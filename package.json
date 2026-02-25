@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "mcp-server-pinescript": "github:iamrichardD/mcp-server-pinescript"
+  }
+}

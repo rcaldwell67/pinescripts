@@ -1,0 +1,3 @@
+#Ignore Files/Paths
+.vscode
+node_modules
