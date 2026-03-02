@@ -1,12 +1,12 @@
 {
-	"folders": [
+    "folders": [
 		{
 			"path": ".."
 		}
 	],
-	"settings": {
-		"files.associations": {
-			"*.pine": "pine"
-		}
-	}
+    "settings": {
+        "files.associations": {
+            "*.pine": "pine"
+        }
+    }
 }
