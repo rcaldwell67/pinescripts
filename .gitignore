@@ -1,3 +1,4 @@
 #Ignore Files/Paths
 .vscode
+.nvm
 node_modules
