@@ -1,0 +1,67 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © rcaldwell67
+
+//@version=6
+strategy("Institutional BTCC - Regime Detection v10", overlay=true, initial_capital=10000, commission_value=0.06)
+
+// ==========================================
+// 1. INDICATOR SETUP
+// ==========================================
+ema200 = ta.ema(close, 200) 
+[macdLine, signalLine, macdHist] = ta.macd(close, 12, 26, 9)
+[bbMiddle, bbUpper, bbLower] = ta.bb(close, 20, 2)
+volSMA = ta.sma(volume, 20)
+
+// ==========================================
+// 2. MARKET REGIME DETECTION (The Key to Surviving 2026)
+// ==========================================
+// A. Trend Strength (ADX)
+[diplus, diminus, adx] = ta.dmi(14, 14)
+isTrending = adx > 25 // Market must have a definitive trend
+isChoppy = adx < 20   // Identifies sideways, trap-heavy markets
+
+// B. Volatility State (ATR)
+atr14 = ta.atr(14)
+atr60 = ta.sma(atr14, 60)
+// If short-term volatility is 40% higher than the baseline, we are in a panic/crash regime
+isPanicVolatility = atr14 > (atr60 * 1.4) 
+
+// ==========================================
+// 3. RISK MANAGEMENT
+// ==========================================
+riskPerTrade = 0.01 
+atrMultiplier = 3.0 
+stopDist = atr14 * atrMultiplier
+capitalAtRisk = strategy.equity * riskPerTrade
+posSize = stopDist > 0 ? capitalAtRisk / stopDist : 0
+
+// ==========================================
+// 4. REGIME-FILTERED PROTOCOLS 
+// ==========================================
+// LONG: Macro Bullish + Breakout + Volume + MUST NOT BE IN PANIC VOLATILITY OR CHOP
+longCondition = (close > ema200) and (macdLine > signalLine) and (close > bbUpper) and (volume > volSMA) and isTrending and not isPanicVolatility
+
+// SHORT: Macro Bearish + Breakdown + Volume + MUST NOT BE IN PANIC VOLATILITY OR CHOP
+shortCondition = (close < ema200) and (macdLine < signalLine) and (close < bbLower) and (volume > volSMA) and isTrending and not isPanicVolatility
+
+// ==========================================
+// 5. EXECUTION WITH TRAILING STOPS
+// ==========================================
+longSL = close - stopDist
+shortSL = close + stopDist
+trailOffset = stopDist / syminfo.mintick
+
+if (longCondition and strategy.opentrades == 0)
+    strategy.entry("Long Trend", strategy.long, qty=posSize)
+    strategy.exit("Trail Long", "Long Trend", stop=longSL, trail_points=trailOffset, trail_offset=trailOffset)
+
+if (shortCondition and strategy.opentrades == 0)
+    strategy.entry("Short Trend", strategy.short, qty=posSize)
+    strategy.exit("Trail Short", "Short Trend", stop=shortSL, trail_points=trailOffset, trail_offset=trailOffset)
+
+// ==========================================
+// 6. VISUALIZATION
+// ==========================================
+plot(ema200, color=color.new(color.white, 0), title="EMA 200", linewidth=2) 
+// Visual warning: Background turns red when market is in panic volatility (Do Not Trade Zone)
+bgcolor(isPanicVolatility ? color.new(color.red, 90) : na, title="Panic Volatility Warning")
