@@ -1,0 +1,178 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0
+// © APM Strategy
+
+//@version=6
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Adaptive Pullback Momentum v1.0
+//
+// THESIS
+//   Most breakout strategies enter *after* the move is mature.  This strategy
+//   enters during brief pullbacks to a key moving average while the broader
+//   trend is intact, giving tighter natural stops and a higher-quality R:R.
+//
+// ENTRY LOGIC
+//   Long  : close > EMA200  |  EMA21 > EMA50  |  prev-bar low tagged EMA21
+//            then current bar recovers above EMA21 (bullish body)
+//            + RSI 42–68  |  Volume ≥ 1× VolSMA  |  ADX > 20  |  no panic
+//   Short : mirror of the above (close < EMA200, EMA21 < EMA50, etc.)
+//
+// EXIT LOGIC
+//   → Hard stop  : entry ± ATR × 1.5
+//   → Hard TP    : entry ± ATR × 2.5  (1.67:1 R:R forced every trade)
+//   → Trail      : activates once price moves ATR×1.0 in favour,
+//                  then trails ATR×0.8 from best price (locks early gains)
+//   → Sizing     : 1 % of equity risked per trade
+// ─────────────────────────────────────────────────────────────────────────────
+
+strategy(
+    title             = "Adaptive Pullback Momentum v1.0",
+    shorttitle        = "APM v1.0",
+    overlay           = true,
+    pyramiding        = 0,
+    initial_capital   = 10000,
+    default_qty_type  = strategy.cash,
+    default_qty_value = 10000,        // overridden by risk-based sizing below
+    commission_type   = strategy.commission.percent,
+    commission_value  = 0.06,
+    slippage          = 1)
+
+// ── Inputs ───────────────────────────────────────────────────────────────────
+var G_TREND = "Trend Filters"
+i_ema_fast   = input.int  (21,   "EMA Fast",            group=G_TREND, minval=5)
+i_ema_mid    = input.int  (50,   "EMA Mid",             group=G_TREND, minval=10)
+i_ema_slow   = input.int  (200,  "EMA Slow",            group=G_TREND, minval=50)
+i_adx_thresh = input.int  (20,   "ADX threshold",       group=G_TREND, minval=5,  maxval=60)
+i_adx_len    = input.int  (14,   "ADX / DI length",     group=G_TREND, minval=5)
+i_pb_pct     = input.float(0.30, "Pullback tolerance (%)", group=G_TREND, minval=0.05, maxval=3.0, step=0.05,
+                 tooltip="How close the prev bar's low/high must come to EMA-fast to count as a pullback")
+
+var G_MOM = "Momentum & Volume"
+i_rsi_len    = input.int  (14,   "RSI length",            group=G_MOM, minval=3)
+i_rsi_lo_l   = input.int  (42,   "RSI min – Long",        group=G_MOM, minval=10, maxval=70)
+i_rsi_hi_l   = input.int  (68,   "RSI max – Long",        group=G_MOM, minval=50, maxval=90)
+i_rsi_lo_s   = input.int  (32,   "RSI min – Short",       group=G_MOM, minval=10, maxval=50)
+i_rsi_hi_s   = input.int  (58,   "RSI max – Short",       group=G_MOM, minval=40, maxval=80)
+i_vol_len    = input.int  (20,   "Volume SMA length",     group=G_MOM, minval=5)
+i_vol_mult   = input.float(1.0,  "Volume multiplier",     group=G_MOM, minval=0.3, maxval=5.0, step=0.1)
+
+var G_VOL = "Volatility"
+i_atr_len    = input.int  (14,   "ATR length",            group=G_VOL, minval=3)
+i_panic_mult = input.float(1.5,  "Panic suppression mult",group=G_VOL, minval=1.0, step=0.1,
+                 tooltip="ATR14 > ATR-60SMA × this value → skip new entries")
+
+var G_RISK = "Risk Management"
+i_sl_mult    = input.float(1.5,  "Stop loss ATR mult",    group=G_RISK, minval=0.3, step=0.1)
+i_tp_mult    = input.float(2.5,  "Take profit ATR mult",  group=G_RISK, minval=0.5, step=0.1)
+i_tr_act     = input.float(1.0,  "Trail activate ATR mult",group=G_RISK,minval=0.3, step=0.1,
+                 tooltip="Trailing stop kicks in once price moves this many ATRs in your favour")
+i_tr_dist    = input.float(0.8,  "Trail distance ATR mult",group=G_RISK,minval=0.2, step=0.1,
+                 tooltip="Once active, trail stays this many ATRs below/above the best price")
+i_risk_pct   = input.float(1.0,  "Equity risked per trade (%)",group=G_RISK,minval=0.1,maxval=20,step=0.1)
+
+var G_DISP = "Display"
+i_longs      = input.bool(true,  "Trade Longs",  group=G_DISP)
+i_shorts     = input.bool(true,  "Trade Shorts", group=G_DISP)
+i_show_emas  = input.bool(true,  "Show EMAs",    group=G_DISP)
+
+// ── Indicators ────────────────────────────────────────────────────────────────
+ema_fast = ta.ema(close, i_ema_fast)
+ema_mid  = ta.ema(close, i_ema_mid)
+ema_slow = ta.ema(close, i_ema_slow)
+rsi      = ta.rsi(close, i_rsi_len)
+atr      = ta.atr(i_atr_len)
+atr_bl   = ta.sma(atr, 60)               // 60-bar ATR baseline
+vol_ma   = ta.sma(volume, i_vol_len)
+
+[di_plus, di_minus, adx] = ta.dmi(i_adx_len, i_adx_len)
+
+// ── Regime guards ─────────────────────────────────────────────────────────────
+is_trending = adx > i_adx_thresh
+is_panic    = atr > atr_bl * i_panic_mult
+
+// ── Pullback-to-EMA trigger ───────────────────────────────────────────────────
+// Long : prev bar's low came within pullback tolerance of EMA-fast FROM ABOVE,
+//        current bar closes ABOVE EMA-fast with a bullish body (close > open)
+pb_tol_up  = ema_fast[1] * (1.0 + i_pb_pct / 100.0)
+long_pb    = low[1] <= pb_tol_up and close > ema_fast and close > open
+
+// Short: prev bar's high came within pullback tolerance of EMA-fast FROM BELOW,
+//        current bar closes BELOW EMA-fast with a bearish body (close < open)
+pb_tol_dn  = ema_fast[1] * (1.0 - i_pb_pct / 100.0)
+short_pb   = high[1] >= pb_tol_dn and close < ema_fast and close < open
+
+// ── Full entry conditions ─────────────────────────────────────────────────────
+no_pos     = strategy.position_size == 0.0
+stop_dist  = atr * i_sl_mult
+
+long_ok  = i_longs  and no_pos and not is_panic and is_trending and
+     long_pb and
+     close   > ema_slow and             // macro bullish
+     ema_fast > ema_mid  and            // medium-term structure up
+     rsi     >= i_rsi_lo_l and rsi <= i_rsi_hi_l and
+     volume  >= vol_ma * i_vol_mult
+
+short_ok = i_shorts and no_pos and not is_panic and is_trending and
+     short_pb and
+     close   < ema_slow and             // macro bearish
+     ema_fast < ema_mid  and            // medium-term structure down
+     rsi     >= i_rsi_lo_s and rsi <= i_rsi_hi_s and
+     volume  >= vol_ma * i_vol_mult
+
+// ── State for manual trailing stop management ─────────────────────────────────
+var float sl_price    = na
+var float tp_price    = na
+var float best_price  = na
+var float entry_p     = na
+
+// ── Entries ───────────────────────────────────────────────────────────────────
+if long_ok
+    qty       = strategy.equity * i_risk_pct / 100.0 / stop_dist
+    sl_price  := close - stop_dist
+    tp_price  := close + atr * i_tp_mult
+    best_price:= close
+    strategy.entry("Long", strategy.long, qty=qty)
+
+if short_ok
+    qty       = strategy.equity * i_risk_pct / 100.0 / stop_dist
+    sl_price  := close + stop_dist
+    tp_price  := close - atr * i_tp_mult
+    best_price:= close
+    strategy.entry("Short", strategy.short, qty=qty)
+
+// ── Trailing stop update (runs every bar while in trade) ──────────────────────
+if strategy.position_size > 0.0          // long
+    best_price := math.max(best_price, high)
+    entry_p    := strategy.position_avg_price
+    if best_price >= entry_p + atr * i_tr_act
+        trail_sl   = best_price - atr * i_tr_dist
+        sl_price  := math.max(sl_price, trail_sl)
+    strategy.exit("Long Exit", "Long", stop=sl_price, limit=tp_price)
+
+if strategy.position_size < 0.0          // short
+    best_price := math.min(best_price, low)
+    entry_p    := strategy.position_avg_price
+    if best_price <= entry_p - atr * i_tr_act
+        trail_sl   = best_price + atr * i_tr_dist
+        sl_price  := math.min(sl_price, trail_sl)
+    strategy.exit("Short Exit", "Short", stop=sl_price, limit=tp_price)
+
+// ── Plots ─────────────────────────────────────────────────────────────────────
+plot(i_show_emas ? ema_fast : na, "EMA 21",  color=color.new(#5b9ef4, 0),  linewidth=1)
+plot(i_show_emas ? ema_mid  : na, "EMA 50",  color=color.new(#f6ad55, 0),  linewidth=1)
+plot(i_show_emas ? ema_slow : na, "EMA 200", color=color.new(#f6e05e, 0),  linewidth=2)
+
+// Stop / TP lines while in trade
+p_sl = plot(strategy.position_size != 0 ? sl_price : na, "Stop",    color=color.new(color.red,   0), linewidth=1, style=plot.style_linebr)
+p_tp = plot(strategy.position_size != 0 ? tp_price : na, "Target",  color=color.new(color.lime,  0), linewidth=1, style=plot.style_linebr)
+
+// Entry markers
+plotshape(long_ok,  title="Long entry",  style=shape.triangleup,   location=location.belowbar, color=color.new(color.lime, 0), size=size.small)
+plotshape(short_ok, title="Short entry", style=shape.triangledown, location=location.abovebar, color=color.new(color.red,  0), size=size.small)
+
+// Background: panic suppression active
+bgcolor(is_panic ? color.new(color.red, 90) : na, title="Panic zone")
+
+// ── Alerts ────────────────────────────────────────────────────────────────────
+alertcondition(long_ok,  title="APM – Long Entry",  message="APM v1 | Long  entry on {{ticker}} @ {{close}} | TF: {{interval}}")
+alertcondition(short_ok, title="APM – Short Entry", message="APM v1 | Short entry on {{ticker}} @ {{close}} | TF: {{interval}}")

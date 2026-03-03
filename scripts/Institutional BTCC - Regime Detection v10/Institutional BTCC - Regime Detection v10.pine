@@ -2,7 +2,7 @@
 // © rcaldwell67
 
 //@version=6
-strategy("Institutional BTCC - Regime Detection v10", overlay=true, initial_capital=10000, commission_value=0.06)
+strategy("Institutional BTCC - Regime Detection v11", overlay=true, initial_capital=10000, commission_value=0.06)
 
 // ==========================================
 // 1. INDICATOR SETUP
@@ -12,12 +12,16 @@ ema200 = ta.ema(close, 200)
 [bbMiddle, bbUpper, bbLower] = ta.bb(close, 20, 2)
 volSMA = ta.sma(volume, 20)
 
+// MACD histogram acceleration (momentum is building, not fading)
+histAccelUp = (macdHist > 0) and (macdHist > macdHist[1])
+histAccelDn = (macdHist < 0) and (macdHist < macdHist[1])
+
 // ==========================================
 // 2. MARKET REGIME DETECTION (The Key to Surviving 2026)
 // ==========================================
 // A. Trend Strength (ADX)
 [diplus, diminus, adx] = ta.dmi(14, 14)
-isTrending = adx > 25 // Market must have a definitive trend
+isTrending = adx > 30 // v11: raised from 25 — demand a genuinely strong trend
 isChoppy = adx < 20   // Identifies sideways, trap-heavy markets
 
 // B. Volatility State (ATR)
@@ -30,34 +34,44 @@ isPanicVolatility = atr14 > (atr60 * 1.4)
 // 3. RISK MANAGEMENT
 // ==========================================
 riskPerTrade = 0.01 
-atrMultiplier = 3.0 
+atrMultiplier = 1.5  // v11: tighter stop (was 3.0) → smaller max loss, better R:R
+tpMultiplier  = 3.0  // v11: hard TP at ATR×3 = 2:1 R:R on the ATR×1.5 stop
 stopDist = atr14 * atrMultiplier
 capitalAtRisk = strategy.equity * riskPerTrade
 posSize = stopDist > 0 ? capitalAtRisk / stopDist : 0
 
 // ==========================================
-// 4. REGIME-FILTERED PROTOCOLS 
+// 4. REGIME-FILTERED PROTOCOLS (v11)
 // ==========================================
-// LONG: Macro Bullish + Breakout + Volume + MUST NOT BE IN PANIC VOLATILITY OR CHOP
-longCondition = (close > ema200) and (macdLine > signalLine) and (close > bbUpper) and (volume > volSMA) and isTrending and not isPanicVolatility
+// v11 tightened filters:
+//   • volume ≥ 1.5× VolSMA  (was 1.0×)  — demand real participation
+//   • close > BB band + ATR×0.3          — avoid thin/marginal breakouts
+//   • MACD histogram accelerating in trade direction
 
-// SHORT: Macro Bearish + Breakdown + Volume + MUST NOT BE IN PANIC VOLATILITY OR CHOP
-shortCondition = (close < ema200) and (macdLine < signalLine) and (close < bbLower) and (volume > volSMA) and isTrending and not isPanicVolatility
+// LONG: Macro Bullish + Strong Breakout + Strong Volume + MACD Accel + Trend + No Panic
+longCondition = (close > ema200) and (macdLine > signalLine) and (close > bbUpper + atr14 * 0.3) and (volume > volSMA * 1.5) and isTrending and histAccelUp and not isPanicVolatility
+
+// SHORT: Macro Bearish + Strong Breakdown + Strong Volume + MACD Accel + Trend + No Panic
+shortCondition = (close < ema200) and (macdLine < signalLine) and (close < bbLower - atr14 * 0.3) and (volume > volSMA * 1.5) and isTrending and histAccelDn and not isPanicVolatility
 
 // ==========================================
-// 5. EXECUTION WITH TRAILING STOPS
+// 5. EXECUTION — HARD TP (2:1) + TRAILING STOP (v11)
 // ==========================================
-longSL = close - stopDist
-shortSL = close + stopDist
+// Hard TP at 2:1 R:R enforces a minimum reward on every winning trade.
+// Trailing stop activates once price moves ATR×1.5 in favor.
+longSL      = close - stopDist
+shortSL     = close + stopDist
+longTP      = close + atr14 * tpMultiplier
+shortTP     = close - atr14 * tpMultiplier
 trailOffset = stopDist / syminfo.mintick
 
 if (longCondition and strategy.opentrades == 0)
     strategy.entry("Long Trend", strategy.long, qty=posSize)
-    strategy.exit("Trail Long", "Long Trend", stop=longSL, trail_points=trailOffset, trail_offset=trailOffset)
+    strategy.exit("Exit Long", "Long Trend", stop=longSL, limit=longTP, trail_points=trailOffset, trail_offset=trailOffset)
 
 if (shortCondition and strategy.opentrades == 0)
     strategy.entry("Short Trend", strategy.short, qty=posSize)
-    strategy.exit("Trail Short", "Short Trend", stop=shortSL, trail_points=trailOffset, trail_offset=trailOffset)
+    strategy.exit("Exit Short", "Short Trend", stop=shortSL, limit=shortTP, trail_points=trailOffset, trail_offset=trailOffset)
 
 // ==========================================
 // 6. VISUALIZATION
