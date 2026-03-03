@@ -4,7 +4,7 @@
 //@version=6
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Adaptive Pullback Momentum v1.0
+// Adaptive Pullback Momentum v1.1
 //
 // THESIS
 //   Most breakout strategies enter *after* the move is mature.  This strategy
@@ -14,20 +14,28 @@
 // ENTRY LOGIC
 //   Long  : close > EMA200  |  EMA21 > EMA50  |  prev-bar low tagged EMA21
 //            then current bar recovers above EMA21 (bullish body)
-//            + RSI 42–68  |  Volume ≥ 1× VolSMA  |  ADX > 20  |  no panic
+//            + RSI 42–68  |  Volume ≥ 1× VolSMA  |  ADX > 25  |  no panic
+//            + body ≥ 0.15×ATR (entry bar must have meaningful directional close)
 //   Short : mirror of the above (close < EMA200, EMA21 < EMA50, etc.)
 //
 // EXIT LOGIC
 //   → Hard stop  : entry ± ATR × 1.5
-//   → Hard TP    : entry ± ATR × 2.5  (1.67:1 R:R forced every trade)
-//   → Trail      : activates once price moves ATR×1.0 in favour,
+//   → Hard TP    : entry ± ATR × 2.0  (1.33:1 R:R — sweep-optimised)
+//   → Trail      : activates once price moves ATR×1.5 in favour,
 //                  then trails ATR×0.8 from best price (locks early gains)
 //   → Sizing     : 1 % of equity risked per trade
+//
+// v1.1 CHANGES vs v1.0  (based on BTC-USD 30m backtest sweep)
+//   PB tolerance : 0.30% → 0.15%  (tighter pullback = fewer, higher-quality entries)
+//   TP multiplier: 2.5×  → 2.0×   (sweep peak; +5.92% vs +2.71% at 1.5×)
+//   ADX threshold: 20    → 25     (filters choppy regimes; trades 74→38)
+//   Trail activate: 1.0× → 1.5×  (lets winners breathe before trailing)
+//   Body filter  : none  → 0.15×ATR (rejects doji / indecision candles)
 // ─────────────────────────────────────────────────────────────────────────────
 
 strategy(
-    title             = "Adaptive Pullback Momentum v1.0",
-    shorttitle        = "APM v1.0",
+    title             = "Adaptive Pullback Momentum v1.1",
+    shorttitle        = "APM v1.1",
     overlay           = true,
     pyramiding        = 0,
     initial_capital   = 10000,
@@ -42,9 +50,9 @@ var G_TREND = "Trend Filters"
 i_ema_fast   = input.int  (21,   "EMA Fast",            group=G_TREND, minval=5)
 i_ema_mid    = input.int  (50,   "EMA Mid",             group=G_TREND, minval=10)
 i_ema_slow   = input.int  (200,  "EMA Slow",            group=G_TREND, minval=50)
-i_adx_thresh = input.int  (20,   "ADX threshold",       group=G_TREND, minval=5,  maxval=60)
+i_adx_thresh = input.int  (25,   "ADX threshold",       group=G_TREND, minval=5,  maxval=60)
 i_adx_len    = input.int  (14,   "ADX / DI length",     group=G_TREND, minval=5)
-i_pb_pct     = input.float(0.30, "Pullback tolerance (%)", group=G_TREND, minval=0.05, maxval=3.0, step=0.05,
+i_pb_pct     = input.float(0.15, "Pullback tolerance (%)", group=G_TREND, minval=0.05, maxval=3.0, step=0.05,
                  tooltip="How close the prev bar's low/high must come to EMA-fast to count as a pullback")
 
 var G_MOM = "Momentum & Volume"
@@ -55,6 +63,8 @@ i_rsi_lo_s   = input.int  (32,   "RSI min – Short",       group=G_MOM, minval=
 i_rsi_hi_s   = input.int  (58,   "RSI max – Short",       group=G_MOM, minval=40, maxval=80)
 i_vol_len    = input.int  (20,   "Volume SMA length",     group=G_MOM, minval=5)
 i_vol_mult   = input.float(1.0,  "Volume multiplier",     group=G_MOM, minval=0.3, maxval=5.0, step=0.1)
+i_min_body   = input.float(0.15, "Min body (×ATR)",        group=G_MOM, minval=0.0, maxval=2.0, step=0.05,
+                 tooltip="Entry bar body (|close-open|/ATR) must exceed this — filters doji / indecision candles")
 
 var G_VOL = "Volatility"
 i_atr_len    = input.int  (14,   "ATR length",            group=G_VOL, minval=3)
@@ -63,17 +73,20 @@ i_panic_mult = input.float(1.5,  "Panic suppression mult",group=G_VOL, minval=1.
 
 var G_RISK = "Risk Management"
 i_sl_mult    = input.float(1.5,  "Stop loss ATR mult",    group=G_RISK, minval=0.3, step=0.1)
-i_tp_mult    = input.float(2.5,  "Take profit ATR mult",  group=G_RISK, minval=0.5, step=0.1)
-i_tr_act     = input.float(1.0,  "Trail activate ATR mult",group=G_RISK,minval=0.3, step=0.1,
+i_tp_mult    = input.float(2.0,  "Take profit ATR mult",  group=G_RISK, minval=0.5, step=0.1)
+i_tr_act     = input.float(1.5,  "Trail activate ATR mult",group=G_RISK,minval=0.3, step=0.1,
                  tooltip="Trailing stop kicks in once price moves this many ATRs in your favour")
 i_tr_dist    = input.float(0.8,  "Trail distance ATR mult",group=G_RISK,minval=0.2, step=0.1,
                  tooltip="Once active, trail stays this many ATRs below/above the best price")
 i_risk_pct   = input.float(1.0,  "Equity risked per trade (%)",group=G_RISK,minval=0.1,maxval=20,step=0.1)
 
 var G_DISP = "Display"
-i_longs      = input.bool(true,  "Trade Longs",  group=G_DISP)
-i_shorts     = input.bool(true,  "Trade Shorts", group=G_DISP)
-i_show_emas  = input.bool(true,  "Show EMAs",    group=G_DISP)
+i_longs      = input.bool(true,  "Trade Longs",   group=G_DISP)
+i_shorts     = input.bool(true,  "Trade Shorts",  group=G_DISP)
+i_show_emas  = input.bool(true,  "Show EMAs",     group=G_DISP)
+i_show_dash  = input.bool(true,  "Show Dashboard",group=G_DISP)
+i_dash_pos   = input.string("Top Right", "Dashboard position", group=G_DISP,
+                 options=["Top Right","Top Left","Bottom Right","Bottom Left","Middle Right","Middle Left"])
 
 // ── Indicators ────────────────────────────────────────────────────────────────
 ema_fast = ta.ema(close, i_ema_fast)
@@ -94,12 +107,13 @@ is_panic    = atr > atr_bl * i_panic_mult
 // Long : prev bar's low came within pullback tolerance of EMA-fast FROM ABOVE,
 //        current bar closes ABOVE EMA-fast with a bullish body (close > open)
 pb_tol_up  = ema_fast[1] * (1.0 + i_pb_pct / 100.0)
-long_pb    = low[1] <= pb_tol_up and close > ema_fast and close > open
+body_size  = math.abs(close - open) / atr
+long_pb    = low[1] <= pb_tol_up and close > ema_fast and close > open and body_size >= i_min_body
 
 // Short: prev bar's high came within pullback tolerance of EMA-fast FROM BELOW,
 //        current bar closes BELOW EMA-fast with a bearish body (close < open)
 pb_tol_dn  = ema_fast[1] * (1.0 - i_pb_pct / 100.0)
-short_pb   = high[1] >= pb_tol_dn and close < ema_fast and close < open
+short_pb   = high[1] >= pb_tol_dn and close < ema_fast and close < open and body_size >= i_min_body
 
 // ── Full entry conditions ─────────────────────────────────────────────────────
 no_pos     = strategy.position_size == 0.0
@@ -132,6 +146,7 @@ if long_ok
     tp_price  := close + atr * i_tp_mult
     best_price:= close
     strategy.entry("Long", strategy.long, qty=qty)
+    alert("APM v1.1 | Long entry on " + syminfo.ticker + " @ " + str.tostring(close) + " | TF: " + timeframe.period, alert.freq_once_per_bar_close)
 
 if short_ok
     qty       = strategy.equity * i_risk_pct / 100.0 / stop_dist
@@ -139,6 +154,7 @@ if short_ok
     tp_price  := close - atr * i_tp_mult
     best_price:= close
     strategy.entry("Short", strategy.short, qty=qty)
+    alert("APM v1.1 | Short entry on " + syminfo.ticker + " @ " + str.tostring(close) + " | TF: " + timeframe.period, alert.freq_once_per_bar_close)
 
 // ── Trailing stop update (runs every bar while in trade) ──────────────────────
 if strategy.position_size > 0.0          // long
@@ -173,6 +189,82 @@ plotshape(short_ok, title="Short entry", style=shape.triangledown, location=loca
 // Background: panic suppression active
 bgcolor(is_panic ? color.new(color.red, 90) : na, title="Panic zone")
 
-// ── Alerts ────────────────────────────────────────────────────────────────────
-alertcondition(long_ok,  title="APM – Long Entry",  message="APM v1 | Long  entry on {{ticker}} @ {{close}} | TF: {{interval}}")
-alertcondition(short_ok, title="APM – Short Entry", message="APM v1 | Short entry on {{ticker}} @ {{close}} | TF: {{interval}}")
+// ── Dashboard colours (top-level constants) ───────────────────────────────────
+var color D_HDR = color.new(#1a1a2e,  5)
+var color D_BG  = color.new(#0d0d1a, 15)
+var color D_BRT = color.new(#e2e8f0,  0)
+var color D_DIM = color.new(#718096,  0)
+var color D_GRN = color.new(#48bb78,  0)
+var color D_RED = color.new(#fc8181,  0)
+var color D_YEL = color.new(#f6e05e,  0)
+var color D_ORG = color.new(#f6ad55,  0)
+var color D_BLU = color.new(#63b3ed,  0)
+
+// ── Dashboard row helper (top-level function) ─────────────────────────────────
+_row(tbl, r, lbl, val, vc) =>
+    table.cell(tbl, 0, r, lbl, text_color=D_DIM, bgcolor=D_BG, text_size=size.small, text_halign=text.align_left)
+    table.cell(tbl, 1, r, val, text_color=vc,    bgcolor=D_BG, text_size=size.small, text_halign=text.align_right)
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+if i_show_dash and barstate.islast
+    tbl_pos = switch i_dash_pos
+        "Top Right"    => position.top_right
+        "Top Left"     => position.top_left
+        "Bottom Right" => position.bottom_right
+        "Bottom Left"  => position.bottom_left
+        "Middle Right" => position.middle_right
+        "Middle Left"  => position.middle_left
+        => position.top_right
+
+    tbl = table.new(tbl_pos, columns=2, rows=20,
+         border_width=1, border_color=color.new(color.gray, 60),
+         frame_width=1,  frame_color=color.new(color.gray, 40))
+
+    // header
+    table.cell(tbl, 0, 0, "APM v1.1", text_color=D_BRT, bgcolor=D_HDR, text_size=size.normal, text_halign=text.align_left)
+    table.cell(tbl, 1, 0, timeframe.period + " | " + syminfo.ticker, text_color=D_YEL, bgcolor=D_HDR, text_size=size.small, text_halign=text.align_right)
+
+    // position
+    pos_size = strategy.position_size
+    _row(tbl, 1, "Position", pos_size > 0 ? "LONG" : pos_size < 0 ? "SHORT" : "FLAT", pos_size > 0 ? D_GRN : pos_size < 0 ? D_RED : D_DIM)
+    _row(tbl, 2, "Entry",    pos_size == 0 ? "--" : str.tostring(strategy.position_avg_price, "#.##"), D_BRT)
+    _row(tbl, 3, "Stop",     na(sl_price) or pos_size == 0 ? "--" : str.tostring(sl_price, "#.##"), D_RED)
+    _row(tbl, 4, "Target",   na(tp_price) or pos_size == 0 ? "--" : str.tostring(tp_price, "#.##"), D_GRN)
+
+    upnl     = pos_size == 0 ? 0.0 : (close - strategy.position_avg_price) * math.abs(pos_size) * (pos_size > 0 ? 1 : -1)
+    upnl_str = pos_size == 0 ? "--" : (upnl >= 0 ? "+" : "") + str.tostring(upnl, "#.##")
+    _row(tbl, 5, "Unrealised P&L", upnl_str, upnl >= 0 ? D_GRN : D_RED)
+
+    // indicators section header
+    table.cell(tbl, 0, 6, "Indicators", text_color=D_DIM, bgcolor=D_BG, text_size=size.tiny, text_halign=text.align_left)
+    table.cell(tbl, 1, 6, "",           text_color=D_DIM, bgcolor=D_BG)
+
+    _row(tbl,  7, "ADX",    str.tostring(adx, "#.#") + (is_trending ? " ok" : " --"), is_trending ? D_GRN : D_RED)
+    _row(tbl,  8, "RSI",    str.tostring(rsi, "#.#"),  rsi > 70 ? D_RED : rsi < 30 ? D_GRN : D_BRT)
+    _row(tbl,  9, "ATR",    str.tostring(atr, "#.##"), D_BLU)
+    _row(tbl, 10, "Vol/MA", str.tostring(volume / vol_ma, "#.##") + "x", volume >= vol_ma * i_vol_mult ? D_GRN : D_DIM)
+
+    // filters section header
+    table.cell(tbl, 0, 11, "Filters", text_color=D_DIM, bgcolor=D_BG, text_size=size.tiny, text_halign=text.align_left)
+    table.cell(tbl, 1, 11, "",        text_color=D_DIM, bgcolor=D_BG)
+
+    _row(tbl, 12, "Trend", is_trending ? "PASS" : "FAIL", is_trending ? D_GRN : D_RED)
+    _row(tbl, 13, "Panic", is_panic    ? "ACTIVE" : "OK", is_panic    ? D_YEL : D_GRN)
+
+    macro_bull = close > ema_slow and ema_fast > ema_mid
+    macro_bear = close < ema_slow and ema_fast < ema_mid
+    _row(tbl, 14, "Macro bias", macro_bull ? "Bullish" : macro_bear ? "Bearish" : "Neutral", macro_bull ? D_GRN : macro_bear ? D_RED : D_ORG)
+
+    // performance section header
+    table.cell(tbl, 0, 15, "Performance", text_color=D_DIM, bgcolor=D_BG, text_size=size.tiny, text_halign=text.align_left)
+    table.cell(tbl, 1, 15, "",            text_color=D_DIM, bgcolor=D_BG)
+
+    total_trades = strategy.wintrades + strategy.losstrades
+    wr_str = total_trades == 0 ? "--" : str.tostring(math.round(strategy.wintrades / total_trades * 100, 1)) + "%"
+    pf_raw = strategy.grossloss == 0 ? na : strategy.grossprofit / math.abs(strategy.grossloss)
+
+    _row(tbl, 16, "Net P&L",      (strategy.netprofit >= 0 ? "+" : "") + str.tostring(strategy.netprofit, "#.##"), strategy.netprofit >= 0 ? D_GRN : D_RED)
+    _row(tbl, 17, "Win rate",     wr_str + " (" + str.tostring(strategy.wintrades) + "/" + str.tostring(total_trades) + ")", D_BRT)
+    _row(tbl, 18, "Prof. factor", na(pf_raw) ? "--" : str.tostring(pf_raw, "#.##"), na(pf_raw) ? D_DIM : pf_raw >= 1.0 ? D_GRN : D_RED)
+    _row(tbl, 19, "Max DD",       str.tostring(math.round(strategy.max_drawdown_percent, 2)) + "%", D_RED)
+
