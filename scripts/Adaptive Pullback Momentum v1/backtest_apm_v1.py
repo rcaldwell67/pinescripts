@@ -128,10 +128,115 @@ short_sig = (~is_panic & is_trending & short_pb & full_bear  & slope_down &
 equity = INITIAL_CAP
 pos    = None
 trades = []
+alerts = []
+
+def fmt_alert(lines):
+    """Join alert lines the same way Pine's \\n separator works."""
+    return "\n".join(lines)
+
+def entry_alert(direction, row, ts, cl, av, atr_bl_v, sd, qty, equity_at_entry, df_row):
+    sl  = cl - sd if direction == "long" else cl + sd
+    tp  = cl + av * TP_MULT if direction == "long" else cl - av * TP_MULT
+    rr  = TP_MULT / SL_MULT
+    rsk = equity_at_entry * RISK_PCT
+    dir_label = "LONG" if direction == "long" else "SHORT"
+    rsi_range = f"{RSI_LO_L}-{RSI_HI_L}" if direction == "long" else f"{RSI_LO_S}-{RSI_HI_S}"
+    rsi_dir   = "Rising" if direction == "long" else "Falling"
+    stack     = "BULL" if direction == "long" else "BEAR"
+    slope     = "UP"   if direction == "long" else "DOWN"
+    trail_on  = av * TRAIL_ACT
+    trail_dist_v = av * TRAIL_DIST
+    sl_sign   = "-" if direction == "long" else "+"
+    tp_sign   = "+" if direction == "long" else "-"
+    trail_sign= "+" if direction == "long" else "-"
+    body_v    = abs(float(df_row["Close"]) - float(df_row["Open"])) / av
+    lines = [
+        f"APM v1.3 | {dir_label} ENTRY | {TICKER} [{INTERVAL}]",
+        f"Entry   : {cl:.2f}  |  Equity: ${equity_at_entry:.2f}",
+        f"Stop    : {sl:.2f}  ({sl_sign}{sd:.2f} = ATR x{SL_MULT})",
+        f"Target  : {tp:.2f}  ({tp_sign}{av * TP_MULT:.2f} = ATR x{TP_MULT})",
+        f"R:R     : 1:{rr:.2f}  |  Risk: ${rsk:.2f} ({RISK_PCT*100:.1f}%)",
+        f"Qty     : {qty:.4f}",
+        f"ATR     : {av:.2f} ({av/cl*100:.3f}% of price)  |  Floor: {'OK' if av/cl >= ATR_FLOOR else 'FAIL'}",
+        f"RSI     : {float(df_row['RSI']):.2f} [{rsi_range}]  |  Dir: {rsi_dir}",
+        f"ADX     : {float(df_row['ADX']):.2f}  DI+: {float(df_row['DI_PLUS']):.2f}  DI-: {float(df_row['DI_MINUS']):.2f}  [min {ADX_THRESH}]",
+        f"Vol/MA  : {float(df_row['Volume'])/float(df_row['VOL_MA']):.2f}x  [min {VOL_MULT}x]",
+        f"Body    : {body_v:.3f}x ATR  [min {MIN_BODY}x]",
+        f"EMA{EMA_FAST}/{EMA_MID}/{EMA_SLOW}: {float(df_row['EMA_FAST']):.2f}/{float(df_row['EMA_MID']):.2f}/{float(df_row['EMA_SLOW']):.2f}  Stack: {stack}  Slope: {slope}",
+        f"Trail on: {trail_sign}{trail_on:.2f} (ATR x{TRAIL_ACT})  Dist: {trail_dist_v:.2f} (ATR x{TRAIL_DIST})",
+        f"Time    : {ts}",
+    ]
+    return fmt_alert(lines)
+
+def trail_alert(direction, best, entry, new_sl, old_sl, tp, runup, av, ts):
+    dir_label = "LONG" if direction == "long" else "SHORT"
+    dist_v    = av * TRAIL_DIST
+    dist_sign = "-" if direction == "long" else "+"
+    runup_pct = abs(runup) / entry * 100
+    runup_sign= "+" if direction == "long" else "-"
+    lines = [
+        f"APM v1.3 | TRAIL STOP ACTIVATED | {TICKER} [{INTERVAL}]",
+        f"Direction : {dir_label}",
+        f"Best price: {best:.2f}  |  Entry: {entry:.2f}",
+        f"Trail SL  : {new_sl:.2f}  (best {dist_sign} ATR x{TRAIL_DIST} = {dist_sign}{dist_v:.2f})",
+        f"Prev SL   : {old_sl:.2f}  |  Target: {tp:.2f}",
+        f"Runup     : {runup_sign}{abs(best - entry):.2f} ({runup_pct:.2f}%)",
+        f"Time      : {ts}",
+    ]
+    return fmt_alert(lines)
+
+def exit_alert(direction, ep, xp, pnl_dollar, comm_dollar, max_runup,
+               bars_held, equity_after, closed_count, win_count, ts):
+    dir_label = "LONG" if direction == "long" else "SHORT"
+    result    = "WIN" if pnl_dollar >= 0 else "LOSS"
+    mvpct     = ((xp - ep) / ep * 100) if direction == "long" else ((ep - xp) / ep * 100)
+    wr        = f"{win_count/closed_count*100:.1f}%" if closed_count else "--"
+    pnl_sign  = "+" if pnl_dollar >= 0 else ""
+    mv_sign   = "+" if mvpct >= 0 else ""
+    lines = [
+        f"APM v1.3 | {dir_label} EXIT [{result}] | {TICKER} [{INTERVAL}]",
+        f"Entry   : {ep:.2f}  ->  Exit: {xp:.2f}",
+        f"Move    : {mv_sign}{mvpct:.2f}%",
+        f"P&L     : {pnl_sign}{pnl_dollar:.2f} USD",
+        f"Comm    : -{comm_dollar:.2f} USD",
+        f"Max runup: {max_runup:.2f}",
+        f"Bars    : {bars_held}",
+        f"Equity  : ${equity_after:.2f}",
+        f"Trades  : {closed_count}  |  Win rate: {wr}",
+        f"Time    : {ts}",
+    ]
+    return fmt_alert(lines)
+
+def panic_alert(started, atr_v, atr_bl_v, ts):
+    state_label = "PANIC REGIME STARTED" if started else "PANIC REGIME CLEARED"
+    status      = "New entries SUSPENDED" if started else "New entries RESUMED"
+    lines = [
+        f"APM v1.3 | {state_label} | {TICKER} [{INTERVAL}]",
+        f"ATR     : {atr_v:.2f}  |  ATR baseline: {atr_bl_v:.2f}",
+        f"Ratio   : {atr_v/atr_bl_v:.2f}x  [threshold: {PANIC_MULT}x]",
+        f"Status  : {status}",
+        f"Time    : {ts}",
+    ]
+    return fmt_alert(lines)
+
+# track closed-trade counts for win rate in exit alert
+win_count   = 0
+closed_count= 0
+prev_panic  = False
+bar_index   = {ts: i for i, ts in enumerate(df.index)}
 
 for ts, row in df.iterrows():
     cl = float(row["Close"]); hi = float(row["High"])
     lo = float(row["Low"]);   av = float(row["ATR"])
+    atr_bl_v = float(row["ATR_BL"])
+    cur_panic = bool(is_panic[ts])
+
+    # ── Panic regime edge alerts ──────────────────────────────────────────
+    if cur_panic and not prev_panic:
+        alerts.append((ts, "PANIC_START", panic_alert(True,  av, atr_bl_v, ts)))
+    elif not cur_panic and prev_panic:
+        alerts.append((ts, "PANIC_CLEAR", panic_alert(False, av, atr_bl_v, ts)))
+    prev_panic = cur_panic
 
     hit_tp = hit_sl = False
     exit_price = pnl = 0.0
@@ -139,17 +244,35 @@ for ts, row in df.iterrows():
     if pos is not None:
         d = pos["direction"]
         if d == "long":
-            if hi > pos["best"]: pos["best"] = hi
+            if hi > pos["best"]:
+                pos["best"] = hi
+                pos["max_runup"] = max(pos["max_runup"], hi - pos["entry"])
             if pos["best"] >= pos["entry"] + av * TRAIL_ACT:
                 trail_sl = pos["best"] - av * TRAIL_DIST
-                pos["sl"] = max(pos["sl"], trail_sl)
+                new_sl   = max(pos["sl"], trail_sl)
+                if not pos["trail_active"]:
+                    pos["trail_active"] = True
+                    alerts.append((ts, "TRAIL", trail_alert(
+                        d, pos["best"], pos["entry"], new_sl,
+                        pos["sl"], pos["tp"],
+                        pos["best"] - pos["entry"], av, ts)))
+                pos["sl"] = new_sl
             hit_tp = hi >= pos["tp"]
             hit_sl = lo <= pos["sl"]
         else:
-            if lo < pos["best"]: pos["best"] = lo
+            if lo < pos["best"]:
+                pos["best"] = lo
+                pos["max_runup"] = max(pos["max_runup"], pos["entry"] - lo)
             if pos["best"] <= pos["entry"] - av * TRAIL_ACT:
                 trail_sl = pos["best"] + av * TRAIL_DIST
-                pos["sl"] = min(pos["sl"], trail_sl)
+                new_sl   = min(pos["sl"], trail_sl)
+                if not pos["trail_active"]:
+                    pos["trail_active"] = True
+                    alerts.append((ts, "TRAIL", trail_alert(
+                        d, pos["best"], pos["entry"], new_sl,
+                        pos["sl"], pos["tp"],
+                        pos["entry"] - pos["best"], av, ts)))
+                pos["sl"] = new_sl
             hit_tp = lo <= pos["tp"]
             hit_sl = hi >= pos["sl"]
 
@@ -161,8 +284,12 @@ for ts, row in df.iterrows():
                 pnl = (pos["entry"] - exit_price) / pos["entry"]
 
     if hit_tp or hit_sl:
-        dollar_pnl = pnl * pos["notional"] - pos["notional"] * COMM * 2
-        equity += dollar_pnl
+        comm_dollar = pos["notional"] * COMM * 2
+        dollar_pnl  = pnl * pos["notional"] - comm_dollar
+        equity     += dollar_pnl
+        closed_count += 1
+        if dollar_pnl > 0: win_count += 1
+        bars_held = bar_index[ts] - bar_index[pos["entry_time"]]
         trades.append({
             "entry_time":  pos["entry_time"],
             "exit_time":   ts,
@@ -174,6 +301,10 @@ for ts, row in df.iterrows():
             "dollar_pnl":  round(dollar_pnl, 2),
             "equity":      round(equity, 2),
         })
+        alerts.append((ts, "EXIT", exit_alert(
+            pos["direction"], pos["entry"], exit_price,
+            dollar_pnl, comm_dollar, pos["max_runup"],
+            bars_held, equity, closed_count, win_count, ts)))
         pos = None
 
     if pos is None:
@@ -184,14 +315,19 @@ for ts, row in df.iterrows():
             notional = min(equity * RISK_PCT / sd * cl, equity * 5.0)
             sl       = cl - sd if sig == "long" else cl + sd
             tp       = cl + av * TP_MULT if sig == "long" else cl - av * TP_MULT
+            qty      = notional / cl
+            alerts.append((ts, "ENTRY", entry_alert(
+                sig, row, ts, cl, av, atr_bl_v, sd, qty, equity, row)))
             pos = {
-                "direction":  sig,
-                "entry":      cl,
-                "entry_time": ts,
-                "sl":         sl,
-                "tp":         tp,
-                "best":       cl,
-                "notional":   notional,
+                "direction":    sig,
+                "entry":        cl,
+                "entry_time":   ts,
+                "sl":           sl,
+                "tp":           tp,
+                "best":         cl,
+                "notional":     notional,
+                "trail_active": False,
+                "max_runup":    0.0,
             }
 
 # ── Stats ─────────────────────────────────────────────────────────────────────
@@ -243,3 +379,28 @@ else:
     out = f"apm_v1_trades_{TICKER.replace('-','').lower()}_{INTERVAL}.csv"
     tdf.to_csv(out, index=False)
     print(f"\nTrades saved → {out}")
+
+# ── Write alerts log ─────────────────────────────────────────────────────────
+alert_types = {"ENTRY": 0, "TRAIL": 0, "EXIT": 0, "PANIC_START": 0, "PANIC_CLEAR": 0}
+SEP = "-" * 70
+alert_out = f"apm_v1_alerts_{TICKER.replace('-','').lower()}_{INTERVAL}.txt"
+with open(alert_out, "w") as f:
+    for ts, atype, msg in alerts:
+        alert_types[atype] += 1
+        f.write(SEP + "\n")
+        f.write(msg + "\n")
+    f.write(SEP + "\n")
+
+print(f"\nAlerts summary:")
+for k, v in alert_types.items():
+    print(f"  {k:<14}: {v}")
+print(f"\nAlerts log  → {alert_out}")
+print(f"Total alerts: {len(alerts)}")
+
+# ── Print first 5 alerts as preview ──────────────────────────────────────────
+print("\n" + "=" * 55)
+print("  ALERT PREVIEW (first 5)")
+print("=" * 55)
+for ts, atype, msg in alerts[:5]:
+    print(SEP)
+    print(msg)
