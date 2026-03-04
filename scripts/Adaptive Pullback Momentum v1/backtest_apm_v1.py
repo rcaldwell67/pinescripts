@@ -404,3 +404,21 @@ print("=" * 55)
 for ts, atype, msg in alerts[:5]:
     print(SEP)
     print(msg)
+
+# ── Push to Google Sheets (optional — requires service_account.json) ──────────
+from pathlib import Path as _Path
+_SA_KEY = _Path(__file__).parent / "service_account.json"
+if _SA_KEY.exists():
+    from push_to_sheets import push_results
+    push_results(
+        trades       = trades,
+        alerts       = alerts,
+        symbol       = TICKER,
+        interval     = INTERVAL,
+        period       = PERIOD,
+        initial_cap  = INITIAL_CAP,
+        final_equity = equity,
+    )
+else:
+    print(f"\nSkipping Google Sheets push — service_account.json not found.")
+    print(f"See push_to_sheets.py for setup instructions.")

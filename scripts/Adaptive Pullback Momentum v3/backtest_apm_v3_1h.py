@@ -1,5 +1,4 @@
-"""
-Faithful Python backtest of Adaptive Pullback Momentum v3.1
+"""Faithful Python backtest of Adaptive Pullback Momentum v3.1
 Timeframe : 1h BTC-USD, period="max" (~730 days via yfinance)
 Commission : 0.06 % per side   Risk : 1 % equity / trade
 
@@ -134,6 +133,90 @@ short_entry = (
 )
 
 # ── Bar-by-bar simulation ───────────────────────────────────────────────────────
+
+# ── Alert helper functions ─────────────────────────────────────────────────────
+def _al(lines): return "\n".join(lines)
+
+def entry_alert(direction, ts, cl, av, atr_eff_v, atr_bl_v, sd, qty, equity_at_entry, row):
+    sl  = cl - sd if direction == "long" else cl + sd
+    tp  = cl + atr_eff_v * TP_MULT if direction == "long" else cl - atr_eff_v * TP_MULT
+    rr  = TP_MULT / SL_MULT
+    rsk = equity_at_entry * RISK_PCT
+    dl  = "LONG" if direction == "long" else "SHORT"
+    rr_range = f"{RSI_LO_L}-{RSI_HI_L}" if direction == "long" else f"{RSI_LO_S}-{RSI_HI_S}"
+    rdir = "Rising" if direction == "long" else "Falling"
+    stk  = "BULL" if direction == "long" else "BEAR"
+    slp  = "UP"   if direction == "long" else "DOWN"
+    ss   = "-" if direction == "long" else "+"
+    ts_  = "+" if direction == "long" else "-"
+    body_v = abs(float(row["Close"]) - float(row["Open"])) / av
+    atr_fl = "OK" if av / cl >= ATR_FLOOR else "FAIL"
+    return _al([
+        f"APM v3.1 | {dl} ENTRY | {TICKER} [{INTERVAL}]",
+        f"Entry   : {cl:.2f}  |  Equity: ${equity_at_entry:.2f}",
+        f"Stop    : {sl:.2f}  ({ss}{sd:.2f} = ATR x{SL_MULT})",
+        f"Target  : {tp:.2f}  ({ts_}{atr_eff_v*TP_MULT:.2f} = ATR x{TP_MULT})",
+        f"R:R     : 1:{rr:.2f}  |  Risk: ${rsk:.2f} ({RISK_PCT*100:.1f}%)",
+        f"Qty     : {qty:.4f}",
+        f"ATR     : {av:.2f} ({av/cl*100:.3f}% of price)  |  Floor: {atr_fl}",
+        f"RSI     : {float(row['RSI']):.2f} [{rr_range}]  |  Dir: {rdir}",
+        f"ADX     : {float(row['ADX']):.2f}  DI+: n/a  DI-: n/a  [min {ADX_THRESH}]",
+        f"Vol/MA  : {float(row['Volume'])/float(row['VOL_MA']):.2f}x  [min {VOL_MULT}x]",
+        f"Body    : {body_v:.3f}x ATR  [min {MIN_BODY}x]",
+        f"EMA{EMA_FAST_LEN}/{EMA_MID_LEN}/{EMA_SLOW_LEN}: {float(row['EMA_F']):.2f}/{float(row['EMA_M']):.2f}/{float(row['EMA_S']):.2f}  Stack: {stk}  Slope: {slp}",
+        f"Trail on: {ts_}{atr_eff_v*TRAIL_ACT:.2f} (ATR x{TRAIL_ACT})  Dist: {atr_eff_v*TRAIL_DIST:.2f} (ATR x{TRAIL_DIST})",
+        f"Time    : {ts}",
+    ])
+
+def trail_alert(direction, best, entry, new_sl, old_sl, tp, av, ts):
+    dl   = "LONG" if direction == "long" else "SHORT"
+    ds   = "-" if direction == "long" else "+"
+    runup = abs(best - entry)
+    rpct  = runup / entry * 100
+    rs    = "+" if direction == "long" else "-"
+    return _al([
+        f"APM v3.1 | TRAIL STOP ACTIVATED | {TICKER} [{INTERVAL}]",
+        f"Direction : {dl}",
+        f"Best price: {best:.2f}  |  Entry: {entry:.2f}",
+        f"Trail SL  : {new_sl:.2f}  (best {ds} ATR x{TRAIL_DIST} = {ds}{av*TRAIL_DIST:.2f})",
+        f"Prev SL   : {old_sl:.2f}  |  Target: {tp:.2f}",
+        f"Runup     : {rs}{runup:.2f} ({rpct:.2f}%)",
+        f"Time      : {ts}",
+    ])
+
+def exit_alert(direction, ep, xp, pnl_dollar, comm_dollar, max_runup,
+               bars_held, equity_after, closed_count, win_count, ts):
+    dl   = "LONG" if direction == "long" else "SHORT"
+    res  = "WIN" if pnl_dollar >= 0 else "LOSS"
+    mv   = ((xp-ep)/ep*100) if direction=="long" else ((ep-xp)/ep*100)
+    wr   = f"{win_count/closed_count*100:.1f}%" if closed_count else "--"
+    ps   = "+" if pnl_dollar >= 0 else ""
+    ms   = "+" if mv >= 0 else ""
+    return _al([
+        f"APM v3.1 | {dl} EXIT [{res}] | {TICKER} [{INTERVAL}]",
+        f"Entry   : {ep:.2f}  ->  Exit: {xp:.2f}",
+        f"Move    : {ms}{mv:.2f}%",
+        f"P&L     : {ps}{pnl_dollar:.2f} USD",
+        f"Comm    : -{comm_dollar:.2f} USD",
+        f"Max runup: {max_runup:.2f}",
+        f"Bars    : {bars_held}",
+        f"Equity  : ${equity_after:.2f}",
+        f"Trades  : {closed_count}  |  Win rate: {wr}",
+        f"Time    : {ts}",
+    ])
+
+def panic_alert(started, atr_v, atr_bl_v, ts):
+    lbl    = "PANIC REGIME STARTED" if started else "PANIC REGIME CLEARED"
+    status = "New entries SUSPENDED" if started else "New entries RESUMED"
+    return _al([
+        f"APM v3.1 | {lbl} | {TICKER} [{INTERVAL}]",
+        f"ATR     : {atr_v:.2f}  |  ATR baseline: {atr_bl_v:.2f}",
+        f"Ratio   : {atr_v/atr_bl_v:.2f}x  [threshold: {PANIC_MULT}x]",
+        f"Status  : {status}",
+        f"Time    : {ts}",
+    ])
+
+# ── Simulation state ─────────────────────────────────────────────────────────────
 equity     = INIT_CAP
 in_trade   = False
 direction  = None   # "long" | "short"
@@ -143,8 +226,15 @@ tp_price   = 0.0
 best_price = 0.0
 entry_atr  = 0.0
 
-trades = []
+tradesdict   = []
+alerts       = []
 equity_curve = [equity]
+win_count    = 0
+closed_count = 0
+prev_panic   = False
+trail_active_f = False  # trail-alert one-shot per trade
+max_runup_f    = 0.0
+bar_index_map  = {t: i for i, t in enumerate(df.index)}
 
 l_entry  = long_entry.values
 s_entry  = short_entry.values
@@ -163,8 +253,18 @@ for i in range(EMA_SLOW_LEN + 50, len(df)):
         equity_curve.append(equity)
         continue
 
-    # Apply ATR floor (0 in baseline — no effect)
+    # Apply ATR floor
     eff_atr = max(curr_atr, c[i] * ATR_FLOOR)
+    row     = df.iloc[i]
+    cur_ts  = idx[i]
+    cur_panic = bool(is_panic.iloc[i])
+
+    # panic edge alerts
+    if cur_panic and not prev_panic:
+        alerts.append((cur_ts, "PANIC_START", panic_alert(True,  curr_atr, float(df["ATR_BL"].iloc[i]), cur_ts)))
+    elif not cur_panic and prev_panic:
+        alerts.append((cur_ts, "PANIC_CLEAR", panic_alert(False, curr_atr, float(df["ATR_BL"].iloc[i]), cur_ts)))
+    prev_panic = cur_panic
 
     exited = False
 
@@ -173,10 +273,16 @@ for i in range(EMA_SLOW_LEN + 50, len(df)):
         if direction == "long":
             if h[i] > best_price:
                 best_price = h[i]
+                max_runup_f = max(max_runup_f, h[i] - entry_px)
             # Activate trailing stop
             if best_price >= entry_px + entry_atr * TRAIL_ACT:
                 trail_sl = best_price - entry_atr * TRAIL_DIST
                 if trail_sl > sl_price:
+                    if not trail_active_f:
+                        trail_active_f = True
+                        alerts.append((cur_ts, "TRAIL", trail_alert(
+                            "long", best_price, entry_px, trail_sl,
+                            sl_price, tp_price, entry_atr, cur_ts)))
                     sl_price = trail_sl
 
             # Check SL (low touches or crosses sl_price)
@@ -184,79 +290,124 @@ for i in range(EMA_SLOW_LEN + 50, len(df)):
                 exit_px  = min(o[i], sl_price)   # gap-down fills at open
                 pnl      = (exit_px - entry_px) * qty
                 comm     = (entry_px + exit_px) * qty * COMM
-                equity  += pnl - comm
-                trades.append({"entry_time": entry_time, "exit_time": idx[i],
+                net_pnl  = pnl - comm
+                equity  += net_pnl
+                closed_count += 1
+                if net_pnl > 0: win_count += 1
+                bars_h = bar_index_map[cur_ts] - bar_index_map[entry_time]
+                tradesdict.append({"entry_time": entry_time, "exit_time": cur_ts,
                                 "direction": "long", "entry": entry_px,
-                                "exit": exit_px, "pnl": pnl - comm, "equity": equity,
+                                "exit": exit_px, "pnl": net_pnl, "equity": equity,
                                 "exit_reason": "SL"})
+                alerts.append((cur_ts, "EXIT", exit_alert(
+                    "long", entry_px, exit_px, net_pnl, comm, max_runup_f,
+                    bars_h, equity, closed_count, win_count, cur_ts)))
                 in_trade = False; exited = True
 
             elif not exited and h[i] >= tp_price:
                 exit_px  = max(o[i], tp_price)
                 pnl      = (exit_px - entry_px) * qty
                 comm     = (entry_px + exit_px) * qty * COMM
-                equity  += pnl - comm
-                trades.append({"entry_time": entry_time, "exit_time": idx[i],
+                net_pnl  = pnl - comm
+                equity  += net_pnl
+                closed_count += 1
+                if net_pnl > 0: win_count += 1
+                bars_h = bar_index_map[cur_ts] - bar_index_map[entry_time]
+                tradesdict.append({"entry_time": entry_time, "exit_time": cur_ts,
                                 "direction": "long", "entry": entry_px,
-                                "exit": exit_px, "pnl": pnl - comm, "equity": equity,
+                                "exit": exit_px, "pnl": net_pnl, "equity": equity,
                                 "exit_reason": "TP"})
+                alerts.append((cur_ts, "EXIT", exit_alert(
+                    "long", entry_px, exit_px, net_pnl, comm, max_runup_f,
+                    bars_h, equity, closed_count, win_count, cur_ts)))
                 in_trade = False; exited = True
 
         else:  # short
             if l_[i] < best_price:
                 best_price = l_[i]
+                max_runup_f = max(max_runup_f, entry_px - l_[i])
             if best_price <= entry_px - entry_atr * TRAIL_ACT:
                 trail_sl = best_price + entry_atr * TRAIL_DIST
                 if trail_sl < sl_price:
+                    if not trail_active_f:
+                        trail_active_f = True
+                        alerts.append((cur_ts, "TRAIL", trail_alert(
+                            "short", best_price, entry_px, trail_sl,
+                            sl_price, tp_price, entry_atr, cur_ts)))
                     sl_price = trail_sl
 
             if h[i] >= sl_price:
                 exit_px  = max(o[i], sl_price)
                 pnl      = (entry_px - exit_px) * qty
                 comm     = (entry_px + exit_px) * qty * COMM
-                equity  += pnl - comm
-                trades.append({"entry_time": entry_time, "exit_time": idx[i],
+                net_pnl  = pnl - comm
+                equity  += net_pnl
+                closed_count += 1
+                if net_pnl > 0: win_count += 1
+                bars_h = bar_index_map[cur_ts] - bar_index_map[entry_time]
+                tradesdict.append({"entry_time": entry_time, "exit_time": cur_ts,
                                 "direction": "short", "entry": entry_px,
-                                "exit": exit_px, "pnl": pnl - comm, "equity": equity,
+                                "exit": exit_px, "pnl": net_pnl, "equity": equity,
                                 "exit_reason": "SL"})
+                alerts.append((cur_ts, "EXIT", exit_alert(
+                    "short", entry_px, exit_px, net_pnl, comm, max_runup_f,
+                    bars_h, equity, closed_count, win_count, cur_ts)))
                 in_trade = False; exited = True
 
             elif not exited and l_[i] <= tp_price:
                 exit_px  = min(o[i], tp_price)
                 pnl      = (entry_px - exit_px) * qty
                 comm     = (entry_px + exit_px) * qty * COMM
-                equity  += pnl - comm
-                trades.append({"entry_time": entry_time, "exit_time": idx[i],
+                net_pnl  = pnl - comm
+                equity  += net_pnl
+                closed_count += 1
+                if net_pnl > 0: win_count += 1
+                bars_h = bar_index_map[cur_ts] - bar_index_map[entry_time]
+                tradesdict.append({"entry_time": entry_time, "exit_time": cur_ts,
                                 "direction": "short", "entry": entry_px,
-                                "exit": exit_px, "pnl": pnl - comm, "equity": equity,
+                                "exit": exit_px, "pnl": net_pnl, "equity": equity,
                                 "exit_reason": "TP"})
+                alerts.append((cur_ts, "EXIT", exit_alert(
+                    "short", entry_px, exit_px, net_pnl, comm, max_runup_f,
+                    bars_h, equity, closed_count, win_count, cur_ts)))
                 in_trade = False; exited = True
 
     if not in_trade:
         if l_entry[i]:
-            stop_dist  = eff_atr * SL_MULT
-            entry_px   = c[i]
-            sl_price   = entry_px - stop_dist
-            tp_price   = entry_px + eff_atr * TP_MULT
-            entry_atr  = eff_atr
-            best_price = entry_px
-            qty        = equity * RISK_PCT / stop_dist
-            entry_time = idx[i]
-            direction  = "long"; in_trade = True
+            stop_dist     = eff_atr * SL_MULT
+            entry_px      = c[i]
+            sl_price      = entry_px - stop_dist
+            tp_price      = entry_px + eff_atr * TP_MULT
+            entry_atr     = eff_atr
+            best_price    = entry_px
+            qty           = equity * RISK_PCT / stop_dist
+            entry_time    = cur_ts
+            trail_active_f= False
+            max_runup_f   = 0.0
+            direction     = "long"; in_trade = True
+            alerts.append((cur_ts, "ENTRY", entry_alert(
+                "long", cur_ts, c[i], curr_atr, eff_atr,
+                float(df["ATR_BL"].iloc[i]), stop_dist, qty, equity, row)))
         elif s_entry[i]:
-            stop_dist  = eff_atr * SL_MULT
-            entry_px   = c[i]
-            sl_price   = entry_px + stop_dist
-            tp_price   = entry_px - eff_atr * TP_MULT
-            entry_atr  = eff_atr
-            best_price = entry_px
-            qty        = equity * RISK_PCT / stop_dist
-            entry_time = idx[i]
-            direction  = "short"; in_trade = True
+            stop_dist     = eff_atr * SL_MULT
+            entry_px      = c[i]
+            sl_price      = entry_px + stop_dist
+            tp_price      = entry_px - eff_atr * TP_MULT
+            entry_atr     = eff_atr
+            best_price    = entry_px
+            qty           = equity * RISK_PCT / stop_dist
+            entry_time    = cur_ts
+            trail_active_f= False
+            max_runup_f   = 0.0
+            direction     = "short"; in_trade = True
+            alerts.append((cur_ts, "ENTRY", entry_alert(
+                "short", cur_ts, c[i], curr_atr, eff_atr,
+                float(df["ATR_BL"].iloc[i]), stop_dist, qty, equity, row)))
 
     equity_curve.append(equity)
 
 # ── Results ────────────────────────────────────────────────────────────────────
+trades = tradesdict
 tdf = pd.DataFrame(trades)
 print(f"\n{'='*55}")
 print(f"  APM v3.1 (sweep-optimised)  |  {TICKER} {INTERVAL}  |  Longs Only")
@@ -310,3 +461,47 @@ else:
     print(f"\n  Saved → apm_v3_trades_btcusd_1h.csv")
 
 print(f"{'='*55}")
+
+# ── Write alert log ───────────────────────────────────────────────────────────────
+SEP = "-" * 70
+alert_out   = f"apm_v3_alerts_{TICKER.replace('-','').lower()}_{INTERVAL}.txt"
+alert_types = {t: 0 for t in ["ENTRY","TRAIL","EXIT","PANIC_START","PANIC_CLEAR"]}
+with open(alert_out, "w") as f:
+    for ts, atype, msg in alerts:
+        alert_types[atype] += 1
+        f.write(SEP + "\n" + msg + "\n")
+    f.write(SEP + "\n")
+
+print(f"\nAlerts summary:")
+for k, v in alert_types.items():
+    print(f"  {k:<14}: {v}")
+print(f"Total alerts: {len(alerts)}")
+print(f"Alerts log  → {alert_out}")
+
+print("\n" + "=" * 55)
+print("  ALERT PREVIEW (first 3 non-panic)")
+print("=" * 55)
+shown = 0
+for ts, atype, msg in alerts:
+    if atype in ("ENTRY", "TRAIL", "EXIT"):
+        print(SEP); print(msg)
+        shown += 1
+        if shown >= 3: break
+
+# ── Google Sheets push (requires service_account.json) ─────────────────────
+from pathlib import Path as _Path
+_SA_KEY = _Path(__file__).parent / "service_account.json"
+if _SA_KEY.exists():
+    from push_to_sheets_v3 import push_results
+    push_results(
+        trades       = trades,
+        alerts       = alerts,
+        symbol       = TICKER,
+        interval     = INTERVAL,
+        period       = PERIOD,
+        initial_cap  = INIT_CAP,
+        final_equity = equity,
+    )
+else:
+    print(f"\nSkipping Google Sheets push — service_account.json not found.")
+    print(f"See push_to_sheets_v3.py for setup instructions.")
