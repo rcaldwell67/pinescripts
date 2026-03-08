@@ -31,229 +31,265 @@ var PROCESSED_LABEL  = "apm-v4-processed";
 var GMAIL_QUERY      = 'from:noreply@tradingview.com subject:"APM v4.1" -label:' + PROCESSED_LABEL;
 
 var LIVE_HEADERS = [
-  "Received At", "Alert Type", "Direction",
-  "Entry", "Stop", "Target", "R:R",
-  "Risk ($)", "Qty",
+  "Received At", "Symbol", "Timeframe", "Alert Type", "Direction",
+  // Entry fields
+  "Entry", "Stop", "Target", "R:R", "Risk ($)", "Qty",
   "ATR", "ATR %", "ATR Floor",
   "RSI", "RSI Range", "RSI Dir",
   "ADX", "DI+", "DI-",
   "Vol/MA", "Body (x ATR)",
   "EMA Fast", "EMA Mid", "EMA Slow",
   "Trail Activate ($)", "Trail Dist ($)",
-  "Best Price", "New SL", "Previous SL", "Runup ($)", "Runup %",
-  "Exit Entry", "Exit Price", "Move %", "P&L ($)", "Comm ($)",
-  "Max Runup", "Bars", "Equity", "Closed Trades", "Win Rate",
+  // Trail fields
+  "Best Price", "New SL", "Prev SL", "Runup ($)", "Runup %",
+  // Exit fields
+  "Exit Price", "Move %", "P&L ($)", "Comm ($)", "Max Runup", "Bars",
+  "Equity", "Closed Trades", "Win Rate",
+  // Panic fields
   "ATR Value", "ATR Baseline", "ATR Ratio",
+  // Raw
   "Raw Message",
+  // ID
+  "Message ID"
 ];
 
 // ── Entry point ───────────────────────────────────────────────────────────────
 function processAlertEmails() {
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var ws = getOrCreateSheet(ss, LIVE_SHEET_NAME, LIVE_HEADERS);
+  var label = getOrCreateLabel(PROCESSED_LABEL);
+
+  // Get existing message IDs to prevent duplicates
+  var lastRow = ws.getLastRow();
+  var existingIds = lastRow > 1
+    ? ws.getRange(2, LIVE_HEADERS.indexOf("Message ID") + 1, lastRow - 1, 1).getValues().flat()
+    : [];
+
   var threads = GmailApp.search(GMAIL_QUERY, 0, 50);
   if (threads.length === 0) return;
 
-  var ss      = SpreadsheetApp.openById(SPREADSHEET_ID);
-  var ws      = getOrCreateSheet(ss);
-  var label   = getOrCreateLabel(PROCESSED_LABEL);
-  var newRows = [];
+  var rows = [];
+  for (var i = 0; i < threads.length; i++) {
+    var msgs = threads[i].getMessages();
+    for (var j = 0; j < msgs.length; j++) {
+      var msg = msgs[j];
+      var msgId = msg.getId();
 
-  threads.forEach(function(thread) {
-    thread.getMessages().forEach(function(msg) {
+      // Skip if the message ID already exists in the sheet
+      if (existingIds.indexOf(msgId) > -1) {
+        Logger.log("Skipping duplicate message ID: " + msgId);
+        continue;
+      }
+
       var body = msg.getPlainBody();
       var date = msg.getDate();
-      var row  = parseAlertBody(body, date);
-      if (row) newRows.push(row);
-    });
-    thread.addLabel(label);
-  });
+      var row = parseAlertBody(body, date, msgId);
+      if (row) {
+        rows.push(row);
+        existingIds.push(msgId); // Add to local list to handle multiple new messages in one run
+      }
+    }
+    threads[i].addLabel(label);
+  }
 
-  if (newRows.length > 0) {
-    ws.getRange(ws.getLastRow() + 1, 1, newRows.length, LIVE_HEADERS.length)
-      .setValues(newRows);
+  if (rows.length > 0) {
+    ws.getRange(ws.getLastRow() + 1, 1, rows.length, LIVE_HEADERS.length)
+      .setValues(rows);
+    Logger.log("Appended " + rows.length + " alert rows.");
   }
 }
 
 // ── Alert parser ──────────────────────────────────────────────────────────────
-function parseAlertBody(body, date) {
-  var lines = body.trim().split("\n");
-  var first = lines[0] || "";
+function parseAlertBody(body, date, msgId) {
+  // Normalise line endings
+  body = body.replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
 
+  var lines = body.split("\n");
+  if (lines.length < 2) return null;
+
+  var header = lines[0].trim();
+  if (header.indexOf("APM v4.1") === -1) return null;
+
+  // Build key→value map from "Key   : Value" lines
   var kv = {};
-  lines.forEach(function(l) {
-    var idx = l.indexOf(":");
+  for (var i = 1; i < lines.length; i++) {
+    var idx = lines[i].indexOf(":");
     if (idx > 0) {
-      var k = l.substring(0, idx).trim();
-      var v = l.substring(idx + 1).trim();
+      var k = lines[i].substring(0, idx).trim();
+      var v = lines[i].substring(idx + 1).trim();
       kv[k] = v;
     }
-  });
-
-  // helpers
-  function get(k)      { return (kv[k] || "").trim(); }
-  function splitFirst(s, sep) {
-    var i = s.indexOf(sep);
-    return i < 0 ? [s, ""] : [s.substring(0, i).trim(), s.substring(i + sep.length).trim()];
   }
 
-  var receivedAt = Utilities.formatDate(date, "UTC", "yyyy-MM-dd HH:mm:ss 'UTC'");
+  // Determine type from header
+  var atype     = "";
+  var direction = "";
+  if (header.indexOf("LONG ENTRY") > -1)          { atype = "ENTRY";       direction = "LONG";  }
+  else if (header.indexOf("SHORT ENTRY") > -1)     { atype = "ENTRY";       direction = "SHORT"; }
+  else if (header.indexOf("TRAIL STOP") > -1)      { atype = "TRAIL";
+    direction = body.indexOf("Direction : LONG") > -1 ? "LONG" : "SHORT";  }
+  else if (header.indexOf("LONG EXIT") > -1)       { atype = "EXIT";        direction = "LONG";  }
+  else if (header.indexOf("SHORT EXIT") > -1)      { atype = "EXIT";        direction = "SHORT"; }
+  else if (header.indexOf("PANIC REGIME STARTED") > -1) { atype = "PANIC_START"; }
+  else if (header.indexOf("PANIC REGIME CLEARED") > -1) { atype = "PANIC_CLEAR";  }
+  else return null;
 
-  // ── ENTRY ─────────────────────────────────────────────────────────────────
-  if (first.indexOf("LONG ENTRY") > -1 || first.indexOf("SHORT ENTRY") > -1) {
-    var direction  = first.indexOf("LONG") > -1 ? "LONG" : "SHORT";
-    var entryRaw   = get("Entry");
-    var entry_v    = splitFirst(entryRaw, "|")[0].replace(/\$$/, "").trim();
-    var stop_v     = splitFirst(get("Stop"),   "(")[0].trim();
-    var target_v   = splitFirst(get("Target"), "(")[0].trim();
-    var rr_raw     = get("R:R");
-    var rr_v       = splitFirst(rr_raw, "|")[0].trim();
-    var risk_v     = rr_raw.indexOf("Risk: $") > -1 ? rr_raw.split("Risk: $")[1].split(" ")[0] : "";
-    var qty_v      = get("Qty");
-    var atr_raw    = get("ATR");
-    var atr_v      = atr_raw.split(" ")[0];
-    var atr_pct    = atr_raw.indexOf("(") > -1 ? atr_raw.split("(")[1].split("%")[0] : "";
-    // v4 has no ATR floor — leave blank
-    var rsi_raw    = get("RSI");
-    var rsi_v      = rsi_raw.split(" ")[0];
-    var rsi_range  = rsi_raw.indexOf("[") > -1 ? rsi_raw.split("[")[1].split("]")[0] : "";
-    var rsi_dir    = rsi_raw.indexOf("Dir:") > -1 ? rsi_raw.split("Dir:")[1].trim() : "";
-    var adx_raw    = get("ADX");
-    var adx_v      = adx_raw.split(" ")[0];
-    var dip        = adx_raw.indexOf("DI+:") > -1 ? adx_raw.split("DI+:")[1].split(" ")[0] : "";
-    var dim        = adx_raw.indexOf("DI-:") > -1 ? adx_raw.split("DI-:")[1].split(" ")[0] : "";
-    var vol_v      = get("Vol/MA").replace(/x.*/, "").trim();
-    var body_v     = get("Body").replace(/x.*/, "").trim();
-    var ema_line   = lines.filter(function(l){ return l.indexOf("Stack:") > -1; })[0] || "";
-    var ema_f = "", ema_m = "", ema_s = "";
-    if (ema_line) {
-      // v4 EMA line has no "Slope:" suffix
-      var ep = ema_line.split(": ").pop().split("  ")[0].split("/");
-      if (ep.length === 3) { ema_f = ep[0]; ema_m = ep[1]; ema_s = ep[2]; }
+  // ── Parse symbol / timeframe from header
+  // Header format: "APM v4.1 | SHORT ENTRY | BTC-USD [1D]"
+  var symParts = header.split("|");
+  var symRaw   = symParts.length >= 3 ? symParts[2].trim() : "";
+  var symbol   = symRaw.split("[")[0].trim();
+  var tf       = symRaw.indexOf("[") > -1
+               ? symRaw.split("[")[1].replace("]","").trim()
+               : "";
+
+  var recvAt  = Utilities.formatDate(date, Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
+
+  // ── Shared helpers
+  function splitFirst(s, delim) {
+    var idx = s.indexOf(delim);
+    return idx >= 0 ? [s.substring(0, idx).trim(), s.substring(idx + delim.length).trim()] : [s.trim(), ""];
+  }
+  function extractBetween(s, open, close) {
+    var a = s.indexOf(open), b = s.indexOf(close, a);
+    return (a >= 0 && b > a) ? s.substring(a + open.length, b).trim() : "";
+  }
+
+  // ── Build the full row (matches LIVE_HEADERS order)
+  var entry="", stop="", target="", rr="", risk="", qty="";
+  var atr_v="", atr_pct="", atr_floor="";
+  var rsi_v="", rsi_range="", rsi_dir="";
+  var adx_v="", dip="", dim="";
+  var vol_v="", body_v="";
+  var ema_f="", ema_m="", ema_s="";
+  var trail_act="", trail_dist="";
+  var best="", new_sl="", prev_sl="", runup_d="", runup_pct="";
+  var exit_p="", move_pct="", pnl_d="", comm_d="", max_runup="", bars="";
+  var eq_v="", closed_v="", wr_v="";
+  var atr_val="", atr_bl="", atr_ratio="";
+
+  if (atype === "ENTRY") {
+    var entryRaw = kv["Entry"] || "";
+    entry  = entryRaw.indexOf("|") > -1 ? entryRaw.split("|")[0].trim() : entryRaw;
+    stop   = (kv["Stop"]   || "").split("(")[0].trim();
+    target = (kv["Target"] || "").split("(")[0].trim();
+
+    var rrRaw = kv["R:R"] || "";
+    rr   = rrRaw.indexOf("|") > -1 ? rrRaw.split("|")[0].trim() : rrRaw;
+    risk = rrRaw.indexOf("Risk: $") > -1 ? rrRaw.split("Risk: $")[1].split(" ")[0] : "";
+    qty  = kv["Qty"] || "";
+
+    var atrRaw = kv["ATR"] || "";
+    atr_v     = atrRaw.split(" ")[0];
+    atr_pct   = extractBetween(atrRaw, "(", "%");
+    // v4 has no ATR floor
+    atr_floor = "";
+
+    var rsiRaw = kv["RSI"] || "";
+    rsi_v     = rsiRaw.split(" ")[0];
+    rsi_range = extractBetween(rsiRaw, "[", "]");
+    rsi_dir   = rsiRaw.indexOf("Dir:") > -1 ? rsiRaw.split("Dir:")[1].trim() : "";
+
+    var adxRaw = kv["ADX"] || "";
+    adx_v = adxRaw.split(" ")[0];
+    dip   = adxRaw.indexOf("DI+:") > -1 ? adxRaw.split("DI+:")[1].split(" ")[0].trim() : "";
+    dim   = adxRaw.indexOf("DI-:") > -1 ? adxRaw.split("DI-:")[1].split(" ")[0].trim() : "";
+
+    vol_v  = (kv["Vol/MA"] || "").replace("x","").trim();
+    body_v = (kv["Body"]   || "").split("x")[0].trim();
+
+    // EMA line: "EMA21/50/200: val/val/val  Stack: ..."
+    var emaLine = "";
+    for (var li = 0; li < lines.length; li++) {
+      if (lines[li].indexOf("Stack:") > -1) { emaLine = lines[li]; break; }
     }
-    var trail_raw  = get("Trail on");
-    var trail_act  = trail_raw.split("(")[0].replace(/[+-]/g, "").trim();
-    var trail_dist = trail_raw.indexOf("Dist:") > -1 ? trail_raw.split("Dist:")[1].split("(")[0].trim() : "";
+    if (emaLine) {
+      var emaVals = emaLine.split(":")[1].trim().split("  ")[0].split("/");
+      if (emaVals.length === 3) { ema_f = emaVals[0]; ema_m = emaVals[1]; ema_s = emaVals[2]; }
+    }
 
-    return [
-      receivedAt, "ENTRY", direction,
-      entry_v, stop_v, target_v, rr_v, risk_v, qty_v,
-      atr_v, atr_pct, "",          // ATR Floor blank for v4
-      rsi_v, rsi_range, rsi_dir,
-      adx_v, dip, dim,
-      vol_v, body_v,
-      ema_f, ema_m, ema_s,
-      trail_act, trail_dist,
-      "", "", "", "", "",
-      "", "", "", "", "", "", "", "", "", "",
-      "", "", "",
-      body,
-    ];
+    var trailRaw = kv["Trail on"] || "";
+    trail_act  = trailRaw.split("(")[0].replace(/[+\-]/g,"").trim();
+    trail_dist = trailRaw.indexOf("Dist:") > -1 ? trailRaw.split("Dist:")[1].split("(")[0].trim() : "";
   }
 
-  // ── TRAIL STOP ACTIVATED ──────────────────────────────────────────────────
-  if (first.indexOf("TRAIL STOP ACTIVATED") > -1) {
-    var direction  = first.indexOf("LONG") > -1 ? "LONG" : "SHORT";
-    var best_raw   = get("Best price");
-    var best_v     = splitFirst(best_raw, "|")[0].trim();
-    var entry_v    = best_raw.indexOf("Entry:") > -1 ? best_raw.split("Entry:")[1].trim() : "";
-    var tsl_raw    = get("Trail SL");
-    var trail_sl   = tsl_raw.split("(")[0].trim();
-    var prev_sl_raw= get("Prev SL");
-    var prev_sl    = splitFirst(prev_sl_raw, "|")[0].trim();
-    var target_v   = prev_sl_raw.indexOf("Target:") > -1 ? prev_sl_raw.split("Target:")[1].trim() : "";
-    var runup_raw  = get("Runup");
-    var runup_v    = runup_raw.split(" ")[0].replace(/[+-]/g, "");
-    var runup_pct  = runup_raw.indexOf("(") > -1 ? runup_raw.split("(")[1].replace("%)","").replace("%","").replace(")","").trim() : "";
+  else if (atype === "TRAIL") {
+    var bestRaw   = kv["Best price"] || "";
+    best    = bestRaw.indexOf("|") > -1 ? bestRaw.split("|")[0].trim() : bestRaw;
+    var trailSlRaw = kv["Trail SL"] || "";
+    new_sl  = trailSlRaw.split("(")[0].trim();
+    var prevSlRaw = kv["Prev SL"] || "";
+    prev_sl = prevSlRaw.indexOf("|") > -1 ? prevSlRaw.split("|")[0].trim() : prevSlRaw;
 
-    return [
-      receivedAt, "TRAIL", direction,
-      entry_v, "", target_v, "", "", "",
-      "", "", "",
-      "", "", "",
-      "", "", "",
-      "", "",
-      "", "", "",
-      "", "",
-      best_v, trail_sl, prev_sl, runup_v, runup_pct,
-      "", "", "", "", "", "", "", "", "", "",
-      "", "", "",
-      body,
-    ];
+    var runupRaw = kv["Runup"] || "";
+    runup_d   = runupRaw.split(" ")[0].replace(/[+\-]/g,"");
+    runup_pct = extractBetween(runupRaw, "(", "%");
   }
 
-  // ── EXIT ─────────────────────────────────────────────────────────────────
-  if (first.indexOf("EXIT [WIN]") > -1 || first.indexOf("EXIT [LOSS]") > -1) {
-    var direction = first.indexOf("LONG") > -1 ? "LONG" : "SHORT";
-    var ep_xp     = get("Entry");
-    var ep_v      = ep_xp.indexOf("->") > -1 ? ep_xp.split("->")[0].trim() : ep_xp;
-    var xp_v      = ep_xp.indexOf("->") > -1 ? ep_xp.split("->")[1].trim() : "";
-    var move_v    = get("Move").replace("%","").trim();
-    var pnl_v     = get("P&L").replace(" USD","").trim();
-    var comm_v    = get("Comm").replace(" USD","").replace("-","").trim();
-    var runup_v   = get("Max runup");
-    var bars_v    = get("Bars");
-    var eq_v      = get("Equity").replace("$","").trim();
-    var tr_raw    = get("Trades");
-    var tr_v      = tr_raw.indexOf("|") > -1 ? tr_raw.split("|")[0].trim() : tr_raw;
-    var wr_v      = tr_raw.indexOf("Win rate:") > -1 ? tr_raw.split("Win rate:")[1].trim() : "";
-
-    return [
-      receivedAt, "EXIT", direction,
-      ep_v, "", "", "", "", "",
-      "", "", "",
-      "", "", "",
-      "", "", "",
-      "", "",
-      "", "", "",
-      "", "",
-      "", "", "", "", "",
-      ep_v, xp_v, move_v, pnl_v, comm_v, runup_v, bars_v, eq_v, tr_v, wr_v,
-      "", "", "",
-      body,
-    ];
+  else if (atype === "EXIT") {
+    var epxpRaw = kv["Entry"] || "";
+    var epxp    = epxpRaw.indexOf("->") > -1 ? epxpRaw.split("->") : [epxpRaw, ""];
+    entry   = epxp[0].trim();
+    exit_p  = epxp[1].trim();
+    move_pct = (kv["Move"]  || "").replace("%","").trim();
+    pnl_d    = (kv["P&L"]   || "").replace(" USD","").trim();
+    comm_d   = (kv["Comm"]  || "").replace(" USD","").replace("-","").trim();
+    max_runup= kv["Max runup"] || "";
+    bars     = kv["Bars"] || "";
+    eq_v     = (kv["Equity"] || "").replace("$","").trim();
+    var trRaw = kv["Trades"] || "";
+    closed_v = trRaw.indexOf("|") > -1 ? trRaw.split("|")[0].trim() : trRaw;
+    wr_v     = trRaw.indexOf("Win rate:") > -1 ? trRaw.split("Win rate:")[1].trim() : "";
   }
 
-  // ── PANIC REGIME STARTED / CLEARED ───────────────────────────────────────
-  if (first.indexOf("PANIC REGIME STARTED") > -1 || first.indexOf("PANIC REGIME CLEARED") > -1) {
-    var atype   = first.indexOf("STARTED") > -1 ? "PANIC_START" : "PANIC_CLEAR";
-    var atr_raw = get("ATR");
-    var atr_v   = atr_raw.indexOf("|") > -1 ? atr_raw.split("|")[0].trim() : atr_raw;
-    var atr_bl  = atr_raw.indexOf("ATR baseline:") > -1 ? atr_raw.split("ATR baseline:")[1].trim() : "";
-    var ratio   = get("Ratio").replace(/x.*/, "").trim();
-
-    return [
-      receivedAt, atype, "",
-      "", "", "", "", "", "",
-      "", "", "",
-      "", "", "",
-      "", "", "",
-      "", "",
-      "", "", "",
-      "", "",
-      "", "", "", "", "",
-      "", "", "", "", "", "", "", "", "", "",
-      atr_v, atr_bl, ratio,
-      body,
-    ];
+  else if (atype === "PANIC_START" || atype === "PANIC_CLEAR") {
+    var atrPanicRaw = kv["ATR"] || "";
+    atr_val = atrPanicRaw.indexOf("|") > -1 ? atrPanicRaw.split("|")[0].trim() : atrPanicRaw;
+    atr_bl  = atrPanicRaw.indexOf("ATR baseline:") > -1
+              ? atrPanicRaw.split("ATR baseline:")[1].trim() : "";
+    atr_ratio = (kv["Ratio"] || "").split("x")[0].trim();
   }
 
-  return null;  // unknown alert format
+  return [
+    recvAt, symbol, tf, atype, direction,
+    entry, stop, target, rr, risk, qty,
+    atr_v, atr_pct, atr_floor,
+    rsi_v, rsi_range, rsi_dir,
+    adx_v, dip, dim,
+    vol_v, body_v,
+    ema_f, ema_m, ema_s,
+    trail_act, trail_dist,
+    best, new_sl, prev_sl, runup_d, runup_pct,
+    exit_p, move_pct, pnl_d, comm_d, max_runup, bars,
+    eq_v, closed_v, wr_v,
+    atr_val, atr_bl, atr_ratio,
+    body,
+    msgId
+  ];
 }
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
-function getOrCreateSheet(ss) {
-  var ws = ss.getSheetByName(LIVE_SHEET_NAME);
+function getOrCreateSheet(ss, name, headers) {
+  var ws = ss.getSheetByName(name);
   if (!ws) {
-    ws = ss.insertSheet(LIVE_SHEET_NAME);
-    ws.appendRow(LIVE_HEADERS);
+    ws = ss.insertSheet(name);
+    ws.appendRow(headers);
     ws.setFrozenRows(1);
+    // Basic formatting: bold header, freeze
+    ws.getRange(1, 1, 1, headers.length)
+      .setFontWeight("bold")
+      .setBackground("#1a1a2e")
+      .setFontColor("#e2e8f0");
   }
   return ws;
 }
 
 function getOrCreateLabel(name) {
-  var label = GmailApp.getUserLabelByName(name);
-  if (!label) label = GmailApp.createLabel(name);
-  return label;
+  var labels = GmailApp.getUserLabels();
+  for (var i = 0; i < labels.length; i++) {
+    if (labels[i].getName() === name) return labels[i];
+  }
+  return GmailApp.createLabel(name);
 }
 
 // ── Setup / Utilities ─────────────────────────────────────────────────────────
@@ -275,28 +311,15 @@ function setupTrigger() {
   Logger.log("Trigger installed: processAlertEmails every 1 minute.");
 }
 
-/**
- * Debug helper — paste a sample alert body below and run testParse()
- * to inspect the parsed row in the Apps Script logs.
- */
+/** Utility: manually run once to test parsing against existing emails. */
 function testParse() {
-  var sample = [
-    "APM v4.1 | LONG ENTRY | BTC-USD [1D]",
-    "Entry   : 63762.28  |  Equity: $10000.00",
-    "Stop    : 62784.98  (-977.30 = ATR x2.0)",
-    "Target  : 64251.43  (+489.15 = ATR x1.0)",
-    "R:R     : 1:0.50  |  Risk: $100.00 (1.0%)",
-    "Qty     : 0.1023",
-    "ATR     : 489.15 (0.767% of price)",
-    "RSI     : 58.64 [42.0-72.0]  |  Dir: Rising",
-    "ADX     : 30.15  DI+: 22.45  DI-: 11.33  [min 28.0]",
-    "Vol/MA  : 1.25x  [min 1.0x]",
-    "Body    : 0.450x ATR  [min 0.3x]",
-    "EMA21/50/200: 63406.49/62596.59/61936.16  Stack: BULL",
-    "Trail on: +978.30 (ATR x2.0)  Dist: 195.66 (ATR x0.4)",
-    "Time    : 2024-05-05 00:00:00",
-  ].join("\n");
-
-  var row = parseAlertBody(sample, new Date());
-  Logger.log(row ? JSON.stringify(row) : "Parse returned null");
+  var threads = GmailApp.search('from:noreply@tradingview.com subject:"APM v4.1"', 0, 3);
+  for (var i = 0; i < threads.length; i++) {
+    var msgs = threads[i].getMessages();
+    for (var j = 0; j < msgs.length; j++) {
+      var msg = msgs[j];
+      var row = parseAlertBody(msg.getPlainBody(), msg.getDate(), "test-id-" + i + "-" + j);
+      Logger.log(JSON.stringify(row));
+    }
+  }
 }

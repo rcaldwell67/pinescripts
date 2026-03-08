@@ -41,15 +41,23 @@ var LIVE_HEADERS = [
   // Panic fields
   "ATR Value", "ATR Baseline", "ATR Ratio",
   // Raw
-  "Raw Message"
+  "Raw Message",
+  // ID
+  "Message ID"
 ];
 
 
 // ── Entry point: called by time trigger ──────────────────────────────────────
 function processAlertEmails() {
-  var ss      = SpreadsheetApp.openById(SPREADSHEET_ID);
-  var ws      = getOrCreateSheet(ss, LIVE_SHEET_NAME, LIVE_HEADERS);
-  var label   = getOrCreateLabel(PROCESSED_LABEL);
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var ws = getOrCreateSheet(ss, LIVE_SHEET_NAME, LIVE_HEADERS);
+  var label = getOrCreateLabel(PROCESSED_LABEL);
+
+  // Get existing message IDs to prevent duplicates
+  var lastRow = ws.getLastRow();
+  var existingIds = lastRow > 1
+    ? ws.getRange(2, LIVE_HEADERS.indexOf("Message ID") + 1, lastRow - 1, 1).getValues().flat()
+    : [];
 
   var threads = GmailApp.search(GMAIL_QUERY, 0, 50);
   if (threads.length === 0) return;
@@ -58,11 +66,22 @@ function processAlertEmails() {
   for (var i = 0; i < threads.length; i++) {
     var msgs = threads[i].getMessages();
     for (var j = 0; j < msgs.length; j++) {
-      var msg  = msgs[j];
+      var msg = msgs[j];
+      var msgId = msg.getId();
+
+      // Skip if the message ID already exists in the sheet
+      if (existingIds.indexOf(msgId) > -1) {
+        Logger.log("Skipping duplicate message ID: " + msgId);
+        continue;
+      }
+
       var body = msg.getPlainBody();
       var date = msg.getDate();
-      var row  = parseAlertBody(body, date);
-      if (row) rows.push(row);
+      var row = parseAlertBody(body, date, msgId);
+      if (row) {
+        rows.push(row);
+        existingIds.push(msgId); // Add to local list to handle multiple new messages in one run
+      }
     }
     threads[i].addLabel(label);
   }
@@ -76,7 +95,7 @@ function processAlertEmails() {
 
 
 // ── Parser ────────────────────────────────────────────────────────────────────
-function parseAlertBody(body, date) {
+function parseAlertBody(body, date, msgId) {
   // Normalise line endings
   body = body.replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
 
@@ -238,7 +257,8 @@ function parseAlertBody(body, date) {
     exit_p, move_pct, pnl_d, comm_d, max_runup, bars,
     eq_v, closed_v, wr_v,
     atr_val, atr_bl, atr_ratio,
-    body
+    body,
+    msgId
   ];
 }
 
@@ -290,7 +310,8 @@ function testParse() {
   for (var i = 0; i < threads.length; i++) {
     var msgs = threads[i].getMessages();
     for (var j = 0; j < msgs.length; j++) {
-      var row = parseAlertBody(msgs[j].getPlainBody(), msgs[j].getDate());
+      var msg = msgs[j];
+      var row = parseAlertBody(msg.getPlainBody(), msg.getDate(), "test-id-" + i + "-" + j);
       Logger.log(JSON.stringify(row));
     }
   }
