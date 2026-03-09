@@ -1,5 +1,5 @@
 /**
- * APM — Combined Google Apps Script (v1.3 / v2.2 / v3.1 / v4.1)
+ * APM — Combined Google Apps Script (v1.0 / v2.2 / v3.0 / v4.0)
  * ==============================================================
  * Single file that polls Gmail every 1 minute for TradingView alert
  * emails from all APM strategy versions and appends parsed rows to
@@ -19,10 +19,10 @@
 var SPREADSHEET_ID = "19wjt8sWl1PddkwYbk8NgXEzoZSo6dVbec3pUdAk3-n8";
 
 var APM_CONFIGS = [
-  { version: "APM v1.3", sheetName: "Live Alerts",    label: "apm-processed",    hasAtrFloor: true  },
-  { version: "APM v2.2", sheetName: "Live Alerts v2", label: "apm-v2-processed", hasAtrFloor: true  },
-  { version: "APM v3.1", sheetName: "Live Alerts v3", label: "apm-v3-processed", hasAtrFloor: true  },
-  { version: "APM v4.1", sheetName: "Live Alerts v4", label: "apm-v4-processed", hasAtrFloor: false },
+  { version: "APM v1.0", sheetName: "Live Alerts",    label: "apm-processed",    hasAtrFloor: true  },
+  { version: "APM v2.0", sheetName: "Live Alerts v2", label: "apm-v2-processed", hasAtrFloor: true  },
+  { version: "APM v3.0", sheetName: "Live Alerts v3", label: "apm-v3-processed", hasAtrFloor: true  },
+  { version: "APM v4.0", sheetName: "Live Alerts v4", label: "apm-v4-processed", hasAtrFloor: false },
 ];
 
 var LIVE_HEADERS = [

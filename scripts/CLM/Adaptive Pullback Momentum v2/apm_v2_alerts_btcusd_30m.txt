@@ -1,0 +1,108 @@
+----------------------------------------------------------------------
+APM v2.2 | PANIC REGIME STARTED | BTC-USD [30m]
+ATR     : 595.56  |  ATR baseline: 418.32
+Ratio   : 1.42x  [threshold: 1.3x]
+Status  : New entries SUSPENDED
+Time    : 2026-03-03 16:30:00+00:00
+----------------------------------------------------------------------
+APM v2.2 | PANIC REGIME CLEARED | BTC-USD [30m]
+ATR     : 569.97  |  ATR baseline: 460.02
+Ratio   : 1.24x  [threshold: 1.3x]
+Status  : New entries RESUMED
+Time    : 2026-03-03 21:30:00+00:00
+----------------------------------------------------------------------
+APM v2.2 | LONG ENTRY | BTC-USD [30m]
+Entry   : 68064.79  |  Equity: $10000.00
+Stop    : 66924.85  (-1139.94 = ATR x2.0)
+Target  : 70059.68  (+1994.89 = ATR x3.5)
+R:R     : 1:1.75  |  Risk: $100.00 (1.0%)
+Qty     : 0.0877
+ATR     : 569.97 (0.837% of price)  |  Floor: OK
+RSI     : 67.20 [42-68]  |  Dir: Rising
+ADX     : 39.16  DI+: 31.53  DI-: 9.02  [min 25]
+Vol/MA  : 3.65x  [min 1.2x]
+Body    : 0.240x ATR  [min 0.2x]
+EMA21/50/200: 68014.85/67854.50/67000.70  Stack: BULL  Slope: UP
+Trail on: +1424.92 (ATR x2.5)  Dist: 854.95 (ATR x1.5)
+Time    : 2026-03-03 21:30:00+00:00
+----------------------------------------------------------------------
+APM v2.2 | TRAIL STOP ACTIVATED | BTC-USD [30m]
+Direction : LONG
+Best price: 69556.47  |  Entry: 68064.79
+Trail SL  : 68701.52  (best - ATR x1.5 = -854.95)
+Prev SL   : 66924.85  |  Target: 70059.68
+Runup     : +1491.68 (2.19%)
+Time      : 2026-03-04 07:30:00+00:00
+----------------------------------------------------------------------
+APM v2.2 | LONG EXIT [WIN] | BTC-USD [30m]
+Entry   : 68064.79  ->  Exit: 68701.52
+Move    : +0.94%
+P&L     : +48.69 USD
+Comm    : -7.17 USD
+Max runup: 1491.68
+Bars    : 20
+Equity  : $10048.69
+Trades  : 1  |  Win rate: 100.0%
+Time    : 2026-03-04 07:30:00+00:00
+----------------------------------------------------------------------
+APM v2.2 | PANIC REGIME STARTED | BTC-USD [30m]
+ATR     : 622.24  |  ATR baseline: 472.60
+Ratio   : 1.32x  [threshold: 1.3x]
+Status  : New entries SUSPENDED
+Time    : 2026-03-04 15:00:00+00:00
+----------------------------------------------------------------------
+APM v2.2 | PANIC REGIME CLEARED | BTC-USD [30m]
+ATR     : 537.94  |  ATR baseline: 475.80
+Ratio   : 1.13x  [threshold: 1.3x]
+Status  : New entries RESUMED
+Time    : 2026-03-04 15:30:00+00:00
+----------------------------------------------------------------------
+APM v2.2 | SHORT ENTRY | BTC-USD [30m]
+Entry   : 67925.17  |  Equity: $10048.69
+Stop    : 68309.96  (+384.79 = ATR x2.0)
+Target  : 67251.79  (-673.38 = ATR x3.5)
+R:R     : 1:1.75  |  Risk: $100.49 (1.0%)
+Qty     : 0.2611
+ATR     : 192.39 (0.283% of price)  |  Floor: OK
+RSI     : 38.83 [32-58]  |  Dir: Falling
+ADX     : 29.71  DI+: 15.61  DI-: 33.13  [min 25]
+Vol/MA  : 1.61x  [min 1.2x]
+Body    : 0.385x ATR  [min 0.2x]
+EMA21/50/200: 68049.31/68631.85/69435.34  Stack: BEAR  Slope: DOWN
+Trail on: -480.99 (ATR x2.5)  Dist: 288.59 (ATR x1.5)
+Time    : 2026-03-07 10:00:00+00:00
+----------------------------------------------------------------------
+APM v2.2 | TRAIL STOP ACTIVATED | BTC-USD [30m]
+Direction : SHORT
+Best price: 67225.70  |  Entry: 67925.17
+Trail SL  : 67514.29  (best + ATR x1.5 = +288.59)
+Prev SL   : 68309.96  |  Target: 67251.79
+Runup     : -699.48 (1.03%)
+Time      : 2026-03-07 19:00:00+00:00
+----------------------------------------------------------------------
+APM v2.2 | SHORT EXIT [WIN] | BTC-USD [30m]
+Entry   : 67925.17  ->  Exit: 67251.79
+Move    : +0.99%
+P&L     : +154.57 USD
+Comm    : -21.29 USD
+Max runup: 699.48
+Bars    : 18
+Equity  : $10203.26
+Trades  : 2  |  Win rate: 100.0%
+Time    : 2026-03-07 19:00:00+00:00
+----------------------------------------------------------------------
+APM v2.2 | SHORT ENTRY | BTC-USD [30m]
+Entry   : 67228.49  |  Equity: $10203.26
+Stop    : 67623.96  (+395.47 = ATR x2.0)
+Target  : 66536.43  (-692.07 = ATR x3.5)
+R:R     : 1:1.75  |  Risk: $102.03 (1.0%)
+Qty     : 0.2580
+ATR     : 197.73 (0.294% of price)  |  Floor: OK
+RSI     : 33.47 [32-58]  |  Dir: Falling
+ADX     : 52.96  DI+: 11.75  DI-: 37.04  [min 25]
+Vol/MA  : 1.49x  [min 1.2x]
+Body    : 0.595x ATR  [min 0.2x]
+EMA21/50/200: 67488.88/67893.53/68979.62  Stack: BEAR  Slope: DOWN
+Trail on: -494.33 (ATR x2.5)  Dist: 296.60 (ATR x1.5)
+Time    : 2026-03-08 00:30:00+00:00
+----------------------------------------------------------------------
