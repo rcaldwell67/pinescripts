@@ -1,11 +1,12 @@
-"""Faithful Python backtest of Adaptive Pullback Momentum v3.1
-Timeframe : 1h BTC-USD, period="max" (~730 days via yfinance)
+"""Python backtest of Adaptive Pullback Momentum v3 — CLM 1h
+Timeframe : 1h CLM (WTI Crude Oil futures), period="max" (~730 days via yfinance)
 Commission : 0.06 % per side   Risk : 1 % equity / trade
 
-v3.1 optimal parameters (7-phase sweep over BTC-USD 1h max history):
-  Longs only | ADX>35 | SL×1.5 | TP×1.5 | Trail act×2.5 | Trail dist×0.5
-  Vol×1.5 | Body×0.20 | ATR floor 0.30% | EMA slope (3-bar) | RSI 42-72
-  Result: +6.31%, PF=3.682, WR=83.3%, 12 trades, MaxDD=-1.18%
+v3 sweep-optimal parameters (deep sweep over CLM 1h max history):
+  Longs + Shorts | ADX>33 | SL×2.0 | TP×2.0 | Trail OFF | Vol×1.2 | Body×0.05
+  Panic×1.4 | EMA slope OFF | ATR floor 0.00% | RSI L:40-70 / S:30-60
+  EMA 21/34/200 | RSI len 20 | ATR 14/50 | Vol MA 20
+  Result: +12.30%, PF=11.002, WR=93.8%, 16 trades, MaxDD=-1.13%
 """
 
 import pandas as pd
@@ -15,37 +16,37 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # ── Configuration ──────────────────────────────────────────────────────────────
-TICKER     = "BTC-USD"
+TICKER     = "CLM"
 INTERVAL   = "1h"
 PERIOD     = "max"          # ~730 days for 1h on yfinance
 INIT_CAP   = 10_000.0
 COMMISSION = 0.0006         # 0.06 % per side
 RISK_PCT   = 0.01           # 1 % equity per trade
 
-# ── Strategy defaults (v3.1 — sweep-optimised) ────────────────────────────────
+# ── Strategy parameters (CLM 1h — sweep-optimised) ───────────────────────────
 EMA_FAST_LEN = 21
-EMA_MID_LEN  = 50
+EMA_MID_LEN  = 34          # deep sweep-optimal: 34 vs 50
 EMA_SLOW_LEN = 200
 ADX_LEN      = 14
-ADX_THRESH   = 35.0
-PB_PCT       = 0.10         # % pullback tolerance
+ADX_THRESH   = 33.0         # extended sweep-optimal: ADX>33
+PB_PCT       = 0.20         # % pullback tolerance — wider for crude oil
 VOL_MA_LEN   = 20
-VOL_MULT     = 1.5
-MIN_BODY     = 0.20         # minimum body in ATR units
-PANIC_MULT   = 1.5
+VOL_MULT     = 1.20         # sweep-optimal: 1.2× avg volume
+MIN_BODY     = 0.05         # deep sweep-optimal: relaxed body filter
+PANIC_MULT   = 1.4          # extended sweep-optimal: tighter panic filter
 ATR_LEN      = 14
-ATR_BL_LEN   = 50          # ATR baseline (SMA of ATR)
-SL_MULT      = 1.5
-TP_MULT      = 1.5
-TRAIL_ACT    = 2.5
-TRAIL_DIST   = 0.5
-RSI_LEN      = 14
-RSI_LO_L     = 42.0; RSI_HI_L = 72.0   # long RSI band
-RSI_LO_S     = 32.0; RSI_HI_S = 58.0   # short RSI band (unused — shorts off)
+ATR_BL_LEN   = 50           # ATR baseline (SMA of ATR)
+SL_MULT      = 2.0          # extended sweep-optimal: SL×2.0
+TP_MULT      = 2.0
+TRAIL_ACT    = 99.0         # sweep-optimal: trailing stop off (hard TP only)
+TRAIL_DIST   = 0.3
+RSI_LEN      = 20           # deep sweep-optimal: 20 vs 14
+RSI_LO_L     = 40.0; RSI_HI_L = 70.0   # long RSI band
+RSI_LO_S     = 30.0; RSI_HI_S = 60.0   # short RSI band
 TRADE_LONGS  = True
-TRADE_SHORTS = False
-ATR_FLOOR    = 0.0030       # 0.30% of price — floors ATR for sizing
-USE_EMA_SLOPE = True        # require EMA-fast rising (3-bar)
+TRADE_SHORTS = True
+ATR_FLOOR    = 0.0000       # sweep-optimal: no ATR floor needed
+USE_EMA_SLOPE = False       # sweep-optimal: EMA slope filter not beneficial at 1h
 
 # ── Data download ──────────────────────────────────────────────────────────────
 print(f"Downloading {TICKER} {INTERVAL} {PERIOD} …")
@@ -132,8 +133,6 @@ short_entry = (
     is_trending & ~is_panic
 )
 
-# ── Bar-by-bar simulation ───────────────────────────────────────────────────────
-
 # ── Alert helper functions ─────────────────────────────────────────────────────
 def _al(lines): return "\n".join(lines)
 
@@ -152,7 +151,7 @@ def entry_alert(direction, ts, cl, av, atr_eff_v, atr_bl_v, sd, qty, equity_at_e
     body_v = abs(float(row["Close"]) - float(row["Open"])) / av
     atr_fl = "OK" if av / cl >= ATR_FLOOR else "FAIL"
     return _al([
-        f"APM v3.1 | {dl} ENTRY | {TICKER} [{INTERVAL}]",
+        f"APM v3 | {dl} ENTRY | {TICKER} [{INTERVAL}]",
         f"Entry   : {cl:.2f}  |  Equity: ${equity_at_entry:.2f}",
         f"Stop    : {sl:.2f}  ({ss}{sd:.2f} = ATR x{SL_MULT})",
         f"Target  : {tp:.2f}  ({ts_}{atr_eff_v*TP_MULT:.2f} = ATR x{TP_MULT})",
@@ -160,7 +159,7 @@ def entry_alert(direction, ts, cl, av, atr_eff_v, atr_bl_v, sd, qty, equity_at_e
         f"Qty     : {qty:.4f}",
         f"ATR     : {av:.2f} ({av/cl*100:.3f}% of price)  |  Floor: {atr_fl}",
         f"RSI     : {float(row['RSI']):.2f} [{rr_range}]  |  Dir: {rdir}",
-        f"ADX     : {float(row['ADX']):.2f}  DI+: n/a  DI-: n/a  [min {ADX_THRESH}]",
+        f"ADX     : {float(row['ADX']):.2f}  [min {ADX_THRESH}]",
         f"Vol/MA  : {float(row['Volume'])/float(row['VOL_MA']):.2f}x  [min {VOL_MULT}x]",
         f"Body    : {body_v:.3f}x ATR  [min {MIN_BODY}x]",
         f"EMA{EMA_FAST_LEN}/{EMA_MID_LEN}/{EMA_SLOW_LEN}: {float(row['EMA_F']):.2f}/{float(row['EMA_M']):.2f}/{float(row['EMA_S']):.2f}  Stack: {stk}  Slope: {slp}",
@@ -175,7 +174,7 @@ def trail_alert(direction, best, entry, new_sl, old_sl, tp, av, ts):
     rpct  = runup / entry * 100
     rs    = "+" if direction == "long" else "-"
     return _al([
-        f"APM v3.1 | TRAIL STOP ACTIVATED | {TICKER} [{INTERVAL}]",
+        f"APM v3 | TRAIL STOP ACTIVATED | {TICKER} [{INTERVAL}]",
         f"Direction : {dl}",
         f"Best price: {best:.2f}  |  Entry: {entry:.2f}",
         f"Trail SL  : {new_sl:.2f}  (best {ds} ATR x{TRAIL_DIST} = {ds}{av*TRAIL_DIST:.2f})",
@@ -193,7 +192,7 @@ def exit_alert(direction, ep, xp, pnl_dollar, comm_dollar, max_runup,
     ps   = "+" if pnl_dollar >= 0 else ""
     ms   = "+" if mv >= 0 else ""
     return _al([
-        f"APM v3.1 | {dl} EXIT [{res}] | {TICKER} [{INTERVAL}]",
+        f"APM v3 | {dl} EXIT [{res}] | {TICKER} [{INTERVAL}]",
         f"Entry   : {ep:.2f}  ->  Exit: {xp:.2f}",
         f"Move    : {ms}{mv:.2f}%",
         f"P&L     : {ps}{pnl_dollar:.2f} USD",
@@ -209,14 +208,14 @@ def panic_alert(started, atr_v, atr_bl_v, ts):
     lbl    = "PANIC REGIME STARTED" if started else "PANIC REGIME CLEARED"
     status = "New entries SUSPENDED" if started else "New entries RESUMED"
     return _al([
-        f"APM v3.1 | {lbl} | {TICKER} [{INTERVAL}]",
+        f"APM v3 | {lbl} | {TICKER} [{INTERVAL}]",
         f"ATR     : {atr_v:.2f}  |  ATR baseline: {atr_bl_v:.2f}",
         f"Ratio   : {atr_v/atr_bl_v:.2f}x  [threshold: {PANIC_MULT}x]",
         f"Status  : {status}",
         f"Time    : {ts}",
     ])
 
-# ── Simulation state ─────────────────────────────────────────────────────────────
+# ── Simulation state ───────────────────────────────────────────────────────────
 equity     = INIT_CAP
 in_trade   = False
 direction  = None   # "long" | "short"
@@ -232,7 +231,7 @@ equity_curve = [equity]
 win_count    = 0
 closed_count = 0
 prev_panic   = False
-trail_active_f = False  # trail-alert one-shot per trade
+trail_active_f = False
 max_runup_f    = 0.0
 bar_index_map  = {t: i for i, t in enumerate(df.index)}
 
@@ -269,7 +268,6 @@ for i in range(EMA_SLOW_LEN + 50, len(df)):
     exited = False
 
     if in_trade:
-        # Update best price
         if direction == "long":
             if h[i] > best_price:
                 best_price = h[i]
@@ -285,9 +283,9 @@ for i in range(EMA_SLOW_LEN + 50, len(df)):
                             sl_price, tp_price, entry_atr, cur_ts)))
                     sl_price = trail_sl
 
-            # Check SL (low touches or crosses sl_price)
+            # Check SL
             if l_[i] <= sl_price:
-                exit_px  = min(o[i], sl_price)   # gap-down fills at open
+                exit_px  = min(o[i], sl_price)
                 pnl      = (exit_px - entry_px) * qty
                 comm     = (entry_px + exit_px) * qty * COMM
                 net_pnl  = pnl - comm
@@ -296,9 +294,9 @@ for i in range(EMA_SLOW_LEN + 50, len(df)):
                 if net_pnl > 0: win_count += 1
                 bars_h = bar_index_map[cur_ts] - bar_index_map[entry_time]
                 tradesdict.append({"entry_time": entry_time, "exit_time": cur_ts,
-                                "direction": "long", "entry": entry_px,
-                                "exit": exit_px, "pnl": net_pnl, "equity": equity,
-                                "exit_reason": "SL"})
+                                   "direction": "long", "entry": entry_px,
+                                   "exit": exit_px, "pnl": net_pnl, "equity": equity,
+                                   "exit_reason": "SL"})
                 alerts.append((cur_ts, "EXIT", exit_alert(
                     "long", entry_px, exit_px, net_pnl, comm, max_runup_f,
                     bars_h, equity, closed_count, win_count, cur_ts)))
@@ -314,9 +312,9 @@ for i in range(EMA_SLOW_LEN + 50, len(df)):
                 if net_pnl > 0: win_count += 1
                 bars_h = bar_index_map[cur_ts] - bar_index_map[entry_time]
                 tradesdict.append({"entry_time": entry_time, "exit_time": cur_ts,
-                                "direction": "long", "entry": entry_px,
-                                "exit": exit_px, "pnl": net_pnl, "equity": equity,
-                                "exit_reason": "TP"})
+                                   "direction": "long", "entry": entry_px,
+                                   "exit": exit_px, "pnl": net_pnl, "equity": equity,
+                                   "exit_reason": "TP"})
                 alerts.append((cur_ts, "EXIT", exit_alert(
                     "long", entry_px, exit_px, net_pnl, comm, max_runup_f,
                     bars_h, equity, closed_count, win_count, cur_ts)))
@@ -346,9 +344,9 @@ for i in range(EMA_SLOW_LEN + 50, len(df)):
                 if net_pnl > 0: win_count += 1
                 bars_h = bar_index_map[cur_ts] - bar_index_map[entry_time]
                 tradesdict.append({"entry_time": entry_time, "exit_time": cur_ts,
-                                "direction": "short", "entry": entry_px,
-                                "exit": exit_px, "pnl": net_pnl, "equity": equity,
-                                "exit_reason": "SL"})
+                                   "direction": "short", "entry": entry_px,
+                                   "exit": exit_px, "pnl": net_pnl, "equity": equity,
+                                   "exit_reason": "SL"})
                 alerts.append((cur_ts, "EXIT", exit_alert(
                     "short", entry_px, exit_px, net_pnl, comm, max_runup_f,
                     bars_h, equity, closed_count, win_count, cur_ts)))
@@ -364,9 +362,9 @@ for i in range(EMA_SLOW_LEN + 50, len(df)):
                 if net_pnl > 0: win_count += 1
                 bars_h = bar_index_map[cur_ts] - bar_index_map[entry_time]
                 tradesdict.append({"entry_time": entry_time, "exit_time": cur_ts,
-                                "direction": "short", "entry": entry_px,
-                                "exit": exit_px, "pnl": net_pnl, "equity": equity,
-                                "exit_reason": "TP"})
+                                   "direction": "short", "entry": entry_px,
+                                   "exit": exit_px, "pnl": net_pnl, "equity": equity,
+                                   "exit_reason": "TP"})
                 alerts.append((cur_ts, "EXIT", exit_alert(
                     "short", entry_px, exit_px, net_pnl, comm, max_runup_f,
                     bars_h, equity, closed_count, win_count, cur_ts)))
@@ -374,32 +372,32 @@ for i in range(EMA_SLOW_LEN + 50, len(df)):
 
     if not in_trade:
         if l_entry[i]:
-            stop_dist     = eff_atr * SL_MULT
-            entry_px      = c[i]
-            sl_price      = entry_px - stop_dist
-            tp_price      = entry_px + eff_atr * TP_MULT
-            entry_atr     = eff_atr
-            best_price    = entry_px
-            qty           = equity * RISK_PCT / stop_dist
-            entry_time    = cur_ts
-            trail_active_f= False
-            max_runup_f   = 0.0
-            direction     = "long"; in_trade = True
+            stop_dist      = eff_atr * SL_MULT
+            entry_px       = c[i]
+            sl_price       = entry_px - stop_dist
+            tp_price       = entry_px + eff_atr * TP_MULT
+            entry_atr      = eff_atr
+            best_price     = entry_px
+            qty            = equity * RISK_PCT / stop_dist
+            entry_time     = cur_ts
+            trail_active_f = False
+            max_runup_f    = 0.0
+            direction      = "long"; in_trade = True
             alerts.append((cur_ts, "ENTRY", entry_alert(
                 "long", cur_ts, c[i], curr_atr, eff_atr,
                 float(df["ATR_BL"].iloc[i]), stop_dist, qty, equity, row)))
         elif s_entry[i]:
-            stop_dist     = eff_atr * SL_MULT
-            entry_px      = c[i]
-            sl_price      = entry_px + stop_dist
-            tp_price      = entry_px - eff_atr * TP_MULT
-            entry_atr     = eff_atr
-            best_price    = entry_px
-            qty           = equity * RISK_PCT / stop_dist
-            entry_time    = cur_ts
-            trail_active_f= False
-            max_runup_f   = 0.0
-            direction     = "short"; in_trade = True
+            stop_dist      = eff_atr * SL_MULT
+            entry_px       = c[i]
+            sl_price       = entry_px + stop_dist
+            tp_price       = entry_px - eff_atr * TP_MULT
+            entry_atr      = eff_atr
+            best_price     = entry_px
+            qty            = equity * RISK_PCT / stop_dist
+            entry_time     = cur_ts
+            trail_active_f = False
+            max_runup_f    = 0.0
+            direction      = "short"; in_trade = True
             alerts.append((cur_ts, "ENTRY", entry_alert(
                 "short", cur_ts, c[i], curr_atr, eff_atr,
                 float(df["ATR_BL"].iloc[i]), stop_dist, qty, equity, row)))
@@ -410,7 +408,7 @@ for i in range(EMA_SLOW_LEN + 50, len(df)):
 trades = tradesdict
 tdf = pd.DataFrame(trades)
 print(f"\n{'='*55}")
-print(f"  APM v3.1 (sweep-optimised)  |  {TICKER} {INTERVAL}  |  Longs Only")
+print(f"  APM v3  |  {TICKER} {INTERVAL}  |  Longs + Shorts")
 print(f"{'='*55}")
 
 if tdf.empty:
@@ -428,7 +426,7 @@ else:
     avg_w   = wins["pnl"].mean() if not wins.empty else 0
     avg_l   = losses["pnl"].mean() if not losses.empty else 0
 
-    eq_arr  = np.array(equity_curve)
+    eq_arr   = np.array(equity_curve)
     roll_max = np.maximum.accumulate(eq_arr)
     dd       = (eq_arr - roll_max) / roll_max * 100
     max_dd   = dd.min()
@@ -457,15 +455,16 @@ else:
     print(f"\n  Exit breakdown:")
     print(tdf["exit_reason"].value_counts().to_string())
 
-    tdf.to_csv("apm_v3_trades_btcusd_1h.csv", index=False)
-    print(f"\n  Saved → apm_v3_trades_btcusd_1h.csv")
+    out_csv = "apm_v3_trades_clm_1h.csv"
+    tdf.to_csv(out_csv, index=False)
+    print(f"\n  Saved → {out_csv}")
 
 print(f"{'='*55}")
 
-# ── Write alert log ───────────────────────────────────────────────────────────────
+# ── Write alert log ────────────────────────────────────────────────────────────
 SEP = "-" * 70
-alert_out   = f"apm_v3_alerts_{TICKER.replace('-','').lower()}_{INTERVAL}.txt"
-alert_types = {t: 0 for t in ["ENTRY","TRAIL","EXIT","PANIC_START","PANIC_CLEAR"]}
+alert_out   = f"apm_v3_alerts_clm_{INTERVAL}.txt"
+alert_types = {t: 0 for t in ["ENTRY", "TRAIL", "EXIT", "PANIC_START", "PANIC_CLEAR"]}
 with open(alert_out, "w") as f:
     for ts, atype, msg in alerts:
         alert_types[atype] += 1
@@ -488,7 +487,7 @@ for ts, atype, msg in alerts:
         shown += 1
         if shown >= 3: break
 
-# ── Google Sheets push (requires service_account.json) ─────────────────────
+# ── Google Sheets push (requires service_account.json) ────────────────────────
 from pathlib import Path as _Path
 _SA_KEY = _Path(__file__).parent / "service_account.json"
 if _SA_KEY.exists():

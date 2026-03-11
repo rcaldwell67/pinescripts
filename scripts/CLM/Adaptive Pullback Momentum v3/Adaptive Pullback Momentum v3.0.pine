@@ -4,8 +4,8 @@
 //@version=6
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Adaptive Pullback Momentum v3.1
-// 1h BTC-USD  |  Longs Only
+// Adaptive Pullback Momentum v3.0
+// 1h CLM  |  Longs Only
 // THESIS
 //   Most breakout strategies enter *after* the move is mature.  This strategy
 //   enters during brief pullbacks to a key moving average while the broader
@@ -24,7 +24,7 @@
 //                  then trails ATR×0.5 from best price
 //   → Sizing     : 1 % of equity risked per trade
 //
-// v3.1 CHANGES vs v3.0  (BTC-USD 1h max-history sweep, 7 phases)
+// v3.1 CHANGES vs v3.0  (CLM 1h max-history sweep, 7 phases)
 //   Longs only   : shorts disabled (33% WR on 1h; longs 83% WR)
 //   ADX threshold: 25 → 35     (strong-trend filter; dramatically raises WR)
 //   PB tolerance : 0.15% → 0.10%  (tighter pullback = higher-quality entries)

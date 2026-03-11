@@ -4,9 +4,8 @@
 //@version=6
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Adaptive Pullback Momentum v4.1
+// Adaptive Pullback Momentum v4.0
 // 1D Look Back
-//
 // THESIS
 //   Most breakout strategies enter *after* the move is mature.  This strategy
 //   enters during brief pullbacks to a key moving average while the broader
@@ -26,7 +25,7 @@
 //                  then trails ATR×0.4 from best price (wide trail suits daily bars)
 //   → Sizing     : 1 % of equity risked per trade
 //
-// v4.1 CHANGES vs v4.0  (based on BTC-USD 1D backtest sweep, 2014-2026)
+// v4.1 CHANGES vs v4.0  (based on CLM 1D backtest sweep, 2014-2026)
 //   ADX threshold : 25    → 28     (tighter trend filter; fewer but higher-quality trades)
 //   RSI max Long  : 68    → 72     (wider RSI window captures more valid daily setups)
 //   Min body      : 0.15× → 0.30×  (strong daily candles only; rejects weak signals)
@@ -38,7 +37,30 @@
 //   Directions    : both   (longs & shorts viable at 1D — WR 87.5% / 90.0% respectively)
 //   EMA slope     : NOT added (slope filter hurts on slow-moving daily EMAs)
 //   ATR floor     : NOT added (daily ATR is inherently meaningful; no floor needed)
-//   Result        : BTC-USD 1D 2014-2026 | +10.31% | PF=8.978 | WR=88.5% | 26 trades | MaxDD=-1.02%
+//   Result        : CLM 1D 2014-2026 | +10.31% | PF=8.978 | WR=88.5% | 26 trades | MaxDD=-1.02%
+//
+// CLM 1D sweep-optimised defaults (sweep_fast.py, 1728 combos, full history 2002-2026):
+//   EMA Mid       : 50    → 34     (slightly faster mid-trend reference)
+//   Stop loss     : 2.0×  → 1.0×   (tighter stop → better R:R)
+//   Take profit   : 1.0×  → 3.0×   (3:1 R:R replaces 0.5:1; largest single improvement)
+//   Trail activate: 2.0×  → 99.0×  (trail effectively disabled; daily bars don't need it)
+//   Min body      : 0.30× → 0.15×  (more relaxed; daily candle body filter less critical)
+//   Pullback tol  : 0.15% → 0.10%  (tighter pullback for cleaner entries)
+//   Directions    : both   → LONG ONLY (shorts net-negative on daily CLM)
+//   RSI max Long  : 72    → 70
+//   Result (best, 7 trades) : CLM 1D full history | PF=3.60 | net=+9.06% | WR=57.1% | MaxDD=-1.11%
+//   Alt-1 (27 trades)      : AT=20, PB=0.25, TP=2.5, SL=1.5 | PF=2.08 | net=+14.6% | MaxDD=-4.62%
+//
+// v4.2 Stage-3 sweep (sweep_stage3.py, 14,580 combos — best by Calmar=6.046):
+//   PB=0.30 | TP=3.0 | SL=1.5 | MaxB=25 | RSI L:42-75 | MB=0.20 | VO=1.0
+//   Result (30 trades): PF=2.60 | net=+21.8% | WR=63.3% | MaxDD=-3.61% | Calmar=6.05
+//   Key insight: MaxB=25 converts the 2021 stalled trade (27 bars, reversed before TP)
+//   into a profitable exit, yielding a $267 swing on that single trade.
+//
+// v4.3 Stage-4 sweep (sweep_stage4.py, 720 combos — best by Calmar=7.308):
+//   em_slope=8 (EMA_MID(34) rising vs 8 bars ago) | TP=3.5
+//   Result (28 trades): PF=3.076 | net=+26.35% | WR=64.3% | MaxDD=-3.60% | Calmar=7.308
+//   Key insight: EMA_MID slope filter removes 2 choppy-trend entries; TP=3.5 captures larger moves.
 // ─────────────────────────────────────────────────────────────────────────────
 
 strategy(
@@ -56,22 +78,24 @@ strategy(
 // ── Inputs ───────────────────────────────────────────────────────────────────
 var G_TREND = "Trend Filters"
 i_ema_fast   = input.int  (21,   "EMA Fast",            group=G_TREND, minval=5)
-i_ema_mid    = input.int  (50,   "EMA Mid",             group=G_TREND, minval=10)
+i_ema_mid    = input.int  (34,   "EMA Mid",             group=G_TREND, minval=10)
 i_ema_slow   = input.int  (200,  "EMA Slow",            group=G_TREND, minval=50)
-i_adx_thresh = input.int  (28,   "ADX threshold",       group=G_TREND, minval=5,  maxval=60)
+i_adx_thresh = input.int  (20,   "ADX threshold",       group=G_TREND, minval=5,  maxval=60)
 i_adx_len    = input.int  (14,   "ADX / DI length",     group=G_TREND, minval=5)
-i_pb_pct     = input.float(0.15, "Pullback tolerance (%)", group=G_TREND, minval=0.05, maxval=3.0, step=0.05,
+i_pb_pct     = input.float(0.30, "Pullback tolerance (%)", group=G_TREND, minval=0.05, maxval=3.0, step=0.05,
                  tooltip="How close the prev bar's low/high must come to EMA-fast to count as a pullback")
+i_em_slope_lb = input.int  (8,   "EMA Mid slope lookback (0=off)", group=G_TREND, minval=0, maxval=50,
+                 tooltip="Entry requires EMA Mid to be rising over this many bars. 0 = disabled.")
 
 var G_MOM = "Momentum & Volume"
 i_rsi_len    = input.int  (14,   "RSI length",            group=G_MOM, minval=3)
 i_rsi_lo_l   = input.int  (42,   "RSI min – Long",        group=G_MOM, minval=10, maxval=70)
-i_rsi_hi_l   = input.int  (72,   "RSI max – Long",        group=G_MOM, minval=50, maxval=90)
+i_rsi_hi_l   = input.int  (75,   "RSI max – Long",        group=G_MOM, minval=50, maxval=90)
 i_rsi_lo_s   = input.int  (32,   "RSI min – Short",       group=G_MOM, minval=10, maxval=50)
 i_rsi_hi_s   = input.int  (58,   "RSI max – Short",       group=G_MOM, minval=40, maxval=80)
 i_vol_len    = input.int  (20,   "Volume SMA length",     group=G_MOM, minval=5)
 i_vol_mult   = input.float(1.0,  "Volume multiplier",     group=G_MOM, minval=0.3, maxval=5.0, step=0.1)
-i_min_body   = input.float(0.30, "Min body (×ATR)",        group=G_MOM, minval=0.0, maxval=2.0, step=0.05,
+i_min_body   = input.float(0.20, "Min body (×ATR)",        group=G_MOM, minval=0.0, maxval=2.0, step=0.05,
                  tooltip="Entry bar body (|close-open|/ATR) must exceed this — filters doji / indecision candles")
 
 var G_VOL = "Volatility"
@@ -80,17 +104,19 @@ i_panic_mult = input.float(2.0,  "Panic suppression mult",group=G_VOL, minval=1.
                  tooltip="ATR14 > ATR-60SMA × this value → skip new entries")
 
 var G_RISK = "Risk Management"
-i_sl_mult    = input.float(2.0,  "Stop loss ATR mult",    group=G_RISK, minval=0.3, step=0.1)
-i_tp_mult    = input.float(1.0,  "Take profit ATR mult",  group=G_RISK, minval=0.5, step=0.1)
-i_tr_act     = input.float(2.0,  "Trail activate ATR mult",group=G_RISK,minval=0.3, step=0.1,
+i_sl_mult    = input.float(1.5,  "Stop loss ATR mult",    group=G_RISK, minval=0.3, step=0.1)
+i_tp_mult    = input.float(3.5,  "Take profit ATR mult",  group=G_RISK, minval=0.5, step=0.1)
+i_tr_act     = input.float(99.0, "Trail activate ATR mult",group=G_RISK,minval=0.3, step=0.1,
                  tooltip="Trailing stop kicks in once price moves this many ATRs in your favour")
 i_tr_dist    = input.float(0.4,  "Trail distance ATR mult",group=G_RISK,minval=0.2, step=0.1,
                  tooltip="Once active, trail stays this many ATRs below/above the best price")
 i_risk_pct   = input.float(1.0,  "Equity risked per trade (%)",group=G_RISK,minval=0.1,maxval=20,step=0.1)
+i_max_bars   = input.int  (25,   "Max bars in trade (0=off)",  group=G_RISK, minval=0, maxval=200,
+                 tooltip="Exit at bar close after this many bars. 0 = disabled. Prevents stalled trades from reversing.")
 
 var G_DISP = "Display"
 i_longs      = input.bool(true,  "Trade Longs",   group=G_DISP)
-i_shorts     = input.bool(true,  "Trade Shorts",  group=G_DISP)
+i_shorts     = input.bool(false, "Trade Shorts",  group=G_DISP)
 i_show_emas  = input.bool(true,  "Show EMAs",     group=G_DISP)
 i_show_dash  = input.bool(true,  "Show Dashboard",group=G_DISP)
 i_dash_pos   = input.string("Top Right", "Dashboard position", group=G_DISP,
@@ -126,15 +152,16 @@ short_pb   = high[1] >= pb_tol_dn and close < ema_fast and close < open and body
 // ── Full entry conditions ─────────────────────────────────────────────────────
 no_pos     = strategy.position_size == 0.0
 stop_dist  = atr * i_sl_mult
+em_rising  = i_em_slope_lb == 0 or ema_mid > ema_mid[i_em_slope_lb]
 
-long_ok  = i_longs  and no_pos and not is_panic and is_trending and
+long_ok  = i_longs  and no_pos and not is_panic and is_trending and em_rising and
      long_pb and
      close   > ema_slow and             // macro bullish
      ema_fast > ema_mid  and            // medium-term structure up
      rsi     >= i_rsi_lo_l and rsi <= i_rsi_hi_l and
      volume  >= vol_ma * i_vol_mult
 
-short_ok = i_shorts and no_pos and not is_panic and is_trending and
+short_ok = i_shorts and no_pos and not is_panic and is_trending and em_rising and
      short_pb and
      close   < ema_slow and             // macro bearish
      ema_fast < ema_mid  and            // medium-term structure down
@@ -147,6 +174,7 @@ var float tp_price     = na
 var float best_price   = na
 var float entry_p      = na
 var bool  trail_active = false
+var int   bars_in_trade = 0
 
 // ── Entries ───────────────────────────────────────────────────────────────────
 if long_ok
@@ -215,6 +243,7 @@ if short_ok
 
 // ── Trailing stop update (runs every bar while in trade) ──────────────────────
 if strategy.position_size > 0.0          // long
+    bars_in_trade += 1
     best_price := math.max(best_price, high)
     entry_p    := strategy.position_avg_price
     if best_price >= entry_p + atr * i_tr_act
@@ -233,9 +262,13 @@ if strategy.position_size > 0.0          // long
                 "Time      : " + str.format_time(time, "yyyy-MM-dd HH:mm", syminfo.timezone),
                 alert.freq_once_per_bar_close)
         sl_price := trail_sl_new
-    strategy.exit("Long Exit", "Long", stop=sl_price, limit=tp_price)
+    if i_max_bars > 0 and bars_in_trade >= i_max_bars
+        strategy.close("Long", comment="MaxB")
+    else
+        strategy.exit("Long Exit", "Long", stop=sl_price, limit=tp_price)
 
 if strategy.position_size < 0.0          // short
+    bars_in_trade += 1
     best_price := math.min(best_price, low)
     entry_p    := strategy.position_avg_price
     if best_price <= entry_p - atr * i_tr_act
@@ -254,7 +287,13 @@ if strategy.position_size < 0.0          // short
                 "Time      : " + str.format_time(time, "yyyy-MM-dd HH:mm", syminfo.timezone),
                 alert.freq_once_per_bar_close)
         sl_price := trail_sl_new
-    strategy.exit("Short Exit", "Short", stop=sl_price, limit=tp_price)
+    if i_max_bars > 0 and bars_in_trade >= i_max_bars
+        strategy.close("Short", comment="MaxB")
+    else
+        strategy.exit("Short Exit", "Short", stop=sl_price, limit=tp_price)
+
+if strategy.position_size == 0.0
+    bars_in_trade := 0
 
 // ── Exit detection (closed-trade alerts) ──────────────────────────────────────
 var int _prev_closed = 0

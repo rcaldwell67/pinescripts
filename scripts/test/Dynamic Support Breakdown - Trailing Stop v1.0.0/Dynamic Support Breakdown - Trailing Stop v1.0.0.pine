@@ -1,0 +1,75 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+
+//@version=6
+strategy("Dynamic Support Breakdown V6 - Trailing Stop", overlay=true, initial_capital=10000, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// --- Inputs ---
+int emaFastLen = input.int(9, "Fast EMA Length")
+int emaSlowLen = input.int(21, "Slow EMA Length")
+
+// Dynamic Setup Inputs
+int lookback   = input.int(20, "Support Lookback Period", tooltip="Number of bars to check for a recent low")
+float atrMult  = input.float(1.5, "Initial ATR Stop Loss Multiplier")
+float rrRatio  = input.float(2.0, "Risk/Reward Ratio (Take Profit)")
+
+// Trailing Stop Inputs
+bool useTrailingStop = input.bool(true, "Use Trailing Stop", group="Trailing Stop")
+float trailAtrMult   = input.float(1.0, "Trailing Stop ATR Multiplier", group="Trailing Stop")
+
+// --- Indicators ---
+float ema9  = ta.ema(close, emaFastLen)
+float ema21 = ta.ema(close, emaSlowLen)
+float atr   = ta.atr(14) // Average True Range for volatility measurement
+
+// Calculate Dynamic Support (lowest low of the lookback period)
+float dynamicSupport = ta.lowest(low, lookback)[1] 
+
+// --- Logic (Explicit Boolean declarations) ---
+bool bearishCross      = ta.crossunder(ema9, ema21)
+bool priceBelowSupport = close < dynamicSupport 
+bool entryCondition    = bearishCross and priceBelowSupport and strategy.position_size == 0
+
+// Variables to lock in and track SL/TP across multiple bars
+var float stopLossPrice = na
+var float takeProfitPrice = na
+
+// --- Execution ---
+if entryCondition
+    // Explicitly declare the local float variable for risk calculation
+    float riskAmount = atr * atrMult
+    
+    // Lock in the initial Stop Loss and Take Profit levels
+    stopLossPrice := close + riskAmount
+    takeProfitPrice := close - (riskAmount * rrRatio)
+    
+    // Note: Quantity is handled automatically by the strategy() settings (10% of equity)
+    strategy.entry("Short Breakout", strategy.short, comment="Entry @ " + str.tostring(close))
+    
+    // Telegram Alert Trigger
+    alert("🚨 BTC Short Entry at " + str.tostring(close) + " | Target: " + str.tostring(takeProfitPrice), alert.freq_once_per_bar)
+
+// --- Trade Management (Trailing Stop & Exit) ---
+if strategy.position_size < 0
+    // Trailing Stop Logic for Short Position
+    if useTrailingStop
+        // Explicitly declare the local float for the trailing calculation
+        float potentialTrailStop = close + (atr * trailAtrMult)
+        
+        // math.min ensures the stop loss only moves DOWN, locking in profits.
+        stopLossPrice := math.min(stopLossPrice, potentialTrailStop)
+
+    // Execute the exit with the (potentially updated) stop loss and fixed take profit
+    strategy.exit("Exit Short", "Short Breakout", stop=stopLossPrice, limit=takeProfitPrice, comment_loss="Stop/Trail Hit", comment_profit="Target Met")
+
+// --- Visuals ---
+plot(ema9, color=color.new(color.blue, 0), title="9 EMA")
+plot(ema21, color=color.new(color.orange, 0), title="21 EMA")
+
+// Plot the dynamic support line
+plot(dynamicSupport, "Dynamic Support", color=color.new(color.red, 50), style=plot.style_stepline)
+
+// Plotting the entry signal
+plotshape(entryCondition, title="Sell Signal", location=location.abovebar, color=color.red, style=shape.labeldown, text="SELL")
+
+// Plot the Trailing Stop Level (only visible when actively in a trade)
+plot(strategy.position_size < 0 ? stopLossPrice : na, "Active Stop Loss", color=color.new(color.fuchsia, 0), style=plot.style_linebr, linewidth=2)

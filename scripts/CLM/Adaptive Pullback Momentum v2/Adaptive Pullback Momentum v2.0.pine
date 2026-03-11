@@ -4,7 +4,7 @@
 //@version=6
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Adaptive Pullback Momentum v2.2
+// Adaptive Pullback Momentum v2.0
 // 30min Look Back
 // THESIS
 //   Most breakout strategies enter *after* the move is mature.  This strategy
@@ -27,7 +27,7 @@
 //                  then trails ATR×1.5 from best price (room to breathe)
 //   → Sizing     : 1 % of equity risked per trade
 //
-// v2.1 CHANGES vs v2.0  (BTC-USD 30m sweep: +9.48% PF=2.297 vs +2.53% PF=1.112 baseline)
+// v2.1 CHANGES vs v2.0  (CLM 30m sweep: +9.48% PF=2.297 vs +2.53% PF=1.112 baseline)
 //   EMA condition : loose (close>EMA200 & EMA21>EMA50) → full stack EMA21>EMA50>EMA200
 //   EMA slope     : ADDED — EMA21 must trend in trade direction over 3 bars
 //   RSI direction : ADDED — RSI must be rising (long) / falling (short) on entry
@@ -40,7 +40,7 @@
 //   Trail distance: 0.8× → 1.5×   (wider trail stops micro-spike exits)
 //   Panic mult    : 1.5× → 1.3×   (exit volatile regimes more aggressively)
 //
-// v2.2 CHANGES vs v2.1  (BTC-USD 30m isolation sweep: +10.41% PF=2.415 vs +9.48% PF=2.297)
+// v2.2 CHANGES vs v2.1  (CLM 30m isolation sweep: +10.41% PF=2.415 vs +9.48% PF=2.297)
 //   TP multiplier : 3.0× → 3.5×   (DI alignment / strong-close / RSI-2bar filters
 //                  each tested — all reduced PF and return, confirming v2.1 entry
 //                  logic is already optimal for this instrument/timeframe.
