@@ -7,6 +7,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
   <style>
     :root {
       --bg:      #0d1117;
@@ -118,6 +119,33 @@
     <div class="panel chart-wrap">
       <h2>Monthly P&amp;L</h2>
       <canvas id="monthlyChart"></canvas>
+    </div>
+  </div>
+  <div class="panel" style="margin-bottom:16px;" id="priceChartPanel">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+      <h2 style="margin-bottom:0;">Price Chart</h2>
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+        <div class="chart-range-btns" id="chartRangeBtns">
+          <button class="chart-range-btn" data-days="30">1M</button>
+          <button class="chart-range-btn" data-days="90">3M</button>
+          <button class="chart-range-btn active" data-days="180">6M</button>
+          <button class="chart-range-btn" data-days="0">All</button>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><div class="dot" style="background:#58a6ff"></div>EMA 21</div>
+          <div class="legend-item"><div class="dot" style="background:#ffa657"></div>EMA 50</div>
+          <div class="legend-item"><div class="dot" style="background:#f85149"></div>EMA 200</div>
+        </div>
+      </div>
+    </div>
+    <input type="hidden" id="chartRangeSelect" value="180">
+    <div id="lcChartContainer"></div>
+    <div class="legend" style="margin-top:10px;font-size:11px;">
+      <div class="legend-item"><span style="color:#bc8cff;font-weight:700;font-size:14px;">&#9660;</span>&nbsp;Short entry</div>
+      <div class="legend-item"><span style="color:#3fb950;font-weight:700;font-size:14px;">&#9650;</span>&nbsp;Long entry</div>
+      <div class="legend-item"><div class="dot" style="background:#3fb950"></div>TP exit</div>
+      <div class="legend-item"><div class="dot" style="background:#f85149"></div>SL exit</div>
+      <div class="legend-item"><div class="dot" style="background:#ffa657"></div>Trail exit</div>
     </div>
   </div>
   <div id="yearSection" style="display:none; margin-bottom:16px;">
@@ -568,6 +596,131 @@ function renderTransactionsTable() {
   }).join('')}</tbody></table>`;
 }
 
+// ── Price Chart (Lightweight Charts) ────────────────────────────────────────
+const chartDataCache = {};
+let lcChartInst = null;
+
+async function loadChartData(sym) {
+  if (chartDataCache[sym]) return chartDataCache[sym];
+  const file = sym === 'btc' ? 'data/chart_btcusd.json' : 'data/chart_clm.json';
+  const resp = await fetch(file);
+  const json = await resp.json();
+  chartDataCache[sym] = json.bars;
+  return json.bars;
+}
+
+function computeEMA(bars, period) {
+  const k = 2 / (period + 1);
+  const result = [];
+  let ema = bars[0].c;
+  for (let i = 0; i < bars.length; i++) {
+    ema = bars[i].c * k + ema * (1 - k);
+    if (i >= period - 1) result.push({ time: bars[i].t, value: parseFloat(ema.toFixed(6)) });
+  }
+  return result;
+}
+
+function getPriceChartMarkers(sym, tab) {
+  const vers = INSTRUMENTS[sym].versions;
+  const markers = [];
+  const versToShow = tab === 'all' ? Object.keys(vers) : [tab];
+  for (const vk of versToShow) {
+    const rows = loaded[sym][vk] || [];
+    const cfg = vers[vk];
+    for (const r of rows) {
+      const entTs = r.entry_time ? Math.floor(new Date(r.entry_time.replace(' ','T')).getTime()/1000) : null;
+      const exTs  = r.exit_time  ? Math.floor(new Date(r.exit_time.replace(' ','T')).getTime()/1000)  : null;
+      if (entTs) markers.push({
+        time: entTs,
+        position: r.direction === 'long' ? 'belowBar' : 'aboveBar',
+        color:    r.direction === 'long' ? '#3fb950'  : '#bc8cff',
+        shape:    r.direction === 'long' ? 'arrowUp'  : 'arrowDown',
+        text:     tab === 'all' ? cfg.tf : (r.direction === 'long' ? 'Long' : 'Short'),
+        size: 0.8,
+      });
+      if (exTs) {
+        const rc = (r.result||'').toUpperCase();
+        let color = '#8b949e';
+        if (rc === 'TP')              color = '#3fb950';
+        else if (rc === 'SL')        color = '#f85149';
+        else if (rc.includes('TRAIL')) color = '#ffa657';
+        markers.push({
+          time: exTs,
+          position: r.direction === 'long' ? 'aboveBar' : 'belowBar',
+          color, shape: 'circle',
+          text: rc || 'Exit', size: 0.5,
+        });
+      }
+    }
+  }
+  markers.sort((a,b) => a.time - b.time);
+  // Deduplicate markers at same time (keep first)
+  const seen = new Set();
+  return markers.filter(m => { const k = m.time+'|'+m.position; if (seen.has(k)) return false; seen.add(k); return true; });
+}
+
+async function renderPriceChart() {
+  const container = document.getElementById('lcChartContainer');
+  if (!container) return;
+  if (lcChartInst) { lcChartInst.remove(); lcChartInst = null; }
+  container.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:16px 0;">Loading chart data…</div>';
+
+  let bars;
+  try { bars = await loadChartData(activeSym); } catch(e) { container.innerHTML = '<div class="empty">Chart data unavailable</div>'; return; }
+  if (!bars?.length) { container.innerHTML = '<div class="empty">No bar data</div>'; return; }
+  container.innerHTML = '';
+
+  const rangeDays = parseInt(document.getElementById('chartRangeSelect')?.value || '180');
+  const lastT  = bars[bars.length-1].t;
+  const cutoff = rangeDays > 0 ? lastT - rangeDays * 86400 : 0;
+  const visible = bars.filter(b => b.t >= cutoff);
+  if (!visible.length) return;
+
+  lcChartInst = LightweightCharts.createChart(container, {
+    width:  container.clientWidth,
+    height: 400,
+    layout:  { background: { type: 'solid', color: '#161b22' }, textColor: '#8b949e' },
+    grid:    { vertLines: { color: '#21262d' }, horzLines: { color: '#21262d' } },
+    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+    rightPriceScale: { borderColor: '#30363d' },
+    timeScale: { borderColor: '#30363d', timeVisible: true, secondsVisible: false },
+  });
+
+  new ResizeObserver(() => { if (lcChartInst) lcChartInst.resize(container.clientWidth, 400); }).observe(container);
+
+  const candleSeries = lcChartInst.addCandlestickSeries({
+    upColor:'#3fb950', downColor:'#f85149',
+    borderUpColor:'#3fb950', borderDownColor:'#f85149',
+    wickUpColor:'#3fb950', wickDownColor:'#f85149',
+  });
+  candleSeries.setData(visible.map(b => ({ time:b.t, open:b.o, high:b.h, low:b.l, close:b.c })));
+
+  const emaConfigs = [
+    { period:21,  color:'#58a6ff' },
+    { period:50,  color:'#ffa657' },
+    { period:200, color:'#f85149' },
+  ];
+  for (const { period, color } of emaConfigs) {
+    const allEma = computeEMA(bars, period);
+    const visEma = allEma.filter(p => p.time >= cutoff);
+    if (!visEma.length) continue;
+    const ls = lcChartInst.addLineSeries({ color, lineWidth:1, priceLineVisible:false, lastValueVisible:false });
+    ls.setData(visEma);
+  }
+
+  const markers = getPriceChartMarkers(activeSym, activeTab).filter(m => m.time >= cutoff);
+  if (markers.length) candleSeries.setMarkers(markers);
+}
+
+document.getElementById('chartRangeBtns')?.addEventListener('click', e => {
+  const btn = e.target.closest('.chart-range-btn');
+  if (!btn) return;
+  document.querySelectorAll('.chart-range-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('chartRangeSelect').value = btn.dataset.days;
+  renderPriceChart();
+});
+
 function renderComparisonTable() {
   const el=document.getElementById('cmpTable');
   const vers=INSTRUMENTS[activeSym].versions;
@@ -608,6 +761,7 @@ function render() {
   renderTradeTable(rows);
   renderComparisonTable();
   renderTransactionsTable();
+  renderPriceChart();
 }
 
 document.querySelectorAll('.sym-btn').forEach(btn => {
