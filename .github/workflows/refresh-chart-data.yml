@@ -23,7 +23,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: pip install alpaca-py python-dotenv pytz
+        run: pip install --no-cache-dir alpaca-py python-dotenv pytz
 
       - name: Fetch chart data
         env:
