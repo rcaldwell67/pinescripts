@@ -1,16 +1,19 @@
 """
 fetch_chart_data.py — Generate static OHLCV JSON files for the APM dashboard.
 
-Fetches stock bars from Alpaca and saves them to docs/data/ as JSON for use
-by the GitHub Pages chart panel.  Run this script whenever you want to refresh
-the chart data:
+Fetches a rolling 12-month window of bars from Alpaca and saves them to
+docs/data/ as JSON for use by the GitHub Pages chart panel.
 
+Run manually:
     cd /workspaces/pinescripts/docs
     python fetch_chart_data.py
 
+Or automated via GitHub Actions (.github/workflows/refresh-chart-data.yml)
+which runs this script on a schedule and commits the updated JSON.
+
 Requirements:
     pip install alpaca-py python-dotenv
-Environment (set in .env or shell):
+Environment (set in .env or GitHub Actions secrets):
     ALPACA_API_KEY
     ALPACA_API_SECRET
 """
@@ -18,7 +21,7 @@ Environment (set in .env or shell):
 import json
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 # ── Load .env if present ──────────────────────────────────────────────────────
@@ -37,21 +40,26 @@ API_KEY    = os.environ.get("ALPACA_API_KEY")
 API_SECRET = os.environ.get("ALPACA_API_SECRET")
 OUT_DIR    = Path(__file__).parent / "data"
 
-# Symbols and their chart params:  { symbol: (tf_value, tf_unit, start, end, outfile) }
+# Rolling window: today minus LOOKBACK_DAYS → yesterday's close
+LOOKBACK_DAYS = 365
+_now   = datetime.now(timezone.utc)
+_end   = _now.replace(hour=0, minute=0, second=0, microsecond=0)      # midnight today (UTC)
+_start = _end - timedelta(days=LOOKBACK_DAYS)
+
 JOBS = {
     "CLM": {
-        "tf":       TimeFrame(5, TimeFrameUnit.Minute),
-        "start":    datetime(2025, 3, 12, tzinfo=timezone.utc),
-        "end":      datetime(2026, 3, 11, tzinfo=timezone.utc),
-        "outfile":  "chart_clm.json",
+        "tf":      TimeFrame(5, TimeFrameUnit.Minute),
+        "start":   _start,
+        "end":     _end,
+        "outfile": "chart_clm.json",
     },
     "BTC/USD": {
-        "symbol":   "BTC/USD",
-        "tf":       TimeFrame(15, TimeFrameUnit.Minute),
-        "start":    datetime(2025, 3, 12, tzinfo=timezone.utc),
-        "end":      datetime(2026, 3, 11, tzinfo=timezone.utc),
-        "outfile":  "chart_btcusd.json",
-        "crypto":   True,
+        "symbol":  "BTC/USD",
+        "tf":      TimeFrame(15, TimeFrameUnit.Minute),
+        "start":   _start,
+        "end":     _end,
+        "outfile": "chart_btcusd.json",
+        "crypto":  True,
     },
 }
 
