@@ -22,22 +22,24 @@
 //            RSI falling on entry bar  +  RSI in [30–58]
 //            Close < close[5] (5-bar momentum confirms direction)
 //            Prev bar high tagged EMA21 zone (±0.25%); current bar closes below with body
-//            Volume ≥ 0.3× VolSMA  |  Body ≥ 0.15×ATR  |  ATR floor disabled
+//            Volume ≥ 0.3× VolSMA  |  Body ≥ 0.15×ATR  |  ATR floor ≥ 0.1%
 //            Session 09:00–14:00 ET  (NYSE open through midday)
 //            No panic: ATR ≤ ATR-60SMA × 1.5
+//            Macro bias: close < EMA(400)  ← new Stage-4 filter (avoids uptrend shorts)
 //   Optional: ADX slope (0=off), DI spread (0=off) — sweep: not beneficial on CLM
 //
-// EXIT LOGIC  (3-stage sweep-optimised on CLM 5m YTD 2026)
-//   → Hard SL    : entry + ATR × 3.0  (widened vs 2× — absorbs 5m CEF noise)
-//   → Hard TP    : entry − ATR × 4.0  (1.33:1 R:R; 6× was unreachable on CLM)
-//   → Trail      : activates at ATR × 3.5 runup (let winners breathe),
-//                  trails ATR × 0.2 from best price (tighter lock: 12/19 SL exits profitable)
-//   → Max bars   : disabled (0) — removing the time-exit improved returns significantly
+// EXIT LOGIC  (4-stage sweep-optimised on CLM 5m 12-month window via Alpaca)
+//   → Hard SL    : entry + ATR × 4.0  (wider; low ATR on CLM means SL hits cleanly)
+//   → Hard TP    : entry − ATR × 6.0  (2:1 R:R nominal, achieved by trail on most winners)
+//   → Trail      : activates at ATR × 2.5 runup (earlier lock-in),
+//                  trails ATR × 0.1 from best price (very tight — captures trail gains quickly)
+//   → Max bars   : disabled (0)
 //   → Sizing     : 1% of equity risked per trade
 //
-// SWEEP RESULTS (YTD 2026, 60d 5m data):
-//   Baseline  : 13T  WR=7.7%   PF=0.074  net=-9.89%  (6×TP, 2×SL, max_bars=30)
-//   Optimised : 27T  WR=74.1%  PF=2.422  net=+10.86%  MaxDD=-3.58%  Calmar=3.04
+// SWEEP RESULTS (12-month 2025-03-12→2026-03-11, 25,905 5m bars via Alpaca):
+//   Baseline  : 98T  WR=43.9%  PF=0.650  net=-21.31%  MaxDD=-26.03%
+//   Optimised : 81T  WR=76.5%  PF=1.498  net=+11.62%  MaxDD=-2.32%  Calmar=5.005
+//   Key gain  : Stage-4 macro_ema=400 filter reduced MaxDD -26%→-2.3% (stopped uptrend shorts)
 // ─────────────────────────────────────────────────────────────────────────────
 
 strategy(
@@ -57,7 +59,7 @@ var G_TREND = "Trend Filters"
 i_ema_fast   = input.int  (21,   "EMA Fast",               group=G_TREND, minval=5)
 i_ema_mid    = input.int  (50,   "EMA Mid",                group=G_TREND, minval=10)
 i_ema_slow   = input.int  (200,  "EMA Slow",               group=G_TREND, minval=50)
-i_adx_thresh = input.int  (12,   "ADX threshold",          group=G_TREND, minval=5, maxval=60)
+i_adx_thresh = input.int  (18,   "ADX threshold",          group=G_TREND, minval=5, maxval=60)
 i_adx_len    = input.int  (14,   "ADX / DI length",        group=G_TREND, minval=5)
 i_adx_slope  = input.int  (0,    "ADX slope bars (0=off)", group=G_TREND, minval=0, maxval=20,
                  tooltip="ADX must be higher than N bars ago. 0 = disabled. Stage-1 sweep showed this filter is not beneficial on CLM.")
@@ -82,8 +84,8 @@ i_min_body   = input.float(0.15, "Min body (x ATR)",       group=G_MOM, minval=0
 var G_VOL = "Volatility"
 i_atr_len    = input.int  (14,   "ATR length",              group=G_VOL, minval=3)
 i_atr_bl_len = input.int  (60,   "ATR baseline length",     group=G_VOL, minval=10)
-i_atr_floor  = input.float(0.0,  "ATR floor (% of price)",  group=G_VOL, minval=0.0, maxval=2.0, step=0.01,
-                 tooltip="ATR/price must exceed this %. Filters low-vol entries where commission drag dominates.")
+i_atr_floor  = input.float(0.1,  "ATR floor (% of price)",  group=G_VOL, minval=0.0, maxval=2.0, step=0.01,
+                 tooltip="ATR/price must exceed this %. Stage-2 (12mo sweep) winner: 0.1% — removes near-zero ATR bars where commission drag dominates.")
 i_panic_mult = input.float(1.5,  "Panic suppression mult",  group=G_VOL, minval=1.0, step=0.1,
                  tooltip="ATR > ATR_baseline x this value => skip new entries.")
 
@@ -94,15 +96,19 @@ i_sess_end   = input.int  (14,   "Session end (ET hour)",   group=G_SESS, minval
                  tooltip="Entries blocked from this hour onward. Default 14 = 2:00 PM ET.")
 
 var G_RISK = "Risk Management"
-i_sl_mult    = input.float(3.0,  "Stop loss ATR mult",       group=G_RISK, minval=0.3, step=0.1)
-i_tp_mult    = input.float(4.0,  "Take profit ATR mult",     group=G_RISK, minval=0.5, step=0.1)
-i_tr_act     = input.float(3.5,  "Trail activate ATR mult",  group=G_RISK, minval=0.3, step=0.1,
-                 tooltip="Trailing stop activates once price moves this many ATRs in your favour. Stage-3 sweep winner: 3.5 — let the trade breathe before trailing.")
-i_tr_dist    = input.float(0.2,  "Trail distance ATR mult",  group=G_RISK, minval=0.1, step=0.1,
-                 tooltip="Once active, trail stays this many ATRs from best price. Stage-3 sweep winner: 0.2 — tighter trail; 12/19 SL exits became profitable via trail locking.")
+i_sl_mult    = input.float(4.0,  "Stop loss ATR mult",       group=G_RISK, minval=0.3, step=0.1)
+i_tp_mult    = input.float(6.0,  "Take profit ATR mult",     group=G_RISK, minval=0.5, step=0.1)
+i_tr_act     = input.float(2.5,  "Trail activate ATR mult",  group=G_RISK, minval=0.3, step=0.1,
+                 tooltip="Trailing stop activates once price moves this many ATRs in your favour. 12mo sweep winner: 2.5 — earlier trail activation captures gains before reversal.")
+i_tr_dist    = input.float(0.1,  "Trail distance ATR mult",  group=G_RISK, minval=0.1, step=0.1,
+                 tooltip="Once active, trail stays this many ATRs from best price. 12mo sweep winner: 0.1 — very tight; locks small gains rapidly. Most winners exit via trail.")
 i_risk_pct   = input.float(1.0,  "Equity risked per trade (%)", group=G_RISK, minval=0.1, maxval=20, step=0.1)
 i_max_bars   = input.int  (0,    "Max bars in trade (0=off)",   group=G_RISK, minval=0, maxval=500,
                  tooltip="0 = disabled (sweep winner). Removing the time-exit improved net return significantly — trail+TP handle position management. Re-enable if concerned about overnight holds.")
+
+var G_MACRO = "Macro Bias Filter"
+i_macro_ema  = input.int  (400, "Macro EMA period (0=off)", group=G_MACRO, minval=0, maxval=5000,
+                 tooltip="Only trade shorts when close < EMA(N). Filters out shorting during sustained uptrends. 0 = disabled. Stage-4 12mo sweep winner: 400. Cuts MaxDD from -26% to -2.3%.")
 
 var G_DISP = "Display"
 i_longs      = input.bool  (false,       "Trade Longs",   group=G_DISP)
@@ -113,9 +119,10 @@ i_dash_pos   = input.string("Top Right", "Dashboard position", group=G_DISP,
                  options=["Top Right","Top Left","Bottom Right","Bottom Left","Middle Right","Middle Left"])
 
 // ── Indicators ────────────────────────────────────────────────────────────────
-ema_fast = ta.ema(close, i_ema_fast)
-ema_mid  = ta.ema(close, i_ema_mid)
-ema_slow = ta.ema(close, i_ema_slow)
+ema_fast   = ta.ema(close, i_ema_fast)
+ema_mid    = ta.ema(close, i_ema_mid)
+ema_slow   = ta.ema(close, i_ema_slow)
+macro_ema  = i_macro_ema > 0 ? ta.ema(close, i_macro_ema) : na
 rsi      = ta.rsi(close, i_rsi_len)
 atr      = ta.atr(i_atr_len)
 atr_bl   = ta.sma(atr, i_atr_bl_len)
@@ -128,6 +135,7 @@ is_trending  = adx > i_adx_thresh
 is_panic     = atr > atr_bl * i_panic_mult
 adx_rising   = i_adx_slope > 0 ? adx > adx[i_adx_slope] : true
 atr_floor_ok = atr / close * 100 >= i_atr_floor
+macro_bear   = i_macro_ema > 0 ? close < macro_ema : true   // Stage-4: avoid uptrend shorts
 
 // ── EMA structure ─────────────────────────────────────────────────────────────
 ema_bull_full  = ema_fast > ema_mid  and ema_mid  > ema_slow
@@ -178,7 +186,7 @@ short_ok = i_shorts and no_pos and not is_panic and is_trending and adx_rising a
      atr_floor_ok and in_session and short_pb and
      ema_bear_full and ema_slope_down and rsi_falling and di_bear_dom and mom_bear and
      rsi >= i_rsi_lo_s and rsi <= i_rsi_hi_s and
-     volume >= vol_ma * i_vol_mult
+     volume >= vol_ma * i_vol_mult and macro_bear
 
 // ── State vars ────────────────────────────────────────────────────────────────
 var float sl_price      = na
@@ -411,7 +419,7 @@ if i_show_dash and barstate.islast
         "Middle Left"  => position.middle_left
         => position.top_right
 
-    tbl = table.new(tbl_pos, columns=2, rows=28,
+    tbl = table.new(tbl_pos, columns=2, rows=29,
          border_width=1, border_color=color.new(color.gray, 60),
          frame_width=1,  frame_color=color.new(color.gray, 40))
 
@@ -453,17 +461,18 @@ if i_show_dash and barstate.islast
     _row(tbl, 19, "Panic",      is_panic      ? "ACTIVE"   : "OK",             is_panic      ? D_YEL : D_GRN)
     _row(tbl, 20, "ATR floor",  atr_floor_ok  ? "PASS"     : "FAIL",           atr_floor_ok  ? D_GRN : D_RED)
     _row(tbl, 21, "Session",    in_session    ? "ACTIVE"   : "CLOSED",         in_session    ? D_GRN : D_DIM)
-    _row(tbl, 22, "Macro bias", ema_bull_full ? "Bullish"  : ema_bear_full ? "Bearish" : "Neutral", ema_bull_full ? D_GRN : ema_bear_full ? D_RED : D_ORG)
+    _row(tbl, 22, "Macro bias",   ema_bull_full ? "Bullish"  : ema_bear_full ? "Bearish" : "Neutral", ema_bull_full ? D_GRN : ema_bear_full ? D_RED : D_ORG)
+    _row(tbl, 23, "Macro EMA",    macro_bear ? "PASS" : "BLOCKED",  macro_bear ? D_GRN : D_RED)
 
     // performance header
-    table.cell(tbl, 0, 23, "Performance", text_color=D_DIM, bgcolor=D_BG, text_size=size.tiny, text_halign=text.align_left)
-    table.cell(tbl, 1, 23, "",            text_color=D_DIM, bgcolor=D_BG)
+    table.cell(tbl, 0, 24, "Performance", text_color=D_DIM, bgcolor=D_BG, text_size=size.tiny, text_halign=text.align_left)
+    table.cell(tbl, 1, 24, "",            text_color=D_DIM, bgcolor=D_BG)
 
     total_trades = strategy.wintrades + strategy.losstrades
     wr_str  = total_trades == 0 ? "--" : str.tostring(math.round(strategy.wintrades / total_trades * 100, 1)) + "%"
     pf_raw  = strategy.grossloss == 0 ? na : strategy.grossprofit / math.abs(strategy.grossloss)
 
-    _row(tbl, 24, "Net P&L",      (strategy.netprofit >= 0 ? "+" : "") + str.tostring(strategy.netprofit, "#.##"), strategy.netprofit >= 0 ? D_GRN : D_RED)
-    _row(tbl, 25, "Win rate",     wr_str + " (" + str.tostring(strategy.wintrades) + "/" + str.tostring(total_trades) + ")", D_BRT)
-    _row(tbl, 26, "Prof. factor", na(pf_raw) ? "--" : str.tostring(pf_raw, "#.##"), na(pf_raw) ? D_DIM : pf_raw >= 1.0 ? D_GRN : D_RED)
-    _row(tbl, 27, "Max DD",       str.tostring(math.round(strategy.max_drawdown_percent, 2)) + "%", D_RED)
+    _row(tbl, 25, "Net P&L",      (strategy.netprofit >= 0 ? "+" : "") + str.tostring(strategy.netprofit, "#.##"), strategy.netprofit >= 0 ? D_GRN : D_RED)
+    _row(tbl, 26, "Win rate",     wr_str + " (" + str.tostring(strategy.wintrades) + "/" + str.tostring(total_trades) + ")", D_BRT)
+    _row(tbl, 27, "Prof. factor", na(pf_raw) ? "--" : str.tostring(pf_raw, "#.##"), na(pf_raw) ? D_DIM : pf_raw >= 1.0 ? D_GRN : D_RED)
+    _row(tbl, 28, "Max DD",       str.tostring(math.round(strategy.max_drawdown_percent, 2)) + "%", D_RED)
