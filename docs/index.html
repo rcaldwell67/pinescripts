@@ -603,7 +603,7 @@ let lcChartInst = null;
 async function loadChartData(sym) {
   if (chartDataCache[sym]) return chartDataCache[sym];
   const file = sym === 'btc' ? 'data/chart_btcusd.json' : 'data/chart_clm.json';
-  const resp = await fetch(file);
+  const resp = await fetch(file + '?v=' + Date.now());
   const json = await resp.json();
   chartDataCache[sym] = json.bars;
   return json.bars;
