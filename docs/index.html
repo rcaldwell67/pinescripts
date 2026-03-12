@@ -155,16 +155,16 @@ const INSTRUMENTS = {
   btc: {
     label: 'BTC-USD',
     versions: {
-      v1: { label:'v1 · 15m Shorts', tf:'15m', color:'#58a6ff', file:'data/v1_trades.csv',
+      v1: { label:'v1 · 15m Shorts', tf:'15m', color:'#58a6ff', file:'data/btcusd/v1_trades.csv',
             pnlCol:'dollar_pnl', equityCol:'equity', resultCol:'result', dirCol:'direction',
             entryCol:'entry_price', exitCol:'exit_price', entryTimeCol:'entry_time', exitTimeCol:'exit_time' },
-      v2: { label:'v2 · 30m Both',   tf:'30m', color:'#3fb950', file:'data/v2_trades.csv',
+      v2: { label:'v2 · 30m Both',   tf:'30m', color:'#3fb950', file:'data/btcusd/v2_trades.csv',
             pnlCol:'dollar_pnl', equityCol:'equity', resultCol:'result', dirCol:'direction',
             entryCol:'entry', exitCol:'exit', entryTimeCol:'entry_time', exitTimeCol:'exit_time' },
-      v3: { label:'v3 · 1h Longs',   tf:'1h',  color:'#ffa657', file:'data/v3_trades.csv',
+      v3: { label:'v3 · 1h Longs',   tf:'1h',  color:'#ffa657', file:'data/btcusd/v3_trades.csv',
             pnlCol:'pnl', equityCol:'equity', resultCol:'exit_reason', dirCol:'direction',
             entryCol:'entry', exitCol:'exit', entryTimeCol:'entry_time', exitTimeCol:'exit_time' },
-      v4: { label:'v4 · 1D Both',    tf:'1D',  color:'#bc8cff', file:'data/v4_trades.csv',
+      v4: { label:'v4 · 1D Both',    tf:'1D',  color:'#bc8cff', file:'data/btcusd/v4_trades.csv',
             pnlCol:'dollar_pnl', equityCol:'equity', resultCol:'result', dirCol:'direction',
             entryCol:'entry', exitCol:'exit', entryTimeCol:'entry_time', exitTimeCol:'exit_time', hasYear:true },
     }
@@ -172,6 +172,9 @@ const INSTRUMENTS = {
   clm: {
     label: 'CLM',
     versions: {
+      v1: { label:'v1 · 5m Shorts', tf:'5m', color:'#ff7b72', file:'data/clm/v1_trades.csv',
+            pnlCol:'dollar_pnl', equityCol:'equity', resultCol:'result', dirCol:'direction',
+            entryCol:'entry', exitCol:'exit', entryTimeCol:'entry_time', exitTimeCol:'exit_time' },
       v2: { label:'v2 · 10m', tf:'10m', color:'#58a6ff', file:'data/clm/v2_trades.csv',
             pnlCol:'dollar_pnl', equityCol:'equity', resultCol:'result', dirCol:'direction',
             entryCol:'entry', exitCol:'exit', entryTimeCol:'entry_time', exitTimeCol:'exit_time' },
