@@ -141,7 +141,6 @@
         <span class="tx-count" id="txCount"></span>
       </div>
       <div class="tx-filters">
-        <select id="txSymFilter" class="tx-select" onchange="renderTransactionsTable()"><option value="all">All Symbols</option><option value="btc">BTC-USD</option><option value="clm">CLM</option></select>
         <select id="txVerFilter" class="tx-select" onchange="renderTransactionsTable()"><option value="all">All Versions</option></select>
         <select id="txActionFilter" class="tx-select" onchange="renderTransactionsTable()"><option value="all">All Actions</option><option value="BUY">BUY</option><option value="SELL">SELL</option></select>
         <select id="txDirFilter" class="tx-select" onchange="renderTransactionsTable()"><option value="all">All Directions</option><option value="long">Long</option><option value="short">Short</option></select>
@@ -499,49 +498,43 @@ function renderTradeTable(rows) {
 
 function buildTransactions() {
   const txns = [];
-  for (const [sym, symData] of Object.entries(INSTRUMENTS)) {
-    for (const [ver, cfg] of Object.entries(symData.versions)) {
-      const rows = loaded[sym][ver] || [];
-      for (const r of rows) {
-        const isLong = r.direction === 'long';
-        txns.push({ time:r.entry_time, sym, ver, cfg, symLabel:INSTRUMENTS[sym].label,
-          action: isLong?'BUY':'SELL', price:r.entry_price, type:'Open',
-          direction:r.direction, pnl:null, result:null });
-        txns.push({ time:r.exit_time, sym, ver, cfg, symLabel:INSTRUMENTS[sym].label,
-          action: isLong?'SELL':'BUY', price:r.exit_price, type:'Close',
-          direction:r.direction, pnl:r.dollar_pnl, result:r.result });
-      }
+  const symData = INSTRUMENTS[activeSym];
+  for (const [ver, cfg] of Object.entries(symData.versions)) {
+    const rows = loaded[activeSym][ver] || [];
+    for (const r of rows) {
+      const isLong = r.direction === 'long';
+      txns.push({ time:r.entry_time, sym:activeSym, ver, cfg, symLabel:symData.label,
+        action: isLong?'BUY':'SELL', price:r.entry_price, type:'Open',
+        direction:r.direction, pnl:null, result:null });
+      txns.push({ time:r.exit_time, sym:activeSym, ver, cfg, symLabel:symData.label,
+        action: isLong?'SELL':'BUY', price:r.exit_price, type:'Close',
+        direction:r.direction, pnl:r.dollar_pnl, result:r.result });
     }
   }
   txns.sort((a,b) => new Date(b.time?.replace(' ','T')||0) - new Date(a.time?.replace(' ','T')||0));
   return txns;
 }
 
-function updateVerFilter(sym) {
+function updateVerFilter() {
   const sel = document.getElementById('txVerFilter');
   const current = sel.value;
   sel.innerHTML = '<option value="all">All Versions</option>';
-  const source = sym === 'all' ? Object.entries(INSTRUMENTS) : [[sym, INSTRUMENTS[sym]]];
-  for (const [s, sData] of source) {
-    for (const [v, cfg] of Object.entries(sData.versions)) {
-      const opt = document.createElement('option');
-      opt.value = s + ':' + v; opt.textContent = INSTRUMENTS[s].label + ' ' + cfg.label;
-      sel.appendChild(opt);
-    }
+  for (const [v, cfg] of Object.entries(INSTRUMENTS[activeSym].versions)) {
+    const opt = document.createElement('option');
+    opt.value = v; opt.textContent = cfg.label;
+    sel.appendChild(opt);
   }
   if ([...sel.options].some(o=>o.value===current)) sel.value = current;
 }
 
 function renderTransactionsTable() {
-  const symF    = document.getElementById('txSymFilter').value;
   const verF    = document.getElementById('txVerFilter').value;
   const actionF = document.getElementById('txActionFilter').value;
   const dirF    = document.getElementById('txDirFilter').value;
   const typeF   = document.getElementById('txTypeFilter').value;
-  updateVerFilter(symF);
+  updateVerFilter();
   let txns = buildTransactions();
-  if (symF    !== 'all') txns = txns.filter(t => t.sym === symF);
-  if (verF    !== 'all') { const [fs,fv]=verF.split(':'); txns = txns.filter(t=>t.sym===fs&&t.ver===fv); }
+  if (verF    !== 'all') txns = txns.filter(t => t.ver === verF);
   if (actionF !== 'all') txns = txns.filter(t => t.action === actionF);
   if (dirF    !== 'all') txns = txns.filter(t => t.direction === dirF);
   if (typeF   !== 'all') txns = txns.filter(t => t.type === typeF);
@@ -550,7 +543,7 @@ function renderTransactionsTable() {
   const wrap = document.getElementById('txTableWrap');
   if (!txns.length) { wrap.innerHTML='<div class="empty">No transactions match filters</div>'; return; }
   wrap.innerHTML = `<table><thead><tr>
-    <th>Date / Time</th><th>Symbol</th><th>Version</th><th>Action</th><th>Type</th><th>Direction</th><th>Price</th><th>P&amp;L</th><th>Result</th>
+    <th>Date / Time</th><th>Version</th><th>Action</th><th>Type</th><th>Direction</th><th>Price</th><th>P&amp;L</th><th>Result</th>
   </tr></thead><tbody>${txns.map(t=>{
     const fmtP = p => isNaN(p)?'—' : p<100?'$'+p.toFixed(4):'$'+p.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
     const actionTag = t.action==='BUY'
@@ -565,7 +558,6 @@ function renderTransactionsTable() {
     const pnlCell = t.pnl!=null ? `<span class="${clsVal(t.pnl)}">${fmt$(t.pnl)}</span>` : '<span style="color:var(--border)">—</span>';
     return `<tr>
       <td>${t.time||'—'}</td>
-      <td><span class="pill" style="background:${t.sym==='btc'?'#f7931a22':'#58a6ff22'};color:${t.sym==='btc'?'#f7931a':'#58a6ff'};border-color:${t.sym==='btc'?'#f7931a':'#58a6ff'}">${t.symLabel}</span></td>
       <td><span class="pill" style="background:${t.cfg.color}22;color:${t.cfg.color};border-color:${t.cfg.color}">${t.cfg.tf}</span></td>
       <td>${actionTag}</td><td>${typeTag}</td><td>${dirTag}</td>
       <td>${fmtP(t.price)}</td><td>${pnlCell}</td><td>${t.result?resultTag(t.result):'<span style="color:var(--border)">—</span>'}</td>
