@@ -7,6 +7,11 @@
        "pinescript-reviewer": {
        "command": "node",
        "args": ["./node_modules/mcp-server-pinescript/index.js"]
+      },
+      "alpaca-mcp": {
+        "command": "node",
+        "args": ["./node_modules/alpaca-mcp/dist/index.js"],
+        "envFile": "${workspaceFolder}/.env"
       }
     }
   }
