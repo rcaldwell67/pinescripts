@@ -4,7 +4,7 @@
         "type": "http",
         "url": "https://pinescript-mcp.fly.dev/mcp"
       },
-       "pinescript-reviewer": {
+      "pinescript-reviewer": {
        "command": "node",
        "args": ["./node_modules/mcp-server-pinescript/index.js"]
       },
