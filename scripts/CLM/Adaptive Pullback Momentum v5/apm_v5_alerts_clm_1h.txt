@@ -1,17 +1,17 @@
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.05  |  ATR baseline: 0.03
 Ratio   : 1.46x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2024-05-01 13:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.05  |  ATR baseline: 0.03
 Ratio   : 1.38x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2024-05-01 16:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | LONG ENTRY | CLM [1h]
+APM v5 | LONG ENTRY | CLM [1h]
 Entry   : 7.57  |  Equity: $10000.00
 Stop    : 7.50  (-0.07 = ATR x2.0)
 Target  : 7.65  (+0.07 = ATR x2.0)
@@ -26,7 +26,7 @@ EMA21/34/200: 7.56/7.53/7.42  Stack: BULL  Slope: UP
 Trail on: +3.65 (ATR x99.0)  Dist: 0.01 (ATR x0.3)
 Time    : 2024-05-08 13:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | LONG EXIT [WIN] | CLM [1h]
+APM v5 | LONG EXIT [WIN] | CLM [1h]
 Entry   : 7.57  ->  Exit: 7.65
 Move    : +0.97%
 P&L     : +87.63 USD
@@ -37,31 +37,31 @@ Equity  : $10087.63
 Trades  : 1  |  Win rate: 100.0%
 Time    : 2024-05-10 14:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.05  |  ATR baseline: 0.03
 Ratio   : 1.50x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2024-05-14 13:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.05  |  ATR baseline: 0.03
 Ratio   : 1.36x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2024-05-14 16:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.05  |  ATR baseline: 0.03
 Ratio   : 1.46x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2024-05-15 13:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.05  |  ATR baseline: 0.04
 Ratio   : 1.36x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2024-05-15 17:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | LONG ENTRY | CLM [1h]
+APM v5 | LONG ENTRY | CLM [1h]
 Entry   : 7.60  |  Equity: $10087.63
 Stop    : 7.54  (-0.06 = ATR x2.0)
 Target  : 7.66  (+0.06 = ATR x2.0)
@@ -76,7 +76,7 @@ EMA21/34/200: 7.59/7.58/7.51  Stack: BULL  Slope: UP
 Trail on: +3.02 (ATR x99.0)  Dist: 0.01 (ATR x0.3)
 Time    : 2024-06-05 15:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | LONG EXIT [WIN] | CLM [1h]
+APM v5 | LONG EXIT [WIN] | CLM [1h]
 Entry   : 7.60  ->  Exit: 7.66
 Move    : +0.80%
 P&L     : +85.73 USD
@@ -87,43 +87,43 @@ Equity  : $10173.35
 Trades  : 2  |  Win rate: 100.0%
 Time    : 2024-06-06 16:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.03  |  ATR baseline: 0.02
 Ratio   : 1.42x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2024-07-15 15:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.03  |  ATR baseline: 0.02
 Ratio   : 1.40x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2024-07-15 16:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.05  |  ATR baseline: 0.03
 Ratio   : 1.55x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2024-08-02 13:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.05  |  ATR baseline: 0.04
 Ratio   : 1.38x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2024-08-02 19:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.12  |  ATR baseline: 0.04
 Ratio   : 3.14x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2024-08-05 13:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.09  |  ATR baseline: 0.06
 Ratio   : 1.38x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2024-08-07 18:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | LONG ENTRY | CLM [1h]
+APM v5 | LONG ENTRY | CLM [1h]
 Entry   : 7.61  |  Equity: $10173.35
 Stop    : 7.56  (-0.05 = ATR x2.0)
 Target  : 7.66  (+0.05 = ATR x2.0)
@@ -138,7 +138,7 @@ EMA21/34/200: 7.59/7.58/7.55  Stack: BULL  Slope: UP
 Trail on: +2.48 (ATR x99.0)  Dist: 0.01 (ATR x0.3)
 Time    : 2024-09-27 15:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | LONG EXIT [WIN] | CLM [1h]
+APM v5 | LONG EXIT [WIN] | CLM [1h]
 Entry   : 7.61  ->  Exit: 7.66
 Move    : +0.66%
 P&L     : +83.15 USD
@@ -149,7 +149,7 @@ Equity  : $10256.51
 Trades  : 3  |  Win rate: 100.0%
 Time    : 2024-09-30 13:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | LONG ENTRY | CLM [1h]
+APM v5 | LONG ENTRY | CLM [1h]
 Entry   : 7.66  |  Equity: $10256.51
 Stop    : 7.61  (-0.05 = ATR x2.0)
 Target  : 7.72  (+0.05 = ATR x2.0)
@@ -164,7 +164,7 @@ EMA21/34/200: 7.61/7.59/7.56  Stack: BULL  Slope: UP
 Trail on: +2.67 (ATR x99.0)  Dist: 0.01 (ATR x0.3)
 Time    : 2024-09-30 13:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | LONG EXIT [WIN] | CLM [1h]
+APM v5 | LONG EXIT [WIN] | CLM [1h]
 Entry   : 7.66  ->  Exit: 7.72
 Move    : +0.70%
 P&L     : +85.03 USD
@@ -175,7 +175,7 @@ Equity  : $10341.54
 Trades  : 4  |  Win rate: 100.0%
 Time    : 2024-10-03 15:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | LONG ENTRY | CLM [1h]
+APM v5 | LONG ENTRY | CLM [1h]
 Entry   : 7.75  |  Equity: $10341.54
 Stop    : 7.70  (-0.04 = ATR x2.0)
 Target  : 7.79  (+0.04 = ATR x2.0)
@@ -190,7 +190,7 @@ EMA21/34/200: 7.73/7.71/7.60  Stack: BULL  Slope: UP
 Trail on: +2.10 (ATR x99.0)  Dist: 0.01 (ATR x0.3)
 Time    : 2024-10-07 15:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | LONG EXIT [WIN] | CLM [1h]
+APM v5 | LONG EXIT [WIN] | CLM [1h]
 Entry   : 7.75  ->  Exit: 7.79
 Move    : +0.55%
 P&L     : +80.71 USD
@@ -201,7 +201,7 @@ Equity  : $10422.25
 Trades  : 5  |  Win rate: 100.0%
 Time    : 2024-10-09 13:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | LONG ENTRY | CLM [1h]
+APM v5 | LONG ENTRY | CLM [1h]
 Entry   : 7.78  |  Equity: $10422.25
 Stop    : 7.74  (-0.04 = ATR x2.0)
 Target  : 7.82  (+0.04 = ATR x2.0)
@@ -216,7 +216,7 @@ EMA21/34/200: 7.75/7.73/7.62  Stack: BULL  Slope: UP
 Trail on: +1.95 (ATR x99.0)  Dist: 0.01 (ATR x0.3)
 Time    : 2024-10-09 13:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | LONG EXIT [WIN] | CLM [1h]
+APM v5 | LONG EXIT [WIN] | CLM [1h]
 Entry   : 7.78  ->  Exit: 7.82
 Move    : +0.51%
 P&L     : +79.40 USD
@@ -227,91 +227,91 @@ Equity  : $10501.65
 Trades  : 6  |  Win rate: 100.0%
 Time    : 2024-10-09 18:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.04  |  ATR baseline: 0.02
 Ratio   : 1.65x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2024-10-15 13:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.03  |  ATR baseline: 0.03
 Ratio   : 1.36x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2024-10-15 18:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.04  |  ATR baseline: 0.03
 Ratio   : 1.48x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2024-10-16 13:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.04  |  ATR baseline: 0.03
 Ratio   : 1.39x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2024-10-16 15:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.04  |  ATR baseline: 0.03
 Ratio   : 1.44x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2024-11-12 14:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.04  |  ATR baseline: 0.03
 Ratio   : 1.39x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2024-11-12 16:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.04  |  ATR baseline: 0.03
 Ratio   : 1.45x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2024-11-12 17:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.04  |  ATR baseline: 0.03
 Ratio   : 1.40x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2024-11-13 18:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.05  |  ATR baseline: 0.03
 Ratio   : 1.46x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2024-11-13 19:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.05  |  ATR baseline: 0.03
 Ratio   : 1.39x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2024-11-14 17:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.06  |  ATR baseline: 0.04
 Ratio   : 1.71x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2024-11-15 14:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.05  |  ATR baseline: 0.04
 Ratio   : 1.33x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2024-11-15 20:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.06  |  ATR baseline: 0.04
 Ratio   : 1.41x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2024-11-18 14:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.06  |  ATR baseline: 0.04
 Ratio   : 1.37x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2024-11-18 15:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | LONG ENTRY | CLM [1h]
+APM v5 | LONG ENTRY | CLM [1h]
 Entry   : 8.98  |  Equity: $10501.65
 Stop    : 8.91  (-0.07 = ATR x2.0)
 Target  : 9.05  (+0.07 = ATR x2.0)
@@ -326,7 +326,7 @@ EMA21/34/200: 8.88/8.85/8.48  Stack: BULL  Slope: UP
 Trail on: +3.45 (ATR x99.0)  Dist: 0.01 (ATR x0.3)
 Time    : 2024-11-29 14:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | LONG EXIT [WIN] | CLM [1h]
+APM v5 | LONG EXIT [WIN] | CLM [1h]
 Entry   : 8.98  ->  Exit: 9.05
 Move    : +0.78%
 P&L     : +88.71 USD
@@ -337,7 +337,7 @@ Equity  : $10590.36
 Trades  : 7  |  Win rate: 100.0%
 Time    : 2024-12-02 15:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | LONG ENTRY | CLM [1h]
+APM v5 | LONG ENTRY | CLM [1h]
 Entry   : 9.27  |  Equity: $10590.36
 Stop    : 9.18  (-0.08 = ATR x2.0)
 Target  : 9.35  (+0.08 = ATR x2.0)
@@ -352,7 +352,7 @@ EMA21/34/200: 9.20/9.15/8.67  Stack: BULL  Slope: UP
 Trail on: +4.09 (ATR x99.0)  Dist: 0.01 (ATR x0.3)
 Time    : 2024-12-06 14:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | LONG EXIT [LOSS] | CLM [1h]
+APM v5 | LONG EXIT [LOSS] | CLM [1h]
 Entry   : 9.27  ->  Exit: 9.18
 Move    : -0.89%
 P&L     : -120.08 USD
@@ -363,43 +363,43 @@ Equity  : $10470.28
 Trades  : 8  |  Win rate: 87.5%
 Time    : 2024-12-06 17:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.05  |  ATR baseline: 0.04
 Ratio   : 1.43x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2024-12-09 20:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.11  |  ATR baseline: 0.08
 Ratio   : 1.36x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2024-12-13 16:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.08  |  ATR baseline: 0.04
 Ratio   : 1.96x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2025-02-03 14:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.06  |  ATR baseline: 0.05
 Ratio   : 1.32x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2025-02-04 17:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.08  |  ATR baseline: 0.03
 Ratio   : 2.51x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2025-02-24 14:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.10  |  ATR baseline: 0.07
 Ratio   : 1.36x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2025-02-28 19:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | SHORT ENTRY | CLM [1h]
+APM v5 | SHORT ENTRY | CLM [1h]
 Entry   : 7.74  |  Equity: $10470.28
 Stop    : 7.87  (+0.13 = ATR x2.0)
 Target  : 7.61  (-0.13 = ATR x2.0)
@@ -414,7 +414,7 @@ EMA21/34/200: 7.78/7.82/8.31  Stack: BEAR  Slope: DOWN
 Trail on: -6.64 (ATR x99.0)  Dist: 0.02 (ATR x0.3)
 Time    : 2025-03-12 14:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | SHORT EXIT [WIN] | CLM [1h]
+APM v5 | SHORT EXIT [WIN] | CLM [1h]
 Entry   : 7.74  ->  Exit: 7.61
 Move    : +1.73%
 P&L     : +97.51 USD
@@ -425,67 +425,67 @@ Equity  : $10567.79
 Trades  : 9  |  Win rate: 88.9%
 Time    : 2025-03-18 15:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.06  |  ATR baseline: 0.04
 Ratio   : 1.71x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2025-03-31 13:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.06  |  ATR baseline: 0.05
 Ratio   : 1.35x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2025-04-02 14:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.07  |  ATR baseline: 0.05
 Ratio   : 1.44x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2025-04-03 15:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.07  |  ATR baseline: 0.05
 Ratio   : 1.37x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2025-04-03 17:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.08  |  ATR baseline: 0.05
 Ratio   : 1.46x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2025-04-03 18:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.07  |  ATR baseline: 0.05
 Ratio   : 1.38x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2025-04-03 19:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.09  |  ATR baseline: 0.05
 Ratio   : 1.71x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2025-04-04 13:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.17  |  ATR baseline: 0.12
 Ratio   : 1.39x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2025-04-10 18:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.05  |  ATR baseline: 0.04
 Ratio   : 1.48x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2025-05-15 13:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.05  |  ATR baseline: 0.04
 Ratio   : 1.36x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2025-05-15 16:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | LONG ENTRY | CLM [1h]
+APM v5 | LONG ENTRY | CLM [1h]
 Entry   : 7.96  |  Equity: $10567.79
 Stop    : 7.87  (-0.09 = ATR x2.0)
 Target  : 8.05  (+0.09 = ATR x2.0)
@@ -500,7 +500,7 @@ EMA21/34/200: 7.87/7.82/7.45  Stack: BULL  Slope: UP
 Trail on: +4.43 (ATR x99.0)  Dist: 0.01 (ATR x0.3)
 Time    : 2025-06-06 13:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | LONG EXIT [WIN] | CLM [1h]
+APM v5 | LONG EXIT [WIN] | CLM [1h]
 Entry   : 7.96  ->  Exit: 8.06
 Move    : +1.26%
 P&L     : +106.65 USD
@@ -511,7 +511,7 @@ Equity  : $10674.44
 Trades  : 10  |  Win rate: 90.0%
 Time    : 2025-06-11 13:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | LONG ENTRY | CLM [1h]
+APM v5 | LONG ENTRY | CLM [1h]
 Entry   : 8.40  |  Equity: $10674.44
 Stop    : 8.35  (-0.04 = ATR x2.0)
 Target  : 8.44  (+0.04 = ATR x2.0)
@@ -526,7 +526,7 @@ EMA21/34/200: 8.36/8.34/8.22  Stack: BULL  Slope: UP
 Trail on: +2.02 (ATR x99.0)  Dist: 0.01 (ATR x0.3)
 Time    : 2025-10-07 18:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | LONG EXIT [WIN] | CLM [1h]
+APM v5 | LONG EXIT [WIN] | CLM [1h]
 Entry   : 8.40  ->  Exit: 8.44
 Move    : +0.49%
 P&L     : +80.28 USD
@@ -537,31 +537,31 @@ Equity  : $10754.72
 Trades  : 11  |  Win rate: 90.9%
 Time    : 2025-10-08 14:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.03  |  ATR baseline: 0.02
 Ratio   : 1.54x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2025-10-10 14:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.04  |  ATR baseline: 0.03
 Ratio   : 1.38x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2025-10-14 19:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.05  |  ATR baseline: 0.03
 Ratio   : 1.62x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2025-10-15 13:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.05  |  ATR baseline: 0.03
 Ratio   : 1.39x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2025-10-15 17:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | SHORT ENTRY | CLM [1h]
+APM v5 | SHORT ENTRY | CLM [1h]
 Entry   : 8.16  |  Equity: $10754.72
 Stop    : 8.24  (+0.08 = ATR x2.0)
 Target  : 8.07  (-0.08 = ATR x2.0)
@@ -576,7 +576,7 @@ EMA21/34/200: 8.23/8.25/8.27  Stack: BEAR  Slope: DOWN
 Trail on: -4.10 (ATR x99.0)  Dist: 0.01 (ATR x0.3)
 Time    : 2025-10-21 13:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | SHORT EXIT [WIN] | CLM [1h]
+APM v5 | SHORT EXIT [WIN] | CLM [1h]
 Entry   : 8.16  ->  Exit: 8.07
 Move    : +1.02%
 P&L     : +94.90 USD
@@ -587,31 +587,31 @@ Equity  : $10849.62
 Trades  : 12  |  Win rate: 91.7%
 Time    : 2025-10-22 16:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.04  |  ATR baseline: 0.03
 Ratio   : 1.46x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2025-11-14 14:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.04  |  ATR baseline: 0.03
 Ratio   : 1.38x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2025-11-14 17:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.05  |  ATR baseline: 0.03
 Ratio   : 1.43x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2025-11-18 15:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.05  |  ATR baseline: 0.04
 Ratio   : 1.38x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2025-11-18 18:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | SHORT ENTRY | CLM [1h]
+APM v5 | SHORT ENTRY | CLM [1h]
 Entry   : 8.13  |  Equity: $10849.62
 Stop    : 8.23  (+0.10 = ATR x2.0)
 Target  : 8.03  (-0.10 = ATR x2.0)
@@ -626,7 +626,7 @@ EMA21/34/200: 8.14/8.16/8.23  Stack: BEAR  Slope: DOWN
 Trail on: -4.97 (ATR x99.0)  Dist: 0.02 (ATR x0.3)
 Time    : 2025-11-20 16:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | SHORT EXIT [WIN] | CLM [1h]
+APM v5 | SHORT EXIT [WIN] | CLM [1h]
 Entry   : 8.13  ->  Exit: 8.01
 Move    : +1.47%
 P&L     : +118.82 USD
@@ -637,97 +637,97 @@ Equity  : $10968.44
 Trades  : 13  |  Win rate: 92.3%
 Time    : 2025-11-21 14:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.04  |  ATR baseline: 0.02
 Ratio   : 1.60x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2025-12-15 14:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.03  |  ATR baseline: 0.02
 Ratio   : 1.38x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2025-12-15 18:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.04  |  ATR baseline: 0.02
 Ratio   : 1.59x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2026-01-15 14:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.03  |  ATR baseline: 0.02
 Ratio   : 1.37x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2026-01-15 18:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.03  |  ATR baseline: 0.02
 Ratio   : 1.41x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2026-01-16 14:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.03  |  ATR baseline: 0.02
 Ratio   : 1.33x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2026-01-16 15:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.04  |  ATR baseline: 0.03
 Ratio   : 1.58x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2026-02-03 18:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.04  |  ATR baseline: 0.03
 Ratio   : 1.36x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2026-02-04 20:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.05  |  ATR baseline: 0.03
 Ratio   : 1.53x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2026-02-05 14:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.05  |  ATR baseline: 0.03
 Ratio   : 1.39x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2026-02-05 19:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.05  |  ATR baseline: 0.04
 Ratio   : 1.48x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2026-02-06 14:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.05  |  ATR baseline: 0.04
 Ratio   : 1.36x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2026-02-06 16:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.05  |  ATR baseline: 0.04
 Ratio   : 1.41x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2026-02-17 14:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.05  |  ATR baseline: 0.04
 Ratio   : 1.38x  [threshold: 1.4x]
 Status  : New entries RESUMED
 Time    : 2026-02-17 16:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME STARTED | CLM [1h]
+APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.06  |  ATR baseline: 0.04
 Ratio   : 1.66x  [threshold: 1.4x]
 Status  : New entries SUSPENDED
 Time    : 2026-02-18 14:30:00+00:00
 ----------------------------------------------------------------------
-APM v3 | PANIC REGIME CLEARED | CLM [1h]
+APM v5 | PANIC REGIME CLEARED | CLM [1h]
 ATR     : 0.09  |  ATR baseline: 0.07
 Ratio   : 1.37x  [threshold: 1.4x]
 Status  : New entries RESUMED

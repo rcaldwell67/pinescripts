@@ -1,4 +1,4 @@
-"""FAST parameter sweep for APM v4.1 — CLM 1D
+"""FAST parameter sweep for APM v6.1 — CLM 1D
 Sweeps key parameters and ranks results by Profit Factor.
 """
 
@@ -319,5 +319,5 @@ else:
     print(f"  Max Drawdown      : {best['dd']:.2f}%")
     print(f"{'='*60}")
 
-    rdf.to_csv("sweep_apm_v4_1d_results.csv", index=False)
-    print(f"\nFull results saved → sweep_apm_v4_1d_results.csv")
+    rdf.to_csv("sweep_apm_v6_1d_results.csv", index=False)
+    print(f"\nFull results saved → sweep_apm_v6_1d_results.csv")

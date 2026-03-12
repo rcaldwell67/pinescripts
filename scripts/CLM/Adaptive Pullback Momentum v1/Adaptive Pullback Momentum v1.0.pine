@@ -4,8 +4,8 @@
 //@version=6
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Adaptive Pullback Momentum v5.0
-// 10min Look Back
+// Adaptive Pullback Momentum v1.0
+// 15min Look Back
 // THESIS
 //   Most breakout strategies enter *after* the move is mature.  This strategy
 //   enters during brief pullbacks to a key moving average while the broader
@@ -47,17 +47,17 @@
 //   Trail distance: 0.8× → 1.5×   (wider trail stops micro-spike exits)
 //   Panic mult    : 1.5× → 1.3×   (exit volatile regimes more aggressively)
 //
-// v5.1 Stage-1 sweep (7416 combos — best by PF@≥8 trades):
+// v1.1 Stage-1 sweep (7416 combos — best by PF@≥8 trades):
 //   ADX=20 | vol=0.7 | session_end=14 | adx_slope=off | di_spread=off | pb=0.30
 //   tp=3.0 | sl=2.0
 //   Result (10 trades): PF=7.785 | net=+9.01% | WR=90.0% | MaxDD=-1.31% | Calmar=6.865
 //
-// v5.2 Stage-2 sweep (768 combos — best by Calmar):
+// v1.2 Stage-2 sweep (768 combos — best by Calmar):
 //   panic=1.5 | tp=4.0 | sl=2.0 | max_bars=25 (NEW)
 //   Result (11 trades): PF=63.604 | net=+9.75% | WR=90.9% | MaxDD=-0.15% | Calmar=63.653
 //   Key insight: max_bars=25 cuts stalled trades → near-zero drawdown
 //
-// v5.3 Stage-3 sweep (625 combos — best by net%):
+// v1.3 Stage-3 sweep (625 combos — best by net%):
 //   trail_act=3.5 | trail_dist=0.3 | tp=6.0 | max_bars=30
 //   Result (11 trades): PF=59.634 | net=+18.67% | WR=90.9% | MaxDD=-0.31% | Calmar=59.706
 //   Key insight: late trail (3.5×ATR) + tight dist (0.3×ATR) + wider TP (6.0) → 2× return

@@ -1,6 +1,6 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# APM v2.2 — CLM 30m backtest
-# Pine script: "Adaptive Pullback Momentum v2.2"
+# APM v4.2 — CLM 30m backtest
+# Pine script: "Adaptive Pullback Momentum v4.2"
 #
 # CLM-specific tuning vs BTC-USD defaults (informed by v1 CLM 15m sweep):
 #   ADX threshold : 25  → 18   (crude oil 30m trends at lower ADX than BTC)
@@ -13,7 +13,7 @@
 #                           DI_PLUS - DI_MINUS ≥ 5 for longs
 #   Momentum      : ADDED — 5-bar close momentum confirms direction
 #   Cooldown      : ADDED — skip 1 signal after 2 consecutive SL exits
-#   Longs / Shorts: both enabled (v2.2 benefits both directions at 30m)
+#   Longs / Shorts: both enabled (v4.2 benefits both directions at 30m)
 # ─────────────────────────────────────────────────────────────────────────────
 
 import subprocess, sys
@@ -49,14 +49,14 @@ INITIAL_CAPITAL = 10_000.0
 COMMISSION_PCT  = 0.0006   # 0.06% per side
 RISK_PCT        = 0.01     # 1% equity risked per trade
 
-# ── CLM-tuned Pine v2.2 parameters ───────────────────────────────────────────
+# ── CLM-tuned Pine v4.2 parameters ───────────────────────────────────────────
 PB_PCT     = 0.30    # wider pullback tolerance — crude oil EMA-zone noise
 ADX_THRESH = 12      # sweep-optimal: DI spread+EMA+momentum already confirm direction
 VOL_MULT   = 0.50    # sweep-optimal: 50% of avg vol; was 0.6 (funnel killer)
 MIN_BODY   = 0.15    # slight relaxation for crude oil 30m bar structure
 ATR_FLOOR  = 0.0010  # 0.10% — crude oil 30m bars are larger in % than BTC
 SL_MULT    = 2.0     # stop   = entry ± ATR × SL_MULT
-TP_MULT    = 3.5     # target = entry ± ATR × TP_MULT  (v2.2 sweep-peak)
+TP_MULT    = 3.5     # target = entry ± ATR × TP_MULT  (v4.2 sweep-peak)
 TRAIL_ACT  = 3.5     # trail activates at ATR×3.5 (beyond TP; only big runners)
 TRAIL_DIST = 1.5     # trail stays ATR×1.5 from best price
 PANIC_MULT = 1.5     # crude oil spikes are regime-changing, not just noise
@@ -251,7 +251,7 @@ for name, mask in components_short:
     cum = cum & mask
     print(f"  {name:<20} → {cum.sum():>4} rows pass")
 
-print(f"\nv2.2 Signals — Long: {long_signal.sum()}  Short: {short_signal.sum()}")
+print(f"\nv4.2 Signals — Long: {long_signal.sum()}  Short: {short_signal.sum()}")
 
 # ─── Alert helpers ─────────────────────────────────────────────────────────────
 def _al(lines): return "\n".join(lines)
@@ -269,7 +269,7 @@ def entry_alert(direction, ts, cl, av, sd, qty, equity_at_entry, row):
     ts_   = "+"  if direction == "long" else "-"
     body_v = abs(float(row["Close"]) - float(row["Open"])) / av
     return _al([
-        f"APM v2.2-CLM | {dl} ENTRY | {TICKER} [{INTERVAL}]",
+        f"APM v4.2-CLM | {dl} ENTRY | {TICKER} [{INTERVAL}]",
         f"Entry   : {cl:.4f}  |  Equity: ${equity_at_entry:.2f}",
         f"Stop    : {sl:.4f}  ({ss}{sd:.4f} = ATR×{SL_MULT})",
         f"Target  : {tp:.4f}  ({ts_}{av*TP_MULT:.4f} = ATR×{TP_MULT})",
@@ -293,7 +293,7 @@ def exit_alert(direction, ep, xp, dp, bars_held, equity_after,
     ps  = "+" if dp >= 0 else ""
     ms  = "+" if mv >= 0 else ""
     return _al([
-        f"APM v2.2-CLM | {dl} EXIT [{res}] | {TICKER} [{INTERVAL}]",
+        f"APM v4.2-CLM | {dl} EXIT [{res}] | {TICKER} [{INTERVAL}]",
         f"Entry  : {ep:.4f}  →  Exit: {xp:.4f}",
         f"Move   : {ms}{mv:.3f}%",
         f"P&L    : {ps}{dp:.2f} USD",
@@ -435,7 +435,7 @@ eq_s = pd.Series([e["equity"] for e in eqcurve])
 mdd  = ((eq_s - eq_s.cummax()) / eq_s.cummax() * 100).min()
 
 print("=" * 60)
-print(f"  APM v2.2 (CLM-tuned)  —  {TICKER} {INTERVAL}  ({PERIOD})")
+print(f"  APM v4.2 (CLM-tuned)  —  {TICKER} {INTERVAL}  ({PERIOD})")
 print("=" * 60)
 print(f"  Initial capital   :  ${INITIAL_CAPITAL:>10,.2f}")
 print(f"  Final equity      :  ${final:>10,.2f}")
@@ -470,13 +470,13 @@ for direction in ["long", "short"]:
     print(f"  {direction.upper():<6} trades={len(sub):>3}  WR={sub_wr:.0f}%  "
           f"PF={sub_pf:.3f}  net=${sub_pnl:+.2f}")
 
-out_csv = f"apm_v2_trades_{TICKER.lower()}_{INTERVAL}.csv"
+out_csv = f"apm_v4_trades_{TICKER.lower()}_{INTERVAL}.csv"
 tdf.to_csv(out_csv, index=False)
 print(f"\nTrades CSV → {out_csv}")
 
 # ─── Alerts log ───────────────────────────────────────────────────────────────
 SEP = "-" * 70
-alert_out = f"apm_v2_alerts_{TICKER.lower()}_{INTERVAL}.txt"
+alert_out = f"apm_v4_alerts_{TICKER.lower()}_{INTERVAL}.txt"
 with open(alert_out, "w") as f:
     for ts, atype, msg in alerts:
         f.write(SEP + "\n" + msg + "\n")
@@ -502,7 +502,7 @@ plt.style.use("dark_background")
 fig, axes = plt.subplots(3, 1, figsize=(18, 14),
                          gridspec_kw={"height_ratios": [3, 1.5, 1.5]})
 fig.suptitle(
-    f"APM v2.2 (CLM-tuned)  ·  {TICKER} {INTERVAL}  ·  "
+    f"APM v4.2 (CLM-tuned)  ·  {TICKER} {INTERVAL}  ·  "
     f"ADX>{ADX_THRESH}↑  DI>{DI_SPREAD_MIN}  Mom{MOMENTUM_BARS}b  |  "
     f"SL×{SL_MULT} TP×{TP_MULT}  Return={ret:+.2f}%  PF={pf:.3f}",
     fontsize=11)
@@ -550,6 +550,6 @@ ax3.set_ylabel("P&L ($)")
 ax3.grid(alpha=0.15)
 
 plt.tight_layout()
-out_png = f"apm_v2_equity_{TICKER.lower()}_{INTERVAL}.png"
+out_png = f"apm_v4_equity_{TICKER.lower()}_{INTERVAL}.png"
 plt.savefig(out_png, dpi=150, bbox_inches="tight")
 print(f"Chart → {out_png}")

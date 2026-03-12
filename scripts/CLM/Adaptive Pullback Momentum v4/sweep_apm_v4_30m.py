@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# APM v2.2  CLM 30m  —  parameter sweep
+# APM v4.2  CLM 30m  —  parameter sweep
 # Sweeps ADX_THRESH × VOL_MULT × TP_MULT × SL_MULT
 # Fixed: PB_PCT=0.30, MIN_BODY=0.15, ATR_FLOOR=0.10%, PANIC_MULT=1.5
 #        DI_SPREAD_MIN=3.0, ADX_SLOPE_BARS=1, MOMENTUM_BARS=5
@@ -214,7 +214,7 @@ for _, row in rdf.head(20).iterrows():
           f"{row['pf']:>8.3f} {row['ret']:>7.2f}%")
 print("─" * 78)
 
-out_csv = "sweep_apm_v2_clm_30m.csv"
+out_csv = "sweep_apm_v4_clm_30m.csv"
 rdf.to_csv(out_csv, index=False)
 print(f"\nFull results → {out_csv}")
 

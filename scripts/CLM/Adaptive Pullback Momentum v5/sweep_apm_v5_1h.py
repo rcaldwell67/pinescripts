@@ -1,5 +1,5 @@
 """
-Multi-phase improvement sweep — APM v3 @ 1h CLM (WTI Crude Oil futures)
+Multi-phase improvement sweep — APM v5 @ 1h CLM (WTI Crude Oil futures)
 Builds on each phase's best result to find the optimal parameter set.
 
 CLM baseline (from v1 15m + v2 30m sweep history):
@@ -198,7 +198,7 @@ def row(cfg, r, tag=""):
     print(f"  {tag:<32} n={r['n']:3d}  WR={r['wr']:5.1f}%  "
           f"PF={r['pf']:.3f}  {r['pct']:+.2f}%  DD={r['dd']:.1f}%")
 
-# ── CLM v3 1h baseline ────────────────────────────────────────────────────────
+# ── CLM v5 1h baseline ────────────────────────────────────────────────────────
 BASE = {
     "adx": 20.0, "pb_pct": 0.20, "vol_mult": 0.70, "min_body": 0.20,
     "panic": 1.5, "sl": 1.5, "tp": 2.0, "trail_act": 2.5, "trail_dist": 0.5,

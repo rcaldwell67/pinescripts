@@ -1,17 +1,17 @@
-"""Faithful Python backtest of Adaptive Pullback Momentum v4.1
+"""Faithful Python backtest of Adaptive Pullback Momentum v6.1
 Timeframe : 1D CLM (WTI Crude Oil futures), period="max"
 Commission : 0.06% per side   Risk : 1% equity / trade
 
-v4.1 sweep-optimised parameters (CLM 1D — sweep_fast.py, 1728 combos):
+v6.1 sweep-optimised parameters (CLM 1D — sweep_fast.py, 1728 combos):
   Longs only (SHORTS OFF) | ADX>20 | SL×1.5 | TP×2.5 | Trail OFF (ACT×99.0)
   Panic×2.0 | Body×0.15 | Vol×1.0 | RSI L:42-70
   Result (27 trades): PF=2.08 | net=+14.56% | WR=59.3% | MaxDD=-4.62%
 
-v4.2 Stage-3 sweep (sweep_stage3.py, 14,580 combos — best by Calmar=6.046):
+v6.2 Stage-3 sweep (sweep_stage3.py, 14,580 combos — best by Calmar=6.046):
   PB=0.30 | TP=3.0 | SL=1.5 | MaxB=25 | RSI L:42-75 | MB=0.20 | VO=1.0
   Result (30 trades): PF=2.60 | net=+21.8% | WR=63.3% | MaxDD=-3.61% | Calmar=6.05
 
-v4.3 Stage-4 sweep (sweep_stage4.py, 720 combos — best by Calmar=7.308):
+v6.3 Stage-4 sweep (sweep_stage4.py, 720 combos — best by Calmar=7.308):
   em_slope=8 (EMA_MID(34) rising vs 8 bars ago) | TP=3.5
   Result (28 trades): PF=3.076 | net=+26.35% | WR=64.3% | MaxDD=-3.60% | Calmar=7.308
 """
@@ -30,7 +30,7 @@ INIT_CAP   = 10_000.0
 COMMISSION = 0.0006
 RISK_PCT   = 0.01
 
-# ── Strategy defaults (v4.1 sweep-optimised for CLM 1D) ─────────────────────
+# ── Strategy defaults (v6.1 sweep-optimised for CLM 1D) ─────────────────────
 EMA_FAST_LEN = 21
 EMA_MID_LEN  = 34       # sweep: 34 (was 50)
 EMA_SLOW_LEN = 200
@@ -164,7 +164,7 @@ def entry_alert(direction, ts, cl, av, sd, qty, equity_at_entry, row):
         tsign  = "-"; rsi_range = f"{RSI_LO_S}-{RSI_HI_S}"
         rsi_dir = "Falling"; stack = "BEAR"
     return (
-        f"APM v4.1 | {direction.upper()} ENTRY | CLM [1D]\n"
+        f"APM v6.1 | {direction.upper()} ENTRY | CLM [1D]\n"
         f"Entry   : {cl:.2f}  |  Equity: ${equity_at_entry:.2f}\n"
         f"Stop    : {stop:.2f}  {stop_s}\n"
         f"Target  : {tgt:.2f}  {tgt_s}\n"
@@ -186,7 +186,7 @@ def trail_alert(direction, ts, best_px, entry_px, new_sl, target, av, entry_atr)
     detail = f"(best {tsign} ATR x{TRAIL_DIST} = {tsign}{av * TRAIL_DIST:.2f})"
     orig_sl = entry_px - entry_atr * SL_MULT if direction == "long" else entry_px + entry_atr * SL_MULT
     return (
-        f"APM v4.1 | TRAIL STOP ACTIVATED | CLM [1D]\n"
+        f"APM v6.1 | TRAIL STOP ACTIVATED | CLM [1D]\n"
         f"Direction : {direction.upper()}\n"
         f"Best price: {best_px:.2f}  |  Entry: {entry_px:.2f}\n"
         f"Trail SL  : {new_sl:.2f}  {detail}\n"
@@ -199,7 +199,7 @@ def exit_alert(direction, ts, entry_px, exit_px, net_pnl, comm, max_runup, bars,
     move = (exit_px - entry_px) / entry_px * 100 if direction == "long" else (entry_px - exit_px) / entry_px * 100
     result = "WIN" if net_pnl > 0 else "LOSS"
     return (
-        f"APM v4.1 | {direction.upper()} EXIT [{result}] | CLM [1D]\n"
+        f"APM v6.1 | {direction.upper()} EXIT [{result}] | CLM [1D]\n"
         f"Entry   : {entry_px:.2f}  ->  Exit: {exit_px:.2f}\n"
         f"Move    : {move:+.2f}%\n"
         f"P&L     : {net_pnl:+.2f} USD\n"
@@ -215,7 +215,7 @@ def panic_alert(started, av, atr_bl_v, ts):
     status = "STARTED" if started else "CLEARED"
     action = "New entries SUSPENDED" if started else "New entries RESUMED"
     return (
-        f"APM v4.1 | PANIC REGIME {status} | CLM [1D]\n"
+        f"APM v6.1 | PANIC REGIME {status} | CLM [1D]\n"
         f"ATR     : {av:.2f}  |  ATR baseline: {atr_bl_v:.2f}\n"
         f"Ratio   : {av / atr_bl_v:.2f}x  [threshold: {PANIC_MULT}x]\n"
         f"Status  : {action}\n"
@@ -403,7 +403,7 @@ for i in range(len(df)):
 trades = tradesdict
 tdf = pd.DataFrame(trades)
 print(f"\n{'='*58}")
-print(f"  APM v4.1 (sweep-optimised)  |  {TICKER} {INTERVAL}  |  Longs & Shorts")
+print(f"  APM v6.1 (sweep-optimised)  |  {TICKER} {INTERVAL}  |  Longs & Shorts")
 print(f"{'='*58}")
 
 if tdf.empty:
@@ -452,8 +452,8 @@ else:
         yw = (grp["dollar_pnl"] > 0).sum(); yn = len(grp)
         print(f"    {yr}  n={yn:2d}  WR={yw/yn*100:.0f}%  Net=${grp['dollar_pnl'].sum():+.2f}")
 
-    tdf.to_csv("apm_v4_trades_clm_1d.csv", index=False)
-    print(f"\n  Saved → apm_v4_trades_clm_1d.csv")
+    tdf.to_csv("apm_v6_trades_clm_1d.csv", index=False)
+    print(f"\n  Saved → apm_v6_trades_clm_1d.csv")
 
 print(f"{'='*58}")
 
@@ -464,7 +464,7 @@ for _, atype, _ in alerts:
 
 SEP = "-" * 70
 alert_log = ("\n" + SEP + "\n").join(msg for _, _, msg in alerts)
-with open("apm_v4_alerts_clm_1d.txt", "w") as f:
+with open("apm_v6_alerts_clm_1d.txt", "w") as f:
     f.write(alert_log)
 
 print(f"\nAlerts summary:")
@@ -472,7 +472,7 @@ for k in ["ENTRY", "TRAIL", "EXIT", "PANIC_START", "PANIC_CLEAR"]:
     if k in type_counts:
         print(f"  {k:<14}: {type_counts[k]}")
 print(f"Total alerts: {len(alerts)}")
-print(f"Alerts log  → apm_v4_alerts_clm_1d.txt")
+print(f"Alerts log  → apm_v6_alerts_clm_1d.txt")
 
 preview = [msg for _, atype, msg in alerts if atype not in ("PANIC_START", "PANIC_CLEAR")][:3]
 if preview:
@@ -485,7 +485,7 @@ if preview:
 import os
 SA = os.path.join(os.path.dirname(__file__), "service_account.json")
 if os.path.exists(SA):
-    from push_to_sheets_v4 import push_results
+    from push_to_sheets_v6 import push_results
     push_results(
         trades      = trades,
         alerts      = alerts,
@@ -497,4 +497,4 @@ if os.path.exists(SA):
     )
 else:
     print(f"\nSkipping Google Sheets push — service_account.json not found.")
-    print(f"See push_to_sheets_v4.py for setup instructions.")
+    print(f"See push_to_sheets_v6.py for setup instructions.")

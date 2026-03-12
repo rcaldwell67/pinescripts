@@ -1,8 +1,8 @@
-"""Python backtest of Adaptive Pullback Momentum v3 — CLM 1h
+"""Python backtest of Adaptive Pullback Momentum v5 — CLM 1h
 Timeframe : 1h CLM (WTI Crude Oil futures), period="max" (~730 days via yfinance)
 Commission : 0.06 % per side   Risk : 1 % equity / trade
 
-v3 sweep-optimal parameters (deep sweep over CLM 1h max history):
+v5 sweep-optimal parameters (deep sweep over CLM 1h max history):
   Longs + Shorts | ADX>33 | SL×2.0 | TP×2.0 | Trail OFF | Vol×1.2 | Body×0.05
   Panic×1.4 | EMA slope OFF | ATR floor 0.00% | RSI L:40-70 / S:30-60
   EMA 21/34/200 | RSI len 20 | ATR 14/50 | Vol MA 20
@@ -151,7 +151,7 @@ def entry_alert(direction, ts, cl, av, atr_eff_v, atr_bl_v, sd, qty, equity_at_e
     body_v = abs(float(row["Close"]) - float(row["Open"])) / av
     atr_fl = "OK" if av / cl >= ATR_FLOOR else "FAIL"
     return _al([
-        f"APM v3 | {dl} ENTRY | {TICKER} [{INTERVAL}]",
+        f"APM v5 | {dl} ENTRY | {TICKER} [{INTERVAL}]",
         f"Entry   : {cl:.2f}  |  Equity: ${equity_at_entry:.2f}",
         f"Stop    : {sl:.2f}  ({ss}{sd:.2f} = ATR x{SL_MULT})",
         f"Target  : {tp:.2f}  ({ts_}{atr_eff_v*TP_MULT:.2f} = ATR x{TP_MULT})",
@@ -174,7 +174,7 @@ def trail_alert(direction, best, entry, new_sl, old_sl, tp, av, ts):
     rpct  = runup / entry * 100
     rs    = "+" if direction == "long" else "-"
     return _al([
-        f"APM v3 | TRAIL STOP ACTIVATED | {TICKER} [{INTERVAL}]",
+        f"APM v5 | TRAIL STOP ACTIVATED | {TICKER} [{INTERVAL}]",
         f"Direction : {dl}",
         f"Best price: {best:.2f}  |  Entry: {entry:.2f}",
         f"Trail SL  : {new_sl:.2f}  (best {ds} ATR x{TRAIL_DIST} = {ds}{av*TRAIL_DIST:.2f})",
@@ -192,7 +192,7 @@ def exit_alert(direction, ep, xp, pnl_dollar, comm_dollar, max_runup,
     ps   = "+" if pnl_dollar >= 0 else ""
     ms   = "+" if mv >= 0 else ""
     return _al([
-        f"APM v3 | {dl} EXIT [{res}] | {TICKER} [{INTERVAL}]",
+        f"APM v5 | {dl} EXIT [{res}] | {TICKER} [{INTERVAL}]",
         f"Entry   : {ep:.2f}  ->  Exit: {xp:.2f}",
         f"Move    : {ms}{mv:.2f}%",
         f"P&L     : {ps}{pnl_dollar:.2f} USD",
@@ -208,7 +208,7 @@ def panic_alert(started, atr_v, atr_bl_v, ts):
     lbl    = "PANIC REGIME STARTED" if started else "PANIC REGIME CLEARED"
     status = "New entries SUSPENDED" if started else "New entries RESUMED"
     return _al([
-        f"APM v3 | {lbl} | {TICKER} [{INTERVAL}]",
+        f"APM v5 | {lbl} | {TICKER} [{INTERVAL}]",
         f"ATR     : {atr_v:.2f}  |  ATR baseline: {atr_bl_v:.2f}",
         f"Ratio   : {atr_v/atr_bl_v:.2f}x  [threshold: {PANIC_MULT}x]",
         f"Status  : {status}",
@@ -408,7 +408,7 @@ for i in range(EMA_SLOW_LEN + 50, len(df)):
 trades = tradesdict
 tdf = pd.DataFrame(trades)
 print(f"\n{'='*55}")
-print(f"  APM v3  |  {TICKER} {INTERVAL}  |  Longs + Shorts")
+print(f"  APM v5  |  {TICKER} {INTERVAL}  |  Longs + Shorts")
 print(f"{'='*55}")
 
 if tdf.empty:
@@ -455,7 +455,7 @@ else:
     print(f"\n  Exit breakdown:")
     print(tdf["exit_reason"].value_counts().to_string())
 
-    out_csv = "apm_v3_trades_clm_1h.csv"
+    out_csv = "apm_v5_trades_clm_1h.csv"
     tdf.to_csv(out_csv, index=False)
     print(f"\n  Saved → {out_csv}")
 
@@ -463,7 +463,7 @@ print(f"{'='*55}")
 
 # ── Write alert log ────────────────────────────────────────────────────────────
 SEP = "-" * 70
-alert_out   = f"apm_v3_alerts_clm_{INTERVAL}.txt"
+alert_out   = f"apm_v5_alerts_clm_{INTERVAL}.txt"
 alert_types = {t: 0 for t in ["ENTRY", "TRAIL", "EXIT", "PANIC_START", "PANIC_CLEAR"]}
 with open(alert_out, "w") as f:
     for ts, atype, msg in alerts:
@@ -489,9 +489,12 @@ for ts, atype, msg in alerts:
 
 # ── Google Sheets push (requires service_account.json) ────────────────────────
 from pathlib import Path as _Path
+import importlib as _importlib
+import sys as _sys
 _SA_KEY = _Path(__file__).parent / "service_account.json"
 if _SA_KEY.exists():
-    from push_to_sheets_v3 import push_results
+    _sys.path.insert(0, str(_Path(__file__).parent))
+    push_results = _importlib.import_module("push_to_sheets_v5").push_results
     push_results(
         trades       = trades,
         alerts       = alerts,
@@ -503,4 +506,4 @@ if _SA_KEY.exists():
     )
 else:
     print(f"\nSkipping Google Sheets push — service_account.json not found.")
-    print(f"See push_to_sheets_v3.py for setup instructions.")
+    print(f"See push_to_sheets_v5.py for setup instructions.")

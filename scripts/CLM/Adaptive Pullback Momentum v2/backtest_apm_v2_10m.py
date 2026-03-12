@@ -1,22 +1,22 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# APM v5.0 — CLM 10m backtest
-# Mirrors "Adaptive Pullback Momentum v5.0" pine script parameters exactly.
+# APM v2.0 — CLM 10m backtest
+# Mirrors "Adaptive Pullback Momentum v2.0" pine script parameters exactly.
 # Shorts-only by default (same thesis as v1: longs at sub-15m WR too low).
 #
 # Data: yfinance 5m → resampled to 10m (yfinance has no native 10m interval)
 # Period: 60d (max intraday window available from yfinance)
 #
-# v5.1 Stage-1 sweep (sweep_stage1_results.csv, 7416 combos — best by PF@≥8 trades):
+# v2.1 Stage-1 sweep (sweep_stage1_results.csv, 7416 combos — best by PF@≥8 trades):
 #   ADX=20 | vol=0.7 | session_end=14 | adx_slope=0 (off) | di_spread=0 (off) | pb=0.30
 #   tp=3.0 | sl=2.0
 #   Result (10 trades): PF=7.785 | net=+9.01% | WR=90.0% | MaxDD=-1.31% | Calmar=6.865
 #
-# v5.2 Stage-2 sweep (sweep_stage2.py, 768 combos — best by Calmar):
+# v2.2 Stage-2 sweep (sweep_stage2.py, 768 combos — best by Calmar):
 #   panic=1.5 | tp=4.0 | sl=2.0 | max_bars=25 (NEW)
 #   Result (11 trades): PF=63.604 | net=+9.75% | WR=90.9% | MaxDD=-0.15% | Calmar=63.653
 #   Key insight: max_bars=25 cuts stalled trades before reversal → near-zero drawdown
 #
-# v5.3 Stage-3 sweep (sweep_stage3.py, 625 combos — best by net%):
+# v2.3 Stage-3 sweep (sweep_stage3.py, 625 combos — best by net%):
 #   trail_act=3.5 | trail_dist=0.3 | tp=6.0 | max_bars=30
 #   Result (11 trades): PF=59.634 | net=+18.67% | WR=90.9% | MaxDD=-0.31% | Calmar=59.706
 #   Key insight: late trail activation (3.5×ATR) + tight dist (0.3×ATR) + wider TP (6.0) → 2× return
@@ -50,7 +50,7 @@ RSI_LEN  = 14
 ATR_LEN  = 14
 VOL_LEN  = 20
 
-# ── Strategy parameters (v5.2 sweep-optimised for CLM 10m) ──────────────────
+# ── Strategy parameters (v2.2 sweep-optimised for CLM 10m) ──────────────────
 PB_PCT      = 0.30    # stage1: wider pullback tolerance (was 0.15)
 ADX_THRESH  = 20      # stage1: looser ADX threshold (was 28)
 VOL_MULT    = 0.7     # stage1: loosened volume filter (was 1.2)
@@ -262,7 +262,7 @@ for name, mask in components_short:
     cum = cum & mask
     print(f"  {name:<20} → {cum.sum():>4} rows pass")
 
-print(f"\nv5.0 Signals — Long: {long_signal.sum()}  Short: {short_signal.sum()}")
+print(f"\nv2.0 Signals — Long: {long_signal.sum()}  Short: {short_signal.sum()}")
 
 # ─── Bar-by-bar simulation ────────────────────────────────────────────────────
 equity        = INITIAL_CAPITAL
@@ -441,7 +441,7 @@ eq_s = pd.Series([e["equity"] for e in eqcurve])
 mdd  = ((eq_s - eq_s.cummax()) / eq_s.cummax() * 100).min()
 
 print("=" * 60)
-print(f"  APM v5.0  —  {TICKER} {INTERVAL}  ({PERIOD})")
+print(f"  APM v2.0  —  {TICKER} {INTERVAL}  ({PERIOD})")
 print("=" * 60)
 print(f"  Initial capital   :  ${INITIAL_CAPITAL:>10,.2f}")
 print(f"  Final equity      :  ${final:>10,.2f}")
@@ -476,7 +476,7 @@ for direction in ["long", "short"]:
     print(f"  {direction.upper():<6} trades={len(sub):>3}  WR={sub_wr:.0f}%  "
           f"PF={sub_pf:.3f}  net=${sub_pnl:+.2f}")
 
-out_csv = f"apm_v5_trades_{TICKER.lower()}_{INTERVAL}.csv"
+out_csv = f"apm_v2_trades_{TICKER.lower()}_{INTERVAL}.csv"
 tdf.to_csv(out_csv, index=False)
 print(f"\nTrades CSV → {out_csv}")
 
@@ -487,12 +487,12 @@ for _, t in tdf.iterrows():
     result = t["result"]
     dp     = t["dollar_pnl"]
     alert_lines.append(
-        f"APM v5.0 | {sign} {result} | {TICKER} [{INTERVAL}]\n"
+        f"APM v2.0 | {sign} {result} | {TICKER} [{INTERVAL}]\n"
         f"Entry   : {t['entry']:.2f}  Exit: {t['exit']:.2f}\n"
         f"P&L     : ${dp:+.2f}  ({t['pnl_pct']:+.3f}%)\n"
         f"Entry time: {t['entry_time']}  Exit time: {t['exit_time']}\n"
     )
-out_txt = f"apm_v5_alerts_{TICKER.lower()}_{INTERVAL}.txt"
+out_txt = f"apm_v2_alerts_{TICKER.lower()}_{INTERVAL}.txt"
 with open(out_txt, "w") as f:
     f.write(("\n" + "-" * 60 + "\n").join(alert_lines))
 print(f"Alerts log  → {out_txt}")
@@ -504,7 +504,7 @@ plt.style.use("dark_background")
 fig, axes = plt.subplots(3, 1, figsize=(18, 14),
                          gridspec_kw={"height_ratios": [3, 1.5, 1.5]})
 fig.suptitle(
-    f"APM v5.0  ·  {TICKER} {INTERVAL}  ·  "
+    f"APM v2.0  ·  {TICKER} {INTERVAL}  ·  "
     f"ADX>{ADX_THRESH}↑  DI>{DI_SPREAD_MIN}  Mom{MOMENTUM_BARS}b  Session 09:30–12:00 ET  |  "
     f"SL×{SL_MULT} TP×{TP_MULT}  Return={ret:+.2f}%  PF={pf:.3f}",
     fontsize=10)
@@ -547,6 +547,6 @@ ax3.set_ylabel("P&L ($)")
 ax3.grid(alpha=0.15)
 
 plt.tight_layout()
-out_png = f"apm_v5_equity_{TICKER.lower()}_{INTERVAL}.png"
+out_png = f"apm_v2_equity_{TICKER.lower()}_{INTERVAL}.png"
 plt.savefig(out_png, dpi=150, bbox_inches="tight")
 print(f"Chart → {out_png}")

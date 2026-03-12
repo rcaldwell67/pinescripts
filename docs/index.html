@@ -9,68 +9,48 @@
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <style>
     :root {
-      --bg:       #0d1117;
-      --surface:  #161b22;
-      --border:   #30363d;
-      --text:     #e6edf3;
-      --muted:    #8b949e;
-      --accent:   #58a6ff;
-      --green:    #3fb950;
-      --red:      #f85149;
-      --yellow:   #d29922;
-      --purple:   #bc8cff;
-      --orange:   #ffa657;
-      --v1:       #58a6ff;
-      --v2:       #3fb950;
-      --v3:       #ffa657;
-      --v4:       #bc8cff;
+      --bg:      #0d1117;
+      --surface: #161b22;
+      --border:  #30363d;
+      --text:    #e6edf3;
+      --muted:   #8b949e;
+      --accent:  #58a6ff;
+      --green:   #3fb950;
+      --red:     #f85149;
+      --orange:  #ffa657;
+      --purple:  #bc8cff;
+      --yellow:  #d29922;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.5; }
-
-    /* ── Layout ─────────────────────────────────────────── */
-    header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; gap: 16px; position: sticky; top: 0; z-index: 100; }
-    header h1 { font-size: 18px; font-weight: 600; letter-spacing: -.3px; }
+    header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; gap: 16px; position: sticky; top: 0; z-index: 100; flex-wrap: wrap; }
+    header h1 { font-size: 17px; font-weight: 600; letter-spacing: -.3px; }
     header .subtitle { color: var(--muted); font-size: 12px; }
-    .badge { padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; }
-    .badge-btc { background: #f7931a22; color: #f7931a; border: 1px solid #f7931a44; }
-
+    #lastUpdated { margin-left: auto; color: var(--muted); font-size: 12px; }
+    .sym-switcher { display: flex; gap: 6px; }
+    .sym-btn { padding: 5px 16px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; font-weight: 600; transition: all .15s; }
+    .sym-btn:hover { border-color: var(--accent); color: var(--text); }
+    .sym-btn.active[data-sym="btc"] { background: #f7931a22; border-color: #f7931a; color: #f7931a; }
+    .sym-btn.active[data-sym="clm"] { background: #58a6ff22; border-color: var(--accent); color: var(--accent); }
     main { max-width: 1400px; margin: 0 auto; padding: 24px; }
-
-    /* ── Version Tabs ─────────────────────────────────────── */
     .tabs { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
-    .tab { padding: 6px 18px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; font-weight: 500; transition: all .15s; }
+    .tab { padding: 6px 16px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; font-weight: 500; transition: all .15s; }
     .tab:hover { border-color: var(--accent); color: var(--text); }
-    .tab.active { color: var(--text); border-color: transparent; }
-    .tab[data-v="v1"].active { background: #58a6ff22; border-color: var(--v1); color: var(--v1); }
-    .tab[data-v="v2"].active { background: #3fb95022; border-color: var(--v2); color: var(--v2); }
-    .tab[data-v="v3"].active { background: #ffa65722; border-color: var(--v3); color: var(--v3); }
-    .tab[data-v="v4"].active { background: #bc8cff22; border-color: var(--v4); color: var(--v4); }
-    .tab[data-v="all"].active { background: #e6edf322; border-color: var(--text); color: var(--text); }
-
-    /* ── Cards ─────────────────────────────────────────────── */
-    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 24px; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 12px; margin-bottom: 24px; }
     .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
     .card .label { font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin-bottom: 6px; }
     .card .value { font-size: 24px; font-weight: 700; }
-    .card .sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .card .sub   { font-size: 11px; color: var(--muted); margin-top: 2px; }
     .positive { color: var(--green); }
     .negative { color: var(--red); }
     .neutral  { color: var(--accent); }
-
-    /* ── Grid ───────────────────────────────────────────────── */
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
     .grid-3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
     @media (max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
-
-    /* ── Chart panels ───────────────────────────────────────── */
     .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
-    .panel h2 { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .7px; margin-bottom: 16px; }
-    .chart-wrap { position: relative; }
+    .panel h2 { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .7px; margin-bottom: 16px; }
     .chart-wrap canvas { max-height: 300px; }
     .chart-wrap.tall canvas { max-height: 380px; }
-
-    /* ── Table ─────────────────────────────────────────────── */
     .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 12px; }
     th { padding: 8px 12px; text-align: left; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid var(--border); white-space: nowrap; }
@@ -78,63 +58,37 @@
     tr:last-child td { border-bottom: none; }
     tr:hover td { background: #21262d; }
     .tag { display: inline-block; padding: 1px 7px; border-radius: 4px; font-size: 11px; font-weight: 600; }
-    .tag-tp  { background: #3fb95022; color: var(--green); border: 1px solid #3fb95044; }
-    .tag-sl  { background: #f8514922; color: var(--red);   border: 1px solid #f8514944; }
+    .tag-tp    { background: #3fb95022; color: var(--green);  border: 1px solid #3fb95044; }
+    .tag-sl    { background: #f8514922; color: var(--red);    border: 1px solid #f8514944; }
     .tag-trail { background: #ffa65722; color: var(--orange); border: 1px solid #ffa65744; }
+    .tag-mb    { background: #d2992222; color: var(--yellow); border: 1px solid #d2992244; }
+    .tag-other { background: #8b949e22; color: var(--muted);  border: 1px solid #8b949e44; }
     .tag-long  { background: #58a6ff22; color: var(--accent); border: 1px solid #58a6ff44; }
     .tag-short { background: #bc8cff22; color: var(--purple); border: 1px solid #bc8cff44; }
-
-    /* ── Comparison Table ───────────────────────────────────── */
-    .cmp th:first-child, .cmp td:first-child { font-weight: 600; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
-    .cmp td.v1 { color: var(--v1); }
-    .cmp td.v2 { color: var(--v2); }
-    .cmp td.v3 { color: var(--v3); }
-    .cmp td.v4 { color: var(--v4); }
-
-    /* ── Legend dots ─────────────────────────────────────── */
+    .cmp th:first-child, .cmp td:first-child { font-weight: 600; color: var(--muted); font-size: 11px; text-transform: uppercase; }
     .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; }
     .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
     .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-
-    /* ── Misc ─────────────────────────────────────────────── */
-    .section-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; padding-top: 8px; }
     .empty { color: var(--muted); font-size: 13px; padding: 24px 0; text-align: center; }
-    .pill { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 999px; font-size: 12px; }
-    .pill-v1 { background: #58a6ff22; color: var(--v1); border: 1px solid var(--v1); }
-    .pill-v2 { background: #3fb95022; color: var(--v2); border: 1px solid var(--v2); }
-    .pill-v3 { background: #ffa65722; color: var(--v3); border: 1px solid var(--v3); }
-    .pill-v4 { background: #bc8cff22; color: var(--v4); border: 1px solid var(--v4); }
-
-    /* ── Year bar chart section ───────────────────────────── */
-    #yearSection { display: none; }
+    .pill { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 999px; font-size: 12px; border: 1px solid; }
   </style>
 </head>
 <body>
-
 <header>
   <div>
     <h1>APM Dashboard</h1>
-    <div class="subtitle">Adaptive Pullback Momentum · BTC-USD</div>
+    <div class="subtitle">Adaptive Pullback Momentum</div>
   </div>
-  <span class="badge badge-btc">BTC-USD</span>
-  <span id="lastUpdated" style="margin-left:auto;color:var(--muted);font-size:12px;"></span>
+  <div class="sym-switcher">
+    <button class="sym-btn active" data-sym="btc">BTC-USD</button>
+    <button class="sym-btn" data-sym="clm">CLM</button>
+  </div>
+  <span id="lastUpdated"></span>
 </header>
-
 <main>
-  <!-- Version Tabs -->
-  <div class="tabs">
-    <button class="tab active" data-v="all">All Versions</button>
-    <button class="tab" data-v="v1">v1 · 15m (Shorts)</button>
-    <button class="tab" data-v="v2">v2 · 30m (Both)</button>
-    <button class="tab" data-v="v3">v3 · 1h (Longs)</button>
-    <button class="tab" data-v="v4">v4 · 1D (Both)</button>
-  </div>
-
-  <!-- Summary Cards -->
+  <div class="tabs" id="tabs"></div>
   <div class="cards" id="cards"></div>
-
-  <!-- Equity Curve + Trade Outcomes -->
-  <div class="grid-3">
+  <div class="grid-3" id="topRow">
     <div class="panel chart-wrap tall" style="grid-column: span 2;">
       <h2>Equity Curve</h2>
       <canvas id="equityChart"></canvas>
@@ -146,506 +100,436 @@
       <div id="outcomeLegend" style="margin-top:12px;font-size:12px;"></div>
     </div>
   </div>
-
-  <!-- Direction Split + Monthly P&L -->
-  <div class="grid-2" style="margin-top:16px;" id="directionRow">
+  <div class="grid-2" id="midRow">
     <div class="panel chart-wrap">
-      <h2>P&amp;L by Direction</h2>
+      <h2 id="dirChartTitle">P&amp;L by Direction</h2>
       <canvas id="directionChart"></canvas>
     </div>
     <div class="panel chart-wrap">
-      <h2>Cumulative Return by Month</h2>
+      <h2>Monthly P&amp;L</h2>
       <canvas id="monthlyChart"></canvas>
     </div>
   </div>
-
-  <!-- Year-by-Year (v4 only) -->
-  <div id="yearSection" style="margin-top:16px;">
+  <div id="yearSection" style="display:none; margin-bottom:16px;">
     <div class="panel chart-wrap tall">
-      <h2>Year-by-Year Breakdown · v4 · 1D</h2>
+      <h2 id="yearChartTitle">Year-by-Year Breakdown</h2>
       <canvas id="yearChart"></canvas>
     </div>
   </div>
-
-  <!-- Trade Log Table -->
-  <div class="panel" style="margin-top:16px;">
+  <div class="panel" style="margin-bottom:16px;">
     <h2>Trade Log</h2>
-    <div class="table-wrap" id="tradeTableWrap">
-      <div class="empty">Loading…</div>
-    </div>
+    <div class="table-wrap" id="tradeTableWrap"><div class="empty">Loading…</div></div>
   </div>
-
-  <!-- Version Comparison -->
-  <div class="panel" style="margin-top:16px;">
+  <div class="panel">
     <h2>Version Comparison</h2>
-    <div class="table-wrap">
-      <table class="cmp" id="cmpTable"></table>
-    </div>
+    <div class="table-wrap"><table class="cmp" id="cmpTable"></table></div>
   </div>
 </main>
-
 <script>
-// ─── Config ────────────────────────────────────────────────────────────────
-const VERSIONS = {
-  v1: { label: 'v1 · 15m Shorts', tf: '15m', color: '#58a6ff', file: 'data/v1_trades.csv',
-        pnlCol: 'dollar_pnl', equityCol: 'equity', resultCol: 'result', dirCol: 'direction',
-        entryCol: 'entry_price', exitCol: 'exit_price', entryTimeCol: 'entry_time', exitTimeCol: 'exit_time' },
-  v2: { label: 'v2 · 30m Both',  tf: '30m', color: '#3fb950', file: 'data/v2_trades.csv',
-        pnlCol: 'dollar_pnl', equityCol: 'equity', resultCol: 'result', dirCol: 'direction',
-        entryCol: 'entry', exitCol: 'exit', entryTimeCol: 'entry_time', exitTimeCol: 'exit_time' },
-  v3: { label: 'v3 · 1h Longs',  tf: '1h',  color: '#ffa657', file: 'data/v3_trades.csv',
-        pnlCol: 'pnl', equityCol: 'equity', resultCol: 'exit_reason', dirCol: 'direction',
-        entryCol: 'entry', exitCol: 'exit', entryTimeCol: 'entry_time', exitTimeCol: 'exit_time' },
-  v4: { label: 'v4 · 1D Both',   tf: '1D',  color: '#bc8cff', file: 'data/v4_trades.csv',
-        pnlCol: 'dollar_pnl', equityCol: 'equity', resultCol: 'result', dirCol: 'direction',
-        entryCol: 'entry', exitCol: 'exit', entryTimeCol: 'entry_time', exitTimeCol: 'exit_time' },
+const INSTRUMENTS = {
+  btc: {
+    label: 'BTC-USD',
+    versions: {
+      v1: { label:'v1 · 15m Shorts', tf:'15m', color:'#58a6ff', file:'data/v1_trades.csv',
+            pnlCol:'dollar_pnl', equityCol:'equity', resultCol:'result', dirCol:'direction',
+            entryCol:'entry_price', exitCol:'exit_price', entryTimeCol:'entry_time', exitTimeCol:'exit_time' },
+      v2: { label:'v2 · 30m Both',   tf:'30m', color:'#3fb950', file:'data/v2_trades.csv',
+            pnlCol:'dollar_pnl', equityCol:'equity', resultCol:'result', dirCol:'direction',
+            entryCol:'entry', exitCol:'exit', entryTimeCol:'entry_time', exitTimeCol:'exit_time' },
+      v3: { label:'v3 · 1h Longs',   tf:'1h',  color:'#ffa657', file:'data/v3_trades.csv',
+            pnlCol:'pnl', equityCol:'equity', resultCol:'exit_reason', dirCol:'direction',
+            entryCol:'entry', exitCol:'exit', entryTimeCol:'entry_time', exitTimeCol:'exit_time' },
+      v4: { label:'v4 · 1D Both',    tf:'1D',  color:'#bc8cff', file:'data/v4_trades.csv',
+            pnlCol:'dollar_pnl', equityCol:'equity', resultCol:'result', dirCol:'direction',
+            entryCol:'entry', exitCol:'exit', entryTimeCol:'entry_time', exitTimeCol:'exit_time', hasYear:true },
+    }
+  },
+  clm: {
+    label: 'CLM',
+    versions: {
+      v2: { label:'v2 · 10m', tf:'10m', color:'#58a6ff', file:'data/clm/v2_trades.csv',
+            pnlCol:'dollar_pnl', equityCol:'equity', resultCol:'result', dirCol:'direction',
+            entryCol:'entry', exitCol:'exit', entryTimeCol:'entry_time', exitTimeCol:'exit_time' },
+      v3: { label:'v3 · 15m', tf:'15m', color:'#3fb950', file:'data/clm/v3_trades.csv',
+            pnlCol:'dollar_pnl', equityCol:'equity', resultCol:'result', dirCol:'direction',
+            entryCol:'entry', exitCol:'exit', entryTimeCol:'entry_time', exitTimeCol:'exit_time' },
+      v4: { label:'v4 · 30m', tf:'30m', color:'#ffa657', file:'data/clm/v4_trades.csv',
+            pnlCol:'dollar_pnl', equityCol:'equity', resultCol:'result', dirCol:'direction',
+            entryCol:'entry', exitCol:'exit', entryTimeCol:'entry_time', exitTimeCol:'exit_time' },
+      v5: { label:'v5 · 1h',  tf:'1h',  color:'#d29922', file:'data/clm/v5_trades.csv',
+            pnlCol:'pnl', equityCol:'equity', resultCol:'exit_reason', dirCol:'direction',
+            entryCol:'entry', exitCol:'exit', entryTimeCol:'entry_time', exitTimeCol:'exit_time' },
+      v6: { label:'v6 · 1D',  tf:'1D',  color:'#bc8cff', file:'data/clm/v6_trades.csv',
+            pnlCol:'dollar_pnl', equityCol:'equity', resultCol:'result', dirCol:'direction',
+            entryCol:'entry', exitCol:'exit', entryTimeCol:'entry_time', exitTimeCol:'exit_time', hasYear:true },
+    }
+  }
 };
 
 const INITIAL_CAPITAL = 10000;
-
-// ─── State ─────────────────────────────────────────────────────────────────
-const data = {};     // raw normalised rows per version
+const loaded = { btc:{}, clm:{} };
+let activeSym = 'btc';
 let activeTab = 'all';
 let charts = {};
 
-// ─── Data Loading ───────────────────────────────────────────────────────────
-function parseCSV(version) {
-  return new Promise((resolve) => {
-    Papa.parse(VERSIONS[version].file, {
-      download: true, header: true, skipEmptyLines: true,
-      complete: (r) => resolve(r.data)
-    });
-  });
-}
-
-function normalise(rows, ver) {
-  const cfg = VERSIONS[ver];
+function normalise(rows, sym, ver) {
+  const cfg = INSTRUMENTS[sym].versions[ver];
   return rows.map(r => ({
-    entry_time: r[cfg.entryTimeCol]?.trim(),
-    exit_time:  r[cfg.exitTimeCol]?.trim(),
-    direction:  r[cfg.dirCol]?.trim().toLowerCase(),
+    entry_time:  r[cfg.entryTimeCol]?.trim(),
+    exit_time:   r[cfg.exitTimeCol]?.trim(),
+    direction:   r[cfg.dirCol]?.trim().toLowerCase(),
     entry_price: parseFloat(r[cfg.entryCol]),
     exit_price:  parseFloat(r[cfg.exitCol]),
     dollar_pnl:  parseFloat(r[cfg.pnlCol]),
     equity:      parseFloat(r[cfg.equityCol]),
     result:      r[cfg.resultCol]?.trim().toUpperCase(),
-    pnl_pct:     r.pnl_pct ? parseFloat(r.pnl_pct) : undefined,
+    pnl_pct:     r.pnl_pct   ? parseFloat(r.pnl_pct)  : undefined,
     max_runup:   r.max_runup ? parseFloat(r.max_runup) : undefined,
-    bars:        r.bars ? parseInt(r.bars) : undefined,
-    year:        r.year ? parseInt(r.year) : undefined,
-    version:     ver,
+    bars:        r.bars      ? parseInt(r.bars)        : undefined,
+    year:        r.year      ? parseInt(r.year)        : undefined,
+    version: ver, sym,
   })).filter(r => !isNaN(r.equity));
 }
 
-// ─── Metrics ────────────────────────────────────────────────────────────────
+function loadCSV(sym, ver) {
+  return new Promise(resolve => {
+    Papa.parse(INSTRUMENTS[sym].versions[ver].file, {
+      download:true, header:true, skipEmptyLines:true,
+      complete: r => resolve(normalise(r.data, sym, ver))
+    });
+  });
+}
+
 function calcMetrics(rows) {
   if (!rows.length) return null;
-  const wins = rows.filter(r => r.dollar_pnl > 0);
+  const wins   = rows.filter(r => r.dollar_pnl > 0);
   const losses = rows.filter(r => r.dollar_pnl <= 0);
-  const totalPnl = rows.reduce((s, r) => s + r.dollar_pnl, 0);
-  const grossWin = wins.reduce((s, r) => s + r.dollar_pnl, 0);
-  const grossLoss = Math.abs(losses.reduce((s, r) => s + r.dollar_pnl, 0));
-  const pf = grossLoss > 0 ? grossWin / grossLoss : grossWin > 0 ? Infinity : 0;
-
-  // Max drawdown from equity curve
+  const totalPnl  = rows.reduce((s,r) => s+r.dollar_pnl, 0);
+  const grossWin  = wins.reduce((s,r) => s+r.dollar_pnl, 0);
+  const grossLoss = Math.abs(losses.reduce((s,r) => s+r.dollar_pnl, 0));
+  const pf = grossLoss > 0 ? grossWin/grossLoss : grossWin > 0 ? Infinity : 0;
   let peak = INITIAL_CAPITAL, maxDD = 0;
   for (const r of rows) {
     if (r.equity > peak) peak = r.equity;
     const dd = (peak - r.equity) / peak * 100;
     if (dd > maxDD) maxDD = dd;
   }
-
-  const longs = rows.filter(r => r.direction === 'long');
+  const longs  = rows.filter(r => r.direction === 'long');
   const shorts = rows.filter(r => r.direction === 'short');
-  const longWins = longs.filter(r => r.dollar_pnl > 0);
-  const shortWins = shorts.filter(r => r.dollar_pnl > 0);
-
-  const tpCount = rows.filter(r => r.result === 'TP').length;
-  const slCount = rows.filter(r => r.result === 'SL').length;
-  const trailCount = rows.filter(r => r.result === 'TRAIL' || r.result === 'TRAILING').length;
-
   return {
     n: rows.length,
-    winRate: rows.length ? wins.length / rows.length * 100 : 0,
-    netPnl: totalPnl,
+    winRate:  wins.length / rows.length * 100,
+    netPnl:   totalPnl,
     netPnlPct: totalPnl / INITIAL_CAPITAL * 100,
-    pf,
-    maxDD,
-    finalEquity: rows[rows.length - 1]?.equity ?? INITIAL_CAPITAL,
-    avgWin: wins.length ? grossWin / wins.length : 0,
+    pf, maxDD,
+    finalEquity: rows[rows.length-1]?.equity ?? INITIAL_CAPITAL,
+    avgWin:  wins.length   ? grossWin   / wins.length   : 0,
     avgLoss: losses.length ? -grossLoss / losses.length : 0,
-    tpCount, slCount, trailCount,
-    longs: longs.length,
-    shorts: shorts.length,
-    longWR: longs.length ? longWins.length / longs.length * 100 : 0,
-    shortWR: shorts.length ? shortWins.length / shorts.length * 100 : 0,
-    longPnl: longs.reduce((s, r) => s + r.dollar_pnl, 0),
-    shortPnl: shorts.reduce((s, r) => s + r.dollar_pnl, 0),
+    tpCount:    rows.filter(r=>r.result==='TP').length,
+    slCount:    rows.filter(r=>r.result==='SL').length,
+    trailCount: rows.filter(r=>r.result==='TRAIL'||r.result==='TRAILING').length,
+    mbCount:    rows.filter(r=>r.result==='MB').length,
+    longs: longs.length, shorts: shorts.length,
+    longWR:  longs.length  ? longs.filter(r=>r.dollar_pnl>0).length  / longs.length  * 100 : 0,
+    shortWR: shorts.length ? shorts.filter(r=>r.dollar_pnl>0).length / shorts.length * 100 : 0,
+    longPnl:  longs.reduce((s,r)=>s+r.dollar_pnl,0),
+    shortPnl: shorts.reduce((s,r)=>s+r.dollar_pnl,0),
   };
 }
 
-// ─── Rendering ──────────────────────────────────────────────────────────────
-function fmt$(n) { return (n >= 0 ? '+$' : '-$') + Math.abs(n).toFixed(2); }
-function fmtPct(n) { return (n >= 0 ? '+' : '') + n.toFixed(2) + '%'; }
+const fmt$   = n => (n>=0?'+$':'-$') + Math.abs(n).toFixed(2);
+const fmtPct = n => (n>=0?'+':'') + n.toFixed(2) + '%';
+const clsVal = n => n>0 ? 'positive' : n<0 ? 'negative' : 'neutral';
 function fmtDate(s) {
   if (!s) return '—';
-  const d = new Date(s.replace(' ', 'T'));
-  return isNaN(d) ? s : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
+  const d = new Date(s.replace(' ','T'));
+  return isNaN(d) ? s : d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'});
 }
-function clsVal(n) { return n > 0 ? 'positive' : n < 0 ? 'negative' : 'neutral'; }
-
-function renderCards(rows, ver) {
-  const isAll = ver === 'all';
-  const cardEl = document.getElementById('cards');
-
-  if (isAll) {
-    // Show per-version metric cards
-    cardEl.innerHTML = '';
-    for (const v of ['v1','v2','v3','v4']) {
-      if (!data[v]) continue;
-      const m = calcMetrics(data[v]);
-      const cfg = VERSIONS[v];
-      cardEl.innerHTML += `
-        <div class="card" style="border-top: 2px solid ${cfg.color}">
-          <div class="label">${cfg.label}</div>
-          <div class="value ${clsVal(m.netPnl)}">${fmtPct(m.netPnlPct)}</div>
-          <div class="sub">WR ${m.winRate.toFixed(1)}% · PF ${m.pf === Infinity ? '∞' : m.pf.toFixed(2)} · ${m.n} trades</div>
-        </div>`;
-    }
-  } else {
-    const m = calcMetrics(rows);
-    if (!m) { cardEl.innerHTML = ''; return; }
-    cardEl.innerHTML = `
-      <div class="card"><div class="label">Total Trades</div><div class="value neutral">${m.n}</div><div class="sub">${m.longs}L / ${m.shorts}S</div></div>
-      <div class="card"><div class="label">Win Rate</div><div class="value ${m.winRate>=60?'positive':m.winRate>=50?'neutral':'negative'}">${m.winRate.toFixed(1)}%</div><div class="sub">${m.tpCount} TP · ${m.slCount} SL · ${m.trailCount} Trail</div></div>
-      <div class="card"><div class="label">Net P&L</div><div class="value ${clsVal(m.netPnl)}">${fmt$(m.netPnl)}</div><div class="sub">${fmtPct(m.netPnlPct)} on $${INITIAL_CAPITAL.toLocaleString()}</div></div>
-      <div class="card"><div class="label">Profit Factor</div><div class="value ${m.pf>=2?'positive':m.pf>=1?'neutral':'negative'}">${m.pf===Infinity?'∞':m.pf.toFixed(3)}</div><div class="sub">Gross Win / Gross Loss</div></div>
-      <div class="card"><div class="label">Max Drawdown</div><div class="value ${m.maxDD<5?'positive':m.maxDD<15?'neutral':'negative'}">-${m.maxDD.toFixed(2)}%</div><div class="sub">Peak-to-trough equity</div></div>
-      <div class="card"><div class="label">Final Equity</div><div class="value ${clsVal(m.finalEquity-INITIAL_CAPITAL)}">$${m.finalEquity.toFixed(2)}</div><div class="sub">Started $${INITIAL_CAPITAL.toLocaleString()}</div></div>
-    `;
-  }
+function resultTag(r) {
+  if (!r) return '<span class="tag tag-other">—</span>';
+  const u = r.toUpperCase();
+  if (u==='TP') return '<span class="tag tag-tp">TP</span>';
+  if (u==='SL') return '<span class="tag tag-sl">SL</span>';
+  if (u==='MB') return '<span class="tag tag-mb">MB</span>';
+  if (u.includes('TRAIL')) return '<span class="tag tag-trail">Trail</span>';
+  return `<span class="tag tag-other">${r}</span>`;
 }
-
-// ─── Charts ─────────────────────────────────────────────────────────────────
 function destroyChart(key) { if (charts[key]) { charts[key].destroy(); delete charts[key]; } }
 
-function renderEquityChart(rows, ver) {
+function buildTabs() {
+  const vers = INSTRUMENTS[activeSym].versions;
+  const tabEl = document.getElementById('tabs');
+  tabEl.innerHTML = '';
+  const addBtn = (v, label, color) => {
+    const btn = document.createElement('button');
+    btn.className = 'tab' + (activeTab===v?' active':'');
+    btn.dataset.v = v;
+    btn.textContent = label;
+    if (activeTab===v) btn.style.cssText = color
+      ? `background:${color}22;border-color:${color};color:${color}`
+      : 'background:#e6edf322;border-color:var(--text);color:var(--text)';
+    btn.addEventListener('click', () => { activeTab = v; buildTabs(); render(); });
+    tabEl.appendChild(btn);
+  };
+  addBtn('all','All Versions',null);
+  for (const [vk, cfg] of Object.entries(vers)) addBtn(vk, cfg.label, cfg.color);
+}
+
+function renderCards(rows) {
+  const cardEl = document.getElementById('cards');
+  const vers = INSTRUMENTS[activeSym].versions;
+  if (activeTab === 'all') {
+    cardEl.innerHTML = Object.entries(vers).filter(([v])=>loaded[activeSym][v]?.length).map(([v,cfg])=>{
+      const m = calcMetrics(loaded[activeSym][v]);
+      return `<div class="card" style="border-top:2px solid ${cfg.color}">
+        <div class="label">${cfg.label}</div>
+        <div class="value ${clsVal(m.netPnl)}">${fmtPct(m.netPnlPct)}</div>
+        <div class="sub">WR ${m.winRate.toFixed(1)}% · PF ${m.pf===Infinity?'∞':m.pf.toFixed(2)} · ${m.n} trades</div>
+      </div>`;
+    }).join('');
+    return;
+  }
+  const m = calcMetrics(rows);
+  if (!m) { cardEl.innerHTML=''; return; }
+  cardEl.innerHTML = `
+    <div class="card"><div class="label">Total Trades</div><div class="value neutral">${m.n}</div><div class="sub">${m.longs}L / ${m.shorts}S</div></div>
+    <div class="card"><div class="label">Win Rate</div><div class="value ${m.winRate>=60?'positive':m.winRate>=50?'neutral':'negative'}">${m.winRate.toFixed(1)}%</div><div class="sub">${m.tpCount} TP · ${m.slCount} SL · ${m.trailCount} Trail${m.mbCount?' · '+m.mbCount+' MB':''}</div></div>
+    <div class="card"><div class="label">Net P&L</div><div class="value ${clsVal(m.netPnl)}">${fmt$(m.netPnl)}</div><div class="sub">${fmtPct(m.netPnlPct)} on $${INITIAL_CAPITAL.toLocaleString()}</div></div>
+    <div class="card"><div class="label">Profit Factor</div><div class="value ${m.pf>=2?'positive':m.pf>=1?'neutral':'negative'}">${m.pf===Infinity?'∞':m.pf.toFixed(3)}</div><div class="sub">Gross Win / Gross Loss</div></div>
+    <div class="card"><div class="label">Max Drawdown</div><div class="value ${m.maxDD<5?'positive':m.maxDD<15?'neutral':'negative'}">-${m.maxDD.toFixed(2)}%</div><div class="sub">Peak-to-trough</div></div>
+    <div class="card"><div class="label">Final Equity</div><div class="value ${clsVal(m.finalEquity-INITIAL_CAPITAL)}">$${m.finalEquity.toFixed(2)}</div><div class="sub">Started $${INITIAL_CAPITAL.toLocaleString()}</div></div>`;
+}
+
+function renderEquityChart(rows) {
   destroyChart('equity');
   const ctx = document.getElementById('equityChart').getContext('2d');
   const legendEl = document.getElementById('equityLegend');
   legendEl.innerHTML = '';
-
-  let datasets;
-  if (ver === 'all') {
-    datasets = ['v1','v2','v3','v4'].filter(v => data[v]?.length).map(v => {
-      const cfg = VERSIONS[v];
-      const pts = data[v].map(r => ({ x: new Date(r.entry_time.replace(' ','T')), y: r.equity }));
+  const vers = INSTRUMENTS[activeSym].versions;
+  let datasets = [];
+  if (activeTab === 'all') {
+    for (const [v,cfg] of Object.entries(vers)) {
+      const r = loaded[activeSym][v];
+      if (!r?.length) continue;
+      const pts = r.map(t=>({ x:new Date(t.entry_time.replace(' ','T')), y:t.equity }));
       legendEl.innerHTML += `<div class="legend-item"><div class="dot" style="background:${cfg.color}"></div>${cfg.label}</div>`;
-      return { label: cfg.label, data: pts, borderColor: cfg.color, backgroundColor: 'transparent', borderWidth: 2, pointRadius: 3, tension: 0.1 };
-    });
-  } else {
-    const cfg = VERSIONS[ver];
-    const pts = rows.map(r => ({ x: new Date(r.entry_time.replace(' ','T')), y: r.equity }));
-    const grad = ctx.createLinearGradient(0, 0, 0, 300);
-    grad.addColorStop(0, cfg.color + '33');
-    grad.addColorStop(1, 'transparent');
-    datasets = [{ label: cfg.label, data: pts, borderColor: cfg.color, backgroundColor: grad, borderWidth: 2, fill: true, pointRadius: 3, tension: 0.1 }];
-    legendEl.innerHTML = `<div class="legend-item"><div class="dot" style="background:${cfg.color}"></div>${cfg.label}</div>`;
-  }
-
-  // Add baseline
-  const allPts = datasets.flatMap(d => d.data);
-  const minDate = allPts.reduce((a,b) => a.x < b.x ? a : b, allPts[0]);
-  const maxDate = allPts.reduce((a,b) => a.x > b.x ? a : b, allPts[0]);
-  datasets.push({ label: 'Baseline', data: [{ x: minDate.x, y: INITIAL_CAPITAL }, { x: maxDate.x, y: INITIAL_CAPITAL }], borderColor: '#30363d', borderWidth: 1, borderDash: [4,4], pointRadius: 0 });
-
-  charts.equity = new Chart(ctx, {
-    type: 'line',
-    data: { datasets },
-    options: {
-      animation: false,
-      responsive: true, maintainAspectRatio: true,
-      interaction: { mode: 'nearest', intersect: false },
-      scales: {
-        x: { type: 'time', time: { unit: 'month' }, grid: { color: '#21262d' }, ticks: { color: '#8b949e' } },
-        y: { grid: { color: '#21262d' }, ticks: { color: '#8b949e', callback: v => '$'+v.toLocaleString() } }
-      },
-      plugins: { legend: { display: false }, tooltip: { callbacks: {
-        label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.y.toFixed(2)}`
-      }}}
+      datasets.push({ label:cfg.label, data:pts, borderColor:cfg.color, backgroundColor:'transparent', borderWidth:2, pointRadius:3, tension:0.1 });
     }
+  } else {
+    const cfg = vers[activeTab];
+    const pts = rows.map(r=>({ x:new Date(r.entry_time.replace(' ','T')), y:r.equity }));
+    const grad = ctx.createLinearGradient(0,0,0,300);
+    grad.addColorStop(0, cfg.color+'33'); grad.addColorStop(1,'transparent');
+    legendEl.innerHTML = `<div class="legend-item"><div class="dot" style="background:${cfg.color}"></div>${cfg.label}</div>`;
+    datasets.push({ label:cfg.label, data:pts, borderColor:cfg.color, backgroundColor:grad, borderWidth:2, fill:true, pointRadius:3, tension:0.1 });
+  }
+  const allPts = datasets.flatMap(d=>d.data);
+  if (allPts.length) {
+    const minX = allPts.reduce((a,b)=>a.x<b.x?a:b,allPts[0]).x;
+    const maxX = allPts.reduce((a,b)=>a.x>b.x?a:b,allPts[0]).x;
+    datasets.push({ label:'Baseline', data:[{x:minX,y:INITIAL_CAPITAL},{x:maxX,y:INITIAL_CAPITAL}], borderColor:'#30363d', borderWidth:1, borderDash:[4,4], pointRadius:0 });
+  }
+  charts.equity = new Chart(ctx, {
+    type:'line', data:{ datasets },
+    options:{ animation:false, responsive:true, maintainAspectRatio:true,
+      interaction:{ mode:'nearest', intersect:false },
+      scales:{ x:{type:'time',time:{unit:'month'},grid:{color:'#21262d'},ticks:{color:'#8b949e'}}, y:{grid:{color:'#21262d'},ticks:{color:'#8b949e',callback:v=>'$'+v.toLocaleString()}} },
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:c=>` ${c.dataset.label}: $${c.parsed.y.toFixed(2)}` } } } }
   });
 }
 
-function renderOutcomeChart(rows, ver) {
+function renderOutcomeChart(rows) {
   destroyChart('outcome');
   const ctx = document.getElementById('outcomeChart').getContext('2d');
   const legendEl = document.getElementById('outcomeLegend');
-
-  let allRows = ver === 'all' ? Object.values(data).flat() : rows;
-  const tp = allRows.filter(r => r.result === 'TP').length;
-  const sl = allRows.filter(r => r.result === 'SL').length;
-  const trail = allRows.filter(r => r.result === 'TRAIL' || r.result === 'TRAILING').length;
-  const other = allRows.length - tp - sl - trail;
-
-  const labels = ['TP', 'SL', 'Trail'];
-  const vals = [tp, sl, trail];
-  if (other > 0) { labels.push('Other'); vals.push(other); }
-
-  legendEl.innerHTML = labels.map((l, i) => `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)"><span style="color:var(--muted)">${l}</span><span style="font-weight:600">${vals[i]}</span></div>`).join('');
-
+  const all = activeTab==='all' ? Object.values(loaded[activeSym]).flat() : rows;
+  const tp=all.filter(r=>r.result==='TP').length, sl=all.filter(r=>r.result==='SL').length;
+  const trail=all.filter(r=>r.result==='TRAIL'||r.result==='TRAILING').length, mb=all.filter(r=>r.result==='MB').length;
+  const other=all.length-tp-sl-trail-mb;
+  const labels=['TP','SL','Trail'], vals=[tp,sl,trail], colors=['#3fb950','#f85149','#ffa657'];
+  if (mb>0)    { labels.push('MB');    vals.push(mb);    colors.push('#d29922'); }
+  if (other>0) { labels.push('Other'); vals.push(other); colors.push('#8b949e'); }
+  legendEl.innerHTML = labels.map((l,i)=>`<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)"><span style="color:${colors[i]}">${l}</span><span style="font-weight:600">${vals[i]}</span></div>`).join('');
   charts.outcome = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels,
-      datasets: [{ data: vals, backgroundColor: ['#3fb95066','#f8514966','#ffa65766','#8b949e66'], borderColor: ['#3fb950','#f85149','#ffa657','#8b949e'], borderWidth: 1.5 }]
-    },
-    options: {
-      animation: false, responsive: true, cutout: '65%',
-      plugins: { legend: { display: false }, tooltip: { callbacks: {
-        label: ctx => ` ${ctx.label}: ${ctx.parsed} (${(ctx.parsed/allRows.length*100).toFixed(0)}%)`
-      }}}
-    }
+    type:'doughnut', data:{ labels, datasets:[{ data:vals, backgroundColor:colors.map(c=>c+'44'), borderColor:colors, borderWidth:1.5 }] },
+    options:{ animation:false, responsive:true, cutout:'65%', plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:c=>` ${c.label}: ${c.parsed} (${all.length?Math.round(c.parsed/all.length*100):0}%)` } } } }
   });
 }
 
-function renderDirectionChart(rows, ver) {
+function renderDirectionChart(rows) {
   destroyChart('direction');
   const ctx = document.getElementById('directionChart').getContext('2d');
-  const sources = ver === 'all' ? ['v1','v2','v3','v4'].filter(v => data[v]?.length) : [ver];
-
-  if (ver !== 'all') {
-    const m = calcMetrics(rows);
-    if (!m) return;
+  const vers = INSTRUMENTS[activeSym].versions;
+  if (activeTab !== 'all') {
+    document.getElementById('dirChartTitle').textContent = 'P&L by Direction';
+    const m = calcMetrics(rows); if (!m) return;
     charts.direction = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: ['Longs', 'Shorts'],
-        datasets: [
-          { label: 'Win Rate %', data: [m.longWR, m.shortWR], backgroundColor: ['#58a6ff66','#bc8cff66'], borderColor: ['#58a6ff','#bc8cff'], borderWidth: 1.5, yAxisID: 'wr' },
-          { label: 'Net P&L $', data: [m.longPnl, m.shortPnl], backgroundColor: ['#3fb95044','#ffa65744'], borderColor: ['#3fb950','#ffa657'], borderWidth: 1.5, yAxisID: 'pnl', type: 'bar' },
-        ]
-      },
-      options: {
-        animation: false, responsive: true,
-        scales: {
-          wr:  { type: 'linear', position: 'left',  grid: { color: '#21262d' }, ticks: { color: '#8b949e', callback: v => v+'%' } },
-          pnl: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#8b949e', callback: v => '$'+v.toFixed(0) } },
-          x: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } }
-        },
-        plugins: { legend: { labels: { color: '#8b949e', font: { size: 11 } } } }
-      }
+      type:'bar', data:{ labels:['Longs','Shorts'], datasets:[
+        { label:'Win Rate %', data:[m.longWR,m.shortWR], backgroundColor:['#58a6ff44','#bc8cff44'], borderColor:['#58a6ff','#bc8cff'], borderWidth:1.5, yAxisID:'wr' },
+        { label:'Net P&L $',  data:[m.longPnl,m.shortPnl], backgroundColor:['#3fb95033','#ffa65733'], borderColor:['#3fb950','#ffa657'], borderWidth:1.5, yAxisID:'pnl' },
+      ]},
+      options:{ animation:false, responsive:true, scales:{
+        wr: {type:'linear',position:'left', grid:{color:'#21262d'},ticks:{color:'#8b949e',callback:v=>v.toFixed(0)+'%'}},
+        pnl:{type:'linear',position:'right',grid:{drawOnChartArea:false},ticks:{color:'#8b949e',callback:v=>'$'+v.toFixed(0)}},
+        x:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}}
+      }, plugins:{legend:{labels:{color:'#8b949e',font:{size:11}}}} }
     });
   } else {
-    const labels = sources.map(v => VERSIONS[v].label);
-    const wrData = sources.map(v => calcMetrics(data[v])?.winRate ?? 0);
-    const pnlData = sources.map(v => calcMetrics(data[v])?.netPnl ?? 0);
+    document.getElementById('dirChartTitle').textContent = 'Return by Version';
+    const vkeys=Object.keys(vers).filter(v=>loaded[activeSym][v]?.length);
+    const labels=vkeys.map(v=>vers[v].tf), wrs=vkeys.map(v=>calcMetrics(loaded[activeSym][v])?.winRate??0);
+    const pnls=vkeys.map(v=>calcMetrics(loaded[activeSym][v])?.netPnlPct??0), colors=vkeys.map(v=>vers[v].color);
     charts.direction = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: [
-          { label: 'Win Rate %', data: wrData, backgroundColor: sources.map(v => VERSIONS[v].color+'44'), borderColor: sources.map(v => VERSIONS[v].color), borderWidth: 1.5, yAxisID: 'wr' },
-          { label: 'Net P&L $', data: pnlData, backgroundColor: sources.map(v => VERSIONS[v].color+'22'), borderColor: sources.map(v => VERSIONS[v].color), borderWidth: 1, borderDash: [4,4], yAxisID: 'pnl' },
-        ]
-      },
-      options: {
-        animation: false, responsive: true,
-        scales: {
-          wr:  { type: 'linear', position: 'left',  grid: { color: '#21262d' }, ticks: { color: '#8b949e', callback: v => v.toFixed(0)+'%' } },
-          pnl: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#8b949e', callback: v => '$'+v.toFixed(0) } },
-          x: { ticks: { color: '#8b949e', maxRotation: 30 }, grid: { color: '#21262d' } }
-        },
-        plugins: { legend: { labels: { color: '#8b949e', font: { size: 11 } } } }
-      }
+      type:'bar', data:{ labels, datasets:[
+        { label:'Win Rate %', data:wrs,  backgroundColor:colors.map(c=>c+'44'), borderColor:colors, borderWidth:1.5, yAxisID:'wr' },
+        { label:'Return %',   data:pnls, backgroundColor:pnls.map(v=>v>=0?'#3fb95022':'#f8514922'), borderColor:pnls.map(v=>v>=0?'#3fb950':'#f85149'), borderWidth:1.5, yAxisID:'pnl' },
+      ]},
+      options:{ animation:false, responsive:true, scales:{
+        wr: {type:'linear',position:'left', grid:{color:'#21262d'},ticks:{color:'#8b949e',callback:v=>v.toFixed(0)+'%'}},
+        pnl:{type:'linear',position:'right',grid:{drawOnChartArea:false},ticks:{color:'#8b949e',callback:v=>v.toFixed(1)+'%'}},
+        x:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}}
+      }, plugins:{legend:{labels:{color:'#8b949e',font:{size:11}}}} }
     });
   }
 }
 
-function renderMonthlyChart(rows, ver) {
+function renderMonthlyChart(rows) {
   destroyChart('monthly');
-  const ctx = document.getElementById('monthlyChart').getContext('2d');
-  const sources = ver === 'all' ? Object.values(data).flat() : rows;
-
-  const monthly = {};
-  for (const r of sources) {
+  const ctx=document.getElementById('monthlyChart').getContext('2d');
+  const src=activeTab==='all'?Object.values(loaded[activeSym]).flat():rows;
+  const monthly={};
+  for (const r of src) {
     if (!r.entry_time) continue;
-    const d = new Date(r.entry_time.replace(' ','T'));
-    if (isNaN(d)) continue;
-    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-    monthly[key] = (monthly[key] || 0) + r.dollar_pnl;
+    const d=new Date(r.entry_time.replace(' ','T')); if (isNaN(d)) continue;
+    const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    monthly[key]=(monthly[key]||0)+r.dollar_pnl;
   }
-  const sorted = Object.keys(monthly).sort();
-  const vals = sorted.map(k => monthly[k]);
-
+  const sorted=Object.keys(monthly).sort(), vals=sorted.map(k=>monthly[k]);
   charts.monthly = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: sorted,
-      datasets: [{ label: 'Monthly P&L ($)', data: vals,
-        backgroundColor: vals.map(v => v >= 0 ? '#3fb95066' : '#f8514966'),
-        borderColor: vals.map(v => v >= 0 ? '#3fb950' : '#f85149'),
-        borderWidth: 1.5 }]
-    },
-    options: {
-      animation: false, responsive: true,
-      scales: {
-        x: { ticks: { color: '#8b949e', maxRotation: 45, font: { size: 10 } }, grid: { color: '#21262d' } },
-        y: { grid: { color: '#21262d' }, ticks: { color: '#8b949e', callback: v => '$'+v.toFixed(0) } }
-      },
-      plugins: { legend: { display: false } }
-    }
+    type:'bar', data:{ labels:sorted, datasets:[{ label:'Monthly P&L ($)', data:vals,
+      backgroundColor:vals.map(v=>v>=0?'#3fb95066':'#f8514966'), borderColor:vals.map(v=>v>=0?'#3fb950':'#f85149'), borderWidth:1.5 }] },
+    options:{ animation:false, responsive:true, scales:{
+      x:{ticks:{color:'#8b949e',maxRotation:45,font:{size:10}},grid:{color:'#21262d'}},
+      y:{grid:{color:'#21262d'},ticks:{color:'#8b949e',callback:v=>'$'+v.toFixed(0)}}
+    }, plugins:{legend:{display:false}} }
   });
 }
 
 function renderYearChart() {
   destroyChart('year');
-  const rows = data.v4;
-  if (!rows) return;
-  const years = {};
+  const vers=INSTRUMENTS[activeSym].versions;
+  const verKey=activeTab!=='all'
+    ?(vers[activeTab]?.hasYear?activeTab:null)
+    :Object.keys(vers).find(v=>vers[v].hasYear&&loaded[activeSym][v]?.length);
+  if (!verKey) return;
+  const rows=loaded[activeSym][verKey], cfg=vers[verKey];
+  document.getElementById('yearChartTitle').textContent=`Year-by-Year · ${cfg.label}`;
+  const years={};
   for (const r of rows) {
-    const y = r.year || new Date(r.entry_time).getFullYear();
-    if (!years[y]) years[y] = { pnl: 0, n: 0, wins: 0 };
-    years[y].pnl += r.dollar_pnl;
-    years[y].n++;
-    if (r.dollar_pnl > 0) years[y].wins++;
+    const y=r.year||new Date(r.entry_time.replace(' ','T')).getFullYear();
+    if (!years[y]) years[y]={pnl:0,n:0,wins:0};
+    years[y].pnl+=r.dollar_pnl; years[y].n++;
+    if (r.dollar_pnl>0) years[y].wins++;
   }
-  const sorted = Object.keys(years).sort();
-  const pnls = sorted.map(y => years[y].pnl);
-  const wrs = sorted.map(y => years[y].wins / years[y].n * 100);
-
-  const ctx = document.getElementById('yearChart').getContext('2d');
+  const sorted=Object.keys(years).sort(), pnls=sorted.map(y=>years[y].pnl), wrs=sorted.map(y=>years[y].wins/years[y].n*100);
+  const ctx=document.getElementById('yearChart').getContext('2d');
   charts.year = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: sorted,
-      datasets: [
-        { label: 'Net P&L ($)', data: pnls, backgroundColor: pnls.map(v => v>=0?'#bc8cff66':'#f8514966'), borderColor: pnls.map(v => v>=0?'#bc8cff':'#f85149'), borderWidth: 1.5, yAxisID: 'pnl' },
-        { label: 'Win Rate %', data: wrs, backgroundColor: 'transparent', borderColor: '#ffa657', borderWidth: 2, type: 'line', yAxisID: 'wr', pointRadius: 5 },
-      ]
-    },
-    options: {
-      animation: false, responsive: true,
-      scales: {
-        pnl: { type: 'linear', position: 'left', grid: { color: '#21262d' }, ticks: { color: '#8b949e', callback: v => '$'+v.toFixed(0) } },
-        wr:  { type: 'linear', position: 'right', min: 0, max: 100, grid: { drawOnChartArea: false }, ticks: { color: '#8b949e', callback: v => v+'%' } },
-        x: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } }
-      },
-      plugins: { legend: { labels: { color: '#8b949e', font: { size: 11 } } } }
-    }
+    type:'bar', data:{ labels:sorted, datasets:[
+      { label:'Net P&L ($)', data:pnls, backgroundColor:pnls.map(v=>v>=0?cfg.color+'55':'#f8514966'), borderColor:pnls.map(v=>v>=0?cfg.color:'#f85149'), borderWidth:1.5, yAxisID:'pnl' },
+      { label:'Win Rate %',  data:wrs, backgroundColor:'transparent', borderColor:'#ffa657', borderWidth:2, type:'line', yAxisID:'wr', pointRadius:5 },
+    ]},
+    options:{ animation:false, responsive:true, scales:{
+      pnl:{type:'linear',position:'left', grid:{color:'#21262d'},ticks:{color:'#8b949e',callback:v=>'$'+v.toFixed(0)}},
+      wr: {type:'linear',position:'right',min:0,max:100,grid:{drawOnChartArea:false},ticks:{color:'#8b949e',callback:v=>v+'%'}},
+      x:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}}
+    }, plugins:{legend:{labels:{color:'#8b949e',font:{size:11}}}} }
   });
 }
 
-function renderTradeTable(rows, ver) {
-  const wrap = document.getElementById('tradeTableWrap');
-  if (!rows || !rows.length) { wrap.innerHTML = '<div class="empty">No data</div>'; return; }
-
-  const showVer = ver === 'all';
-  wrap.innerHTML = `<table>
-    <thead><tr>
-      ${showVer ? '<th>Version</th>' : ''}
-      <th>Entry Time</th>
-      <th>Exit Time</th>
-      <th>Dir</th>
-      <th>Entry $</th>
-      <th>Exit $</th>
-      <th>P&amp;L</th>
-      <th>Result</th>
-      <th>Equity</th>
-    </tr></thead>
-    <tbody>${rows.slice().reverse().map(r => {
-      const pnl = r.dollar_pnl;
-      const pnlClass = pnl > 0 ? 'positive' : 'negative';
-      const resTag = r.result === 'TP' ? 'tag-tp' : r.result === 'SL' ? 'tag-sl' : 'tag-trail';
-      const dirTag = r.direction === 'long' ? 'tag-long' : 'tag-short';
-      const cfg = VERSIONS[r.version];
-      return `<tr>
-        ${showVer ? `<td><span class="pill pill-${r.version}">${cfg.tf}</span></td>` : ''}
-        <td>${fmtDate(r.entry_time)}</td>
-        <td>${fmtDate(r.exit_time)}</td>
-        <td><span class="tag ${dirTag}">${r.direction || '—'}</span></td>
-        <td>$${r.entry_price?.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) ?? '—'}</td>
-        <td>$${r.exit_price?.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) ?? '—'}</td>
-        <td class="${pnlClass}">${fmt$(pnl)}</td>
-        <td><span class="tag ${resTag}">${r.result}</span></td>
-        <td>$${r.equity?.toFixed(2)}</td>
-      </tr>`;
-    }).join('')}</tbody>
-  </table>`;
+function renderTradeTable(rows) {
+  const wrap=document.getElementById('tradeTableWrap');
+  if (!rows?.length) { wrap.innerHTML='<div class="empty">No data</div>'; return; }
+  const showVer=activeTab==='all';
+  const vers=INSTRUMENTS[activeSym].versions;
+  wrap.innerHTML=`<table><thead><tr>
+    ${showVer?'<th>Ver</th>':''}
+    <th>Entry</th><th>Exit</th><th>Dir</th><th>Entry $</th><th>Exit $</th><th>P&L</th><th>Result</th><th>Equity</th>
+  </tr></thead><tbody>${rows.slice().reverse().map(r=>{
+    const dirTag=r.direction==='long'?'tag-long':'tag-short';
+    const cfg=vers[r.version];
+    const ep=r.entry_price<100?'$'+r.entry_price?.toFixed(4):'$'+r.entry_price?.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    const xp=r.exit_price<100?'$'+r.exit_price?.toFixed(4):'$'+r.exit_price?.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    return `<tr>
+      ${showVer?`<td><span class="pill" style="background:${cfg.color}22;color:${cfg.color};border-color:${cfg.color}">${cfg.tf}</span></td>`:''}
+      <td>${fmtDate(r.entry_time)}</td><td>${fmtDate(r.exit_time)}</td>
+      <td><span class="tag ${dirTag}">${r.direction||'—'}</span></td>
+      <td>${ep}</td><td>${xp}</td>
+      <td class="${clsVal(r.dollar_pnl)}">${fmt$(r.dollar_pnl)}</td>
+      <td>${resultTag(r.result)}</td>
+      <td>$${r.equity?.toFixed(2)}</td>
+    </tr>`;
+  }).join('')}</tbody></table>`;
 }
 
 function renderComparisonTable() {
-  const el = document.getElementById('cmpTable');
-  const vkeys = ['v1','v2','v3','v4'].filter(v => data[v]?.length);
-  const metrics = vkeys.map(v => ({ v, m: calcMetrics(data[v]), cfg: VERSIONS[v] }));
-
-  const rows = [
-    ['Timeframe',    m => m.cfg.tf],
-    ['Trades',       m => m.m.n],
-    ['Win Rate',     m => m.m.winRate.toFixed(1) + '%'],
-    ['Net P&L',      m => fmt$(m.m.netPnl)],
-    ['Net Return',   m => fmtPct(m.m.netPnlPct)],
-    ['Profit Factor',m => m.m.pf===Infinity ? '∞' : m.m.pf.toFixed(3)],
-    ['Max Drawdown', m => '-' + m.m.maxDD.toFixed(2) + '%'],
-    ['Avg Win',      m => fmt$(m.m.avgWin)],
-    ['Avg Loss',     m => fmt$(m.m.avgLoss)],
-    ['Longs',        m => m.m.longs],
-    ['Shorts',       m => m.m.shorts],
-    ['TP Exits',     m => m.m.tpCount],
-    ['SL Exits',     m => m.m.slCount],
-    ['Trail Exits',  m => m.m.trailCount],
+  const el=document.getElementById('cmpTable');
+  const vers=INSTRUMENTS[activeSym].versions;
+  const vkeys=Object.keys(vers).filter(v=>loaded[activeSym][v]?.length);
+  const items=vkeys.map(v=>({ v, m:calcMetrics(loaded[activeSym][v]), cfg:vers[v] }));
+  if (!items.length) { el.innerHTML=''; return; }
+  const rows=[
+    ['Timeframe',       m=>m.cfg.tf],
+    ['Trades',          m=>m.m.n],
+    ['Win Rate',        m=>m.m.winRate.toFixed(1)+'%'],
+    ['Net P&L',         m=>fmt$(m.m.netPnl)],
+    ['Net Return',      m=>fmtPct(m.m.netPnlPct)],
+    ['Profit Factor',   m=>m.m.pf===Infinity?'∞':m.m.pf.toFixed(3)],
+    ['Max Drawdown',    m=>'-'+m.m.maxDD.toFixed(2)+'%'],
+    ['Avg Win',         m=>fmt$(m.m.avgWin)],
+    ['Avg Loss',        m=>fmt$(m.m.avgLoss)],
+    ['Longs / Shorts',  m=>`${m.m.longs} / ${m.m.shorts}`],
+    ['TP / SL / Trail', m=>`${m.m.tpCount} / ${m.m.slCount} / ${m.m.trailCount}`],
   ];
-
-  el.innerHTML = `<thead><tr>
-    <th>Metric</th>
-    ${metrics.map(m => `<th><span class="pill pill-${m.v}">${m.cfg.label}</span></th>`).join('')}
-  </tr></thead>
-  <tbody>${rows.map(([label, fn]) => `<tr>
-    <td>${label}</td>
-    ${metrics.map(m => `<td class="${m.v}">${fn(m)}</td>`).join('')}
-  </tr>`).join('')}</tbody>`;
+  el.innerHTML=`<thead><tr><th>Metric</th>${items.map(i=>`<th><span class="pill" style="background:${i.cfg.color}22;color:${i.cfg.color};border-color:${i.cfg.color}">${i.cfg.label}</span></th>`).join('')}</tr></thead>
+  <tbody>${rows.map(([label,fn])=>`<tr><td>${label}</td>${items.map(i=>`<td>${fn(i)}</td>`).join('')}</tr>`).join('')}</tbody>`;
 }
 
-// ─── Tab Switching ───────────────────────────────────────────────────────────
-function render(ver) {
-  const rows = ver === 'all' ? Object.values(data).flat() : (data[ver] || []);
-  renderCards(rows, ver);
-  renderEquityChart(rows, ver);
-  renderOutcomeChart(rows, ver);
-  renderDirectionChart(rows, ver);
-  renderMonthlyChart(rows, ver);
-
-  // Year chart visible only on v4 or all tab when v4 data present
-  const yearSection = document.getElementById('yearSection');
-  if ((ver === 'v4' || ver === 'all') && data.v4?.length) {
-    yearSection.style.display = '';
-    renderYearChart();
-  } else {
-    yearSection.style.display = 'none';
-  }
-
-  renderTradeTable(rows, ver);
+function render() {
+  const vers=INSTRUMENTS[activeSym].versions;
+  const rows=activeTab==='all'?Object.values(loaded[activeSym]).flat():(loaded[activeSym][activeTab]||[]);
+  renderCards(rows);
+  renderEquityChart(rows);
+  renderOutcomeChart(rows);
+  renderDirectionChart(rows);
+  renderMonthlyChart(rows);
+  const has1D=activeTab!=='all'
+    ?(vers[activeTab]?.hasYear&&rows.length>0)
+    :Object.keys(vers).some(v=>vers[v].hasYear&&loaded[activeSym][v]?.length);
+  const yearSection=document.getElementById('yearSection');
+  if (has1D) { yearSection.style.display=''; renderYearChart(); }
+  else        { yearSection.style.display='none'; destroyChart('year'); }
+  renderTradeTable(rows);
   renderComparisonTable();
 }
 
-document.querySelectorAll('.tab').forEach(btn => {
+document.querySelectorAll('.sym-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+    if (btn.dataset.sym===activeSym) return;
+    document.querySelectorAll('.sym-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
-    activeTab = btn.dataset.v;
-    render(activeTab);
+    activeSym=btn.dataset.sym; activeTab='all';
+    const vers=INSTRUMENTS[activeSym].versions;
+    const toLoad=Object.keys(vers).filter(v=>!loaded[activeSym][v]);
+    if (toLoad.length) {
+      Promise.all(toLoad.map(v=>loadCSV(activeSym,v).then(r=>{ loaded[activeSym][v]=r; }))).then(()=>{ buildTabs(); render(); });
+    } else { buildTabs(); render(); }
   });
 });
 
-// ─── Boot ────────────────────────────────────────────────────────────────────
 (async () => {
-  const results = await Promise.allSettled(
-    Object.keys(VERSIONS).map(v => parseCSV(v).then(rows => { data[v] = normalise(rows, v); }))
-  );
-
-  document.getElementById('lastUpdated').textContent = 'Updated ' + new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-
-  render('all');
+  await Promise.all(Object.keys(INSTRUMENTS.btc.versions).map(v=>loadCSV('btc',v).then(r=>{ loaded.btc[v]=r; })));
+  document.getElementById('lastUpdated').textContent='Updated '+new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  buildTabs(); render();
 })();
 </script>
 </body>

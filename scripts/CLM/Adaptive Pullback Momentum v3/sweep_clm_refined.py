@@ -1,4 +1,4 @@
-# APM v1  —  CLM refined sweep  (session filter + tighter grid)  15m ONLY
+# APM v3  —  CLM refined sweep  (session filter + tighter grid)  15m ONLY
 # ─────────────────────────────────────────────────────────────────────────────
 import subprocess, sys
 for pkg in ["yfinance", "pandas", "numpy", "pytz"]:

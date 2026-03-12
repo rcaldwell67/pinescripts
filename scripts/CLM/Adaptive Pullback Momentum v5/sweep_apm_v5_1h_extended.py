@@ -1,5 +1,5 @@
 """
-Extended sweep — APM v3 @ 1h CLM
+Extended sweep — APM v5 @ 1h CLM
 Continuation from Phase 1-8 sweep optimal:
   ADX=30, SL×2.5, TP×2.0, Trail OFF, Vol×1.2, Body×0.10
   EMA slope OFF, ATR floor 0%, RSI L:40-70 / S:30-60, Longs+Shorts

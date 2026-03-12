@@ -1,4 +1,4 @@
-APM v4.1 | LONG ENTRY | CLM [1D]
+APM v6.1 | LONG ENTRY | CLM [1D]
 Entry   : 1.38  |  Equity: $10000.00
 Stop    : 1.34  (-0.04 = ATR x1.5)
 Target  : 1.48  (+0.10 = ATR x3.5)
@@ -13,7 +13,7 @@ EMA21/50/200: 1.33/1.31/1.30  Stack: BULL
 Trail on: +2.93 (ATR x99.0)  Dist: 0.01 (ATR x0.5)
 Time    : 2002-11-21 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG EXIT [LOSS] | CLM [1D]
+APM v6.1 | LONG EXIT [LOSS] | CLM [1D]
 Entry   : 1.38  ->  Exit: 1.34
 Move    : -3.21%
 P&L     : -103.68 USD
@@ -24,7 +24,7 @@ Equity  : $9896.32
 Trades  : 1  |  Win rate: 0.0%
 Time    : 2002-11-25 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG ENTRY | CLM [1D]
+APM v6.1 | LONG ENTRY | CLM [1D]
 Entry   : 1.97  |  Equity: $9896.32
 Stop    : 1.91  (-0.06 = ATR x1.5)
 Target  : 2.10  (+0.13 = ATR x3.5)
@@ -39,7 +39,7 @@ EMA21/50/200: 1.88/1.85/1.56  Stack: BULL
 Trail on: +3.71 (ATR x99.0)  Dist: 0.02 (ATR x0.5)
 Time    : 2003-07-25 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG EXIT [LOSS] | CLM [1D]
+APM v6.1 | LONG EXIT [LOSS] | CLM [1D]
 Entry   : 1.97  ->  Exit: 1.91
 Move    : -2.85%
 P&L     : -103.07 USD
@@ -50,7 +50,7 @@ Equity  : $9793.26
 Trades  : 2  |  Win rate: 0.0%
 Time    : 2003-08-04 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG ENTRY | CLM [1D]
+APM v6.1 | LONG ENTRY | CLM [1D]
 Entry   : 1.94  |  Equity: $9793.26
 Stop    : 1.87  (-0.07 = ATR x1.5)
 Target  : 2.09  (+0.15 = ATR x3.5)
@@ -65,7 +65,7 @@ EMA21/50/200: 1.92/1.88/1.59  Stack: BULL
 Trail on: +4.32 (ATR x99.0)  Dist: 0.02 (ATR x0.5)
 Time    : 2003-08-06 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG EXIT [WIN] | CLM [1D]
+APM v6.1 | LONG EXIT [WIN] | CLM [1D]
 Entry   : 1.94  ->  Exit: 1.94
 Move    : +0.33%
 P&L     : +6.13 USD
@@ -76,7 +76,7 @@ Equity  : $9799.39
 Trades  : 3  |  Win rate: 33.3%
 Time    : 2003-09-11 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG ENTRY | CLM [1D]
+APM v6.1 | LONG ENTRY | CLM [1D]
 Entry   : 2.62  |  Equity: $9799.39
 Stop    : 2.58  (-0.03 = ATR x1.5)
 Target  : 2.69  (+0.08 = ATR x3.5)
@@ -91,7 +91,7 @@ EMA21/50/200: 2.57/2.56/2.46  Stack: BULL
 Trail on: +2.21 (ATR x99.0)  Dist: 0.01 (ATR x0.5)
 Time    : 2004-12-09 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG EXIT [WIN] | CLM [1D]
+APM v6.1 | LONG EXIT [WIN] | CLM [1D]
 Entry   : 2.62  ->  Exit: 2.69
 Move    : +2.98%
 P&L     : +219.31 USD
@@ -102,7 +102,7 @@ Equity  : $10018.70
 Trades  : 4  |  Win rate: 50.0%
 Time    : 2005-01-06 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG ENTRY | CLM [1D]
+APM v6.1 | LONG ENTRY | CLM [1D]
 Entry   : 2.74  |  Equity: $10018.70
 Stop    : 2.68  (-0.05 = ATR x1.5)
 Target  : 2.85  (+0.12 = ATR x3.5)
@@ -117,13 +117,13 @@ EMA21/50/200: 2.67/2.65/2.50  Stack: BULL
 Trail on: +3.38 (ATR x99.0)  Dist: 0.02 (ATR x0.5)
 Time    : 2005-01-14 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME STARTED | CLM [1D]
+APM v6.1 | PANIC REGIME STARTED | CLM [1D]
 ATR     : 0.07  |  ATR baseline: 0.03
 Ratio   : 2.43x  [threshold: 2.0x]
 Status  : New entries SUSPENDED
 Time    : 2005-02-16 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG EXIT [LOSS] | CLM [1D]
+APM v6.1 | LONG EXIT [LOSS] | CLM [1D]
 Entry   : 2.74  ->  Exit: 2.68
 Move    : -1.87%
 P&L     : -106.56 USD
@@ -134,13 +134,13 @@ Equity  : $9912.14
 Trades  : 5  |  Win rate: 40.0%
 Time    : 2005-02-16 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME CLEARED | CLM [1D]
+APM v6.1 | PANIC REGIME CLEARED | CLM [1D]
 ATR     : 0.07  |  ATR baseline: 0.03
 Ratio   : 1.98x  [threshold: 2.0x]
 Status  : New entries RESUMED
 Time    : 2005-03-02 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG ENTRY | CLM [1D]
+APM v6.1 | LONG ENTRY | CLM [1D]
 Entry   : 2.42  |  Equity: $9912.14
 Stop    : 2.35  (-0.07 = ATR x1.5)
 Target  : 2.59  (+0.17 = ATR x3.5)
@@ -155,7 +155,7 @@ EMA21/50/200: 2.37/2.33/2.36  Stack: BULL
 Trail on: +4.72 (ATR x99.0)  Dist: 0.02 (ATR x0.5)
 Time    : 2005-07-08 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG EXIT [WIN] | CLM [1D]
+APM v6.1 | LONG EXIT [WIN] | CLM [1D]
 Entry   : 2.42  ->  Exit: 2.52
 Move    : +4.08%
 P&L     : +132.68 USD
@@ -166,19 +166,19 @@ Equity  : $10044.83
 Trades  : 6  |  Win rate: 50.0%
 Time    : 2005-08-12 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME STARTED | CLM [1D]
+APM v6.1 | PANIC REGIME STARTED | CLM [1D]
 ATR     : 0.08  |  ATR baseline: 0.04
 Ratio   : 2.11x  [threshold: 2.0x]
 Status  : New entries SUSPENDED
 Time    : 2005-10-10 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME CLEARED | CLM [1D]
+APM v6.1 | PANIC REGIME CLEARED | CLM [1D]
 ATR     : 0.10  |  ATR baseline: 0.05
 Ratio   : 1.87x  [threshold: 2.0x]
 Status  : New entries RESUMED
 Time    : 2005-10-25 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG ENTRY | CLM [1D]
+APM v6.1 | LONG ENTRY | CLM [1D]
 Entry   : 2.67  |  Equity: $10044.83
 Stop    : 2.63  (-0.04 = ATR x1.5)
 Target  : 2.76  (+0.09 = ATR x3.5)
@@ -193,7 +193,7 @@ EMA21/50/200: 2.65/2.65/2.58  Stack: BULL
 Trail on: +2.44 (ATR x99.0)  Dist: 0.01 (ATR x0.5)
 Time    : 2006-05-24 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG EXIT [WIN] | CLM [1D]
+APM v6.1 | LONG EXIT [WIN] | CLM [1D]
 Entry   : 2.67  ->  Exit: 2.75
 Move    : +2.94%
 P&L     : +204.58 USD
@@ -204,7 +204,7 @@ Equity  : $10249.41
 Trades  : 7  |  Win rate: 57.1%
 Time    : 2006-06-29 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG ENTRY | CLM [1D]
+APM v6.1 | LONG ENTRY | CLM [1D]
 Entry   : 2.82  |  Equity: $10249.41
 Stop    : 2.77  (-0.05 = ATR x1.5)
 Target  : 2.95  (+0.13 = ATR x3.5)
@@ -219,7 +219,7 @@ EMA21/50/200: 2.77/2.75/2.63  Stack: BULL
 Trail on: +3.58 (ATR x99.0)  Dist: 0.02 (ATR x0.5)
 Time    : 2006-07-17 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG EXIT [WIN] | CLM [1D]
+APM v6.1 | LONG EXIT [WIN] | CLM [1D]
 Entry   : 2.82  ->  Exit: 2.96
 Move    : +4.81%
 P&L     : +249.96 USD
@@ -230,7 +230,7 @@ Equity  : $10499.36
 Trades  : 8  |  Win rate: 62.5%
 Time    : 2006-08-04 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG ENTRY | CLM [1D]
+APM v6.1 | LONG ENTRY | CLM [1D]
 Entry   : 3.16  |  Equity: $10499.36
 Stop    : 3.08  (-0.08 = ATR x1.5)
 Target  : 3.35  (+0.19 = ATR x3.5)
@@ -245,7 +245,7 @@ EMA21/50/200: 3.05/3.00/2.74  Stack: BULL
 Trail on: +5.29 (ATR x99.0)  Dist: 0.03 (ATR x0.5)
 Time    : 2006-09-11 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG EXIT [WIN] | CLM [1D]
+APM v6.1 | LONG EXIT [WIN] | CLM [1D]
 Entry   : 3.16  ->  Exit: 3.35
 Move    : +5.92%
 P&L     : +239.87 USD
@@ -256,31 +256,31 @@ Equity  : $10739.23
 Trades  : 9  |  Win rate: 66.7%
 Time    : 2006-10-13 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME STARTED | CLM [1D]
+APM v6.1 | PANIC REGIME STARTED | CLM [1D]
 ATR     : 0.10  |  ATR baseline: 0.05
 Ratio   : 2.05x  [threshold: 2.0x]
 Status  : New entries SUSPENDED
 Time    : 2006-11-17 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME CLEARED | CLM [1D]
+APM v6.1 | PANIC REGIME CLEARED | CLM [1D]
 ATR     : 0.11  |  ATR baseline: 0.06
 Ratio   : 1.91x  [threshold: 2.0x]
 Status  : New entries RESUMED
 Time    : 2006-11-27 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME STARTED | CLM [1D]
+APM v6.1 | PANIC REGIME STARTED | CLM [1D]
 ATR     : 0.14  |  ATR baseline: 0.07
 Ratio   : 2.03x  [threshold: 2.0x]
 Status  : New entries SUSPENDED
 Time    : 2007-08-06 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME CLEARED | CLM [1D]
+APM v6.1 | PANIC REGIME CLEARED | CLM [1D]
 ATR     : 0.19  |  ATR baseline: 0.10
 Ratio   : 1.96x  [threshold: 2.0x]
 Status  : New entries RESUMED
 Time    : 2007-08-27 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG ENTRY | CLM [1D]
+APM v6.1 | LONG ENTRY | CLM [1D]
 Entry   : 1.88  |  Equity: $10739.23
 Stop    : 1.80  (-0.08 = ATR x1.5)
 Target  : 2.07  (+0.19 = ATR x3.5)
@@ -295,7 +295,7 @@ EMA21/50/200: 1.81/1.77/1.66  Stack: BULL
 Trail on: +5.36 (ATR x99.0)  Dist: 0.03 (ATR x0.5)
 Time    : 2009-07-21 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG EXIT [WIN] | CLM [1D]
+APM v6.1 | LONG EXIT [WIN] | CLM [1D]
 Entry   : 1.88  ->  Exit: 2.07
 Move    : +10.05%
 P&L     : +247.44 USD
@@ -306,7 +306,7 @@ Equity  : $10986.67
 Trades  : 10  |  Win rate: 70.0%
 Time    : 2009-07-30 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG ENTRY | CLM [1D]
+APM v6.1 | LONG ENTRY | CLM [1D]
 Entry   : 2.43  |  Equity: $10986.67
 Stop    : 2.33  (-0.10 = ATR x1.5)
 Target  : 2.65  (+0.22 = ATR x3.5)
@@ -321,7 +321,7 @@ EMA21/50/200: 2.37/2.34/2.23  Stack: BULL
 Trail on: +6.34 (ATR x99.0)  Dist: 0.03 (ATR x0.5)
 Time    : 2011-04-01 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG EXIT [WIN] | CLM [1D]
+APM v6.1 | LONG EXIT [WIN] | CLM [1D]
 Entry   : 2.43  ->  Exit: 2.54
 Move    : +4.79%
 P&L     : +129.40 USD
@@ -332,31 +332,31 @@ Equity  : $11116.07
 Trades  : 11  |  Win rate: 72.7%
 Time    : 2011-05-09 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME STARTED | CLM [1D]
+APM v6.1 | PANIC REGIME STARTED | CLM [1D]
 ATR     : 0.09  |  ATR baseline: 0.04
 Ratio   : 2.08x  [threshold: 2.0x]
 Status  : New entries SUSPENDED
 Time    : 2011-08-09 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME CLEARED | CLM [1D]
+APM v6.1 | PANIC REGIME CLEARED | CLM [1D]
 ATR     : 0.10  |  ATR baseline: 0.05
 Ratio   : 2.00x  [threshold: 2.0x]
 Status  : New entries RESUMED
 Time    : 2011-08-16 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME STARTED | CLM [1D]
+APM v6.1 | PANIC REGIME STARTED | CLM [1D]
 ATR     : 0.06  |  ATR baseline: 0.03
 Ratio   : 2.03x  [threshold: 2.0x]
 Status  : New entries SUSPENDED
 Time    : 2012-05-18 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME CLEARED | CLM [1D]
+APM v6.1 | PANIC REGIME CLEARED | CLM [1D]
 ATR     : 0.06  |  ATR baseline: 0.03
 Ratio   : 1.99x  [threshold: 2.0x]
 Status  : New entries RESUMED
 Time    : 2012-05-25 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG ENTRY | CLM [1D]
+APM v6.1 | LONG ENTRY | CLM [1D]
 Entry   : 2.34  |  Equity: $11116.07
 Stop    : 2.29  (-0.05 = ATR x1.5)
 Target  : 2.45  (+0.11 = ATR x3.5)
@@ -371,7 +371,7 @@ EMA21/50/200: 2.30/2.26/2.13  Stack: BULL
 Trail on: +3.17 (ATR x99.0)  Dist: 0.02 (ATR x0.5)
 Time    : 2012-10-11 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG EXIT [LOSS] | CLM [1D]
+APM v6.1 | LONG EXIT [LOSS] | CLM [1D]
 Entry   : 2.34  ->  Exit: 2.29
 Move    : -2.05%
 P&L     : -117.61 USD
@@ -382,19 +382,19 @@ Equity  : $10998.47
 Trades  : 12  |  Win rate: 66.7%
 Time    : 2012-10-15 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME STARTED | CLM [1D]
+APM v6.1 | PANIC REGIME STARTED | CLM [1D]
 ATR     : 0.07  |  ATR baseline: 0.03
 Ratio   : 2.14x  [threshold: 2.0x]
 Status  : New entries SUSPENDED
 Time    : 2012-11-14 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME CLEARED | CLM [1D]
+APM v6.1 | PANIC REGIME CLEARED | CLM [1D]
 ATR     : 0.08  |  ATR baseline: 0.04
 Ratio   : 1.96x  [threshold: 2.0x]
 Status  : New entries RESUMED
 Time    : 2012-11-23 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG ENTRY | CLM [1D]
+APM v6.1 | LONG ENTRY | CLM [1D]
 Entry   : 2.17  |  Equity: $10998.47
 Stop    : 2.12  (-0.06 = ATR x1.5)
 Target  : 2.31  (+0.14 = ATR x3.5)
@@ -409,7 +409,7 @@ EMA21/50/200: 2.17/2.14/2.10  Stack: BULL
 Trail on: +3.86 (ATR x99.0)  Dist: 0.02 (ATR x0.5)
 Time    : 2013-02-22 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG EXIT [WIN] | CLM [1D]
+APM v6.1 | LONG EXIT [WIN] | CLM [1D]
 Entry   : 2.17  ->  Exit: 2.31
 Move    : +6.28%
 P&L     : +251.57 USD
@@ -420,7 +420,7 @@ Equity  : $11250.04
 Trades  : 13  |  Win rate: 69.2%
 Time    : 2013-03-25 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG ENTRY | CLM [1D]
+APM v6.1 | LONG ENTRY | CLM [1D]
 Entry   : 2.58  |  Equity: $11250.04
 Stop    : 2.53  (-0.05 = ATR x1.5)
 Target  : 2.71  (+0.12 = ATR x3.5)
@@ -435,7 +435,7 @@ EMA21/50/200: 2.55/2.53/2.38  Stack: BULL
 Trail on: +3.45 (ATR x99.0)  Dist: 0.02 (ATR x0.5)
 Time    : 2013-09-23 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG EXIT [WIN] | CLM [1D]
+APM v6.1 | LONG EXIT [WIN] | CLM [1D]
 Entry   : 2.58  ->  Exit: 2.71
 Move    : +4.73%
 P&L     : +255.68 USD
@@ -446,19 +446,19 @@ Equity  : $11505.72
 Trades  : 14  |  Win rate: 71.4%
 Time    : 2013-10-22 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME STARTED | CLM [1D]
+APM v6.1 | PANIC REGIME STARTED | CLM [1D]
 ATR     : 0.05  |  ATR baseline: 0.02
 Ratio   : 2.03x  [threshold: 2.0x]
 Status  : New entries SUSPENDED
 Time    : 2014-09-23 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME CLEARED | CLM [1D]
+APM v6.1 | PANIC REGIME CLEARED | CLM [1D]
 ATR     : 0.09  |  ATR baseline: 0.05
 Ratio   : 1.94x  [threshold: 2.0x]
 Status  : New entries RESUMED
 Time    : 2014-10-30 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG ENTRY | CLM [1D]
+APM v6.1 | LONG ENTRY | CLM [1D]
 Entry   : 2.54  |  Equity: $11505.72
 Stop    : 2.49  (-0.05 = ATR x1.5)
 Target  : 2.67  (+0.12 = ATR x3.5)
@@ -473,7 +473,7 @@ EMA21/50/200: 2.51/2.49/2.41  Stack: BULL
 Trail on: +3.53 (ATR x99.0)  Dist: 0.02 (ATR x0.5)
 Time    : 2015-04-02 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG EXIT [WIN] | CLM [1D]
+APM v6.1 | LONG EXIT [WIN] | CLM [1D]
 Entry   : 2.54  ->  Exit: 2.67
 Move    : +4.91%
 P&L     : +261.75 USD
@@ -484,19 +484,19 @@ Equity  : $11767.47
 Trades  : 15  |  Win rate: 73.3%
 Time    : 2015-05-04 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME STARTED | CLM [1D]
+APM v6.1 | PANIC REGIME STARTED | CLM [1D]
 ATR     : 0.08  |  ATR baseline: 0.04
 Ratio   : 2.01x  [threshold: 2.0x]
 Status  : New entries SUSPENDED
 Time    : 2015-07-16 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME CLEARED | CLM [1D]
+APM v6.1 | PANIC REGIME CLEARED | CLM [1D]
 ATR     : 0.08  |  ATR baseline: 0.04
 Ratio   : 1.97x  [threshold: 2.0x]
 Status  : New entries RESUMED
 Time    : 2015-07-21 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG ENTRY | CLM [1D]
+APM v6.1 | LONG ENTRY | CLM [1D]
 Entry   : 2.35  |  Equity: $11767.47
 Stop    : 2.28  (-0.07 = ATR x1.5)
 Target  : 2.50  (+0.15 = ATR x3.5)
@@ -511,7 +511,7 @@ EMA21/50/200: 2.29/2.24/2.22  Stack: BULL
 Trail on: +4.30 (ATR x99.0)  Dist: 0.02 (ATR x0.5)
 Time    : 2016-04-22 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG EXIT [WIN] | CLM [1D]
+APM v6.1 | LONG EXIT [WIN] | CLM [1D]
 Entry   : 2.35  ->  Exit: 2.50
 Move    : +6.47%
 P&L     : +269.32 USD
@@ -522,7 +522,7 @@ Equity  : $12036.79
 Trades  : 16  |  Win rate: 75.0%
 Time    : 2016-05-06 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG ENTRY | CLM [1D]
+APM v6.1 | LONG ENTRY | CLM [1D]
 Entry   : 2.76  |  Equity: $12036.79
 Stop    : 2.66  (-0.10 = ATR x1.5)
 Target  : 3.00  (+0.24 = ATR x3.5)
@@ -537,7 +537,7 @@ EMA21/50/200: 2.75/2.72/2.43  Stack: BULL
 Trail on: +6.76 (ATR x99.0)  Dist: 0.03 (ATR x0.5)
 Time    : 2016-08-11 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG EXIT [LOSS] | CLM [1D]
+APM v6.1 | LONG EXIT [LOSS] | CLM [1D]
 Entry   : 2.76  ->  Exit: 2.66
 Move    : -3.71%
 P&L     : -124.19 USD
@@ -548,7 +548,7 @@ Equity  : $11912.60
 Trades  : 17  |  Win rate: 70.6%
 Time    : 2016-08-22 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG ENTRY | CLM [1D]
+APM v6.1 | LONG ENTRY | CLM [1D]
 Entry   : 2.75  |  Equity: $11912.60
 Stop    : 2.71  (-0.04 = ATR x1.5)
 Target  : 2.84  (+0.10 = ATR x3.5)
@@ -563,7 +563,7 @@ EMA21/50/200: 2.71/2.69/2.57  Stack: BULL
 Trail on: +2.72 (ATR x99.0)  Dist: 0.01 (ATR x0.5)
 Time    : 2017-02-08 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG EXIT [WIN] | CLM [1D]
+APM v6.1 | LONG EXIT [WIN] | CLM [1D]
 Entry   : 2.75  ->  Exit: 2.84
 Move    : +3.50%
 P&L     : +268.26 USD
@@ -574,31 +574,31 @@ Equity  : $12180.86
 Trades  : 18  |  Win rate: 72.2%
 Time    : 2017-02-28 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME STARTED | CLM [1D]
+APM v6.1 | PANIC REGIME STARTED | CLM [1D]
 ATR     : 0.06  |  ATR baseline: 0.03
 Ratio   : 2.02x  [threshold: 2.0x]
 Status  : New entries SUSPENDED
 Time    : 2017-06-15 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME CLEARED | CLM [1D]
+APM v6.1 | PANIC REGIME CLEARED | CLM [1D]
 ATR     : 0.06  |  ATR baseline: 0.03
 Ratio   : 1.98x  [threshold: 2.0x]
 Status  : New entries RESUMED
 Time    : 2017-06-20 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME STARTED | CLM [1D]
+APM v6.1 | PANIC REGIME STARTED | CLM [1D]
 ATR     : 0.06  |  ATR baseline: 0.03
 Ratio   : 2.06x  [threshold: 2.0x]
 Status  : New entries SUSPENDED
 Time    : 2017-06-21 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME CLEARED | CLM [1D]
+APM v6.1 | PANIC REGIME CLEARED | CLM [1D]
 ATR     : 0.06  |  ATR baseline: 0.03
 Ratio   : 1.90x  [threshold: 2.0x]
 Status  : New entries RESUMED
 Time    : 2017-06-23 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG ENTRY | CLM [1D]
+APM v6.1 | LONG ENTRY | CLM [1D]
 Entry   : 3.09  |  Equity: $12180.86
 Stop    : 3.06  (-0.03 = ATR x1.5)
 Target  : 3.17  (+0.08 = ATR x3.5)
@@ -613,7 +613,7 @@ EMA21/50/200: 3.06/3.04/2.93  Stack: BULL
 Trail on: +2.28 (ATR x99.0)  Dist: 0.01 (ATR x0.5)
 Time    : 2017-11-10 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG EXIT [LOSS] | CLM [1D]
+APM v6.1 | LONG EXIT [LOSS] | CLM [1D]
 Entry   : 3.09  ->  Exit: 3.06
 Move    : -1.12%
 P&L     : -134.84 USD
@@ -624,19 +624,19 @@ Equity  : $12046.03
 Trades  : 19  |  Win rate: 68.4%
 Time    : 2017-11-15 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME STARTED | CLM [1D]
+APM v6.1 | PANIC REGIME STARTED | CLM [1D]
 ATR     : 0.08  |  ATR baseline: 0.03
 Ratio   : 2.89x  [threshold: 2.0x]
 Status  : New entries SUSPENDED
 Time    : 2018-02-06 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME CLEARED | CLM [1D]
+APM v6.1 | PANIC REGIME CLEARED | CLM [1D]
 ATR     : 0.07  |  ATR baseline: 0.04
 Ratio   : 1.89x  [threshold: 2.0x]
 Status  : New entries RESUMED
 Time    : 2018-02-21 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG ENTRY | CLM [1D]
+APM v6.1 | LONG ENTRY | CLM [1D]
 Entry   : 3.43  |  Equity: $12046.03
 Stop    : 3.36  (-0.07 = ATR x1.5)
 Target  : 3.60  (+0.16 = ATR x3.5)
@@ -651,7 +651,7 @@ EMA21/50/200: 3.39/3.38/3.18  Stack: BULL
 Trail on: +4.65 (ATR x99.0)  Dist: 0.02 (ATR x0.5)
 Time    : 2018-04-04 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG EXIT [WIN] | CLM [1D]
+APM v6.1 | LONG EXIT [WIN] | CLM [1D]
 Entry   : 3.43  ->  Exit: 3.56
 Move    : +3.88%
 P&L     : +220.49 USD
@@ -662,19 +662,19 @@ Equity  : $12266.52
 Trades  : 20  |  Win rate: 70.0%
 Time    : 2018-05-09 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME STARTED | CLM [1D]
+APM v6.1 | PANIC REGIME STARTED | CLM [1D]
 ATR     : 0.08  |  ATR baseline: 0.04
 Ratio   : 2.10x  [threshold: 2.0x]
 Status  : New entries SUSPENDED
 Time    : 2018-10-25 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME CLEARED | CLM [1D]
+APM v6.1 | PANIC REGIME CLEARED | CLM [1D]
 ATR     : 0.08  |  ATR baseline: 0.04
 Ratio   : 1.90x  [threshold: 2.0x]
 Status  : New entries RESUMED
 Time    : 2018-11-05 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG ENTRY | CLM [1D]
+APM v6.1 | LONG ENTRY | CLM [1D]
 Entry   : 3.38  |  Equity: $12266.52
 Stop    : 3.35  (-0.03 = ATR x1.5)
 Target  : 3.45  (+0.07 = ATR x3.5)
@@ -689,7 +689,7 @@ EMA21/50/200: 3.35/3.33/3.23  Stack: BULL
 Trail on: +2.09 (ATR x99.0)  Dist: 0.01 (ATR x0.5)
 Time    : 2019-04-30 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG EXIT [LOSS] | CLM [1D]
+APM v6.1 | LONG EXIT [LOSS] | CLM [1D]
 Entry   : 3.38  ->  Exit: 3.35
 Move    : -0.94%
 P&L     : -138.30 USD
@@ -700,7 +700,7 @@ Equity  : $12128.22
 Trades  : 21  |  Win rate: 66.7%
 Time    : 2019-05-06 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG ENTRY | CLM [1D]
+APM v6.1 | LONG ENTRY | CLM [1D]
 Entry   : 3.42  |  Equity: $12128.22
 Stop    : 3.37  (-0.06 = ATR x1.5)
 Target  : 3.55  (+0.13 = ATR x3.5)
@@ -715,7 +715,7 @@ EMA21/50/200: 3.41/3.40/3.29  Stack: BULL
 Trail on: +3.67 (ATR x99.0)  Dist: 0.02 (ATR x0.5)
 Time    : 2019-08-08 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG EXIT [LOSS] | CLM [1D]
+APM v6.1 | LONG EXIT [LOSS] | CLM [1D]
 Entry   : 3.42  ->  Exit: 3.35
 Move    : -2.27%
 P&L     : -178.31 USD
@@ -726,19 +726,19 @@ Equity  : $11949.91
 Trades  : 22  |  Win rate: 63.6%
 Time    : 2019-08-14 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME STARTED | CLM [1D]
+APM v6.1 | PANIC REGIME STARTED | CLM [1D]
 ATR     : 0.05  |  ATR baseline: 0.03
 Ratio   : 2.09x  [threshold: 2.0x]
 Status  : New entries SUSPENDED
 Time    : 2020-02-25 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME CLEARED | CLM [1D]
+APM v6.1 | PANIC REGIME CLEARED | CLM [1D]
 ATR     : 0.22  |  ATR baseline: 0.11
 Ratio   : 1.94x  [threshold: 2.0x]
 Status  : New entries RESUMED
 Time    : 2020-04-07 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG ENTRY | CLM [1D]
+APM v6.1 | LONG ENTRY | CLM [1D]
 Entry   : 4.16  |  Equity: $11949.91
 Stop    : 4.06  (-0.10 = ATR x1.5)
 Target  : 4.39  (+0.23 = ATR x3.5)
@@ -753,7 +753,7 @@ EMA21/50/200: 4.07/4.01/3.59  Stack: BULL
 Trail on: +6.40 (ATR x99.0)  Dist: 0.03 (ATR x0.5)
 Time    : 2020-09-09 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG EXIT [LOSS] | CLM [1D]
+APM v6.1 | LONG EXIT [LOSS] | CLM [1D]
 Entry   : 4.16  ->  Exit: 4.06
 Move    : -2.33%
 P&L     : -125.58 USD
@@ -764,31 +764,31 @@ Equity  : $11824.34
 Trades  : 23  |  Win rate: 60.9%
 Time    : 2020-09-17 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME STARTED | CLM [1D]
+APM v6.1 | PANIC REGIME STARTED | CLM [1D]
 ATR     : 0.14  |  ATR baseline: 0.05
 Ratio   : 2.58x  [threshold: 2.0x]
 Status  : New entries SUSPENDED
 Time    : 2021-02-04 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME CLEARED | CLM [1D]
+APM v6.1 | PANIC REGIME CLEARED | CLM [1D]
 ATR     : 0.13  |  ATR baseline: 0.07
 Ratio   : 1.94x  [threshold: 2.0x]
 Status  : New entries RESUMED
 Time    : 2021-02-18 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME STARTED | CLM [1D]
+APM v6.1 | PANIC REGIME STARTED | CLM [1D]
 ATR     : 0.14  |  ATR baseline: 0.07
 Ratio   : 2.04x  [threshold: 2.0x]
 Status  : New entries SUSPENDED
 Time    : 2021-02-22 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME CLEARED | CLM [1D]
+APM v6.1 | PANIC REGIME CLEARED | CLM [1D]
 ATR     : 0.13  |  ATR baseline: 0.07
 Ratio   : 1.88x  [threshold: 2.0x]
 Status  : New entries RESUMED
 Time    : 2021-02-24 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG ENTRY | CLM [1D]
+APM v6.1 | LONG ENTRY | CLM [1D]
 Entry   : 5.36  |  Equity: $11824.34
 Stop    : 5.18  (-0.18 = ATR x1.5)
 Target  : 5.78  (+0.42 = ATR x3.5)
@@ -803,7 +803,7 @@ EMA21/50/200: 5.20/5.12/4.37  Stack: BULL
 Trail on: +11.94 (ATR x99.0)  Dist: 0.06 (ATR x0.5)
 Time    : 2021-03-08 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG EXIT [WIN] | CLM [1D]
+APM v6.1 | LONG EXIT [WIN] | CLM [1D]
 Entry   : 5.36  ->  Exit: 5.60
 Move    : +4.61%
 P&L     : +157.04 USD
@@ -814,31 +814,31 @@ Equity  : $11981.38
 Trades  : 24  |  Win rate: 62.5%
 Time    : 2021-04-13 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME STARTED | CLM [1D]
+APM v6.1 | PANIC REGIME STARTED | CLM [1D]
 ATR     : 0.15  |  ATR baseline: 0.08
 Ratio   : 2.01x  [threshold: 2.0x]
 Status  : New entries SUSPENDED
 Time    : 2021-11-19 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME CLEARED | CLM [1D]
+APM v6.1 | PANIC REGIME CLEARED | CLM [1D]
 ATR     : 0.17  |  ATR baseline: 0.09
 Ratio   : 1.96x  [threshold: 2.0x]
 Status  : New entries RESUMED
 Time    : 2021-11-30 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME STARTED | CLM [1D]
+APM v6.1 | PANIC REGIME STARTED | CLM [1D]
 ATR     : 0.12  |  ATR baseline: 0.06
 Ratio   : 2.04x  [threshold: 2.0x]
 Status  : New entries SUSPENDED
 Time    : 2024-08-06 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME CLEARED | CLM [1D]
+APM v6.1 | PANIC REGIME CLEARED | CLM [1D]
 ATR     : 0.12  |  ATR baseline: 0.06
 Ratio   : 1.95x  [threshold: 2.0x]
 Status  : New entries RESUMED
 Time    : 2024-08-08 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG ENTRY | CLM [1D]
+APM v6.1 | LONG ENTRY | CLM [1D]
 Entry   : 5.72  |  Equity: $11981.38
 Stop    : 5.61  (-0.11 = ATR x1.5)
 Target  : 5.97  (+0.25 = ATR x3.5)
@@ -853,7 +853,7 @@ EMA21/50/200: 5.68/5.67/5.37  Stack: BULL
 Trail on: +7.13 (ATR x99.0)  Dist: 0.04 (ATR x0.5)
 Time    : 2024-09-11 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG EXIT [WIN] | CLM [1D]
+APM v6.1 | LONG EXIT [WIN] | CLM [1D]
 Entry   : 5.72  ->  Exit: 5.97
 Move    : +4.40%
 P&L     : +271.78 USD
@@ -864,19 +864,19 @@ Equity  : $12253.16
 Trades  : 25  |  Win rate: 64.0%
 Time    : 2024-10-09 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME STARTED | CLM [1D]
+APM v6.1 | PANIC REGIME STARTED | CLM [1D]
 ATR     : 0.15  |  ATR baseline: 0.07
 Ratio   : 2.13x  [threshold: 2.0x]
 Status  : New entries SUSPENDED
 Time    : 2024-12-10 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME CLEARED | CLM [1D]
+APM v6.1 | PANIC REGIME CLEARED | CLM [1D]
 ATR     : 0.17  |  ATR baseline: 0.09
 Ratio   : 1.99x  [threshold: 2.0x]
 Status  : New entries RESUMED
 Time    : 2024-12-23 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG ENTRY | CLM [1D]
+APM v6.1 | LONG ENTRY | CLM [1D]
 Entry   : 6.96  |  Equity: $12253.16
 Stop    : 6.76  (-0.19 = ATR x1.5)
 Target  : 7.41  (+0.45 = ATR x3.5)
@@ -891,7 +891,7 @@ EMA21/50/200: 6.87/6.82/6.06  Stack: BULL
 Trail on: +12.73 (ATR x99.0)  Dist: 0.06 (ATR x0.5)
 Time    : 2025-01-14 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG EXIT [WIN] | CLM [1D]
+APM v6.1 | LONG EXIT [WIN] | CLM [1D]
 Entry   : 6.96  ->  Exit: 7.34
 Move    : +5.51%
 P&L     : +237.90 USD
@@ -902,7 +902,7 @@ Equity  : $12491.06
 Trades  : 26  |  Win rate: 65.4%
 Time    : 2025-02-20 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG ENTRY | CLM [1D]
+APM v6.1 | LONG ENTRY | CLM [1D]
 Entry   : 7.39  |  Equity: $12491.06
 Stop    : 7.29  (-0.10 = ATR x1.5)
 Target  : 7.64  (+0.24 = ATR x3.5)
@@ -917,7 +917,7 @@ EMA21/50/200: 7.32/7.26/6.67  Stack: BULL
 Trail on: +6.85 (ATR x99.0)  Dist: 0.03 (ATR x0.5)
 Time    : 2025-08-20 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG EXIT [WIN] | CLM [1D]
+APM v6.1 | LONG EXIT [WIN] | CLM [1D]
 Entry   : 7.39  ->  Exit: 7.64
 Move    : +3.27%
 P&L     : +280.60 USD
@@ -928,7 +928,7 @@ Equity  : $12771.66
 Trades  : 27  |  Win rate: 66.7%
 Time    : 2025-09-15 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG ENTRY | CLM [1D]
+APM v6.1 | LONG ENTRY | CLM [1D]
 Entry   : 7.81  |  Equity: $12771.66
 Stop    : 7.68  (-0.13 = ATR x1.5)
 Target  : 8.11  (+0.29 = ATR x3.5)
@@ -943,7 +943,7 @@ EMA21/50/200: 7.69/7.62/6.96  Stack: BULL
 Trail on: +8.32 (ATR x99.0)  Dist: 0.04 (ATR x0.5)
 Time    : 2025-10-13 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | LONG EXIT [LOSS] | CLM [1D]
+APM v6.1 | LONG EXIT [LOSS] | CLM [1D]
 Entry   : 7.81  ->  Exit: 7.68
 Move    : -1.61%
 P&L     : -137.14 USD
@@ -954,13 +954,13 @@ Equity  : $12634.52
 Trades  : 28  |  Win rate: 64.3%
 Time    : 2025-10-17 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME STARTED | CLM [1D]
+APM v6.1 | PANIC REGIME STARTED | CLM [1D]
 ATR     : 0.18  |  ATR baseline: 0.08
 Ratio   : 2.25x  [threshold: 2.0x]
 Status  : New entries SUSPENDED
 Time    : 2026-02-20 00:00:00
 ----------------------------------------------------------------------
-APM v4.1 | PANIC REGIME CLEARED | CLM [1D]
+APM v6.1 | PANIC REGIME CLEARED | CLM [1D]
 ATR     : 0.19  |  ATR baseline: 0.10
 Ratio   : 1.98x  [threshold: 2.0x]
 Status  : New entries RESUMED

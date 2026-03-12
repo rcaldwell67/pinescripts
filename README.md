@@ -23,4 +23,3 @@ cp "scripts/BTCUSD/Adaptive Pullback Momentum v2/apm_v2_trades_btcusd_30m.csv" d
 cp "scripts/BTCUSD/Adaptive Pullback Momentum v3/apm_v3_trades_btcusd_1h.csv"  docs/data/v3_trades.csv
 cp "scripts/BTCUSD/Adaptive Pullback Momentum v4/apm_v4_trades_btcusd_1d.csv"  docs/data/v4_trades.csv
 ```
-

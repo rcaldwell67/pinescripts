@@ -1,7 +1,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# APM v1.3 — CLM 15m backtest
-# Mirrors "Adaptive Pullback Momentum v1.3" pine script parameters exactly.
-# Shorts-only by default (v1.3 thesis: longs at 15m WR=23%, noise too high).
+# APM v3.3 — CLM 15m backtest
+# Mirrors "Adaptive Pullback Momentum v3.3" pine script parameters exactly.
+# Shorts-only by default (v3.3 thesis: longs at 15m WR=23%, noise too high).
 # ─────────────────────────────────────────────────────────────────────────────
 
 import subprocess, sys
@@ -270,7 +270,7 @@ for name, mask in components_short:
     cum = cum & mask
     print(f"  {name:<20} → {cum.sum():>4} rows pass")
 
-print(f"\nv1.3 Signals — Long: {long_signal.sum()}  Short: {short_signal.sum()}")
+print(f"\nv3.3 Signals — Long: {long_signal.sum()}  Short: {short_signal.sum()}")
 
 # ─── Bar-by-bar simulation ────────────────────────────────────────────────────
 equity        = INITIAL_CAPITAL
@@ -375,7 +375,7 @@ eq_s = pd.Series([e["equity"] for e in eqcurve])
 mdd  = ((eq_s - eq_s.cummax()) / eq_s.cummax() * 100).min()
 
 print("=" * 60)
-print(f"  APM v1.3  —  {TICKER} {INTERVAL}  ({PERIOD})")
+print(f"  APM v3.3  —  {TICKER} {INTERVAL}  ({PERIOD})")
 print("=" * 60)
 print(f"  Initial capital   :  ${INITIAL_CAPITAL:>10,.2f}")
 print(f"  Final equity      :  ${final:>10,.2f}")
@@ -410,7 +410,7 @@ for direction in ["long", "short"]:
     print(f"  {direction.upper():<6} trades={len(sub):>3}  WR={sub_wr:.0f}%  "
           f"PF={sub_pf:.3f}  net=${sub_pnl:+.2f}")
 
-out_csv = f"apm_v1_trades_{TICKER.lower()}_{INTERVAL}.csv"
+out_csv = f"apm_v3_trades_{TICKER.lower()}_{INTERVAL}.csv"
 tdf.to_csv(out_csv, index=False)
 print(f"\nTrades CSV → {out_csv}")
 
@@ -421,7 +421,7 @@ plt.style.use("dark_background")
 fig, axes = plt.subplots(3, 1, figsize=(18, 14),
                          gridspec_kw={"height_ratios": [3, 1.5, 1.5]})
 fig.suptitle(
-    f"APM v1.3 (CLM v2)  ·  {TICKER} {INTERVAL}  ·  "
+    f"APM v3.3 (CLM v2)  ·  {TICKER} {INTERVAL}  ·  "
     f"ADX>{ADX_THRESH}↑  DI>{DI_SPREAD_MIN}  Mom{MOMENTUM_BARS}b  |  "
     f"SL×{SL_MULT} TP×{TP_MULT}  Return={ret:+.2f}%  PF={pf:.3f}",
     fontsize=11)
@@ -469,6 +469,6 @@ ax3.set_ylabel("P&L ($)")
 ax3.grid(alpha=0.15)
 
 plt.tight_layout()
-out_png = f"apm_v1_equity_{TICKER.lower()}_{INTERVAL}.png"
+out_png = f"apm_v3_equity_{TICKER.lower()}_{INTERVAL}.png"
 plt.savefig(out_png, dpi=150, bbox_inches="tight")
 print(f"Chart → {out_png}")

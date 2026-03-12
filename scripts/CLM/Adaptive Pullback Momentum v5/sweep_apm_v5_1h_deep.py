@@ -1,5 +1,5 @@
 """
-Deep sweep — APM v3 @ 1h CLM
+Deep sweep — APM v5 @ 1h CLM
 Continuation from extended sweep optimal:
   ADX=33, SL×2.0, TP×2.0, Panic×1.4, Vol×1.2, Body×0.10
   Trail OFF, EMA slope OFF, ATR floor 0%, RSI L:40-70 / S:30-60

@@ -4,7 +4,7 @@
 //@version=6
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Adaptive Pullback Momentum v1.0
+// Adaptive Pullback Momentum v3.0
 // 15min Look Back
 // THESIS
 //   Most breakout strategies enter *after* the move is mature.  This strategy
@@ -27,14 +27,14 @@
 //                  then trails ATR×0.6 from best price (tight lock-in at 15m)
 //   → Sizing     : 1 % of equity risked per trade
 //
-// v1.1 CHANGES vs v1.0  (CLM 15m sweep)
+// v3.1 CHANGES vs v3.0  (CLM 15m sweep)
 //   PB tolerance : 0.30% → 0.15%  (tighter pullback = fewer, higher-quality entries)
 //   TP multiplier: 2.5×  → 2.0×   (sweep peak)
 //   ADX threshold: 20    → 25     (filters choppy regimes)
 //   Trail activate: 1.0× → 1.5×  (lets winners breathe before trailing)
 //   Body filter  : none  → 0.15×ATR (rejects doji / indecision candles)
 //
-// v1.2 CHANGES vs v1.1  (ported from APM v2.2 — CLM 30m sweep: +10.41% PF=2.415)
+// v3.2 CHANGES vs v3.1  (ported from APM v2.2 — CLM 30m sweep: +10.41% PF=2.415)
 //   EMA condition : loose (close>EMA200 & EMA21>EMA50) → full stack EMA21>EMA50>EMA200
 //   EMA slope     : ADDED — EMA21 must trend in trade direction over 3 bars
 //   RSI direction : ADDED — RSI must be rising (long) / falling (short) on entry
@@ -47,17 +47,17 @@
 //   Trail distance: 0.8× → 1.5×   (wider trail stops micro-spike exits)
 //   Panic mult    : 1.5× → 1.3×   (exit volatile regimes more aggressively)
 //
-// v1.3 CHANGES vs v1.2  (CLM 15m direction+param sweep: +6.95% PF=1.908 vs -5.14%)
+// v3.3 CHANGES vs v3.2  (CLM 15m direction+param sweep: +6.95% PF=1.908 vs -5.14%)
 //   Longs OFF     : default disabled — longs at 15m: WR=23% PF=0.189 (noise too high)
 //   ADX threshold : 25 → 28     (higher trend quality; WR 60%→70%)
 //   ATR floor     : 0.20% → 0.15% (15m bars smaller; 0.20% over-filtered short setups)
-//   TP multiplier : 3.5× → 2.5×  (15m moves don't reach TP×3.5; only 5/30 hit at v1.2)
+//   TP multiplier : 3.5× → 2.5×  (15m moves don't reach TP×3.5; only 5/30 hit at v3.2)
 //   Trail distance: 1.5× → 0.6×  (tighter trail locks in gains faster on 15m)
 // ─────────────────────────────────────────────────────────────────────────────
 
 strategy(
-    title             = "Adaptive Pullback Momentum v1.3",
-    shorttitle        = "APM v1.3",
+    title             = "Adaptive Pullback Momentum v3.3",
+    shorttitle        = "APM v3.3",
     overlay           = true,
     pyramiding        = 0,
     initial_capital   = 10000,
@@ -127,7 +127,7 @@ vol_ma   = ta.sma(volume, i_vol_len)
 is_trending = adx > i_adx_thresh
 is_panic    = atr > atr_bl * i_panic_mult
 
-// ── v1.2 additional filters ────────────────────────────────────────────────────
+// ── v3.2 additional filters ────────────────────────────────────────────────────
 ema_bull_full  = ema_fast > ema_mid  and ema_mid  > ema_slow   // full bullish stack
 ema_bear_full  = ema_fast < ema_mid  and ema_mid  < ema_slow   // full bearish stack
 ema_slope_up   = ema_fast > ema_fast[3]                        // EMA21 rising over 3 bars
@@ -180,7 +180,7 @@ if long_ok
     trail_active := false
     strategy.entry("Long", strategy.long, qty=qty)
     alert(
-        "APM v1.3 | LONG ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v3.3 | LONG ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "Entry   : " + str.tostring(close, "#.##") +
         "  |  Equity: $" + str.tostring(strategy.equity, "#.##") + "\n" +
         "Stop    : " + str.tostring(sl_price, "#.##") +
@@ -222,7 +222,7 @@ if short_ok
     trail_active := false
     strategy.entry("Short", strategy.short, qty=qty)
     alert(
-        "APM v1.3 | SHORT ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v3.3 | SHORT ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "Entry   : " + str.tostring(close, "#.##") +
         "  |  Equity: $" + str.tostring(strategy.equity, "#.##") + "\n" +
         "Stop    : " + str.tostring(sl_price, "#.##") +
@@ -266,7 +266,7 @@ if strategy.position_size > 0.0          // long
         if not trail_active
             trail_active := true
             alert(
-                "APM v1.3 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+                "APM v3.3 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
                 "Direction : LONG\n" +
                 "Best price: " + str.tostring(best_price, "#.##") +
                 "  |  Entry: " + str.tostring(entry_p, "#.##") + "\n" +
@@ -289,7 +289,7 @@ if strategy.position_size < 0.0          // short
         if not trail_active
             trail_active := true
             alert(
-                "APM v1.3 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+                "APM v3.3 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
                 "Direction : SHORT\n" +
                 "Best price: " + str.tostring(best_price, "#.##") +
                 "  |  Entry: " + str.tostring(entry_p, "#.##") + "\n" +
@@ -320,7 +320,7 @@ if strategy.closedtrades > _prev_closed
     _mvpct   = _sz > 0 ? (_xp - _ep) / _ep * 100 : (_ep - _xp) / _ep * 100
     _wr      = strategy.closedtrades > 0 ? str.tostring(math.round(strategy.wintrades / strategy.closedtrades * 100, 1), "#.#") + "%" : "--"
     alert(
-        "APM v1.3 | " + _dir + " EXIT [" + _res + "] | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v3.3 | " + _dir + " EXIT [" + _res + "] | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "Entry   : " + str.tostring(_ep, "#.##") +
         "  ->  Exit: " + str.tostring(_xp, "#.##") + "\n" +
         "Move    : " + (_mvpct >= 0 ? "+" : "") + str.tostring(_mvpct, "#.##") + "%\n" +
@@ -336,7 +336,7 @@ if strategy.closedtrades > _prev_closed
 // ── Panic regime alert ────────────────────────────────────────────────────────
 if is_panic and not is_panic[1]
     alert(
-        "APM v1.3 | PANIC REGIME STARTED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v3.3 | PANIC REGIME STARTED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "ATR     : " + str.tostring(atr, "#.##") +
         "  |  ATR baseline: " + str.tostring(atr_bl, "#.##") + "\n" +
         "Ratio   : " + str.tostring(atr / atr_bl, "#.##") + "x" +
@@ -346,7 +346,7 @@ if is_panic and not is_panic[1]
 
 if not is_panic and is_panic[1]
     alert(
-        "APM v1.3 | PANIC REGIME CLEARED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v3.3 | PANIC REGIME CLEARED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "ATR     : " + str.tostring(atr, "#.##") +
         "  |  ATR baseline: " + str.tostring(atr_bl, "#.##") + "\n" +
         "Ratio   : " + str.tostring(atr / atr_bl, "#.##") + "x" +
@@ -402,7 +402,7 @@ if i_show_dash and barstate.islast
          frame_width=1,  frame_color=color.new(color.gray, 40))
 
     // header
-    table.cell(tbl, 0, 0, "APM v1.3", text_color=D_BRT, bgcolor=D_HDR, text_size=size.normal, text_halign=text.align_left)
+    table.cell(tbl, 0, 0, "APM v3.3", text_color=D_BRT, bgcolor=D_HDR, text_size=size.normal, text_halign=text.align_left)
     table.cell(tbl, 1, 0, timeframe.period + " | " + syminfo.ticker, text_color=D_YEL, bgcolor=D_HDR, text_size=size.small, text_halign=text.align_right)
 
     // position
