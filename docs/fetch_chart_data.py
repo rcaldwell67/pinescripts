@@ -140,7 +140,12 @@ def main():
             bars = fetch_stock(stock_client, symbol, cfg["tf"], cfg["start"], cfg["end"])
         out = OUT_DIR / cfg["outfile"]
         with open(out, "w") as f:
-            json.dump({"symbol": name, "timeframe": str(cfg["tf"]), "bars": bars}, f, separators=(",", ":"))
+            json.dump({
+                "symbol": name,
+                "timeframe": str(cfg["tf"]),
+                "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "bars": bars,
+            }, f, separators=(",", ":"))
         kb = out.stat().st_size / 1024
         print(f"{len(bars):,} bars → {out.name} ({kb:.0f} KB)")
 

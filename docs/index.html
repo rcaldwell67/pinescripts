@@ -603,25 +603,25 @@ let lcChartInst = null;
 async function updateLastUpdated() {
   try {
     const file = activeSym === 'btc' ? 'data/chart_btcusd.json' : 'data/chart_clm.json';
-    const resp = await fetch(file + '?v=' + Date.now());
+    const resp = await fetch(file + '?v=' + Date.now(), { cache: 'no-store' });
     const json = await resp.json();
     const bars = json.bars || [];
-    if (bars.length) {
-      const lastBar = bars[bars.length - 1];
-      const lastDate = new Date(lastBar.t * 1000);
-      const diffMin = Math.round((Date.now() - lastDate) / 60000);
-      const timeStr = lastDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
-      const ageStr = diffMin < 60 ? `${diffMin}m ago` : `${Math.round(diffMin / 60)}h ago`;
-      document.getElementById('lastUpdated').textContent = `Data: ${timeStr} (${ageStr})`;
-      chartDataCache[activeSym] = bars;
+    // Prefer generated_at (script run time) over last bar time
+    const refTime = json.generated_at ? new Date(json.generated_at) : (bars.length ? new Date(bars[bars.length-1].t * 1000) : null);
+    if (refTime) {
+      const diffMin = Math.round((Date.now() - refTime) / 60000);
+      const timeStr = refTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
+      const ageStr = diffMin < 60 ? `${diffMin}m ago` : diffMin < 1440 ? `${Math.round(diffMin / 60)}h ago` : `${Math.round(diffMin / 1440)}d ago`;
+      document.getElementById('lastUpdated').textContent = `Updated: ${timeStr} (${ageStr})`;
     }
+    if (bars.length) chartDataCache[activeSym] = bars;
   } catch(e) { /* leave as-is */ }
 }
 
 async function loadChartData(sym) {
   if (chartDataCache[sym]) return chartDataCache[sym];
   const file = sym === 'btc' ? 'data/chart_btcusd.json' : 'data/chart_clm.json';
-  const resp = await fetch(file + '?v=' + Date.now());
+  const resp = await fetch(file + '?v=' + Date.now(), { cache: 'no-store' });
   const json = await resp.json();
   chartDataCache[sym] = json.bars;
   return json.bars;
