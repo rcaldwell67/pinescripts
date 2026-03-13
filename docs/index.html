@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>APM Dashboard — Adaptive Pullback Momentum</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
@@ -601,31 +604,31 @@ function renderTransactionsTable() {
 const chartDataCache = {};
 let lcChartInst = null;
 
+// Single source of truth for chart JSON. Returns { bars, generated_at }.
+// Caches by sym to avoid duplicate fetches; caller may bust cache by deleting chartDataCache[sym].
+async function loadChartData(sym) {
+  if (chartDataCache[sym]) return chartDataCache[sym];
+  const file = sym === 'btc' ? 'data/chart_btcusd.json' : 'data/chart_clm.json';
+  const resp = await fetch(file + '?v=' + Date.now(), { cache: 'no-store' });
+  const json = await resp.json();
+  chartDataCache[sym] = { bars: json.bars || [], generated_at: json.generated_at || null };
+  return chartDataCache[sym];
+}
+
 async function updateLastUpdated() {
   try {
-    const file = activeSym === 'btc' ? 'data/chart_btcusd.json' : 'data/chart_clm.json';
-    const resp = await fetch(file + '?v=' + Date.now(), { cache: 'no-store' });
-    const json = await resp.json();
-    const bars = json.bars || [];
-    // Prefer generated_at (script run time) over last bar time
-    const refTime = json.generated_at ? new Date(json.generated_at) : (bars.length ? new Date(bars[bars.length-1].t * 1000) : null);
+    // Bust the cache so we always get the freshest timestamp
+    delete chartDataCache[activeSym];
+    const { bars, generated_at } = await loadChartData(activeSym);
+    const refTime = generated_at ? new Date(generated_at)
+                  : (bars.length ? new Date(bars[bars.length - 1].t * 1000) : null);
     if (refTime) {
       const diffMin = Math.round((Date.now() - refTime) / 60000);
       const timeStr = refTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
       const ageStr = diffMin < 60 ? `${diffMin}m ago` : diffMin < 1440 ? `${Math.round(diffMin / 60)}h ago` : `${Math.round(diffMin / 1440)}d ago`;
       document.getElementById('lastUpdated').textContent = `Updated: ${timeStr} (${ageStr})`;
     }
-    if (bars.length) chartDataCache[activeSym] = bars;
   } catch(e) { /* leave as-is */ }
-}
-
-async function loadChartData(sym) {
-  if (chartDataCache[sym]) return chartDataCache[sym];
-  const file = sym === 'btc' ? 'data/chart_btcusd.json' : 'data/chart_clm.json';
-  const resp = await fetch(file + '?v=' + Date.now(), { cache: 'no-store' });
-  const json = await resp.json();
-  chartDataCache[sym] = json.bars;
-  return json.bars;
 }
 
 function computeEMA(bars, period) {
@@ -724,7 +727,7 @@ async function renderPriceChart() {
   container.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:16px 0;">Loading chart data…</div>';
 
   let bars;
-  try { bars = await loadChartData(activeSym); } catch(e) {
+  try { ({ bars } = await loadChartData(activeSym)); } catch(e) {
     container.innerHTML = `<div class="empty">Chart data unavailable: ${e.message}</div>`; return;
   }
   if (!bars?.length) { container.innerHTML = '<div class="empty">No bar data</div>'; return; }
@@ -742,15 +745,19 @@ async function renderPriceChart() {
   const displayBars = resampleBars(visible, MAX_CANDLE_BARS);
 
   try {
+    // Use fixed width (container has explicit CSS height so clientWidth is valid)
     lcChartInst = LightweightCharts.createChart(container, {
-      autoSize: true,
+      width:  container.clientWidth || 1200,
       height: 400,
       layout:  { background: { type: 'solid', color: '#161b22' }, textColor: '#8b949e' },
       grid:    { vertLines: { color: '#21262d' }, horzLines: { color: '#21262d' } },
       crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
       rightPriceScale: { borderColor: '#30363d' },
-      timeScale: { borderColor: '#30363d', timeVisible: true, secondsVisible: false },
+      timeScale: { borderColor: '#30363d', timeVisible: true, secondsVisible: false, rightOffset: 5 },
     });
+
+    // Resize when container width changes
+    new ResizeObserver(() => { if (lcChartInst) lcChartInst.applyOptions({ width: container.clientWidth }); }).observe(container);
 
     const candleSeries = lcChartInst.addCandlestickSeries({
       upColor:'#3fb950', downColor:'#f85149',
@@ -775,11 +782,10 @@ async function renderPriceChart() {
       ls.setData(visEma);
     }
 
-    // Scroll to end after autoSize has fired (double-rAF guarantees ResizeObserver ran first)
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      if (!lcChartInst) return;
-      lcChartInst.timeScale().scrollToRealTime();
-    }));
+    // fitContent() fits exactly the loaded data with no empty space on the right.
+    // Do NOT use scrollToRealTime() — that scrolls to wall-clock time, leaving
+    // empty space after the last bar and pushing data off-screen to the left.
+    lcChartInst.timeScale().fitContent();
 
     const barTimes = displayBars.map(b => b.t);
     const rawMarkers = getPriceChartMarkers(activeSym, activeTab).filter(m => m.time >= cutoff);
