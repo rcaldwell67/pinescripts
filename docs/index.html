@@ -28,6 +28,7 @@
     header h1 { font-size: 17px; font-weight: 600; letter-spacing: -.3px; }
     header .subtitle { color: var(--muted); font-size: 12px; }
     #lastUpdated { margin-left: auto; color: var(--muted); font-size: 12px; }
+    #lcChartContainer { height: 400px; min-height: 400px; }
     .sym-switcher { display: flex; gap: 6px; }
     .sym-btn { padding: 5px 16px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; font-weight: 600; transition: all .15s; }
     .sym-btn:hover { border-color: var(--accent); color: var(--text); }
@@ -701,7 +702,9 @@ async function renderPriceChart() {
   container.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:16px 0;">Loading chart data…</div>';
 
   let bars;
-  try { bars = await loadChartData(activeSym); } catch(e) { container.innerHTML = '<div class="empty">Chart data unavailable</div>'; return; }
+  try { bars = await loadChartData(activeSym); } catch(e) {
+    container.innerHTML = `<div class="empty">Chart data unavailable: ${e.message}</div>`; return;
+  }
   if (!bars?.length) { container.innerHTML = '<div class="empty">No bar data</div>'; return; }
   container.innerHTML = '';
 
@@ -709,48 +712,52 @@ async function renderPriceChart() {
   const lastT  = bars[bars.length-1].t;
   const cutoff = rangeDays > 0 ? lastT - rangeDays * 86400 : 0;
   const visible = bars.filter(b => b.t >= cutoff);
-  if (!visible.length) return;
+  if (!visible.length) { container.innerHTML = '<div class="empty">No bars in selected range</div>'; return; }
 
-  lcChartInst = LightweightCharts.createChart(container, {
-    width:  container.clientWidth,
-    height: 400,
-    layout:  { background: { type: 'solid', color: '#161b22' }, textColor: '#8b949e' },
-    grid:    { vertLines: { color: '#21262d' }, horzLines: { color: '#21262d' } },
-    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-    rightPriceScale: { borderColor: '#30363d' },
-    timeScale: { borderColor: '#30363d', timeVisible: true, secondsVisible: false },
-  });
+  try {
+    lcChartInst = LightweightCharts.createChart(container, {
+      autoSize: true,
+      height: 400,
+      layout:  { background: { type: 'solid', color: '#161b22' }, textColor: '#8b949e' },
+      grid:    { vertLines: { color: '#21262d' }, horzLines: { color: '#21262d' } },
+      crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+      rightPriceScale: { borderColor: '#30363d' },
+      timeScale: { borderColor: '#30363d', timeVisible: true, secondsVisible: false },
+    });
 
-  new ResizeObserver(() => { if (lcChartInst) lcChartInst.resize(container.clientWidth, 400); }).observe(container);
+    const candleSeries = lcChartInst.addCandlestickSeries({
+      upColor:'#3fb950', downColor:'#f85149',
+      borderUpColor:'#3fb950', borderDownColor:'#f85149',
+      wickUpColor:'#3fb950', wickDownColor:'#f85149',
+    });
+    candleSeries.setData(visible.map(b => ({ time:b.t, open:b.o, high:b.h, low:b.l, close:b.c })));
 
-  const candleSeries = lcChartInst.addCandlestickSeries({
-    upColor:'#3fb950', downColor:'#f85149',
-    borderUpColor:'#3fb950', borderDownColor:'#f85149',
-    wickUpColor:'#3fb950', wickDownColor:'#f85149',
-  });
-  candleSeries.setData(visible.map(b => ({ time:b.t, open:b.o, high:b.h, low:b.l, close:b.c })));
+    const emaConfigs = [
+      { period:21,  color:'#58a6ff' },
+      { period:50,  color:'#ffa657' },
+      { period:200, color:'#f85149' },
+    ];
+    for (const { period, color } of emaConfigs) {
+      const allEma = computeEMA(bars, period);
+      const visEma = allEma.filter(p => p.time >= cutoff);
+      if (!visEma.length) continue;
+      const ls = lcChartInst.addLineSeries({ color, lineWidth:1, priceLineVisible:false, lastValueVisible:false });
+      ls.setData(visEma);
+    }
 
-  const emaConfigs = [
-    { period:21,  color:'#58a6ff' },
-    { period:50,  color:'#ffa657' },
-    { period:200, color:'#f85149' },
-  ];
-  for (const { period, color } of emaConfigs) {
-    const allEma = computeEMA(bars, period);
-    const visEma = allEma.filter(p => p.time >= cutoff);
-    if (!visEma.length) continue;
-    const ls = lcChartInst.addLineSeries({ color, lineWidth:1, priceLineVisible:false, lastValueVisible:false });
-    ls.setData(visEma);
-  }
+    lcChartInst.timeScale().fitContent();
 
-  const barTimes = visible.map(b => b.t);
-  const rawMarkers = getPriceChartMarkers(activeSym, activeTab).filter(m => m.time >= cutoff);
-  if (rawMarkers.length) {
-    const snapped = snapMarkersToBars(rawMarkers, barTimes);
-    // Re-deduplicate after snapping (two markers may now share the same time+position)
-    const seen2 = new Set();
-    const deduped = snapped.filter(m => { const k = m.time+'|'+m.position; if (seen2.has(k)) return false; seen2.add(k); return true; });
-    try { candleSeries.setMarkers(deduped); } catch(e) { console.warn('setMarkers failed:', e); }
+    const barTimes = visible.map(b => b.t);
+    const rawMarkers = getPriceChartMarkers(activeSym, activeTab).filter(m => m.time >= cutoff);
+    if (rawMarkers.length) {
+      const snapped = snapMarkersToBars(rawMarkers, barTimes);
+      const seen2 = new Set();
+      const deduped = snapped.filter(m => { const k = m.time+'|'+m.position; if (seen2.has(k)) return false; seen2.add(k); return true; });
+      try { candleSeries.setMarkers(deduped); } catch(e) { console.warn('setMarkers failed:', e); }
+    }
+  } catch(e) {
+    console.error('Price chart render error:', e);
+    container.innerHTML = `<div class="empty">Chart render error: ${e.message}</div>`;
   }
 }
 
