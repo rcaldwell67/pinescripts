@@ -695,6 +695,28 @@ function getPriceChartMarkers(sym, tab) {
   return markers.filter(m => { const k = m.time+'|'+m.position; if (seen.has(k)) return false; seen.add(k); return true; });
 }
 
+// Aggregate 5-min bars into coarser buckets (for 3M/6M/All views).
+// Lightweight Charts has a hard minimum of 0.5px/bar, so a 1200px chart
+// can only display ~2400 bars. 6M of 5-min CLM data = ~4700 bars → clamps.
+// Solution: resample to ~30-min buckets for views with >1500 bars.
+function resampleBars(bars, targetMaxBars) {
+  if (bars.length <= targetMaxBars) return bars;
+  const factor = Math.ceil(bars.length / targetMaxBars);
+  const out = [];
+  for (let i = 0; i < bars.length; i += factor) {
+    const chunk = bars.slice(i, i + factor);
+    out.push({
+      t: chunk[0].t,
+      o: chunk[0].o,
+      h: Math.max(...chunk.map(b => b.h)),
+      l: Math.min(...chunk.map(b => b.l)),
+      c: chunk[chunk.length - 1].c,
+      v: chunk.reduce((s, b) => s + b.v, 0),
+    });
+  }
+  return out;
+}
+
 async function renderPriceChart() {
   const container = document.getElementById('lcChartContainer');
   if (!container) return;
@@ -711,8 +733,13 @@ async function renderPriceChart() {
   const rangeDays = parseInt(document.getElementById('chartRangeSelect')?.value || '180');
   const lastT  = bars[bars.length-1].t;
   const cutoff = rangeDays > 0 ? lastT - rangeDays * 86400 : 0;
-  const visible = bars.filter(b => b.t >= cutoff);
+  let visible = bars.filter(b => b.t >= cutoff);
   if (!visible.length) { container.innerHTML = '<div class="empty">No bars in selected range</div>'; return; }
+
+  // Resample if too many bars for LC to display at minBarSpacing=0.5
+  // Keep full-resolution for markers; use resampled for candles+EMA rendering
+  const MAX_CANDLE_BARS = 1400;
+  const displayBars = resampleBars(visible, MAX_CANDLE_BARS);
 
   try {
     lcChartInst = LightweightCharts.createChart(container, {
@@ -730,8 +757,10 @@ async function renderPriceChart() {
       borderUpColor:'#3fb950', borderDownColor:'#f85149',
       wickUpColor:'#3fb950', wickDownColor:'#f85149',
     });
-    candleSeries.setData(visible.map(b => ({ time:b.t, open:b.o, high:b.h, low:b.l, close:b.c })));
+    candleSeries.setData(displayBars.map(b => ({ time:b.t, open:b.o, high:b.h, low:b.l, close:b.c })));
 
+    // Compute EMA from full-resolution bars, then filter/snap to displayBars timestamps
+    const displayTimes = new Set(displayBars.map(b => b.t));
     const emaConfigs = [
       { period:21,  color:'#58a6ff' },
       { period:50,  color:'#ffa657' },
@@ -739,27 +768,20 @@ async function renderPriceChart() {
     ];
     for (const { period, color } of emaConfigs) {
       const allEma = computeEMA(bars, period);
-      const visEma = allEma.filter(p => p.time >= cutoff);
+      // Keep only EMA points whose time exists in displayBars
+      const visEma = allEma.filter(p => p.time >= cutoff && displayTimes.has(p.time));
       if (!visEma.length) continue;
       const ls = lcChartInst.addLineSeries({ color, lineWidth:1, priceLineVisible:false, lastValueVisible:false });
       ls.setData(visEma);
     }
 
-    // Set the visible time range after a rAF so autoSize has resized the canvas first.
-    // fitContent() called on a 0-width chart (before autoSize fires) is a no-op.
-    const _cutoff = cutoff;
-    const _lastT  = lastT;
-    const _rangeDays = rangeDays;
-    requestAnimationFrame(() => {
+    // Scroll to end after autoSize has fired (double-rAF guarantees ResizeObserver ran first)
+    requestAnimationFrame(() => requestAnimationFrame(() => {
       if (!lcChartInst) return;
-      if (_rangeDays > 0) {
-        lcChartInst.timeScale().setVisibleRange({ from: _cutoff, to: _lastT + 3600 });
-      } else {
-        lcChartInst.timeScale().fitContent();
-      }
-    });
+      lcChartInst.timeScale().scrollToRealTime();
+    }));
 
-    const barTimes = visible.map(b => b.t);
+    const barTimes = displayBars.map(b => b.t);
     const rawMarkers = getPriceChartMarkers(activeSym, activeTab).filter(m => m.time >= cutoff);
     if (rawMarkers.length) {
       const snapped = snapMarkersToBars(rawMarkers, barTimes);
