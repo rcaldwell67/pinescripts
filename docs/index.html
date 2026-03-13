@@ -600,6 +600,24 @@ function renderTransactionsTable() {
 const chartDataCache = {};
 let lcChartInst = null;
 
+async function updateLastUpdated() {
+  try {
+    const file = activeSym === 'btc' ? 'data/chart_btcusd.json' : 'data/chart_clm.json';
+    const resp = await fetch(file + '?v=' + Date.now());
+    const json = await resp.json();
+    const bars = json.bars || [];
+    if (bars.length) {
+      const lastBar = bars[bars.length - 1];
+      const lastDate = new Date(lastBar.t * 1000);
+      const diffMin = Math.round((Date.now() - lastDate) / 60000);
+      const timeStr = lastDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
+      const ageStr = diffMin < 60 ? `${diffMin}m ago` : `${Math.round(diffMin / 60)}h ago`;
+      document.getElementById('lastUpdated').textContent = `Data: ${timeStr} (${ageStr})`;
+      chartDataCache[activeSym] = bars;
+    }
+  } catch(e) { /* leave as-is */ }
+}
+
 async function loadChartData(sym) {
   if (chartDataCache[sym]) return chartDataCache[sym];
   const file = sym === 'btc' ? 'data/chart_btcusd.json' : 'data/chart_clm.json';
@@ -773,8 +791,8 @@ document.querySelectorAll('.sym-btn').forEach(btn => {
     const vers=INSTRUMENTS[activeSym].versions;
     const toLoad=Object.keys(vers).filter(v=>!loaded[activeSym][v]);
     if (toLoad.length) {
-      Promise.all(toLoad.map(v=>loadCSV(activeSym,v).then(r=>{ loaded[activeSym][v]=r; }))).then(()=>{ buildTabs(); render(); });
-    } else { buildTabs(); render(); }
+      Promise.all(toLoad.map(v=>loadCSV(activeSym,v).then(r=>{ loaded[activeSym][v]=r; }))).then(()=>{ buildTabs(); render(); updateLastUpdated(); });
+    } else { buildTabs(); render(); updateLastUpdated(); }
   });
 });
 
@@ -783,8 +801,7 @@ document.querySelectorAll('.sym-btn').forEach(btn => {
     ...Object.keys(INSTRUMENTS.btc.versions).map(v=>loadCSV('btc',v).then(r=>{ loaded.btc[v]=r; })),
     ...Object.keys(INSTRUMENTS.clm.versions).map(v=>loadCSV('clm',v).then(r=>{ loaded.clm[v]=r; })),
   ]);
-  document.getElementById('lastUpdated').textContent='Updated '+new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-  buildTabs(); render();
+  buildTabs(); render(); updateLastUpdated();
 })();
 </script>
 </body>
