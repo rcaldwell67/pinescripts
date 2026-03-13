@@ -638,6 +638,23 @@ function computeEMA(bars, period) {
   return result;
 }
 
+// Snap each marker's time to the nearest bar in barTimes (sorted ascending).
+// Required because IEX data is sparse — trade entry/exit times often fall on
+// 5-min boundaries that have no bar (no trades occurred on that candle).
+function snapMarkersToBars(markers, barTimes) {
+  if (!barTimes.length) return [];
+  return markers.map(m => {
+    // Binary search for first bar >= marker time
+    let lo = 0, hi = barTimes.length - 1;
+    while (lo < hi) { const mid = (lo + hi) >> 1; if (barTimes[mid] < m.time) lo = mid + 1; else hi = mid; }
+    // Compare neighbour below (lo-1) and at/above (lo)
+    const above = barTimes[lo];
+    const below = lo > 0 ? barTimes[lo - 1] : above;
+    const nearest = (Math.abs(above - m.time) <= Math.abs(below - m.time)) ? above : below;
+    return nearest === m.time ? m : { ...m, time: nearest };
+  });
+}
+
 function getPriceChartMarkers(sym, tab) {
   const vers = INSTRUMENTS[sym].versions;
   const markers = [];
@@ -726,8 +743,15 @@ async function renderPriceChart() {
     ls.setData(visEma);
   }
 
-  const markers = getPriceChartMarkers(activeSym, activeTab).filter(m => m.time >= cutoff);
-  if (markers.length) candleSeries.setMarkers(markers);
+  const barTimes = visible.map(b => b.t);
+  const rawMarkers = getPriceChartMarkers(activeSym, activeTab).filter(m => m.time >= cutoff);
+  if (rawMarkers.length) {
+    const snapped = snapMarkersToBars(rawMarkers, barTimes);
+    // Re-deduplicate after snapping (two markers may now share the same time+position)
+    const seen2 = new Set();
+    const deduped = snapped.filter(m => { const k = m.time+'|'+m.position; if (seen2.has(k)) return false; seen2.add(k); return true; });
+    try { candleSeries.setMarkers(deduped); } catch(e) { console.warn('setMarkers failed:', e); }
+  }
 }
 
 document.getElementById('chartRangeBtns')?.addEventListener('click', e => {
