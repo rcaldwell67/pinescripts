@@ -34,6 +34,7 @@ except ImportError:
 from alpaca.data.historical import StockHistoricalDataClient
 from alpaca.data.requests import StockBarsRequest
 from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
+from alpaca.data.enums import DataFeed
 
 # ── Config ────────────────────────────────────────────────────────────────────
 API_KEY    = os.environ.get("ALPACA_API_KEY")
@@ -70,6 +71,7 @@ def fetch_stock(client, symbol, tf, start, end):
         timeframe=tf,
         start=start,
         end=end,
+        feed=DataFeed.IEX,
     )
     bars = client.get_stock_bars(req)
     df = bars.df

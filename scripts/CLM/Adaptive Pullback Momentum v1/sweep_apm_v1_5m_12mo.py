@@ -25,6 +25,7 @@ from datetime import datetime, timezone
 from alpaca.data.historical import StockHistoricalDataClient
 from alpaca.data.requests import StockBarsRequest
 from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
+from alpaca.data.enums import DataFeed
 
 _ET = pytz.timezone("America/New_York")
 
@@ -67,6 +68,7 @@ req = StockBarsRequest(
     timeframe=TF5,
     start=datetime(2025, 3, 12, tzinfo=timezone.utc),
     end=datetime(2026, 3, 12, tzinfo=timezone.utc),
+    feed=DataFeed.IEX,
 )
 bars = client.get_stock_bars(req)
 raw = bars.df.reset_index(level=0, drop=True)
