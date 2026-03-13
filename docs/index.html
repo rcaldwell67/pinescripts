@@ -174,6 +174,7 @@
       </div>
       <div class="tx-filters">
         <select id="txVerFilter" class="tx-select" onchange="renderTransactionsTable()"><option value="all">All Versions</option></select>
+        <select id="txTfFilter" class="tx-select" onchange="renderTransactionsTable()"><option value="all">All Timeframes</option></select>
         <select id="txActionFilter" class="tx-select" onchange="renderTransactionsTable()"><option value="all">All Actions</option><option value="BUY">BUY</option><option value="SELL">SELL</option></select>
         <select id="txDirFilter" class="tx-select" onchange="renderTransactionsTable()"><option value="all">All Directions</option><option value="long">Long</option><option value="short">Short</option></select>
         <select id="txTypeFilter" class="tx-select" onchange="renderTransactionsTable()"><option value="all">Open &amp; Close</option><option value="Open">Open Only</option><option value="Close">Close Only</option></select>
@@ -551,25 +552,42 @@ function buildTransactions() {
 }
 
 function updateVerFilter() {
-  const sel = document.getElementById('txVerFilter');
-  const current = sel.value;
-  sel.innerHTML = '<option value="all">All Versions</option>';
-  for (const [v, cfg] of Object.entries(INSTRUMENTS[activeSym].versions)) {
+  const vers = INSTRUMENTS[activeSym].versions;
+
+  // Version filter
+  const vsel = document.getElementById('txVerFilter');
+  const vcur = vsel.value;
+  vsel.innerHTML = '<option value="all">All Versions</option>';
+  for (const [v, cfg] of Object.entries(vers)) {
     const opt = document.createElement('option');
     opt.value = v; opt.textContent = cfg.label;
-    sel.appendChild(opt);
+    vsel.appendChild(opt);
   }
-  if ([...sel.options].some(o=>o.value===current)) sel.value = current;
+  if ([...vsel.options].some(o=>o.value===vcur)) vsel.value = vcur;
+
+  // Timeframe filter — unique tf values in insertion order
+  const tfsel = document.getElementById('txTfFilter');
+  const tfcur = tfsel.value;
+  const tfs = [...new Set(Object.values(vers).map(c => c.tf))];
+  tfsel.innerHTML = '<option value="all">All Timeframes</option>';
+  for (const tf of tfs) {
+    const opt = document.createElement('option');
+    opt.value = tf; opt.textContent = tf;
+    tfsel.appendChild(opt);
+  }
+  if ([...tfsel.options].some(o=>o.value===tfcur)) tfsel.value = tfcur;
 }
 
 function renderTransactionsTable() {
   const verF    = document.getElementById('txVerFilter').value;
+  const tfF     = document.getElementById('txTfFilter').value;
   const actionF = document.getElementById('txActionFilter').value;
   const dirF    = document.getElementById('txDirFilter').value;
   const typeF   = document.getElementById('txTypeFilter').value;
   updateVerFilter();
   let txns = buildTransactions();
   if (verF    !== 'all') txns = txns.filter(t => t.ver === verF);
+  if (tfF     !== 'all') txns = txns.filter(t => t.cfg.tf === tfF);
   if (actionF !== 'all') txns = txns.filter(t => t.action === actionF);
   if (dirF    !== 'all') txns = txns.filter(t => t.direction === dirF);
   if (typeF   !== 'all') txns = txns.filter(t => t.type === typeF);
