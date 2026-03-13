@@ -40,10 +40,10 @@ API_KEY    = os.environ.get("ALPACA_API_KEY")
 API_SECRET = os.environ.get("ALPACA_API_SECRET")
 OUT_DIR    = Path(__file__).parent / "data"
 
-# Rolling window: today minus LOOKBACK_DAYS → yesterday's close
+# Rolling window: now minus LOOKBACK_DAYS → current time (captures latest bars)
 LOOKBACK_DAYS = 365
 _now   = datetime.now(timezone.utc)
-_end   = _now.replace(hour=0, minute=0, second=0, microsecond=0)      # midnight today (UTC)
+_end   = _now
 _start = _end - timedelta(days=LOOKBACK_DAYS)
 
 JOBS = {
