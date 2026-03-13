@@ -745,7 +745,19 @@ async function renderPriceChart() {
       ls.setData(visEma);
     }
 
-    lcChartInst.timeScale().fitContent();
+    // Set the visible time range after a rAF so autoSize has resized the canvas first.
+    // fitContent() called on a 0-width chart (before autoSize fires) is a no-op.
+    const _cutoff = cutoff;
+    const _lastT  = lastT;
+    const _rangeDays = rangeDays;
+    requestAnimationFrame(() => {
+      if (!lcChartInst) return;
+      if (_rangeDays > 0) {
+        lcChartInst.timeScale().setVisibleRange({ from: _cutoff, to: _lastT + 3600 });
+      } else {
+        lcChartInst.timeScale().fitContent();
+      }
+    });
 
     const barTimes = visible.map(b => b.t);
     const rawMarkers = getPriceChartMarkers(activeSym, activeTab).filter(m => m.time >= cutoff);
