@@ -31,17 +31,25 @@ jobs:
       - name: Install dependencies
         run: pip install --no-cache-dir alpaca-py pandas numpy python-dotenv
 
-      - name: Run paper trader
+      - name: Run paper trader v3 (CLM 15m)
         env:
           ALPACA_PAPER_API_KEY:    ${{ secrets.ALPACA_PAPER_API_KEY }}
           ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
         run: python docs/paper_trader.py
+
+      - name: Run paper trader v2 (CLM 10m)
+        env:
+          ALPACA_PAPER_API_KEY:    ${{ secrets.ALPACA_PAPER_API_KEY }}
+          ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
+        run: python docs/paper_trader_v2.py
 
       - name: Commit trade data (if changed)
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add \
+            docs/data/clm/v2_paper_state.json \
+            docs/data/clm/v2_trades_paper.csv \
             docs/data/clm/v3_paper_state.json \
             docs/data/clm/v3_trades_paper.csv \
             || true
