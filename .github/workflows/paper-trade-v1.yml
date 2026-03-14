@@ -1,0 +1,55 @@
+name: Paper Trade CLM v1
+
+# Runs every 5 minutes during NYSE market hours (Mon–Fri).
+# The script checks the Alpaca market clock and exits early if the market
+# is closed, so the cron window is intentionally wider than market hours
+# to cover both standard time (UTC-5) and daylight time (UTC-4).
+#
+# Market open  9:30 ET = 13:30 UTC (DST) / 14:30 UTC (standard)
+# Market close 4:00 ET = 20:00 UTC (DST) / 21:00 UTC (standard)
+# Strategy only trades 9:00–14:00 ET — but the position manager runs until
+# market close in case a SL/TP fires late.
+# Cron window: 13:00–21:30 UTC  →  safe coverage of both offsets
+on:
+  schedule:
+    - cron: "*/5 13-21 * * 1-5"
+  workflow_dispatch:
+
+jobs:
+  paper-trade-v1:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to commit updated state + trades CSV
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install --no-cache-dir alpaca-py pandas numpy python-dotenv
+
+      - name: Run paper trader v1
+        env:
+          ALPACA_PAPER_API_KEY:    ${{ secrets.ALPACA_PAPER_API_KEY }}
+          ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
+        run: python docs/paper_trader_v1.py
+
+      - name: Commit trade data (if changed)
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add \
+            docs/data/clm/v1_paper_state.json \
+            docs/data/clm/v1_trades_paper.csv \
+            || true
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: paper trade v1 $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            git push
+          fi
