@@ -43,11 +43,19 @@ jobs:
           ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
         run: python docs/paper_trader_v2.py
 
+      - name: Run paper trader v1 (CLM)
+        env:
+          ALPACA_PAPER_API_KEY:    ${{ secrets.ALPACA_PAPER_API_KEY }}
+          ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
+        run: python docs/paper_trader_v1.py
+
       - name: Commit trade data (if changed)
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add \
+            docs/data/clm/v1_paper_state.json \
+            docs/data/clm/v1_trades_paper.csv \
             docs/data/clm/v2_paper_state.json \
             docs/data/clm/v2_trades_paper.csv \
             docs/data/clm/v3_paper_state.json \
