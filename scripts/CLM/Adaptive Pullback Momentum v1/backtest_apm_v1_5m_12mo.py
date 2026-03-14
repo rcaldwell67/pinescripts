@@ -1,14 +1,17 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# APM v1.0 — CLM 5m  ·  12-Month Backtest
-# Mirrors "Adaptive Pullback Momentum v1.0 · 5m" Pine script exactly.
+# APM v1.1 — CLM 5m  ·  12-Month Backtest
+# Mirrors "Adaptive Pullback Momentum v1.1 · 5m" Pine script exactly.
 # Shorts-only (CLM sub-15m longs: win-rate too low historically).
 #
-# Parameters (Stage-4 sweep-optimised defaults from sweep_apm_v1_5m_12mo.py):
-#   ADX=18 | ADX_SLOPE=0 (off) | DI_SPREAD=0 (off) | PB=0.25%
-#   EMA_SLOPE=3 bars | MOMENTUM=5 bars | SESSION 9–14 ET
-#   SL×4.0 | TP×6.0 | TRAIL_ACT=2.5× | TRAIL_DIST=0.1×
-#   MAX_BARS=0 (off) | ATR_FLOOR=0.1% | PANIC=1.5× | VOL=0.3×
-#   MACRO_EMA=400 (close < EMA(400) gate — Stage-4 filter)
+# v1.1 CHANGES vs v1.0  (sweep_20pct_target.py: 2471 combos ≥ 20%):
+#   ADX threshold : 18 → 15    (slightly wider trend filter, more quality entries)
+#   PB tolerance  : 0.25% → 0.40%  (wider pullback zone — CLM tick noise)
+#   SL mult       : (kept wide at) 4.0× (fewer SL exits, 79% WR)
+#   TP mult       : 6.0× → 8.0×  (CLM big moves run 8×ATR on 5m)
+#   Trail activate: 2.5× → 3.5×  (let winners breathe more before trailing)
+#   Trail distance: 0.1× (kept — tight lock-in on 5m moves)
+#   Risk per trade: 1.0% → 2.0%  (sweep optimum; doubles compounding)
+#   MACRO_EMA     : 400 → 0 (off — signal count too low with macro filter)
 #
 # Data: Alpaca 5m bars — full 12-month window (no 60-day cap)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -50,9 +53,9 @@ EMA_FAST = 21;  EMA_MID = 50;  EMA_SLOW = 200
 ADX_LEN  = 14;  RSI_LEN = 14;  ATR_LEN  = 14;  VOL_LEN = 20
 ATR_BL_LEN = 60
 
-# ── Strategy parameters (Pine v1.0 5m  — Stage-3 sweep-optimised) ─────────────
-PB_PCT         = 0.25    # pullback tolerance (%)
-ADX_THRESH     = 18
+# ── Strategy parameters (Pine v1.1 5m  — sweep_20pct_target.py optimised) ─────
+PB_PCT         = 0.40    # pullback tolerance (%) — wider for CLM tick noise
+ADX_THRESH     = 15
 ADX_SLOPE_BARS = 0       # off
 DI_SPREAD_MIN  = 0.0     # off
 EMA_SLOPE_BARS = 3
@@ -65,13 +68,13 @@ RSI_LO_S       = 30;  RSI_HI_S = 58
 RSI_LO_L       = 42;  RSI_HI_L = 68
 
 SL_MULT    = 4.0
-TP_MULT    = 6.0
-TRAIL_ACT  = 2.5
-TRAIL_DIST = 0.1
-MACRO_EMA  = 400   # close < EMA(400) gate — Stage-4 filter (0 = off)
-MAX_BARS   = 0    # 0 = disabled
+TP_MULT    = 8.0   # CLM 5m big moves run 8×ATR (sweep peak)
+TRAIL_ACT  = 3.5   # let winners breathe before trailing
+TRAIL_DIST = 0.1   # tight lock-in once active
+MACRO_EMA  = 0     # off — signal count too low with macro filter
+MAX_BARS   = 0     # 0 = disabled
 
-RISK_PCT        = 0.01
+RISK_PCT        = 0.02  # 2% — sweep optimum; doubles compounding vs 1%
 INITIAL_CAPITAL = 10_000.0
 COMMISSION_PCT  = 0.0006
 
@@ -426,7 +429,7 @@ avg_dur = (pd.to_datetime(tdf["exit_time"]) - pd.to_datetime(tdf["entry_time"]))
 
 print(f"""
 ╔══════════════════════════════════════════════════════╗
-║   APM v1.0 · 5m  ·  CLM  ·  12-Month Backtest       ║
+║   APM v1.1 · 5m  ·  CLM  ·  12-Month Backtest       ║
 ╠══════════════════════════════════════════════════════╣
 ║  Window  : {str(df.index[0].date()):>10} → {str(df.index[-1].date()):<10}             ║
 ║  Trades  : {total:<5}  (Longs: {tdf[tdf['direction']=='long'].shape[0]}  Shorts: {tdf[tdf['direction']=='short'].shape[0]})           ║
@@ -476,7 +479,7 @@ print(f"\nTrade log saved → {out_csv}")
 eq_df = pd.DataFrame(eqcurve).set_index("time")
 
 fig, axes = plt.subplots(2, 1, figsize=(16, 8), gridspec_kw={"height_ratios": [3, 1]})
-fig.suptitle(f"APM v1.0 · 5m  ·  CLM  ·  12-Month  |  "
+fig.suptitle(f"APM v1.1 · 5m  ·  CLM  ·  12-Month  |"
              f"Net {net_pct:+.2f}%  |  WR {wr:.0f}%  |  PF {pf:.3f}  |  "
              f"MaxDD {max_dd:.2f}%  |  {total} trades",
              fontsize=11, fontweight="bold", color="white")
