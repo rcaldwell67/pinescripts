@@ -93,6 +93,11 @@
     .pg-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--text); }
     .pg-btn:disabled { opacity: 0.35; cursor: default; }
     .pg-size { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+    .mode-switcher { display: flex; gap: 6px; }
+    .mode-btn { padding: 5px 16px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; font-weight: 600; transition: all .15s; }
+    .mode-btn:hover { border-color: var(--accent); color: var(--text); }
+    .mode-btn.active[data-mode="paper"] { background: #ffa65722; border-color: var(--orange); color: var(--orange); }
+    .mode-btn.active[data-mode="live"]  { background: #3fb95022; border-color: var(--green);  color: var(--green); }
   </style>
 </head>
 <body>
@@ -104,6 +109,10 @@
   <div class="sym-switcher">
     <button class="sym-btn active" data-sym="btc">BTC-USD</button>
     <button class="sym-btn" data-sym="clm">CLM</button>
+  </div>
+  <div class="mode-switcher">
+    <button class="mode-btn active" data-mode="paper">Paper</button>
+    <button class="mode-btn" data-mode="live">Live</button>
   </div>
   <span id="lastUpdated"></span>
 </header>
@@ -202,16 +211,16 @@ const INSTRUMENTS = {
   btc: {
     label: 'BTC-USD',
     versions: {
-      v1: { label:'v1 · 15m Shorts', tf:'15m', color:'#58a6ff', file:'data/btcusd/v1_trades.csv',
+      v1: { label:'v1 · 15m Shorts', tf:'15m', color:'#58a6ff', file:'data/btcusd/v1_trades.csv', liveFile:'data/btcusd/v1_trades_live.csv',
             pnlCol:'dollar_pnl', equityCol:'equity', resultCol:'result', dirCol:'direction',
             entryCol:'entry_price', exitCol:'exit_price', entryTimeCol:'entry_time', exitTimeCol:'exit_time' },
-      v2: { label:'v2 · 30m Both',   tf:'30m', color:'#3fb950', file:'data/btcusd/v2_trades.csv',
+      v2: { label:'v2 · 30m Both',   tf:'30m', color:'#3fb950', file:'data/btcusd/v2_trades.csv', liveFile:'data/btcusd/v2_trades_live.csv',
             pnlCol:'dollar_pnl', equityCol:'equity', resultCol:'result', dirCol:'direction',
             entryCol:'entry', exitCol:'exit', entryTimeCol:'entry_time', exitTimeCol:'exit_time' },
-      v3: { label:'v3 · 1h Longs',   tf:'1h',  color:'#ffa657', file:'data/btcusd/v3_trades.csv',
+      v3: { label:'v3 · 1h Longs',   tf:'1h',  color:'#ffa657', file:'data/btcusd/v3_trades.csv', liveFile:'data/btcusd/v3_trades_live.csv',
             pnlCol:'pnl', equityCol:'equity', resultCol:'exit_reason', dirCol:'direction',
             entryCol:'entry', exitCol:'exit', entryTimeCol:'entry_time', exitTimeCol:'exit_time' },
-      v4: { label:'v4 · 1D Both',    tf:'1D',  color:'#bc8cff', file:'data/btcusd/v4_trades.csv',
+      v4: { label:'v4 · 1D Both',    tf:'1D',  color:'#bc8cff', file:'data/btcusd/v4_trades.csv', liveFile:'data/btcusd/v4_trades_live.csv',
             pnlCol:'dollar_pnl', equityCol:'equity', resultCol:'result', dirCol:'direction',
             entryCol:'entry', exitCol:'exit', entryTimeCol:'entry_time', exitTimeCol:'exit_time', hasYear:true },
     }
@@ -219,22 +228,22 @@ const INSTRUMENTS = {
   clm: {
     label: 'CLM',
     versions: {
-      v1: { label:'v1 · 5m Shorts', tf:'5m', color:'#ff7b72', file:'data/clm/v1_trades.csv',
+      v1: { label:'v1 · 5m Shorts', tf:'5m', color:'#ff7b72', file:'data/clm/v1_trades.csv', liveFile:'data/clm/v1_trades_live.csv',
             pnlCol:'dollar_pnl', equityCol:'equity', resultCol:'result', dirCol:'direction',
             entryCol:'entry', exitCol:'exit', entryTimeCol:'entry_time', exitTimeCol:'exit_time' },
-      v2: { label:'v2 · 10m', tf:'10m', color:'#58a6ff', file:'data/clm/v2_trades.csv',
+      v2: { label:'v2 · 10m', tf:'10m', color:'#58a6ff', file:'data/clm/v2_trades.csv', liveFile:'data/clm/v2_trades_live.csv',
             pnlCol:'dollar_pnl', equityCol:'equity', resultCol:'result', dirCol:'direction',
             entryCol:'entry', exitCol:'exit', entryTimeCol:'entry_time', exitTimeCol:'exit_time' },
-      v3: { label:'v3 · 15m', tf:'15m', color:'#3fb950', file:'data/clm/v3_trades.csv',
+      v3: { label:'v3 · 15m', tf:'15m', color:'#3fb950', file:'data/clm/v3_trades.csv', liveFile:'data/clm/v3_trades_live.csv',
             pnlCol:'dollar_pnl', equityCol:'equity', resultCol:'result', dirCol:'direction',
             entryCol:'entry', exitCol:'exit', entryTimeCol:'entry_time', exitTimeCol:'exit_time' },
-      v4: { label:'v4 · 30m', tf:'30m', color:'#ffa657', file:'data/clm/v4_trades.csv',
+      v4: { label:'v4 · 30m', tf:'30m', color:'#ffa657', file:'data/clm/v4_trades.csv', liveFile:'data/clm/v4_trades_live.csv',
             pnlCol:'dollar_pnl', equityCol:'equity', resultCol:'result', dirCol:'direction',
             entryCol:'entry', exitCol:'exit', entryTimeCol:'entry_time', exitTimeCol:'exit_time' },
-      v5: { label:'v5 · 1h',  tf:'1h',  color:'#d29922', file:'data/clm/v5_trades.csv',
+      v5: { label:'v5 · 1h',  tf:'1h',  color:'#d29922', file:'data/clm/v5_trades.csv', liveFile:'data/clm/v5_trades_live.csv',
             pnlCol:'pnl', equityCol:'equity', resultCol:'exit_reason', dirCol:'direction',
             entryCol:'entry', exitCol:'exit', entryTimeCol:'entry_time', exitTimeCol:'exit_time' },
-      v6: { label:'v6 · 1D',  tf:'1D',  color:'#bc8cff', file:'data/clm/v6_trades.csv',
+      v6: { label:'v6 · 1D',  tf:'1D',  color:'#bc8cff', file:'data/clm/v6_trades.csv', liveFile:'data/clm/v6_trades_live.csv',
             pnlCol:'dollar_pnl', equityCol:'equity', resultCol:'result', dirCol:'direction',
             entryCol:'entry', exitCol:'exit', entryTimeCol:'entry_time', exitTimeCol:'exit_time', hasYear:true },
     }
@@ -242,7 +251,9 @@ const INSTRUMENTS = {
 };
 
 const INITIAL_CAPITAL = 10000;
-const loaded = { btc:{}, clm:{} };
+const _modeCache = { paper: { btc:{}, clm:{} }, live: { btc:{}, clm:{} } };
+let loaded = _modeCache.paper;
+let activeMode = 'paper';
 let activeSym = 'btc';
 let activeTab = 'all';
 let charts = {};
@@ -276,10 +287,13 @@ function normalise(rows, sym, ver) {
 }
 
 function loadCSV(sym, ver) {
+  const cfg = INSTRUMENTS[sym].versions[ver];
+  const file = activeMode === 'live' && cfg.liveFile ? cfg.liveFile : cfg.file;
   return new Promise(resolve => {
-    Papa.parse(INSTRUMENTS[sym].versions[ver].file, {
+    Papa.parse(file, {
       download:true, header:true, skipEmptyLines:true,
-      complete: r => resolve(normalise(r.data, sym, ver))
+      complete: r => resolve(normalise(r.data, sym, ver)),
+      error: () => resolve([])
     });
   });
 }
@@ -949,6 +963,26 @@ document.querySelectorAll('.sym-btn').forEach(btn => {
     const toLoad=Object.keys(vers).filter(v=>!loaded[activeSym][v]);
     if (toLoad.length) {
       Promise.all(toLoad.map(v=>loadCSV(activeSym,v).then(r=>{ loaded[activeSym][v]=r; }))).then(()=>{ buildTabs(); render(); updateLastUpdated(); });
+    } else { buildTabs(); render(); updateLastUpdated(); }
+  });
+});
+
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.dataset.mode === activeMode) return;
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeMode = btn.dataset.mode;
+    loaded = _modeCache[activeMode];
+    activeTab = 'all'; tradeTablePage = 1; txPage = 1;
+    const allVers = [
+      ...Object.keys(INSTRUMENTS.btc.versions).map(v => ({sym:'btc', v})),
+      ...Object.keys(INSTRUMENTS.clm.versions).map(v => ({sym:'clm', v})),
+    ];
+    const toLoad = allVers.filter(({sym, v}) => !loaded[sym][v]);
+    if (toLoad.length) {
+      Promise.all(toLoad.map(({sym, v}) => loadCSV(sym, v).then(r => { loaded[sym][v] = r; })))
+        .then(() => { buildTabs(); render(); updateLastUpdated(); });
     } else { buildTabs(); render(); updateLastUpdated(); }
   });
 });
