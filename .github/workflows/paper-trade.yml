@@ -35,7 +35,7 @@ jobs:
         env:
           ALPACA_PAPER_API_KEY:    ${{ secrets.ALPACA_PAPER_API_KEY }}
           ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
-        run: python docs/paper_trader.py
+        run: python docs/paper_trader_v3.py
 
       - name: Run paper trader v2 (CLM 10m)
         env:

@@ -1,5 +1,5 @@
 """
-paper_trader.py — APM v3.4 paper trading bot, CLM 15m shorts.
+paper_trader_v3.py — APM v3.4 paper trading bot, CLM 15m shorts.
 
 Run every 15 minutes at bar close via GitHub Actions.
 Uses Alpaca paper trading API.
@@ -12,7 +12,7 @@ the same format the dashboard expects.
 
 Run manually:
     cd /workspaces/pinescripts/docs
-    python paper_trader.py
+    python paper_trader_v3.py
 
 Requirements:
     pip install alpaca-py pandas numpy python-dotenv

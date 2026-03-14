@@ -4,7 +4,7 @@ paper_trader_v2.py — APM v2.5 paper trading bot, CLM 10m shorts.
 Run every 15 minutes at bar close via GitHub Actions.
 Uses Alpaca paper trading API.
 
-★ Key differences from paper_trader.py (v3):
+★ Key differences from paper_trader_v3.py:
   - CLM 10m bars (Alpaca 5m IEX → resampled to 10m)
   - v2.5 signal params: ADX≥17, PB=0.30%, VOL≥0.7×, SL=2×ATR,
     TP=9×ATR, trail_act=3.5, trail_dist=0.2, risk=2.5%, max_bars=20
