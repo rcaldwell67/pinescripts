@@ -13,8 +13,13 @@ which runs this script on a schedule and commits the updated JSON.
 
 Requirements:
     pip install alpaca-py python-dotenv
-Environment (set in .env or GitHub Actions secrets):
-    ALPACA_API_KEY
+Environment (set in .env or GitHub Actions secrets):    ALPACA_MODE             paper | live  (default: paper)
+    ALPACA_PAPER_API_KEY    paper trading key
+    ALPACA_PAPER_API_SECRET paper trading secret
+    ALPACA_LIVE_API_KEY     live  trading key
+    ALPACA_LIVE_API_SECRET  live  trading secret
+
+    Legacy fallback (used when _PAPER/_LIVE vars are absent):    ALPACA_API_KEY
     ALPACA_API_SECRET
 """
 
@@ -37,8 +42,16 @@ from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
 from alpaca.data.enums import DataFeed
 
 # ── Config ────────────────────────────────────────────────────────────────────
-API_KEY    = os.environ.get("ALPACA_API_KEY")
-API_SECRET = os.environ.get("ALPACA_API_SECRET")
+# Select credentials based on ALPACA_MODE (default: paper).
+# Falls back to legacy ALPACA_API_KEY / ALPACA_API_SECRET if namespaced vars are absent.
+_MODE = os.environ.get("ALPACA_MODE", "paper").strip().lower()
+if _MODE == "live":
+    API_KEY    = os.environ.get("ALPACA_LIVE_API_KEY")    or os.environ.get("ALPACA_API_KEY")
+    API_SECRET = os.environ.get("ALPACA_LIVE_API_SECRET") or os.environ.get("ALPACA_API_SECRET")
+else:
+    API_KEY    = os.environ.get("ALPACA_PAPER_API_KEY")    or os.environ.get("ALPACA_API_KEY")
+    API_SECRET = os.environ.get("ALPACA_PAPER_API_SECRET") or os.environ.get("ALPACA_API_SECRET")
+
 OUT_DIR    = Path(__file__).parent / "data"
 
 # Rolling window: now minus LOOKBACK_DAYS → current time (captures latest bars)
@@ -125,8 +138,13 @@ def fetch_crypto(symbol, tf, start, end):
 
 
 def main():
+    print(f"Mode: {_MODE.upper()}")
     if not API_KEY or not API_SECRET:
-        sys.exit("ERROR: ALPACA_API_KEY / ALPACA_API_SECRET not set.")
+        sys.exit(
+            f"ERROR: No Alpaca credentials found for mode '{_MODE}'.\n"
+            f"Set ALPACA_{_MODE.upper()}_API_KEY / ALPACA_{_MODE.upper()}_API_SECRET "
+            "(or legacy ALPACA_API_KEY / ALPACA_API_SECRET) in .env or GitHub Secrets."
+        )
 
     stock_client = StockHistoricalDataClient(API_KEY, API_SECRET)
     OUT_DIR.mkdir(parents=True, exist_ok=True)

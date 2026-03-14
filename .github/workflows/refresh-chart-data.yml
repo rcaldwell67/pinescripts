@@ -27,8 +27,14 @@ jobs:
 
       - name: Fetch chart data
         env:
-          ALPACA_API_KEY:    ${{ secrets.ALPACA_API_KEY }}
-          ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
+          ALPACA_MODE:             ${{ vars.ALPACA_MODE || 'paper' }}
+          ALPACA_PAPER_API_KEY:    ${{ secrets.ALPACA_PAPER_API_KEY }}
+          ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
+          ALPACA_LIVE_API_KEY:     ${{ secrets.ALPACA_LIVE_API_KEY }}
+          ALPACA_LIVE_API_SECRET:  ${{ secrets.ALPACA_LIVE_API_SECRET }}
+          # Legacy fallback — kept so existing deployments keep working
+          ALPACA_API_KEY:          ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_API_SECRET:       ${{ secrets.ALPACA_API_SECRET }}
         run: python docs/fetch_chart_data.py
 
       - name: Commit updated JSON (if changed)
