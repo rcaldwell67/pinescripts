@@ -136,28 +136,6 @@
     </div>
     <div class="table-wrap" id="txTableWrap"><div class="empty">Loading…</div></div>
   </div>
-  <div class="grid-3" id="topRow">
-    <div class="panel chart-wrap tall" style="grid-column: span 2;">
-      <h2>Equity Curve</h2>
-      <canvas id="equityChart"></canvas>
-      <div class="legend" id="equityLegend"></div>
-    </div>
-    <div class="panel chart-wrap">
-      <h2>Trade Outcomes</h2>
-      <canvas id="outcomeChart"></canvas>
-      <div id="outcomeLegend" style="margin-top:12px;font-size:12px;"></div>
-    </div>
-  </div>
-  <div class="grid-2" id="midRow">
-    <div class="panel chart-wrap">
-      <h2 id="dirChartTitle">P&amp;L by Direction</h2>
-      <canvas id="directionChart"></canvas>
-    </div>
-    <div class="panel chart-wrap">
-      <h2>Monthly P&amp;L</h2>
-      <canvas id="monthlyChart"></canvas>
-    </div>
-  </div>
   <div class="panel" style="margin-bottom:16px;" id="priceChartPanel">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
       <h2 style="margin-bottom:0;">Price Chart</h2>
@@ -183,6 +161,28 @@
       <div class="legend-item"><div class="dot" style="background:#3fb950"></div>TP exit</div>
       <div class="legend-item"><div class="dot" style="background:#f85149"></div>SL exit</div>
       <div class="legend-item"><div class="dot" style="background:#ffa657"></div>Trail exit</div>
+    </div>
+  </div>
+  <div class="grid-3" id="topRow">
+    <div class="panel chart-wrap tall" style="grid-column: span 2;">
+      <h2>Equity Curve</h2>
+      <canvas id="equityChart"></canvas>
+      <div class="legend" id="equityLegend"></div>
+    </div>
+    <div class="panel chart-wrap">
+      <h2>Trade Outcomes</h2>
+      <canvas id="outcomeChart"></canvas>
+      <div id="outcomeLegend" style="margin-top:12px;font-size:12px;"></div>
+    </div>
+  </div>
+  <div class="grid-2" id="midRow">
+    <div class="panel chart-wrap">
+      <h2 id="dirChartTitle">P&amp;L by Direction</h2>
+      <canvas id="directionChart"></canvas>
+    </div>
+    <div class="panel chart-wrap">
+      <h2>Monthly P&amp;L</h2>
+      <canvas id="monthlyChart"></canvas>
     </div>
   </div>
   <div id="yearSection" style="display:none; margin-bottom:16px;">
