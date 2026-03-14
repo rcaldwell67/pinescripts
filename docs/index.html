@@ -119,6 +119,23 @@
 <main>
   <div class="tabs" id="tabs"></div>
   <div class="cards" id="cards"></div>
+  <div class="panel" style="margin-bottom:16px;">
+    <div class="tx-controls">
+      <div style="display:flex;align-items:baseline;gap:10px;">
+        <h2 style="margin-bottom:0;">All Transactions</h2>
+        <span class="tx-count" id="txCount"></span>
+      </div>
+      <div class="tx-filters">
+        <select id="txVerFilter" class="tx-select" onchange="txPage=1;renderTransactionsTable()"><option value="all">All Versions</option></select>
+        <select id="txTfFilter" class="tx-select" onchange="txPage=1;renderTransactionsTable()"><option value="all">All Timeframes</option></select>
+        <select id="txActionFilter" class="tx-select" onchange="txPage=1;renderTransactionsTable()"><option value="all">All Actions</option><option value="BUY">BUY</option><option value="SELL">SELL</option></select>
+        <select id="txDirFilter" class="tx-select" onchange="txPage=1;renderTransactionsTable()"><option value="all">All Directions</option><option value="long">Long</option><option value="short">Short</option></select>
+        <select id="txTypeFilter" class="tx-select" onchange="txPage=1;renderTransactionsTable()"><option value="all">Open &amp; Close</option><option value="Open">Open Only</option><option value="Close">Close Only</option></select>
+        <div class="pg-size"><label>Rows</label><select id="txPageSizeSelect" class="tx-select" onchange="txPageSize=parseInt(this.value);txPage=1;renderTransactionsTable()"><option value="10">10</option><option value="25" selected>25</option><option value="50">50</option><option value="100">100</option></select></div>
+      </div>
+    </div>
+    <div class="table-wrap" id="txTableWrap"><div class="empty">Loading…</div></div>
+  </div>
   <div class="grid-3" id="topRow">
     <div class="panel chart-wrap tall" style="grid-column: span 2;">
       <h2>Equity Curve</h2>
@@ -187,23 +204,6 @@
   <div class="panel">
     <h2>Version Comparison</h2>
     <div class="table-wrap"><table class="cmp" id="cmpTable"></table></div>
-  </div>
-  <div class="panel" style="margin-top:16px;">
-    <div class="tx-controls">
-      <div style="display:flex;align-items:baseline;gap:10px;">
-        <h2 style="margin-bottom:0;">All Transactions</h2>
-        <span class="tx-count" id="txCount"></span>
-      </div>
-      <div class="tx-filters">
-        <select id="txVerFilter" class="tx-select" onchange="txPage=1;renderTransactionsTable()"><option value="all">All Versions</option></select>
-        <select id="txTfFilter" class="tx-select" onchange="txPage=1;renderTransactionsTable()"><option value="all">All Timeframes</option></select>
-        <select id="txActionFilter" class="tx-select" onchange="txPage=1;renderTransactionsTable()"><option value="all">All Actions</option><option value="BUY">BUY</option><option value="SELL">SELL</option></select>
-        <select id="txDirFilter" class="tx-select" onchange="txPage=1;renderTransactionsTable()"><option value="all">All Directions</option><option value="long">Long</option><option value="short">Short</option></select>
-        <select id="txTypeFilter" class="tx-select" onchange="txPage=1;renderTransactionsTable()"><option value="all">Open &amp; Close</option><option value="Open">Open Only</option><option value="Close">Close Only</option></select>
-        <div class="pg-size"><label>Rows</label><select id="txPageSizeSelect" class="tx-select" onchange="txPageSize=parseInt(this.value);txPage=1;renderTransactionsTable()"><option value="10">10</option><option value="25" selected>25</option><option value="50">50</option><option value="100">100</option></select></div>
-      </div>
-    </div>
-    <div class="table-wrap" id="txTableWrap"><div class="empty">Loading…</div></div>
   </div>
 </main>
 <script>
