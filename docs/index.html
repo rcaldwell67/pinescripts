@@ -86,6 +86,13 @@
     .tx-controls h2 { margin-bottom: 0; }
     .tx-filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     .tx-count { font-size: 11px; color: var(--muted); }
+    .pagination { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; flex-wrap: wrap; gap: 8px; }
+    .pg-info { font-size: 12px; color: var(--muted); }
+    .pg-btns { display: flex; align-items: center; gap: 4px; }
+    .pg-btn { padding: 3px 10px; border-radius: 5px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; font-size: 12px; transition: all .15s; }
+    .pg-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--text); }
+    .pg-btn:disabled { opacity: 0.35; cursor: default; }
+    .pg-size { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
   </style>
 </head>
 <body>
@@ -159,7 +166,13 @@
     </div>
   </div>
   <div class="panel" style="margin-bottom:16px;">
-    <h2>Trade Log</h2>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+      <h2 style="margin-bottom:0;">Trade Log</h2>
+      <div class="pg-size">
+        <label>Rows</label>
+        <select id="tradePageSizeSelect" class="tx-select" onchange="tradePageSize=parseInt(this.value);tradeTablePage=1;renderTradeTable(getActiveRows())"><option value="10">10</option><option value="25" selected>25</option><option value="50">50</option><option value="100">100</option></select>
+      </div>
+    </div>
     <div class="table-wrap" id="tradeTableWrap"><div class="empty">Loading…</div></div>
   </div>
   <div class="panel">
@@ -173,11 +186,12 @@
         <span class="tx-count" id="txCount"></span>
       </div>
       <div class="tx-filters">
-        <select id="txVerFilter" class="tx-select" onchange="renderTransactionsTable()"><option value="all">All Versions</option></select>
-        <select id="txTfFilter" class="tx-select" onchange="renderTransactionsTable()"><option value="all">All Timeframes</option></select>
-        <select id="txActionFilter" class="tx-select" onchange="renderTransactionsTable()"><option value="all">All Actions</option><option value="BUY">BUY</option><option value="SELL">SELL</option></select>
-        <select id="txDirFilter" class="tx-select" onchange="renderTransactionsTable()"><option value="all">All Directions</option><option value="long">Long</option><option value="short">Short</option></select>
-        <select id="txTypeFilter" class="tx-select" onchange="renderTransactionsTable()"><option value="all">Open &amp; Close</option><option value="Open">Open Only</option><option value="Close">Close Only</option></select>
+        <select id="txVerFilter" class="tx-select" onchange="txPage=1;renderTransactionsTable()"><option value="all">All Versions</option></select>
+        <select id="txTfFilter" class="tx-select" onchange="txPage=1;renderTransactionsTable()"><option value="all">All Timeframes</option></select>
+        <select id="txActionFilter" class="tx-select" onchange="txPage=1;renderTransactionsTable()"><option value="all">All Actions</option><option value="BUY">BUY</option><option value="SELL">SELL</option></select>
+        <select id="txDirFilter" class="tx-select" onchange="txPage=1;renderTransactionsTable()"><option value="all">All Directions</option><option value="long">Long</option><option value="short">Short</option></select>
+        <select id="txTypeFilter" class="tx-select" onchange="txPage=1;renderTransactionsTable()"><option value="all">Open &amp; Close</option><option value="Open">Open Only</option><option value="Close">Close Only</option></select>
+        <div class="pg-size"><label>Rows</label><select id="txPageSizeSelect" class="tx-select" onchange="txPageSize=parseInt(this.value);txPage=1;renderTransactionsTable()"><option value="10">10</option><option value="25" selected>25</option><option value="50">50</option><option value="100">100</option></select></div>
       </div>
     </div>
     <div class="table-wrap" id="txTableWrap"><div class="empty">Loading…</div></div>
@@ -232,6 +246,15 @@ const loaded = { btc:{}, clm:{} };
 let activeSym = 'btc';
 let activeTab = 'all';
 let charts = {};
+let tradeTablePage = 1;
+let tradePageSize = 25;
+let txPage = 1;
+let txPageSize = 25;
+function getActiveRows() {
+  return activeTab === 'all'
+    ? Object.values(loaded[activeSym]).flat()
+    : (loaded[activeSym][activeTab] || []);
+}
 
 function normalise(rows, sym, ver) {
   const cfg = INSTRUMENTS[sym].versions[ver];
@@ -329,7 +352,7 @@ function buildTabs() {
     if (activeTab===v) btn.style.cssText = color
       ? `background:${color}22;border-color:${color};color:${color}`
       : 'background:#e6edf322;border-color:var(--text);color:var(--text)';
-    btn.addEventListener('click', () => { activeTab = v; buildTabs(); render(); });
+    btn.addEventListener('click', () => { activeTab = v; tradeTablePage = 1; txPage = 1; buildTabs(); render(); });
     tabEl.appendChild(btn);
   };
   addBtn('all','All Versions',null);
@@ -508,28 +531,49 @@ function renderYearChart() {
 }
 
 function renderTradeTable(rows) {
-  const wrap=document.getElementById('tradeTableWrap');
-  if (!rows?.length) { wrap.innerHTML='<div class="empty">No data</div>'; return; }
-  const showVer=activeTab==='all';
-  const vers=INSTRUMENTS[activeSym].versions;
-  wrap.innerHTML=`<table><thead><tr>
-    ${showVer?'<th>Ver</th>':''}
+  const wrap = document.getElementById('tradeTableWrap');
+  if (!rows?.length) { wrap.innerHTML = '<div class="empty">No data</div>'; return; }
+  const showVer = activeTab === 'all';
+  const vers = INSTRUMENTS[activeSym].versions;
+  const sorted = rows.slice().sort((a, b) => {
+    const ta = a.entry_time ? new Date(a.entry_time.replace(' ','T')).getTime() : 0;
+    const tb = b.entry_time ? new Date(b.entry_time.replace(' ','T')).getTime() : 0;
+    return tb - ta;
+  });
+  const total = sorted.length;
+  const totalPages = Math.max(1, Math.ceil(total / tradePageSize));
+  if (tradeTablePage > totalPages) tradeTablePage = totalPages;
+  const start = (tradeTablePage - 1) * tradePageSize;
+  const paged = sorted.slice(start, start + tradePageSize);
+  const end = start + paged.length;
+  const pagCtrl = total > tradePageSize ? `<div class="pagination">
+    <span class="pg-info">${start+1}–${end} of ${total} trades</span>
+    <div class="pg-btns">
+      <button class="pg-btn" ${tradeTablePage<=1?'disabled':''} onclick="tradeTablePage=1;renderTradeTable(getActiveRows())">«</button>
+      <button class="pg-btn" ${tradeTablePage<=1?'disabled':''} onclick="tradeTablePage--;renderTradeTable(getActiveRows())">‹</button>
+      <span class="pg-info" style="padding:0 8px">Page ${tradeTablePage} / ${totalPages}</span>
+      <button class="pg-btn" ${tradeTablePage>=totalPages?'disabled':''} onclick="tradeTablePage++;renderTradeTable(getActiveRows())">›</button>
+      <button class="pg-btn" ${tradeTablePage>=totalPages?'disabled':''} onclick="tradeTablePage=${totalPages};renderTradeTable(getActiveRows())">»</button>
+    </div>
+  </div>` : '';
+  wrap.innerHTML = `<table><thead><tr>
+    ${showVer ? '<th>Ver</th>' : ''}
     <th>Entry</th><th>Exit</th><th>Dir</th><th>Entry $</th><th>Exit $</th><th>P&L</th><th>Result</th><th>Equity</th>
-  </tr></thead><tbody>${rows.slice().reverse().map(r=>{
-    const dirTag=r.direction==='long'?'tag-long':'tag-short';
-    const cfg=vers[r.version];
-    const ep=r.entry_price<100?'$'+r.entry_price?.toFixed(4):'$'+r.entry_price?.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-    const xp=r.exit_price<100?'$'+r.exit_price?.toFixed(4):'$'+r.exit_price?.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  </tr></thead><tbody>${paged.map(r => {
+    const dirTag = r.direction === 'long' ? 'tag-long' : 'tag-short';
+    const cfg = vers[r.version];
+    const ep = r.entry_price < 100 ? '$' + r.entry_price?.toFixed(4) : '$' + r.entry_price?.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+    const xp = r.exit_price  < 100 ? '$' + r.exit_price?.toFixed(4)  : '$' + r.exit_price?.toLocaleString('en-US',  {minimumFractionDigits:2, maximumFractionDigits:2});
     return `<tr>
-      ${showVer?`<td><span class="pill" style="background:${cfg.color}22;color:${cfg.color};border-color:${cfg.color}">${cfg.tf}</span></td>`:''}
+      ${showVer ? `<td><span class="pill" style="background:${cfg.color}22;color:${cfg.color};border-color:${cfg.color}">${cfg.tf}</span></td>` : ''}
       <td>${fmtDate(r.entry_time)}</td><td>${fmtDate(r.exit_time)}</td>
-      <td><span class="tag ${dirTag}">${r.direction||'—'}</span></td>
+      <td><span class="tag ${dirTag}">${r.direction || '—'}</span></td>
       <td>${ep}</td><td>${xp}</td>
       <td class="${clsVal(r.dollar_pnl)}">${fmt$(r.dollar_pnl)}</td>
       <td>${resultTag(r.result)}</td>
       <td>$${r.equity?.toFixed(2)}</td>
     </tr>`;
-  }).join('')}</tbody></table>`;
+  }).join('')}</tbody></table>${pagCtrl}`;
 }
 
 function buildTransactions() {
@@ -594,14 +638,30 @@ function renderTransactionsTable() {
   if (actionF !== 'all') txns = txns.filter(t => t.action === actionF);
   if (dirF    !== 'all') txns = txns.filter(t => t.direction === dirF);
   if (typeF   !== 'all') txns = txns.filter(t => t.type === typeF);
+  const total = txns.length;
   const countEl = document.getElementById('txCount');
-  countEl.textContent = txns.length ? txns.length + ' transactions' : '';
+  countEl.textContent = total ? total + ' transactions' : '';
   const wrap = document.getElementById('txTableWrap');
-  if (!txns.length) { wrap.innerHTML='<div class="empty">No transactions match filters</div>'; return; }
+  if (!total) { wrap.innerHTML = '<div class="empty">No transactions match filters</div>'; return; }
+  const totalPages = Math.max(1, Math.ceil(total / txPageSize));
+  if (txPage > totalPages) txPage = totalPages;
+  const start = (txPage - 1) * txPageSize;
+  const paged = txns.slice(start, start + txPageSize);
+  const end = start + paged.length;
+  const pagCtrl = total > txPageSize ? `<div class="pagination">
+    <span class="pg-info">${start+1}–${end} of ${total} transactions</span>
+    <div class="pg-btns">
+      <button class="pg-btn" ${txPage<=1?'disabled':''} onclick="txPage=1;renderTransactionsTable()">«</button>
+      <button class="pg-btn" ${txPage<=1?'disabled':''} onclick="txPage--;renderTransactionsTable()">‹</button>
+      <span class="pg-info" style="padding:0 8px">Page ${txPage} / ${totalPages}</span>
+      <button class="pg-btn" ${txPage>=totalPages?'disabled':''} onclick="txPage++;renderTransactionsTable()">›</button>
+      <button class="pg-btn" ${txPage>=totalPages?'disabled':''} onclick="txPage=${totalPages};renderTransactionsTable()">»</button>
+    </div>
+  </div>` : '';
   const fmtEq = e => e==null||isNaN(e) ? '—' : '$'+e.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   wrap.innerHTML = `<table><thead><tr>
     <th>Date / Time</th><th>Version</th><th>Action</th><th>Type</th><th>Direction</th><th>Price</th><th>P&amp;L</th><th>Beg. Bal</th><th>End Bal</th><th>Result</th>
-  </tr></thead><tbody>${txns.map(t=>{
+  </tr></thead><tbody>${paged.map(t => {
     const fmtP = p => isNaN(p)?'—' : p<100?'$'+p.toFixed(4):'$'+p.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
     const actionTag = t.action==='BUY'
       ? `<span class="tag tag-buy">▲ BUY</span>`
@@ -623,7 +683,7 @@ function renderTransactionsTable() {
       <td>${actionTag}</td><td>${typeTag}</td><td>${dirTag}</td>
       <td>${fmtP(t.price)}</td><td>${pnlCell}</td><td>${begCell}</td><td>${endCell}</td><td>${t.result?resultTag(t.result):'<span style="color:var(--border)">—</span>'}</td>
     </tr>`;
-  }).join('')}</tbody></table>`;
+  }).join('')}</tbody></table>${pagCtrl}`;
 }
 
 // ── Price Chart (Lightweight Charts) ────────────────────────────────────────
@@ -884,7 +944,7 @@ document.querySelectorAll('.sym-btn').forEach(btn => {
     if (btn.dataset.sym===activeSym) return;
     document.querySelectorAll('.sym-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
-    activeSym=btn.dataset.sym; activeTab='all';
+    activeSym=btn.dataset.sym; activeTab='all'; tradeTablePage=1; txPage=1;
     const vers=INSTRUMENTS[activeSym].versions;
     const toLoad=Object.keys(vers).filter(v=>!loaded[activeSym][v]);
     if (toLoad.length) {
