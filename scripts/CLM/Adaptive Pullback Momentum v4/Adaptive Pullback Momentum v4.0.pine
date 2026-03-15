@@ -4,7 +4,7 @@
 //@version=6
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Adaptive Pullback Momentum v4.4
+// Adaptive Pullback Momentum v4.5
 // 30min (CLM-optimised)
 // THESIS
 //   Most breakout strategies enter *after* the move is mature.  This strategy
@@ -68,11 +68,17 @@
 //   Trail distance : 0.3× → 0.1×   (hardest possible profit lock on activation)
 //   Volume mult    : 1.2× → 1.0×   (lower entry bar = more signals, n: 51→60)
 //   Risk per trade : 3%   → 4%     (hits 5× leverage cap optimally; 5%/6% identical)
+//
+// v4.5 CHANGES vs v4.4  (S9 MDD-constrained: +18.14% PF=2.25 n=17 WR=47.1% MDD=-4.17% Calmar=4.35)
+//   Risk per trade : 4%   → 1%     (below 5× leverage cap for most CLM ATR levels)
+//   Circuit Breaker: ADDED — halt new entries when equity drops CB% below HWM;
+//                    resume when equity recovers halfway back to HWM.
+//                    Default: 4% trigger (MDD capped ≈ 4.17%, Calmar 4.35×)
 // ─────────────────────────────────────────────────────────────────────────────
 
 strategy(
-    title             = "Adaptive Pullback Momentum v4.4",
-    shorttitle        = "APM v4.4",
+    title             = "Adaptive Pullback Momentum v4.5",
+    shorttitle        = "APM v4.5",
     overlay           = true,
     pyramiding        = 0,
     initial_capital   = 10000,
@@ -117,7 +123,9 @@ i_tr_act     = input.float(3.0,  "Trail activate ATR mult",group=G_RISK,minval=0
                  tooltip="Trailing stop kicks in once price moves this many ATRs in your favour")
 i_tr_dist    = input.float(0.1,  "Trail distance ATR mult",group=G_RISK,minval=0.05, step=0.05,
                  tooltip="Once active, trail stays this many ATRs below/above the best price")
-i_risk_pct   = input.float(4.0,  "Equity risked per trade (%)",group=G_RISK,minval=0.1,maxval=20,step=0.1)
+i_risk_pct   = input.float(1.0,  "Equity risked per trade (%)",group=G_RISK,minval=0.1,maxval=20,step=0.1)
+i_cb_dd      = input.float(4.0,  "Circuit Breaker DD% trigger",group=G_RISK,minval=0.0,maxval=20,step=0.5,
+                 tooltip="Halt new entries when equity drops this % below its running high-water mark.\nSet 0 to disable. Resumes when equity recovers halfway back to HWM.")
 
 i_ema_slope  = input.bool(true,  "EMA slope filter", group=G_TREND,
                  tooltip="Require EMA-fast to be rising (longs) / falling (shorts) over 3 bars")
@@ -173,11 +181,37 @@ ema_slope_down = ema_fast < ema_fast[3]
 rsi_rising  = rsi > rsi[1]
 rsi_falling = rsi < rsi[1]
 
+// ── Circuit Breaker state ─────────────────────────────────────────────────────
+// Updated BEFORE entry conditions so CB fires on the same bar it triggers.
+// Tracks equity high-water mark and halts new entries when DD exceeds threshold.
+// Resumes once equity recovers halfway back to HWM, then resets the HWM.
+var float cb_hwm     = na
+var bool  cb_halted  = false
+
+if na(cb_hwm)
+    cb_hwm := strategy.equity
+
+// update HWM
+if strategy.equity > cb_hwm
+    cb_hwm := strategy.equity
+
+// HALT when equity drops cb_dd% below HWM
+if not cb_halted and i_cb_dd > 0
+    if strategy.equity <= cb_hwm * (1 - i_cb_dd / 100)
+        cb_halted := true
+
+// RESUME when equity recovers halfway back to HWM
+if cb_halted
+    float midpoint = cb_hwm * (1 - i_cb_dd / 200)
+    if strategy.equity >= midpoint
+        cb_halted := false
+        cb_hwm    := strategy.equity   // reset HWM on resume
+
 // ── Full entry conditions ─────────────────────────────────────────────────────
 no_pos     = strategy.position_size == 0.0
 stop_dist  = atr * i_sl_mult
 
-long_ok  = i_longs  and no_pos and not is_panic and is_trending and atr_floor_ok and
+long_ok  = i_longs  and no_pos and not cb_halted and not is_panic and is_trending and atr_floor_ok and
      long_pb        and
      ema_bull_full  and             // full stack: EMA21 > EMA50 > EMA200
      (not i_ema_slope or ema_slope_up) and  // optional: EMA21 rising over 3 bars
@@ -185,7 +219,7 @@ long_ok  = i_longs  and no_pos and not is_panic and is_trending and atr_floor_ok
      rsi     >= i_rsi_lo_l and rsi <= i_rsi_hi_l and
      volume  >= vol_ma * i_vol_mult
 
-short_ok = i_shorts and no_pos and not is_panic and is_trending and atr_floor_ok and
+short_ok = i_shorts and no_pos and not cb_halted and not is_panic and is_trending and atr_floor_ok and
      short_pb       and
      ema_bear_full  and             // full stack: EMA21 < EMA50 < EMA200
      (not i_ema_slope or ema_slope_down) and  // optional: EMA21 falling over 3 bars
@@ -209,7 +243,7 @@ if long_ok
     trail_active := false
     strategy.entry("Long", strategy.long, qty=qty)
     alert(
-        "APM v4.4 | LONG ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v4.5 | LONG ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "Entry   : " + str.tostring(close, "#.##") +
         "  |  Equity: $" + str.tostring(strategy.equity, "#.##") + "\n" +
         "Stop    : " + str.tostring(sl_price, "#.##") +
@@ -251,7 +285,7 @@ if short_ok
     trail_active := false
     strategy.entry("Short", strategy.short, qty=qty)
     alert(
-        "APM v4.4 | SHORT ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v4.5 | SHORT ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "Entry   : " + str.tostring(close, "#.##") +
         "  |  Equity: $" + str.tostring(strategy.equity, "#.##") + "\n" +
         "Stop    : " + str.tostring(sl_price, "#.##") +
@@ -295,7 +329,7 @@ if strategy.position_size > 0.0          // long
         if not trail_active
             trail_active := true
             alert(
-                "APM v4.4 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+                "APM v4.5 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
                 "Direction : LONG\n" +
                 "Best price: " + str.tostring(best_price, "#.##") +
                 "  |  Entry: " + str.tostring(entry_p, "#.##") + "\n" +
@@ -318,7 +352,7 @@ if strategy.position_size < 0.0          // short
         if not trail_active
             trail_active := true
             alert(
-                "APM v4.4 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+                "APM v4.5 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
                 "Direction : SHORT\n" +
                 "Best price: " + str.tostring(best_price, "#.##") +
                 "  |  Entry: " + str.tostring(entry_p, "#.##") + "\n" +
@@ -349,7 +383,7 @@ if strategy.closedtrades > _prev_closed
     _mvpct   = _sz > 0 ? (_xp - _ep) / _ep * 100 : (_ep - _xp) / _ep * 100
     _wr      = strategy.closedtrades > 0 ? str.tostring(math.round(strategy.wintrades / strategy.closedtrades * 100, 1), "#.#") + "%" : "--"
     alert(
-        "APM v4.4 | " + _dir + " EXIT [" + _res + "] | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v4.5 | " + _dir + " EXIT [" + _res + "] | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "Entry   : " + str.tostring(_ep, "#.##") +
         "  ->  Exit: " + str.tostring(_xp, "#.##") + "\n" +
         "Move    : " + (_mvpct >= 0 ? "+" : "") + str.tostring(_mvpct, "#.##") + "%\n" +
@@ -362,10 +396,29 @@ if strategy.closedtrades > _prev_closed
         "  |  Win rate: " + _wr,
         alert.freq_once_per_bar_close)
 
+// ── Circuit breaker alerts ────────────────────────────────────────────────────
+if cb_halted and not cb_halted[1]
+    alert(
+        "APM v4.5 | CIRCUIT BREAKER TRIGGERED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "Equity  : $" + str.tostring(strategy.equity, "#.##") + "\n" +
+        "HWM     : $" + str.tostring(cb_hwm, "#.##") + "\n" +
+        "DD      : " + str.tostring((strategy.equity - cb_hwm) / cb_hwm * 100, "#.##") + "%" +
+        "  [threshold: -" + str.tostring(i_cb_dd, "#.#") + "%]\n" +
+        "Status  : New entries SUSPENDED until halfway recovery",
+        alert.freq_once_per_bar_close)
+
+if not cb_halted and cb_halted[1]
+    alert(
+        "APM v4.5 | CIRCUIT BREAKER CLEARED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "Equity  : $" + str.tostring(strategy.equity, "#.##") + "\n" +
+        "New HWM : $" + str.tostring(cb_hwm, "#.##") + "  (reset on resume)\n" +
+        "Status  : New entries RESUMED",
+        alert.freq_once_per_bar_close)
+
 // ── Panic regime alert ────────────────────────────────────────────────────────
 if is_panic and not is_panic[1]
     alert(
-        "APM v4.4 | PANIC REGIME STARTED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v4.5 | PANIC REGIME STARTED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "ATR     : " + str.tostring(atr, "#.##") +
         "  |  ATR baseline: " + str.tostring(atr_bl, "#.##") + "\n" +
         "Ratio   : " + str.tostring(atr / atr_bl, "#.##") + "x" +
@@ -375,7 +428,7 @@ if is_panic and not is_panic[1]
 
 if not is_panic and is_panic[1]
     alert(
-        "APM v4.4 | PANIC REGIME CLEARED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v4.5 | PANIC REGIME CLEARED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "ATR     : " + str.tostring(atr, "#.##") +
         "  |  ATR baseline: " + str.tostring(atr_bl, "#.##") + "\n" +
         "Ratio   : " + str.tostring(atr / atr_bl, "#.##") + "x" +
@@ -426,12 +479,12 @@ if i_show_dash and barstate.islast
         "Middle Left"  => position.middle_left
         => position.top_right
 
-    tbl = table.new(tbl_pos, columns=2, rows=22,
+    tbl = table.new(tbl_pos, columns=2, rows=24,
          border_width=1, border_color=color.new(color.gray, 60),
          frame_width=1,  frame_color=color.new(color.gray, 40))
 
     // header
-    table.cell(tbl, 0, 0, "APM v4.4", text_color=D_BRT, bgcolor=D_HDR, text_size=size.normal, text_halign=text.align_left)
+    table.cell(tbl, 0, 0, "APM v4.5", text_color=D_BRT, bgcolor=D_HDR, text_size=size.normal, text_halign=text.align_left)
     table.cell(tbl, 1, 0, timeframe.period + " | " + syminfo.ticker, text_color=D_YEL, bgcolor=D_HDR, text_size=size.small, text_halign=text.align_right)
 
     // position
@@ -478,4 +531,11 @@ if i_show_dash and barstate.islast
     _row(tbl, 18, "Win rate",     wr_str + " (" + str.tostring(strategy.wintrades) + "/" + str.tostring(total_trades) + ")", D_BRT)
     _row(tbl, 19, "Prof. factor", na(pf_raw) ? "--" : str.tostring(pf_raw, "#.##"), na(pf_raw) ? D_DIM : pf_raw >= 1.0 ? D_GRN : D_RED)
     _row(tbl, 20, "Max DD",       str.tostring(math.round(strategy.max_drawdown_percent, 2)) + "%", D_RED)
+
+    // circuit breaker section
+    table.cell(tbl, 0, 21, "CB Status", text_color=D_DIM, bgcolor=D_BG, text_size=size.tiny, text_halign=text.align_left)
+    table.cell(tbl, 1, 21, "",          text_color=D_DIM, bgcolor=D_BG)
+    _row(tbl, 22, "CB Halted", cb_halted ? "HALTED" : "ACTIVE", cb_halted ? D_RED : D_GRN)
+    cb_dd_str = i_cb_dd == 0 ? "OFF" : str.tostring(i_cb_dd, "#.#") + "%  HWM:$" + str.tostring(cb_hwm, "#.##")
+    _row(tbl, 23, "CB trigger", cb_dd_str, i_cb_dd == 0 ? D_DIM : D_BLU)
 
