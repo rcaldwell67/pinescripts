@@ -4,7 +4,7 @@
 //@version=6
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Adaptive Pullback Momentum v4.5
+// Adaptive Pullback Momentum v4.6
 // 30min (CLM-optimised)
 // THESIS
 //   Most breakout strategies enter *after* the move is mature.  This strategy
@@ -13,19 +13,19 @@
 //
 // ENTRY LOGIC
 //   Long  : EMA21 > EMA50 > EMA200 (full stack — stricter structure)
-//            EMA21 rising over 3 bars (slope filter — no flat/reversing EMAs)
+//            EMA21 rising ≥ 0.10%/3bars (slope-magnitude filter)
 //            RSI rising on entry bar (momentum confirmation)
 //            prev-bar low tagged EMA21 zone, current bar recovers above EMA21
 //            + RSI 38–68  |  Volume ≥ 1.0× VolSMA  |  ADX > 10  |  no panic
-//            + body ≥ 0.15×ATR  |  ATR ≥ 0.10% of price
+//            + body ≥ 0.50×ATR  |  ATR ≥ 0.10% of price  |  no loss cooldown
 //   Short : mirror of the above
 //
 // EXIT LOGIC
-//   → Hard stop  : entry ± ATR × 1.0
+//   → Hard stop  : entry ± ATR × 1.5
 //   → Hard TP    : entry ± ATR × 16.0 (trail does exit work; TP is safety net)
 //   → Trail      : activates once price moves ATR×3.0 in favour,
 //                  then trails ATR×0.1 from best price (maximum profit lock)
-//   → Sizing     : 4 % of equity risked per trade (5× leverage cap)
+//   → Sizing     : 1 % of equity risked per trade
 //
 // v4.1 CHANGES vs v4.0  (CLM 30m sweep: +9.48% PF=2.297 vs +2.53% PF=1.112 baseline)
 //   EMA condition : loose (close>EMA200 & EMA21>EMA50) → full stack EMA21>EMA50>EMA200
@@ -74,11 +74,18 @@
 //   Circuit Breaker: ADDED — halt new entries when equity drops CB% below HWM;
 //                    resume when equity recovers halfway back to HWM.
 //                    Default: 4% trigger (MDD capped ≈ 4.17%, Calmar 4.35×)
+//
+// v4.6 CHANGES vs v4.5  (S14 WR sweep: +23.87% PF=2.88 n=21 WR=61.9% MDD=-2.65% Calmar=9.00)
+//   SL multiplier  : 1.0× → 1.5×   (wider stop gives trades more room before SL fires)
+//   Min body       : 0.15× → 0.50×ATR  (require strong entry candle; filters weak doji-like bars)
+//   EMA slope min  : direction-only → 0.10%/3bars minimum magnitude (active trend confirmation)
+//   Post-loss CD   : ADDED — 13-bar cooldown after each loss (prevents re-entering failed patterns)
+//                    Combined effect: trades now span full year (no CB lockout); MDD halved vs v4.5
 // ─────────────────────────────────────────────────────────────────────────────
 
 strategy(
-    title             = "Adaptive Pullback Momentum v4.5",
-    shorttitle        = "APM v4.5",
+    title             = "Adaptive Pullback Momentum v4.6",
+    shorttitle        = "APM v4.6",
     overlay           = true,
     pyramiding        = 0,
     initial_capital   = 10000,
@@ -108,7 +115,7 @@ i_rsi_lo_s   = input.int  (30,   "RSI min – Short",       group=G_MOM, minval=
 i_rsi_hi_s   = input.int  (62,   "RSI max – Short",       group=G_MOM, minval=40, maxval=80)
 i_vol_len    = input.int  (20,   "Volume SMA length",     group=G_MOM, minval=5)
 i_vol_mult   = input.float(1.0,  "Volume multiplier",     group=G_MOM, minval=0.3, maxval=5.0, step=0.1)
-i_min_body   = input.float(0.15, "Min body (×ATR)",        group=G_MOM, minval=0.0, maxval=2.0, step=0.05,
+i_min_body   = input.float(0.50, "Min body (×ATR)",        group=G_MOM, minval=0.0, maxval=2.0, step=0.05,
                  tooltip="Entry bar body (|close-open|/ATR) must exceed this — filters doji / indecision candles")
 
 var G_VOL = "Volatility"
@@ -117,7 +124,7 @@ i_panic_mult = input.float(1.5,  "Panic suppression mult",group=G_VOL, minval=1.
                  tooltip="ATR14 > ATR-60SMA × this value → skip new entries")
 
 var G_RISK = "Risk Management"
-i_sl_mult    = input.float(1.0,  "Stop loss ATR mult",    group=G_RISK, minval=0.3, step=0.1)
+i_sl_mult    = input.float(1.5,  "Stop loss ATR mult",    group=G_RISK, minval=0.3, step=0.1)
 i_tp_mult    = input.float(16.0, "Take profit ATR mult",  group=G_RISK, minval=0.5, step=0.1)
 i_tr_act     = input.float(3.0,  "Trail activate ATR mult",group=G_RISK,minval=0.3, step=0.1,
                  tooltip="Trailing stop kicks in once price moves this many ATRs in your favour")
@@ -126,9 +133,11 @@ i_tr_dist    = input.float(0.1,  "Trail distance ATR mult",group=G_RISK,minval=0
 i_risk_pct   = input.float(1.0,  "Equity risked per trade (%)",group=G_RISK,minval=0.1,maxval=20,step=0.1)
 i_cb_dd      = input.float(4.0,  "Circuit Breaker DD% trigger",group=G_RISK,minval=0.0,maxval=20,step=0.5,
                  tooltip="Halt new entries when equity drops this % below its running high-water mark.\nSet 0 to disable. Resumes when equity recovers halfway back to HWM.")
+i_cooldown_bars = input.int(13, "Post-loss cooldown (bars)", group=G_RISK, minval=0, maxval=200,
+                 tooltip="After a losing trade, skip this many bars before allowing a new entry.\nHelps avoid re-entering the same failed pattern. Set 0 to disable.")
 
-i_ema_slope  = input.bool(true,  "EMA slope filter", group=G_TREND,
-                 tooltip="Require EMA-fast to be rising (longs) / falling (shorts) over 3 bars")
+i_slope_min_pct = input.float(0.10, "EMA slope min (%/3 bars)", group=G_TREND, minval=0.0, maxval=2.0, step=0.05,
+                 tooltip="Require EMA-fast to have moved at least this % over 3 bars in the trade direction.\nSet 0 to require direction only (no magnitude check).")
 
 var G_DISP = "Display"
 i_longs      = input.bool(true,  "Trade Longs",   group=G_DISP)
@@ -171,15 +180,32 @@ short_pb   = high[1] >= pb_tol_dn and close < ema_fast and close < open and body
 ema_bull_full = ema_fast > ema_mid  and ema_mid > ema_slow
 ema_bear_full = ema_fast < ema_mid  and ema_mid < ema_slow
 
-// ── NEW: EMA slope filter ─────────────────────────────────────────────────────
-// EMA-fast must be trending in trade direction over 3 bars — no flat/reversing EMAs
-ema_slope_up   = ema_fast > ema_fast[3]
-ema_slope_down = ema_fast < ema_fast[3]
+// ── EMA slope filter ─────────────────────────────────────────────────────────
+// EMA-fast must have moved at least i_slope_min_pct% over 3 bars in trade direction
+ema_slope_pct  = (ema_fast - ema_fast[3]) / ema_fast[3] * 100
+ema_slope_up   = ema_slope_pct >=  i_slope_min_pct
+ema_slope_down = ema_slope_pct <= -i_slope_min_pct
 
 // ── NEW: RSI momentum direction ───────────────────────────────────────────────
 // RSI must be rising on longs / falling on shorts — confirms momentum on recovery bar
 rsi_rising  = rsi > rsi[1]
 rsi_falling = rsi < rsi[1]
+
+// ── Post-loss cooldown state ─────────────────────────────────────────────────
+// Prevents re-entry for i_cooldown_bars bars after each losing trade.
+// Cooldown is decremented each bar and reset when a losing trade closes.
+var int  cooldown_remaining  = 0
+var int  _prev_closed_cd     = 0
+
+if cooldown_remaining > 0
+    cooldown_remaining -= 1
+
+if strategy.closedtrades > _prev_closed_cd
+    _cd_ti  = strategy.closedtrades - 1
+    _cd_pnl = strategy.closedtrades.profit(_cd_ti)
+    if _cd_pnl < 0 and i_cooldown_bars > 0
+        cooldown_remaining := i_cooldown_bars
+    _prev_closed_cd := strategy.closedtrades
 
 // ── Circuit Breaker state ─────────────────────────────────────────────────────
 // Updated BEFORE entry conditions so CB fires on the same bar it triggers.
@@ -211,18 +237,20 @@ if cb_halted
 no_pos     = strategy.position_size == 0.0
 stop_dist  = atr * i_sl_mult
 
-long_ok  = i_longs  and no_pos and not cb_halted and not is_panic and is_trending and atr_floor_ok and
+long_ok  = i_longs  and no_pos and not cb_halted and cooldown_remaining == 0 and
+     not is_panic and is_trending and atr_floor_ok and
      long_pb        and
      ema_bull_full  and             // full stack: EMA21 > EMA50 > EMA200
-     (not i_ema_slope or ema_slope_up) and  // optional: EMA21 rising over 3 bars
+     ema_slope_up   and             // EMA21 rising ≥ slope_min_pct over 3 bars
      rsi_rising     and             // RSI momentum confirmation
      rsi     >= i_rsi_lo_l and rsi <= i_rsi_hi_l and
      volume  >= vol_ma * i_vol_mult
 
-short_ok = i_shorts and no_pos and not cb_halted and not is_panic and is_trending and atr_floor_ok and
+short_ok = i_shorts and no_pos and not cb_halted and cooldown_remaining == 0 and
+     not is_panic and is_trending and atr_floor_ok and
      short_pb       and
      ema_bear_full  and             // full stack: EMA21 < EMA50 < EMA200
-     (not i_ema_slope or ema_slope_down) and  // optional: EMA21 falling over 3 bars
+     ema_slope_down and             // EMA21 falling ≥ slope_min_pct over 3 bars
      rsi_falling    and             // RSI momentum confirmation
      rsi     >= i_rsi_lo_s and rsi <= i_rsi_hi_s and
      volume  >= vol_ma * i_vol_mult
@@ -243,7 +271,7 @@ if long_ok
     trail_active := false
     strategy.entry("Long", strategy.long, qty=qty)
     alert(
-        "APM v4.5 | LONG ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v4.6 | LONG ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "Entry   : " + str.tostring(close, "#.##") +
         "  |  Equity: $" + str.tostring(strategy.equity, "#.##") + "\n" +
         "Stop    : " + str.tostring(sl_price, "#.##") +
@@ -285,7 +313,7 @@ if short_ok
     trail_active := false
     strategy.entry("Short", strategy.short, qty=qty)
     alert(
-        "APM v4.5 | SHORT ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v4.6 | SHORT ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "Entry   : " + str.tostring(close, "#.##") +
         "  |  Equity: $" + str.tostring(strategy.equity, "#.##") + "\n" +
         "Stop    : " + str.tostring(sl_price, "#.##") +
@@ -329,7 +357,7 @@ if strategy.position_size > 0.0          // long
         if not trail_active
             trail_active := true
             alert(
-                "APM v4.5 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+                "APM v4.6 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
                 "Direction : LONG\n" +
                 "Best price: " + str.tostring(best_price, "#.##") +
                 "  |  Entry: " + str.tostring(entry_p, "#.##") + "\n" +
@@ -352,7 +380,7 @@ if strategy.position_size < 0.0          // short
         if not trail_active
             trail_active := true
             alert(
-                "APM v4.5 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+                "APM v4.6 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
                 "Direction : SHORT\n" +
                 "Best price: " + str.tostring(best_price, "#.##") +
                 "  |  Entry: " + str.tostring(entry_p, "#.##") + "\n" +
@@ -383,7 +411,7 @@ if strategy.closedtrades > _prev_closed
     _mvpct   = _sz > 0 ? (_xp - _ep) / _ep * 100 : (_ep - _xp) / _ep * 100
     _wr      = strategy.closedtrades > 0 ? str.tostring(math.round(strategy.wintrades / strategy.closedtrades * 100, 1), "#.#") + "%" : "--"
     alert(
-        "APM v4.5 | " + _dir + " EXIT [" + _res + "] | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v4.6 | " + _dir + " EXIT [" + _res + "] | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "Entry   : " + str.tostring(_ep, "#.##") +
         "  ->  Exit: " + str.tostring(_xp, "#.##") + "\n" +
         "Move    : " + (_mvpct >= 0 ? "+" : "") + str.tostring(_mvpct, "#.##") + "%\n" +
@@ -399,7 +427,7 @@ if strategy.closedtrades > _prev_closed
 // ── Circuit breaker alerts ────────────────────────────────────────────────────
 if cb_halted and not cb_halted[1]
     alert(
-        "APM v4.5 | CIRCUIT BREAKER TRIGGERED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v4.6 | CIRCUIT BREAKER TRIGGERED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "Equity  : $" + str.tostring(strategy.equity, "#.##") + "\n" +
         "HWM     : $" + str.tostring(cb_hwm, "#.##") + "\n" +
         "DD      : " + str.tostring((strategy.equity - cb_hwm) / cb_hwm * 100, "#.##") + "%" +
@@ -409,7 +437,7 @@ if cb_halted and not cb_halted[1]
 
 if not cb_halted and cb_halted[1]
     alert(
-        "APM v4.5 | CIRCUIT BREAKER CLEARED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v4.6 | CIRCUIT BREAKER CLEARED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "Equity  : $" + str.tostring(strategy.equity, "#.##") + "\n" +
         "New HWM : $" + str.tostring(cb_hwm, "#.##") + "  (reset on resume)\n" +
         "Status  : New entries RESUMED",
@@ -418,7 +446,7 @@ if not cb_halted and cb_halted[1]
 // ── Panic regime alert ────────────────────────────────────────────────────────
 if is_panic and not is_panic[1]
     alert(
-        "APM v4.5 | PANIC REGIME STARTED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v4.6 | PANIC REGIME STARTED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "ATR     : " + str.tostring(atr, "#.##") +
         "  |  ATR baseline: " + str.tostring(atr_bl, "#.##") + "\n" +
         "Ratio   : " + str.tostring(atr / atr_bl, "#.##") + "x" +
@@ -428,7 +456,7 @@ if is_panic and not is_panic[1]
 
 if not is_panic and is_panic[1]
     alert(
-        "APM v4.5 | PANIC REGIME CLEARED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v4.6 | PANIC REGIME CLEARED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "ATR     : " + str.tostring(atr, "#.##") +
         "  |  ATR baseline: " + str.tostring(atr_bl, "#.##") + "\n" +
         "Ratio   : " + str.tostring(atr / atr_bl, "#.##") + "x" +
@@ -479,12 +507,12 @@ if i_show_dash and barstate.islast
         "Middle Left"  => position.middle_left
         => position.top_right
 
-    tbl = table.new(tbl_pos, columns=2, rows=24,
+    tbl = table.new(tbl_pos, columns=2, rows=26,
          border_width=1, border_color=color.new(color.gray, 60),
          frame_width=1,  frame_color=color.new(color.gray, 40))
 
     // header
-    table.cell(tbl, 0, 0, "APM v4.5", text_color=D_BRT, bgcolor=D_HDR, text_size=size.normal, text_halign=text.align_left)
+    table.cell(tbl, 0, 0, "APM v4.6", text_color=D_BRT, bgcolor=D_HDR, text_size=size.normal, text_halign=text.align_left)
     table.cell(tbl, 1, 0, timeframe.period + " | " + syminfo.ticker, text_color=D_YEL, bgcolor=D_HDR, text_size=size.small, text_halign=text.align_right)
 
     // position
@@ -538,4 +566,10 @@ if i_show_dash and barstate.islast
     _row(tbl, 22, "CB Halted", cb_halted ? "HALTED" : "ACTIVE", cb_halted ? D_RED : D_GRN)
     cb_dd_str = i_cb_dd == 0 ? "OFF" : str.tostring(i_cb_dd, "#.#") + "%  HWM:$" + str.tostring(cb_hwm, "#.##")
     _row(tbl, 23, "CB trigger", cb_dd_str, i_cb_dd == 0 ? D_DIM : D_BLU)
+
+    // cooldown section
+    table.cell(tbl, 0, 24, "Cooldown", text_color=D_DIM, bgcolor=D_BG, text_size=size.tiny, text_halign=text.align_left)
+    table.cell(tbl, 1, 24, "",         text_color=D_DIM, bgcolor=D_BG)
+    cd_str = i_cooldown_bars == 0 ? "OFF" : cooldown_remaining > 0 ? str.tostring(cooldown_remaining) + " bars remain" : "READY"
+    _row(tbl, 25, "Post-loss CD", cd_str, i_cooldown_bars == 0 ? D_DIM : cooldown_remaining > 0 ? D_YEL : D_GRN)
 
