@@ -1,0 +1,8 @@
+{
+  "position": null,
+  "equity": 10000.0,
+  "cb_hwm": 10000.0,
+  "cb_halted": false,
+  "cooldown_remaining": 0,
+  "last_bar_ts": null
+}
