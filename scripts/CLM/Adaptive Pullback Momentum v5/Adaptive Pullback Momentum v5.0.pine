@@ -4,14 +4,14 @@
 //@version=6
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Adaptive Pullback Momentum v5.2
+// Adaptive Pullback Momentum v5.3
 // 1h CLM  |  Longs + Shorts
 // THESIS
 //   Most breakout strategies enter *after* the move is mature.  This strategy
 //   enters during brief pullbacks to a key moving average while the broader
 //   trend is intact, giving tighter natural stops and a higher-quality R:R.
 //
-// ENTRY LOGIC (v5.2 — longs + shorts)
+// ENTRY LOGIC (v5.3 — longs + shorts)
 //   Long  : close > EMA200  |  EMA21 > EMA34
 //            prev-bar low tagged EMA21, current bar recovers above EMA21 (bullish body)
 //            + RSI 40–70  |  Volume ≥ 1.2× VolSMA  |  ADX > 33  |  no panic
@@ -23,7 +23,12 @@
 //   → Hard TP    : entry ± ATR × 10.0  (fallback only; trail is the primary exit)
 //   → Trail      : activates once price moves ATR×2.0 in favour,
 //                  then trails ATR×0.5 from best price (snappy lock-in)
-//   → Sizing     : 1 % of equity risked per trade
+//   → Sizing     : 1.25 % of equity risked per trade
+//
+// v5.3 CHANGES vs v5.2  (Stage-6 risk-scaling sweep, CLM 1h)
+//   Risk per trade: 1.0% → 1.25%  (same 13-trade signal quality, larger positions)
+//   All signal params unchanged from v5.2
+//   Result        : +22.05%, WR=69.2%, 13T, MDD=-4.54%, Calmar=4.86
 //
 // v5.2 CHANGES vs v5.1  (Stage-5 next-bar trail sweep, CLM 1h)
 //   Shorts re-enabled : both directions
@@ -45,8 +50,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 strategy(
-    title             = "Adaptive Pullback Momentum v5.2",
-    shorttitle        = "APM v5.2",
+    title             = "Adaptive Pullback Momentum v5.3",
+    shorttitle        = "APM v5.3",
     overlay           = true,
     pyramiding        = 0,
     initial_capital   = 10000,
@@ -93,7 +98,7 @@ i_tr_act     = input.float(2.0,  "Trail activate ATR mult",group=G_RISK,minval=0
                  tooltip="Trailing stop kicks in once price moves this many ATRs in your favour")
 i_tr_dist    = input.float(0.5,  "Trail distance ATR mult",group=G_RISK,minval=0.1, step=0.1,
                  tooltip="Once active, trail stays this many ATRs below/above the best price")
-i_risk_pct   = input.float(1.0,  "Equity risked per trade (%)",group=G_RISK,minval=0.1,maxval=20,step=0.1)
+i_risk_pct   = input.float(1.25, "Equity risked per trade (%)",group=G_RISK,minval=0.1,maxval=20,step=0.05)
 
 var G_DISP = "Display"
 i_longs      = input.bool(true,  "Trade Longs",   group=G_DISP)
@@ -178,7 +183,7 @@ if long_ok
     _body  = math.abs(close - open) / atr
     _slope = ema_fast > ema_fast[3] ? "UP" : "DOWN"
     alert(
-        "APM v5.2 | LONG ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v5.3 | LONG ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "Entry   : " + str.tostring(close, "#.##") + "  |  Equity: $" + str.tostring(math.round(strategy.equity, 2), "#.##") + "\n" +
         "Stop    : " + str.tostring(math.round(close - _sd, 2), "#.##") + "  (-" + str.tostring(math.round(_sd, 2), "#.##") + " = ATR x" + str.tostring(i_sl_mult) + ")\n" +
         "Target  : " + str.tostring(math.round(_tp, 2), "#.##") + "  (+" + str.tostring(math.round(atr_eff * i_tp_mult, 2), "#.##") + " = ATR x" + str.tostring(i_tp_mult) + ")\n" +
@@ -212,7 +217,7 @@ if short_ok
     _body  = math.abs(close - open) / atr
     _slope = ema_fast < ema_fast[3] ? "DOWN" : "UP"
     alert(
-        "APM v5.2 | SHORT ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v5.3 | SHORT ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "Entry   : " + str.tostring(close, "#.##") + "  |  Equity: $" + str.tostring(math.round(strategy.equity, 2), "#.##") + "\n" +
         "Stop    : " + str.tostring(math.round(close + _sd, 2), "#.##") + "  (+" + str.tostring(math.round(_sd, 2), "#.##") + " = ATR x" + str.tostring(i_sl_mult) + ")\n" +
         "Target  : " + str.tostring(math.round(_tp, 2), "#.##") + "  (-" + str.tostring(math.round(atr_eff * i_tp_mult, 2), "#.##") + " = ATR x" + str.tostring(i_tp_mult) + ")\n" +
@@ -239,7 +244,7 @@ if strategy.position_size > 0.0          // long
             trail_active := true
             _runup = best_price - entry_p
             alert(
-                "APM v5.2 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+                "APM v5.3 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
                 "Direction : LONG\n" +
                 "Best price: " + str.tostring(math.round(best_price, 2), "#.##") + "  |  Entry: " + str.tostring(math.round(entry_p, 2), "#.##") + "\n" +
                 "Trail SL  : " + str.tostring(math.round(trail_sl_new, 2), "#.##") + "  (best - ATR x" + str.tostring(i_tr_dist) + " = -" + str.tostring(math.round(atr * i_tr_dist, 2), "#.##") + ")\n" +
@@ -260,7 +265,7 @@ if strategy.position_size < 0.0          // short
             trail_active := true
             _runup = entry_p - best_price
             alert(
-                "APM v5.2 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+                "APM v5.3 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
                 "Direction : SHORT\n" +
                 "Best price: " + str.tostring(math.round(best_price, 2), "#.##") + "  |  Entry: " + str.tostring(math.round(entry_p, 2), "#.##") + "\n" +
                 "Trail SL  : " + str.tostring(math.round(trail_sl_new, 2), "#.##") + "  (best + ATR x" + str.tostring(i_tr_dist) + " = +" + str.tostring(math.round(atr * i_tr_dist, 2), "#.##") + ")\n" +
@@ -288,7 +293,7 @@ if strategy.closedtrades > _prev_closed
     _tot = strategy.closedtrades
     _wr  = _tot == 0 ? "--" : str.tostring(math.round(strategy.wintrades / _tot * 100, 1)) + "%"
     alert(
-        "APM v5.2 | " + _dir + " EXIT [" + _res + "] | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v5.3 | " + _dir + " EXIT [" + _res + "] | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "Entry   : " + str.tostring(math.round(_ep, 2), "#.##") + "  ->  Exit: " + str.tostring(math.round(_xp, 2), "#.##") + "\n" +
         "Move    : " + (_mv >= 0 ? "+" : "") + str.tostring(math.round(_mv, 2), "#.##") + "%\n" +
         "P&L     : " + (_pnl >= 0 ? "+" : "") + str.tostring(math.round(_pnl, 2), "#.##") + " USD\n" +
@@ -304,7 +309,7 @@ if strategy.closedtrades > _prev_closed
 // ── Panic regime alerts ────────────────────────────────────────────────────────
 if is_panic and not is_panic[1]
     alert(
-        "APM v5.2 | PANIC REGIME STARTED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v5.3 | PANIC REGIME STARTED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "ATR     : " + str.tostring(math.round(atr, 2), "#.##") + "  |  ATR baseline: " + str.tostring(math.round(atr_bl, 2), "#.##") + "\n" +
         "Ratio   : " + str.tostring(math.round(atr / atr_bl, 2), "#.##") + "x  [threshold: " + str.tostring(i_panic_mult) + "x]\n" +
         "Status  : New entries SUSPENDED\n" +
@@ -313,7 +318,7 @@ if is_panic and not is_panic[1]
 
 if not is_panic and is_panic[1]
     alert(
-        "APM v5.2 | PANIC REGIME CLEARED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v5.3 | PANIC REGIME CLEARED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "ATR     : " + str.tostring(math.round(atr, 2), "#.##") + "  |  ATR baseline: " + str.tostring(math.round(atr_bl, 2), "#.##") + "\n" +
         "Ratio   : " + str.tostring(math.round(atr / atr_bl, 2), "#.##") + "x  [threshold: " + str.tostring(i_panic_mult) + "x]\n" +
         "Status  : New entries RESUMED\n" +
@@ -368,7 +373,7 @@ if i_show_dash and barstate.islast
          frame_width=1,  frame_color=color.new(color.gray, 40))
 
     // header
-    table.cell(tbl, 0, 0, "APM v5.2", text_color=D_BRT, bgcolor=D_HDR, text_size=size.normal, text_halign=text.align_left)
+    table.cell(tbl, 0, 0, "APM v5.3", text_color=D_BRT, bgcolor=D_HDR, text_size=size.normal, text_halign=text.align_left)
     table.cell(tbl, 1, 0, timeframe.period + " | " + syminfo.ticker, text_color=D_YEL, bgcolor=D_HDR, text_size=size.small, text_halign=text.align_right)
 
     // position

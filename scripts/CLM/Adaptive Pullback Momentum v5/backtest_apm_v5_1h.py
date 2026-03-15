@@ -1,12 +1,13 @@
-"""Python backtest of Adaptive Pullback Momentum v5.2 — CLM 1h
+"""Python backtest of Adaptive Pullback Momentum v5.3 — CLM 1h
 Timeframe : 1h CLM (WTI Crude Oil futures), period="max" (~730 days via yfinance)
-Commission : 0.06 % per side   Risk : 1 % equity / trade
+Commission : 0.06 % per side   Risk : 1.25 % equity / trade
 
-v5.2 params (Stage-5 realistic next-bar trail sweep):
+v5.3 params (Stage-6 risk-scaling sweep):
   Longs + Shorts | ADX>33 | SL×0.9 | TP×10.0 (off) | Trail act 2.0× dist 0.5×
   Vol×1.2 | Body×0.05 | Panic×1.4 | EMA slope OFF | ATR floor 0.00%
   EMA 21/34/200 | RSI len 20 | ATR 14/50 | Vol MA 20
-  Result: +17.38%, WR=69.2%, 13 trades, MaxDD=-3.64%, Calmar=4.77
+  Risk: 1% → 1.25%  (same 13-trade signal quality, larger position per trade)
+  Result: +22.05%, WR=69.2%, 13 trades, MaxDD=-4.54%, Calmar=4.86
 """
 
 import pandas as pd
@@ -21,9 +22,9 @@ INTERVAL   = "1h"
 PERIOD     = "max"          # ~730 days for 1h on yfinance
 INIT_CAP   = 10_000.0
 COMMISSION = 0.0006         # 0.06 % per side
-RISK_PCT   = 0.01           # 1 % equity per trade
+RISK_PCT   = 0.0125         # 1.25 % equity per trade  (Stage-6: risk-scaling to >20%)
 
-# ── Strategy parameters (CLM 1h — v5.2 Stage-4 max-return sweep) ─────────────
+# ── Strategy parameters (CLM 1h — v5.3 Stage-6 risk-scaling sweep) ───────────
 EMA_FAST_LEN = 21
 EMA_MID_LEN  = 34          # sweep-optimal: 34 vs 50
 EMA_SLOW_LEN = 200
