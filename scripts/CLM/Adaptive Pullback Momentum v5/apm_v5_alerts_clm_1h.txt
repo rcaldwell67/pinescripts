@@ -1,41 +1,37 @@
 ----------------------------------------------------------------------
-APM v5 | PANIC REGIME STARTED | CLM [1h]
-ATR     : 0.05  |  ATR baseline: 0.03
-Ratio   : 1.46x  [threshold: 1.4x]
-Status  : New entries SUSPENDED
-Time    : 2024-05-01 13:30:00+00:00
-----------------------------------------------------------------------
-APM v5 | PANIC REGIME CLEARED | CLM [1h]
-ATR     : 0.05  |  ATR baseline: 0.03
-Ratio   : 1.38x  [threshold: 1.4x]
-Status  : New entries RESUMED
-Time    : 2024-05-01 16:30:00+00:00
-----------------------------------------------------------------------
 APM v5 | LONG ENTRY | CLM [1h]
 Entry   : 7.57  |  Equity: $10000.00
-Stop    : 7.50  (-0.07 = ATR x2.0)
-Target  : 7.65  (+0.07 = ATR x2.0)
-R:R     : 1:1.00  |  Risk: $100.00 (1.0%)
-Qty     : 1354.5134
+Stop    : 7.54  (-0.03 = ATR x0.9)
+Target  : 7.94  (+0.37 = ATR x10.0)
+R:R     : 1:11.11  |  Risk: $100.00 (1.0%)
+Qty     : 3010.0299
 ATR     : 0.04 (0.487% of price)  |  Floor: OK
 RSI     : 58.63 [40.0-70.0]  |  Dir: Rising
 ADX     : 36.46  [min 33.0]
 Vol/MA  : 1.52x  [min 1.2x]
 Body    : 1.189x ATR  [min 0.05x]
 EMA21/34/200: 7.56/7.53/7.42  Stack: BULL  Slope: UP
-Trail on: +3.65 (ATR x99.0)  Dist: 0.01 (ATR x0.3)
+Trail on: +0.07 (ATR x2.0)  Dist: 0.02 (ATR x0.5)
 Time    : 2024-05-08 13:30:00+00:00
 ----------------------------------------------------------------------
+APM v5 | TRAIL STOP ACTIVATED | CLM [1h]
+Direction : LONG
+Best price: 7.65  |  Entry: 7.57
+Trail SL  : 7.63  (best - ATR x0.5 = -0.02)
+Prev SL   : 7.54  |  Target: 7.94
+Runup     : +0.08 (1.00%)
+Time      : 2024-05-10 14:30:00+00:00
+----------------------------------------------------------------------
 APM v5 | LONG EXIT [WIN] | CLM [1h]
-Entry   : 7.57  ->  Exit: 7.65
-Move    : +0.97%
-P&L     : +87.63 USD
-Comm    : -12.37 USD
+Entry   : 7.57  ->  Exit: 7.63
+Move    : +0.74%
+P&L     : +140.50 USD
+Comm    : -27.46 USD
 Max runup: 0.08
-Bars    : 15
-Equity  : $10087.63
+Bars    : 16
+Equity  : $10140.50
 Trades  : 1  |  Win rate: 100.0%
-Time    : 2024-05-10 14:30:00+00:00
+Time    : 2024-05-10 15:30:00+00:00
 ----------------------------------------------------------------------
 APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.05  |  ATR baseline: 0.03
@@ -62,30 +58,38 @@ Status  : New entries RESUMED
 Time    : 2024-05-15 17:30:00+00:00
 ----------------------------------------------------------------------
 APM v5 | LONG ENTRY | CLM [1h]
-Entry   : 7.60  |  Equity: $10087.63
-Stop    : 7.54  (-0.06 = ATR x2.0)
-Target  : 7.66  (+0.06 = ATR x2.0)
-R:R     : 1:1.00  |  Risk: $100.88 (1.0%)
-Qty     : 1654.9371
+Entry   : 7.60  |  Equity: $10140.50
+Stop    : 7.57  (-0.03 = ATR x0.9)
+Target  : 7.90  (+0.30 = ATR x10.0)
+R:R     : 1:11.11  |  Risk: $101.41 (1.0%)
+Qty     : 3696.9137
 ATR     : 0.03 (0.401% of price)  |  Floor: OK
 RSI     : 55.44 [40.0-70.0]  |  Dir: Rising
 ADX     : 33.58  [min 33.0]
 Vol/MA  : 1.33x  [min 1.2x]
 Body    : 0.345x ATR  [min 0.05x]
 EMA21/34/200: 7.59/7.58/7.51  Stack: BULL  Slope: UP
-Trail on: +3.02 (ATR x99.0)  Dist: 0.01 (ATR x0.3)
+Trail on: +0.06 (ATR x2.0)  Dist: 0.02 (ATR x0.5)
 Time    : 2024-06-05 15:30:00+00:00
+----------------------------------------------------------------------
+APM v5 | TRAIL STOP ACTIVATED | CLM [1h]
+Direction : LONG
+Best price: 7.66  |  Entry: 7.60
+Trail SL  : 7.64  (best - ATR x0.5 = -0.02)
+Prev SL   : 7.57  |  Target: 7.90
+Runup     : +0.06 (0.81%)
+Time      : 2024-06-06 16:30:00+00:00
 ----------------------------------------------------------------------
 APM v5 | LONG EXIT [WIN] | CLM [1h]
 Entry   : 7.60  ->  Exit: 7.66
-Move    : +0.80%
-P&L     : +85.73 USD
-Comm    : -15.15 USD
-Max runup: 0.06
-Bars    : 8
-Equity  : $10173.35
+Move    : +0.78%
+P&L     : +185.02 USD
+Comm    : -33.84 USD
+Max runup: 0.08
+Bars    : 10
+Equity  : $10325.52
 Trades  : 2  |  Win rate: 100.0%
-Time    : 2024-06-06 16:30:00+00:00
+Time    : 2024-06-06 18:30:00+00:00
 ----------------------------------------------------------------------
 APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.03  |  ATR baseline: 0.02
@@ -124,108 +128,132 @@ Status  : New entries RESUMED
 Time    : 2024-08-07 18:30:00+00:00
 ----------------------------------------------------------------------
 APM v5 | LONG ENTRY | CLM [1h]
-Entry   : 7.61  |  Equity: $10173.35
-Stop    : 7.56  (-0.05 = ATR x2.0)
-Target  : 7.66  (+0.05 = ATR x2.0)
-R:R     : 1:1.00  |  Risk: $101.73 (1.0%)
-Qty     : 2027.0515
+Entry   : 7.61  |  Equity: $10325.52
+Stop    : 7.59  (-0.02 = ATR x0.9)
+Target  : 7.87  (+0.25 = ATR x10.0)
+R:R     : 1:11.11  |  Risk: $103.26 (1.0%)
+Qty     : 4571.9343
 ATR     : 0.03 (0.330% of price)  |  Floor: OK
 RSI     : 61.73 [40.0-70.0]  |  Dir: Rising
 ADX     : 49.34  [min 33.0]
 Vol/MA  : 1.73x  [min 1.2x]
 Body    : 0.191x ATR  [min 0.05x]
 EMA21/34/200: 7.59/7.58/7.55  Stack: BULL  Slope: UP
-Trail on: +2.48 (ATR x99.0)  Dist: 0.01 (ATR x0.3)
+Trail on: +0.05 (ATR x2.0)  Dist: 0.01 (ATR x0.5)
 Time    : 2024-09-27 15:30:00+00:00
 ----------------------------------------------------------------------
+APM v5 | TRAIL STOP ACTIVATED | CLM [1h]
+Direction : LONG
+Best price: 7.67  |  Entry: 7.61
+Trail SL  : 7.66  (best - ATR x0.5 = -0.01)
+Prev SL   : 7.59  |  Target: 7.87
+Runup     : +0.06 (0.73%)
+Time      : 2024-09-30 13:30:00+00:00
+----------------------------------------------------------------------
 APM v5 | LONG EXIT [WIN] | CLM [1h]
-Entry   : 7.61  ->  Exit: 7.66
-Move    : +0.66%
-P&L     : +83.15 USD
-Comm    : -18.58 USD
-Max runup: 0.06
-Bars    : 5
-Equity  : $10256.51
+Entry   : 7.61  ->  Exit: 7.69
+Move    : +0.95%
+P&L     : +289.95 USD
+Comm    : -41.98 USD
+Max runup: 0.09
+Bars    : 8
+Equity  : $10615.47
 Trades  : 3  |  Win rate: 100.0%
-Time    : 2024-09-30 13:30:00+00:00
+Time    : 2024-09-30 16:30:00+00:00
 ----------------------------------------------------------------------
 APM v5 | LONG ENTRY | CLM [1h]
-Entry   : 7.66  |  Equity: $10256.51
-Stop    : 7.61  (-0.05 = ATR x2.0)
-Target  : 7.72  (+0.05 = ATR x2.0)
-R:R     : 1:1.00  |  Risk: $102.57 (1.0%)
-Qty     : 1900.0783
-ATR     : 0.03 (0.352% of price)  |  Floor: OK
-RSI     : 66.91 [40.0-70.0]  |  Dir: Rising
-ADX     : 50.02  [min 33.0]
-Vol/MA  : 2.38x  [min 1.2x]
-Body    : 1.182x ATR  [min 0.05x]
-EMA21/34/200: 7.61/7.59/7.56  Stack: BULL  Slope: UP
-Trail on: +2.67 (ATR x99.0)  Dist: 0.01 (ATR x0.3)
-Time    : 2024-09-30 13:30:00+00:00
+Entry   : 7.71  |  Equity: $10615.47
+Stop    : 7.69  (-0.02 = ATR x0.9)
+Target  : 7.92  (+0.21 = ATR x10.0)
+R:R     : 1:11.11  |  Risk: $106.15 (1.0%)
+Qty     : 5493.3054
+ATR     : 0.02 (0.278% of price)  |  Floor: OK
+RSI     : 67.04 [40.0-70.0]  |  Dir: Rising
+ADX     : 37.93  [min 33.0]
+Vol/MA  : 1.47x  [min 1.2x]
+Body    : 0.466x ATR  [min 0.05x]
+EMA21/34/200: 7.66/7.65/7.58  Stack: BULL  Slope: UP
+Trail on: +0.04 (ATR x2.0)  Dist: 0.01 (ATR x0.5)
+Time    : 2024-10-03 13:30:00+00:00
+----------------------------------------------------------------------
+APM v5 | TRAIL STOP ACTIVATED | CLM [1h]
+Direction : LONG
+Best price: 7.76  |  Entry: 7.71
+Trail SL  : 7.75  (best - ATR x0.5 = -0.01)
+Prev SL   : 7.69  |  Target: 7.92
+Runup     : +0.05 (0.65%)
+Time      : 2024-10-04 14:30:00+00:00
 ----------------------------------------------------------------------
 APM v5 | LONG EXIT [WIN] | CLM [1h]
-Entry   : 7.66  ->  Exit: 7.72
-Move    : +0.70%
-P&L     : +85.03 USD
-Comm    : -17.53 USD
-Max runup: 0.06
-Bars    : 23
-Equity  : $10341.54
+Entry   : 7.71  ->  Exit: 7.74
+Move    : +0.37%
+P&L     : +105.09 USD
+Comm    : -50.92 USD
+Max runup: 0.05
+Bars    : 9
+Equity  : $10720.56
 Trades  : 4  |  Win rate: 100.0%
-Time    : 2024-10-03 15:30:00+00:00
+Time    : 2024-10-04 15:30:00+00:00
 ----------------------------------------------------------------------
 APM v5 | LONG ENTRY | CLM [1h]
-Entry   : 7.75  |  Equity: $10341.54
-Stop    : 7.70  (-0.04 = ATR x2.0)
-Target  : 7.79  (+0.04 = ATR x2.0)
-R:R     : 1:1.00  |  Risk: $103.42 (1.0%)
-Qty     : 2435.8962
+Entry   : 7.75  |  Equity: $10720.56
+Stop    : 7.73  (-0.02 = ATR x0.9)
+Target  : 7.96  (+0.21 = ATR x10.0)
+R:R     : 1:11.11  |  Risk: $107.21 (1.0%)
+Qty     : 5611.4948
 ATR     : 0.02 (0.274% of price)  |  Floor: OK
 RSI     : 62.30 [40.0-70.0]  |  Dir: Rising
 ADX     : 45.94  [min 33.0]
 Vol/MA  : 1.41x  [min 1.2x]
 Body    : 0.221x ATR  [min 0.05x]
 EMA21/34/200: 7.73/7.71/7.60  Stack: BULL  Slope: UP
-Trail on: +2.10 (ATR x99.0)  Dist: 0.01 (ATR x0.3)
+Trail on: +0.04 (ATR x2.0)  Dist: 0.01 (ATR x0.5)
 Time    : 2024-10-07 15:30:00+00:00
 ----------------------------------------------------------------------
-APM v5 | LONG EXIT [WIN] | CLM [1h]
-Entry   : 7.75  ->  Exit: 7.79
-Move    : +0.55%
-P&L     : +80.71 USD
-Comm    : -22.71 USD
-Max runup: 0.04
-Bars    : 12
-Equity  : $10422.25
-Trades  : 5  |  Win rate: 100.0%
-Time    : 2024-10-09 13:30:00+00:00
+APM v5 | LONG EXIT [LOSS] | CLM [1h]
+Entry   : 7.75  ->  Exit: 7.73
+Move    : -0.25%
+P&L     : -159.31 USD
+Comm    : -52.10 USD
+Max runup: 0.00
+Bars    : 3
+Equity  : $10561.25
+Trades  : 5  |  Win rate: 80.0%
+Time    : 2024-10-07 18:30:00+00:00
 ----------------------------------------------------------------------
 APM v5 | LONG ENTRY | CLM [1h]
-Entry   : 7.78  |  Equity: $10422.25
-Stop    : 7.74  (-0.04 = ATR x2.0)
-Target  : 7.82  (+0.04 = ATR x2.0)
-R:R     : 1:1.00  |  Risk: $104.22 (1.0%)
-Qty     : 2651.8759
+Entry   : 7.78  |  Equity: $10561.25
+Stop    : 7.76  (-0.02 = ATR x0.9)
+Target  : 7.98  (+0.20 = ATR x10.0)
+R:R     : 1:11.11  |  Risk: $105.61 (1.0%)
+Qty     : 5971.6543
 ATR     : 0.02 (0.253% of price)  |  Floor: OK
 RSI     : 63.90 [40.0-70.0]  |  Dir: Rising
 ADX     : 38.30  [min 33.0]
 Vol/MA  : 1.46x  [min 1.2x]
 Body    : 0.514x ATR  [min 0.05x]
 EMA21/34/200: 7.75/7.73/7.62  Stack: BULL  Slope: UP
-Trail on: +1.95 (ATR x99.0)  Dist: 0.01 (ATR x0.3)
+Trail on: +0.04 (ATR x2.0)  Dist: 0.01 (ATR x0.5)
 Time    : 2024-10-09 13:30:00+00:00
 ----------------------------------------------------------------------
+APM v5 | TRAIL STOP ACTIVATED | CLM [1h]
+Direction : LONG
+Best price: 7.85  |  Entry: 7.78
+Trail SL  : 7.84  (best - ATR x0.5 = -0.01)
+Prev SL   : 7.76  |  Target: 7.98
+Runup     : +0.07 (0.90%)
+Time      : 2024-10-09 18:30:00+00:00
+----------------------------------------------------------------------
 APM v5 | LONG EXIT [WIN] | CLM [1h]
-Entry   : 7.78  ->  Exit: 7.82
-Move    : +0.51%
-P&L     : +79.40 USD
-Comm    : -24.82 USD
-Max runup: 0.07
-Bars    : 5
-Equity  : $10501.65
-Trades  : 6  |  Win rate: 100.0%
-Time    : 2024-10-09 18:30:00+00:00
+Entry   : 7.78  ->  Exit: 7.84
+Move    : +0.77%
+P&L     : +302.33 USD
+Comm    : -55.97 USD
+Max runup: 0.12
+Bars    : 6
+Equity  : $10863.58
+Trades  : 6  |  Win rate: 83.3%
+Time    : 2024-10-09 19:30:00+00:00
 ----------------------------------------------------------------------
 APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.04  |  ATR baseline: 0.02
@@ -312,56 +340,64 @@ Status  : New entries RESUMED
 Time    : 2024-11-18 15:30:00+00:00
 ----------------------------------------------------------------------
 APM v5 | LONG ENTRY | CLM [1h]
-Entry   : 8.98  |  Equity: $10501.65
-Stop    : 8.91  (-0.07 = ATR x2.0)
-Target  : 9.05  (+0.07 = ATR x2.0)
-R:R     : 1:1.00  |  Risk: $105.02 (1.0%)
-Qty     : 1507.6230
+Entry   : 8.98  |  Equity: $10863.58
+Stop    : 8.95  (-0.03 = ATR x0.9)
+Target  : 9.33  (+0.35 = ATR x10.0)
+R:R     : 1:11.11  |  Risk: $108.64 (1.0%)
+Qty     : 3465.7388
 ATR     : 0.03 (0.388% of price)  |  Floor: OK
 RSI     : 68.60 [40.0-70.0]  |  Dir: Rising
 ADX     : 36.40  [min 33.0]
 Vol/MA  : 3.80x  [min 1.2x]
 Body    : 0.861x ATR  [min 0.05x]
 EMA21/34/200: 8.88/8.85/8.48  Stack: BULL  Slope: UP
-Trail on: +3.45 (ATR x99.0)  Dist: 0.01 (ATR x0.3)
+Trail on: +0.07 (ATR x2.0)  Dist: 0.02 (ATR x0.5)
 Time    : 2024-11-29 14:30:00+00:00
 ----------------------------------------------------------------------
+APM v5 | TRAIL STOP ACTIVATED | CLM [1h]
+Direction : LONG
+Best price: 9.05  |  Entry: 8.98
+Trail SL  : 9.03  (best - ATR x0.5 = -0.02)
+Prev SL   : 8.95  |  Target: 9.33
+Runup     : +0.07 (0.78%)
+Time      : 2024-12-02 15:30:00+00:00
+----------------------------------------------------------------------
 APM v5 | LONG EXIT [WIN] | CLM [1h]
-Entry   : 8.98  ->  Exit: 9.05
-Move    : +0.78%
-P&L     : +88.71 USD
-Comm    : -16.31 USD
-Max runup: 0.07
-Bars    : 4
-Equity  : $10590.36
-Trades  : 7  |  Win rate: 100.0%
-Time    : 2024-12-02 15:30:00+00:00
+Entry   : 8.98  ->  Exit: 9.11
+Move    : +1.48%
+P&L     : +421.89 USD
+Comm    : -37.62 USD
+Max runup: 0.15
+Bars    : 9
+Equity  : $11285.47
+Trades  : 7  |  Win rate: 85.7%
+Time    : 2024-12-02 20:30:00+00:00
 ----------------------------------------------------------------------
 APM v5 | LONG ENTRY | CLM [1h]
-Entry   : 9.27  |  Equity: $10590.36
-Stop    : 9.18  (-0.08 = ATR x2.0)
-Target  : 9.35  (+0.08 = ATR x2.0)
-R:R     : 1:1.00  |  Risk: $105.90 (1.0%)
-Qty     : 1280.5186
+Entry   : 9.27  |  Equity: $11285.47
+Stop    : 9.23  (-0.04 = ATR x0.9)
+Target  : 9.68  (+0.41 = ATR x10.0)
+R:R     : 1:11.11  |  Risk: $112.85 (1.0%)
+Qty     : 3032.3719
 ATR     : 0.04 (0.446% of price)  |  Floor: OK
 RSI     : 64.12 [40.0-70.0]  |  Dir: Rising
 ADX     : 52.33  [min 33.0]
 Vol/MA  : 1.44x  [min 1.2x]
 Body    : 1.088x ATR  [min 0.05x]
 EMA21/34/200: 9.20/9.15/8.67  Stack: BULL  Slope: UP
-Trail on: +4.09 (ATR x99.0)  Dist: 0.01 (ATR x0.3)
+Trail on: +0.08 (ATR x2.0)  Dist: 0.02 (ATR x0.5)
 Time    : 2024-12-06 14:30:00+00:00
 ----------------------------------------------------------------------
 APM v5 | LONG EXIT [LOSS] | CLM [1h]
-Entry   : 9.27  ->  Exit: 9.18
-Move    : -0.89%
-P&L     : -120.08 USD
-Comm    : -14.17 USD
+Entry   : 9.27  ->  Exit: 9.23
+Move    : -0.40%
+P&L     : -146.50 USD
+Comm    : -33.65 USD
 Max runup: 0.01
-Bars    : 3
-Equity  : $10470.28
-Trades  : 8  |  Win rate: 87.5%
-Time    : 2024-12-06 17:30:00+00:00
+Bars    : 2
+Equity  : $11138.97
+Trades  : 8  |  Win rate: 75.0%
+Time    : 2024-12-06 16:30:00+00:00
 ----------------------------------------------------------------------
 APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.05  |  ATR baseline: 0.04
@@ -400,30 +436,30 @@ Status  : New entries RESUMED
 Time    : 2025-02-28 19:30:00+00:00
 ----------------------------------------------------------------------
 APM v5 | SHORT ENTRY | CLM [1h]
-Entry   : 7.74  |  Equity: $10470.28
-Stop    : 7.87  (+0.13 = ATR x2.0)
-Target  : 7.61  (-0.13 = ATR x2.0)
-R:R     : 1:1.00  |  Risk: $104.70 (1.0%)
-Qty     : 781.0449
+Entry   : 7.74  |  Equity: $11138.97
+Stop    : 7.80  (+0.06 = ATR x0.9)
+Target  : 7.07  (-0.67 = ATR x10.0)
+R:R     : 1:11.11  |  Risk: $111.39 (1.0%)
+Qty     : 1846.5039
 ATR     : 0.07 (0.866% of price)  |  Floor: OK
 RSI     : 43.57 [30.0-60.0]  |  Dir: Falling
 ADX     : 34.51  [min 33.0]
 Vol/MA  : 1.53x  [min 1.2x]
 Body    : 0.670x ATR  [min 0.05x]
 EMA21/34/200: 7.78/7.82/8.31  Stack: BEAR  Slope: DOWN
-Trail on: -6.64 (ATR x99.0)  Dist: 0.02 (ATR x0.3)
+Trail on: -0.13 (ATR x2.0)  Dist: 0.03 (ATR x0.5)
 Time    : 2025-03-12 14:30:00+00:00
 ----------------------------------------------------------------------
-APM v5 | SHORT EXIT [WIN] | CLM [1h]
-Entry   : 7.74  ->  Exit: 7.61
-Move    : +1.73%
-P&L     : +97.51 USD
-Comm    : -7.19 USD
-Max runup: 0.14
-Bars    : 29
-Equity  : $10567.79
-Trades  : 9  |  Win rate: 88.9%
-Time    : 2025-03-18 15:30:00+00:00
+APM v5 | SHORT EXIT [LOSS] | CLM [1h]
+Entry   : 7.74  ->  Exit: 7.80
+Move    : -0.78%
+P&L     : -128.61 USD
+Comm    : -17.22 USD
+Max runup: 0.00
+Bars    : 3
+Equity  : $11010.36
+Trades  : 9  |  Win rate: 66.7%
+Time    : 2025-03-12 17:30:00+00:00
 ----------------------------------------------------------------------
 APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.06  |  ATR baseline: 0.04
@@ -486,56 +522,64 @@ Status  : New entries RESUMED
 Time    : 2025-05-15 16:30:00+00:00
 ----------------------------------------------------------------------
 APM v5 | LONG ENTRY | CLM [1h]
-Entry   : 7.96  |  Equity: $10567.79
-Stop    : 7.87  (-0.09 = ATR x2.0)
-Target  : 8.05  (+0.09 = ATR x2.0)
-R:R     : 1:1.00  |  Risk: $105.68 (1.0%)
-Qty     : 1179.8709
+Entry   : 7.96  |  Equity: $11010.36
+Stop    : 7.92  (-0.04 = ATR x0.9)
+Target  : 8.41  (+0.45 = ATR x10.0)
+R:R     : 1:11.11  |  Risk: $110.10 (1.0%)
+Qty     : 2731.7399
 ATR     : 0.04 (0.563% of price)  |  Floor: OK
 RSI     : 69.47 [40.0-70.0]  |  Dir: Rising
 ADX     : 35.59  [min 33.0]
 Vol/MA  : 2.39x  [min 1.2x]
 Body    : 0.893x ATR  [min 0.05x]
 EMA21/34/200: 7.87/7.82/7.45  Stack: BULL  Slope: UP
-Trail on: +4.43 (ATR x99.0)  Dist: 0.01 (ATR x0.3)
+Trail on: +0.09 (ATR x2.0)  Dist: 0.02 (ATR x0.5)
 Time    : 2025-06-06 13:30:00+00:00
 ----------------------------------------------------------------------
-APM v5 | LONG EXIT [WIN] | CLM [1h]
-Entry   : 7.96  ->  Exit: 8.06
-Move    : +1.26%
-P&L     : +106.65 USD
-Comm    : -11.34 USD
-Max runup: 0.11
-Bars    : 21
-Equity  : $10674.44
-Trades  : 10  |  Win rate: 90.0%
-Time    : 2025-06-11 13:30:00+00:00
+APM v5 | LONG EXIT [LOSS] | CLM [1h]
+Entry   : 7.96  ->  Exit: 7.92
+Move    : -0.51%
+P&L     : -136.13 USD
+Comm    : -26.03 USD
+Max runup: 0.02
+Bars    : 3
+Equity  : $10874.23
+Trades  : 10  |  Win rate: 60.0%
+Time    : 2025-06-06 16:30:00+00:00
 ----------------------------------------------------------------------
 APM v5 | LONG ENTRY | CLM [1h]
-Entry   : 8.40  |  Equity: $10674.44
-Stop    : 8.35  (-0.04 = ATR x2.0)
-Target  : 8.44  (+0.04 = ATR x2.0)
-R:R     : 1:1.00  |  Risk: $106.74 (1.0%)
-Qty     : 2620.2315
+Entry   : 8.40  |  Equity: $10874.23
+Stop    : 8.38  (-0.02 = ATR x0.9)
+Target  : 8.60  (+0.20 = ATR x10.0)
+R:R     : 1:11.11  |  Risk: $108.74 (1.0%)
+Qty     : 5931.7207
 ATR     : 0.02 (0.243% of price)  |  Floor: OK
 RSI     : 67.74 [40.0-70.0]  |  Dir: Rising
 ADX     : 48.80  [min 33.0]
 Vol/MA  : 2.51x  [min 1.2x]
 Body    : 1.232x ATR  [min 0.05x]
 EMA21/34/200: 8.36/8.34/8.22  Stack: BULL  Slope: UP
-Trail on: +2.02 (ATR x99.0)  Dist: 0.01 (ATR x0.3)
+Trail on: +0.04 (ATR x2.0)  Dist: 0.01 (ATR x0.5)
 Time    : 2025-10-07 18:30:00+00:00
 ----------------------------------------------------------------------
+APM v5 | TRAIL STOP ACTIVATED | CLM [1h]
+Direction : LONG
+Best price: 8.45  |  Entry: 8.40
+Trail SL  : 8.44  (best - ATR x0.5 = -0.01)
+Prev SL   : 8.38  |  Target: 8.60
+Runup     : +0.05 (0.66%)
+Time      : 2025-10-08 14:30:00+00:00
+----------------------------------------------------------------------
 APM v5 | LONG EXIT [WIN] | CLM [1h]
-Entry   : 8.40  ->  Exit: 8.44
-Move    : +0.49%
-P&L     : +80.28 USD
-Comm    : -26.46 USD
-Max runup: 0.05
-Bars    : 3
-Equity  : $10754.72
-Trades  : 11  |  Win rate: 90.9%
-Time    : 2025-10-08 14:30:00+00:00
+Entry   : 8.40  ->  Exit: 8.49
+Move    : +1.08%
+P&L     : +476.74 USD
+Comm    : -60.08 USD
+Max runup: 0.10
+Bars    : 5
+Equity  : $11350.97
+Trades  : 11  |  Win rate: 63.6%
+Time    : 2025-10-08 16:30:00+00:00
 ----------------------------------------------------------------------
 APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.03  |  ATR baseline: 0.02
@@ -562,30 +606,38 @@ Status  : New entries RESUMED
 Time    : 2025-10-15 17:30:00+00:00
 ----------------------------------------------------------------------
 APM v5 | SHORT ENTRY | CLM [1h]
-Entry   : 8.16  |  Equity: $10754.72
-Stop    : 8.24  (+0.08 = ATR x2.0)
-Target  : 8.07  (-0.08 = ATR x2.0)
-R:R     : 1:1.00  |  Risk: $107.55 (1.0%)
-Qty     : 1298.3619
+Entry   : 8.16  |  Equity: $11350.97
+Stop    : 8.19  (+0.04 = ATR x0.9)
+Target  : 7.74  (-0.41 = ATR x10.0)
+R:R     : 1:11.11  |  Risk: $113.51 (1.0%)
+Qty     : 3045.2093
 ATR     : 0.04 (0.508% of price)  |  Floor: OK
 RSI     : 37.43 [30.0-60.0]  |  Dir: Falling
 ADX     : 41.79  [min 33.0]
 Vol/MA  : 2.11x  [min 1.2x]
 Body    : 1.533x ATR  [min 0.05x]
 EMA21/34/200: 8.23/8.25/8.27  Stack: BEAR  Slope: DOWN
-Trail on: -4.10 (ATR x99.0)  Dist: 0.01 (ATR x0.3)
+Trail on: -0.08 (ATR x2.0)  Dist: 0.02 (ATR x0.5)
 Time    : 2025-10-21 13:30:00+00:00
 ----------------------------------------------------------------------
+APM v5 | TRAIL STOP ACTIVATED | CLM [1h]
+Direction : SHORT
+Best price: 8.07  |  Entry: 8.16
+Trail SL  : 8.09  (best + ATR x0.5 = +0.02)
+Prev SL   : 8.19  |  Target: 7.74
+Runup     : -0.09 (1.06%)
+Time      : 2025-10-22 16:30:00+00:00
+----------------------------------------------------------------------
 APM v5 | SHORT EXIT [WIN] | CLM [1h]
-Entry   : 8.16  ->  Exit: 8.07
-Move    : +1.02%
-P&L     : +94.90 USD
-Comm    : -12.64 USD
+Entry   : 8.16  ->  Exit: 8.09
+Move    : +0.81%
+P&L     : +170.66 USD
+Comm    : -29.69 USD
 Max runup: 0.09
-Bars    : 10
-Equity  : $10849.62
-Trades  : 12  |  Win rate: 91.7%
-Time    : 2025-10-22 16:30:00+00:00
+Bars    : 12
+Equity  : $11521.64
+Trades  : 12  |  Win rate: 66.7%
+Time    : 2025-10-22 18:30:00+00:00
 ----------------------------------------------------------------------
 APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.04  |  ATR baseline: 0.03
@@ -612,30 +664,38 @@ Status  : New entries RESUMED
 Time    : 2025-11-18 18:30:00+00:00
 ----------------------------------------------------------------------
 APM v5 | SHORT ENTRY | CLM [1h]
-Entry   : 8.13  |  Equity: $10849.62
-Stop    : 8.23  (+0.10 = ATR x2.0)
-Target  : 8.03  (-0.10 = ATR x2.0)
-R:R     : 1:1.00  |  Risk: $108.50 (1.0%)
-Qty     : 1079.9875
+Entry   : 8.13  |  Equity: $11521.64
+Stop    : 8.17  (+0.05 = ATR x0.9)
+Target  : 7.63  (-0.50 = ATR x10.0)
+R:R     : 1:11.11  |  Risk: $115.22 (1.0%)
+Qty     : 2548.6235
 ATR     : 0.05 (0.618% of price)  |  Floor: OK
 RSI     : 46.82 [30.0-60.0]  |  Dir: Falling
 ADX     : 35.29  [min 33.0]
 Vol/MA  : 1.76x  [min 1.2x]
 Body    : 1.200x ATR  [min 0.05x]
 EMA21/34/200: 8.14/8.16/8.23  Stack: BEAR  Slope: DOWN
-Trail on: -4.97 (ATR x99.0)  Dist: 0.02 (ATR x0.3)
+Trail on: -0.10 (ATR x2.0)  Dist: 0.03 (ATR x0.5)
 Time    : 2025-11-20 16:30:00+00:00
 ----------------------------------------------------------------------
+APM v5 | TRAIL STOP ACTIVATED | CLM [1h]
+Direction : SHORT
+Best price: 8.01  |  Entry: 8.13
+Trail SL  : 8.04  (best + ATR x0.5 = +0.03)
+Prev SL   : 8.17  |  Target: 7.63
+Runup     : -0.12 (1.47%)
+Time      : 2025-11-21 14:30:00+00:00
+----------------------------------------------------------------------
 APM v5 | SHORT EXIT [WIN] | CLM [1h]
-Entry   : 8.13  ->  Exit: 8.01
-Move    : +1.47%
-P&L     : +118.82 USD
-Comm    : -10.46 USD
-Max runup: 0.12
-Bars    : 5
-Equity  : $10968.44
-Trades  : 13  |  Win rate: 92.3%
-Time    : 2025-11-21 14:30:00+00:00
+Entry   : 8.13  ->  Exit: 8.04
+Move    : +1.16%
+P&L     : +216.34 USD
+Comm    : -24.72 USD
+Max runup: 0.18
+Bars    : 6
+Equity  : $11737.98
+Trades  : 13  |  Win rate: 69.2%
+Time    : 2025-11-21 15:30:00+00:00
 ----------------------------------------------------------------------
 APM v5 | PANIC REGIME STARTED | CLM [1h]
 ATR     : 0.04  |  ATR baseline: 0.02

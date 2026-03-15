@@ -1,12 +1,12 @@
-"""Python backtest of Adaptive Pullback Momentum v5 — CLM 1h
+"""Python backtest of Adaptive Pullback Momentum v5.2 — CLM 1h
 Timeframe : 1h CLM (WTI Crude Oil futures), period="max" (~730 days via yfinance)
 Commission : 0.06 % per side   Risk : 1 % equity / trade
 
-v5 sweep-optimal parameters (deep sweep over CLM 1h max history):
-  Longs + Shorts | ADX>33 | SL×2.0 | TP×2.0 | Trail OFF | Vol×1.2 | Body×0.05
-  Panic×1.4 | EMA slope OFF | ATR floor 0.00% | RSI L:40-70 / S:30-60
+v5.2 params (Stage-5 realistic next-bar trail sweep):
+  Longs + Shorts | ADX>33 | SL×0.9 | TP×10.0 (off) | Trail act 2.0× dist 0.5×
+  Vol×1.2 | Body×0.05 | Panic×1.4 | EMA slope OFF | ATR floor 0.00%
   EMA 21/34/200 | RSI len 20 | ATR 14/50 | Vol MA 20
-  Result: +12.30%, PF=11.002, WR=93.8%, 16 trades, MaxDD=-1.13%
+  Result: +17.38%, WR=69.2%, 13 trades, MaxDD=-3.64%, Calmar=4.77
 """
 
 import pandas as pd
@@ -23,24 +23,24 @@ INIT_CAP   = 10_000.0
 COMMISSION = 0.0006         # 0.06 % per side
 RISK_PCT   = 0.01           # 1 % equity per trade
 
-# ── Strategy parameters (CLM 1h — sweep-optimised) ───────────────────────────
+# ── Strategy parameters (CLM 1h — v5.2 Stage-4 max-return sweep) ─────────────
 EMA_FAST_LEN = 21
-EMA_MID_LEN  = 34          # deep sweep-optimal: 34 vs 50
+EMA_MID_LEN  = 34          # sweep-optimal: 34 vs 50
 EMA_SLOW_LEN = 200
 ADX_LEN      = 14
-ADX_THRESH   = 33.0         # extended sweep-optimal: ADX>33
-PB_PCT       = 0.20         # % pullback tolerance — wider for crude oil
+ADX_THRESH   = 33.0         # sweep-optimal: ADX>33 (high-quality signals)
+PB_PCT       = 0.20         # % pullback tolerance
 VOL_MA_LEN   = 20
 VOL_MULT     = 1.20         # sweep-optimal: 1.2× avg volume
-MIN_BODY     = 0.05         # deep sweep-optimal: relaxed body filter
-PANIC_MULT   = 1.4          # extended sweep-optimal: tighter panic filter
+MIN_BODY     = 0.05         # relaxed body filter
+PANIC_MULT   = 1.4
 ATR_LEN      = 14
-ATR_BL_LEN   = 50           # ATR baseline (SMA of ATR)
-SL_MULT      = 2.0          # extended sweep-optimal: SL×2.0
-TP_MULT      = 2.0
-TRAIL_ACT    = 99.0         # sweep-optimal: trailing stop off (hard TP only)
-TRAIL_DIST   = 0.3
-RSI_LEN      = 20           # deep sweep-optimal: 20 vs 14
+ATR_BL_LEN   = 50
+SL_MULT      = 0.9          # Stage-5: tight SL → larger pos size
+TP_MULT      = 10.0         # effectively disabled; trail is primary exit
+TRAIL_ACT    = 2.0          # Stage-5: trail activates at 2× ATR profit
+TRAIL_DIST   = 0.5          # Stage-5: 0.5× ATR trailing cushion
+RSI_LEN      = 20
 RSI_LO_L     = 40.0; RSI_HI_L = 70.0   # long RSI band
 RSI_LO_S     = 30.0; RSI_HI_S = 60.0   # short RSI band
 TRADE_LONGS  = True
@@ -224,6 +224,7 @@ sl_price   = 0.0
 tp_price   = 0.0
 best_price = 0.0
 entry_atr  = 0.0
+pending_trail_sl = None   # trail SL to apply at NEXT bar open (next-bar trail model)
 
 tradesdict   = []
 alerts       = []
@@ -268,20 +269,25 @@ for i in range(EMA_SLOW_LEN + 50, len(df)):
     exited = False
 
     if in_trade:
+        # Apply pending trail SL from previous bar (next-bar execution model)
+        if pending_trail_sl is not None:
+            sl_price = pending_trail_sl
+            pending_trail_sl = None
+
         if direction == "long":
             if h[i] > best_price:
                 best_price = h[i]
                 max_runup_f = max(max_runup_f, h[i] - entry_px)
-            # Activate trailing stop
+            # Queue trailing stop update — applied on NEXT bar (realistic execution)
             if best_price >= entry_px + entry_atr * TRAIL_ACT:
                 trail_sl = best_price - entry_atr * TRAIL_DIST
-                if trail_sl > sl_price:
+                if trail_sl > sl_price and (pending_trail_sl is None or trail_sl > pending_trail_sl):
                     if not trail_active_f:
                         trail_active_f = True
                         alerts.append((cur_ts, "TRAIL", trail_alert(
                             "long", best_price, entry_px, trail_sl,
                             sl_price, tp_price, entry_atr, cur_ts)))
-                    sl_price = trail_sl
+                    pending_trail_sl = trail_sl
 
             # Check SL
             if l_[i] <= sl_price:
@@ -324,15 +330,16 @@ for i in range(EMA_SLOW_LEN + 50, len(df)):
             if l_[i] < best_price:
                 best_price = l_[i]
                 max_runup_f = max(max_runup_f, entry_px - l_[i])
+            # Queue trailing stop update — applied on NEXT bar (realistic execution)
             if best_price <= entry_px - entry_atr * TRAIL_ACT:
                 trail_sl = best_price + entry_atr * TRAIL_DIST
-                if trail_sl < sl_price:
+                if trail_sl < sl_price and (pending_trail_sl is None or trail_sl < pending_trail_sl):
                     if not trail_active_f:
                         trail_active_f = True
                         alerts.append((cur_ts, "TRAIL", trail_alert(
                             "short", best_price, entry_px, trail_sl,
                             sl_price, tp_price, entry_atr, cur_ts)))
-                    sl_price = trail_sl
+                    pending_trail_sl = trail_sl
 
             if h[i] >= sl_price:
                 exit_px  = max(o[i], sl_price)
@@ -382,6 +389,7 @@ for i in range(EMA_SLOW_LEN + 50, len(df)):
             entry_time     = cur_ts
             trail_active_f = False
             max_runup_f    = 0.0
+            pending_trail_sl = None
             direction      = "long"; in_trade = True
             alerts.append((cur_ts, "ENTRY", entry_alert(
                 "long", cur_ts, c[i], curr_atr, eff_atr,
@@ -397,6 +405,7 @@ for i in range(EMA_SLOW_LEN + 50, len(df)):
             entry_time     = cur_ts
             trail_active_f = False
             max_runup_f    = 0.0
+            pending_trail_sl = None
             direction      = "short"; in_trade = True
             alerts.append((cur_ts, "ENTRY", entry_alert(
                 "short", cur_ts, c[i], curr_atr, eff_atr,
