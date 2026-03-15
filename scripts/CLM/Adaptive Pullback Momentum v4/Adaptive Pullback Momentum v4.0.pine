@@ -4,7 +4,7 @@
 //@version=6
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Adaptive Pullback Momentum v4.3
+// Adaptive Pullback Momentum v4.4
 // 30min (CLM-optimised)
 // THESIS
 //   Most breakout strategies enter *after* the move is mature.  This strategy
@@ -16,16 +16,16 @@
 //            EMA21 rising over 3 bars (slope filter — no flat/reversing EMAs)
 //            RSI rising on entry bar (momentum confirmation)
 //            prev-bar low tagged EMA21 zone, current bar recovers above EMA21
-//            + RSI 42–68  |  Volume ≥ 1.2× VolSMA  |  ADX > 25  |  no panic
-//            + body ≥ 0.20×ATR  |  ATR ≥ 0.20% of price (kills low-vol entries)
+//            + RSI 38–68  |  Volume ≥ 1.0× VolSMA  |  ADX > 10  |  no panic
+//            + body ≥ 0.15×ATR  |  ATR ≥ 0.10% of price
 //   Short : mirror of the above
 //
 // EXIT LOGIC
-//   → Hard stop  : entry ± ATR × 1.5
+//   → Hard stop  : entry ± ATR × 1.0
 //   → Hard TP    : entry ± ATR × 16.0 (trail does exit work; TP is safety net)
-//   → Trail      : activates once price moves ATR×2.5 in favour,
-//                  then trails ATR×0.3 from best price (locks in profit fast)
-//   → Sizing     : 3 % of equity risked per trade
+//   → Trail      : activates once price moves ATR×3.0 in favour,
+//                  then trails ATR×0.1 from best price (maximum profit lock)
+//   → Sizing     : 4 % of equity risked per trade (5× leverage cap)
 //
 // v4.1 CHANGES vs v4.0  (CLM 30m sweep: +9.48% PF=2.297 vs +2.53% PF=1.112 baseline)
 //   EMA condition : loose (close>EMA200 & EMA21>EMA50) → full stack EMA21>EMA50>EMA200
@@ -61,11 +61,18 @@
 //   Panic mult     : 1.3× → 1.5×   (aligned to sweep fixed value)
 //   Risk per trade : 1%   → 3%     (larger position size to reach +23.71%)
 //   Longs+Shorts   : both enabled  (trade_mode=both best on CLM 30m)
+//
+// v4.4 CHANGES vs v4.3  (S8 max-profit sweep: +82.59% PF=2.027 n=60 WR=41.7% MDD=-13.05% Calmar=6.33)
+//   SL multiplier  : 1.5× → 1.0×   (tighter stop → larger position size per $ risk)
+//   Trail activate : 2.5× → 3.0×   (let price run 3×ATR before trail locks in)
+//   Trail distance : 0.3× → 0.1×   (hardest possible profit lock on activation)
+//   Volume mult    : 1.2× → 1.0×   (lower entry bar = more signals, n: 51→60)
+//   Risk per trade : 3%   → 4%     (hits 5× leverage cap optimally; 5%/6% identical)
 // ─────────────────────────────────────────────────────────────────────────────
 
 strategy(
-    title             = "Adaptive Pullback Momentum v4.3",
-    shorttitle        = "APM v4.3",
+    title             = "Adaptive Pullback Momentum v4.4",
+    shorttitle        = "APM v4.4",
     overlay           = true,
     pyramiding        = 0,
     initial_capital   = 10000,
@@ -94,7 +101,7 @@ i_rsi_hi_l   = input.int  (68,   "RSI max – Long",        group=G_MOM, minval=
 i_rsi_lo_s   = input.int  (30,   "RSI min – Short",       group=G_MOM, minval=10, maxval=50)
 i_rsi_hi_s   = input.int  (62,   "RSI max – Short",       group=G_MOM, minval=40, maxval=80)
 i_vol_len    = input.int  (20,   "Volume SMA length",     group=G_MOM, minval=5)
-i_vol_mult   = input.float(1.2,  "Volume multiplier",     group=G_MOM, minval=0.3, maxval=5.0, step=0.1)
+i_vol_mult   = input.float(1.0,  "Volume multiplier",     group=G_MOM, minval=0.3, maxval=5.0, step=0.1)
 i_min_body   = input.float(0.15, "Min body (×ATR)",        group=G_MOM, minval=0.0, maxval=2.0, step=0.05,
                  tooltip="Entry bar body (|close-open|/ATR) must exceed this — filters doji / indecision candles")
 
@@ -104,13 +111,13 @@ i_panic_mult = input.float(1.5,  "Panic suppression mult",group=G_VOL, minval=1.
                  tooltip="ATR14 > ATR-60SMA × this value → skip new entries")
 
 var G_RISK = "Risk Management"
-i_sl_mult    = input.float(1.5,  "Stop loss ATR mult",    group=G_RISK, minval=0.3, step=0.1)
+i_sl_mult    = input.float(1.0,  "Stop loss ATR mult",    group=G_RISK, minval=0.3, step=0.1)
 i_tp_mult    = input.float(16.0, "Take profit ATR mult",  group=G_RISK, minval=0.5, step=0.1)
-i_tr_act     = input.float(2.5,  "Trail activate ATR mult",group=G_RISK,minval=0.3, step=0.1,
+i_tr_act     = input.float(3.0,  "Trail activate ATR mult",group=G_RISK,minval=0.3, step=0.1,
                  tooltip="Trailing stop kicks in once price moves this many ATRs in your favour")
-i_tr_dist    = input.float(0.3,  "Trail distance ATR mult",group=G_RISK,minval=0.1, step=0.1,
+i_tr_dist    = input.float(0.1,  "Trail distance ATR mult",group=G_RISK,minval=0.05, step=0.05,
                  tooltip="Once active, trail stays this many ATRs below/above the best price")
-i_risk_pct   = input.float(3.0,  "Equity risked per trade (%)",group=G_RISK,minval=0.1,maxval=20,step=0.1)
+i_risk_pct   = input.float(4.0,  "Equity risked per trade (%)",group=G_RISK,minval=0.1,maxval=20,step=0.1)
 
 i_ema_slope  = input.bool(true,  "EMA slope filter", group=G_TREND,
                  tooltip="Require EMA-fast to be rising (longs) / falling (shorts) over 3 bars")
@@ -202,7 +209,7 @@ if long_ok
     trail_active := false
     strategy.entry("Long", strategy.long, qty=qty)
     alert(
-        "APM v4.3 | LONG ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v4.4 | LONG ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "Entry   : " + str.tostring(close, "#.##") +
         "  |  Equity: $" + str.tostring(strategy.equity, "#.##") + "\n" +
         "Stop    : " + str.tostring(sl_price, "#.##") +
@@ -244,7 +251,7 @@ if short_ok
     trail_active := false
     strategy.entry("Short", strategy.short, qty=qty)
     alert(
-        "APM v4.3 | SHORT ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v4.4 | SHORT ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "Entry   : " + str.tostring(close, "#.##") +
         "  |  Equity: $" + str.tostring(strategy.equity, "#.##") + "\n" +
         "Stop    : " + str.tostring(sl_price, "#.##") +
@@ -288,7 +295,7 @@ if strategy.position_size > 0.0          // long
         if not trail_active
             trail_active := true
             alert(
-                "APM v4.3 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+                "APM v4.4 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
                 "Direction : LONG\n" +
                 "Best price: " + str.tostring(best_price, "#.##") +
                 "  |  Entry: " + str.tostring(entry_p, "#.##") + "\n" +
@@ -311,7 +318,7 @@ if strategy.position_size < 0.0          // short
         if not trail_active
             trail_active := true
             alert(
-                "APM v4.3 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+                "APM v4.4 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
                 "Direction : SHORT\n" +
                 "Best price: " + str.tostring(best_price, "#.##") +
                 "  |  Entry: " + str.tostring(entry_p, "#.##") + "\n" +
@@ -342,7 +349,7 @@ if strategy.closedtrades > _prev_closed
     _mvpct   = _sz > 0 ? (_xp - _ep) / _ep * 100 : (_ep - _xp) / _ep * 100
     _wr      = strategy.closedtrades > 0 ? str.tostring(math.round(strategy.wintrades / strategy.closedtrades * 100, 1), "#.#") + "%" : "--"
     alert(
-        "APM v4.2 | " + _dir + " EXIT [" + _res + "] | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v4.4 | " + _dir + " EXIT [" + _res + "] | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "Entry   : " + str.tostring(_ep, "#.##") +
         "  ->  Exit: " + str.tostring(_xp, "#.##") + "\n" +
         "Move    : " + (_mvpct >= 0 ? "+" : "") + str.tostring(_mvpct, "#.##") + "%\n" +
@@ -358,7 +365,7 @@ if strategy.closedtrades > _prev_closed
 // ── Panic regime alert ────────────────────────────────────────────────────────
 if is_panic and not is_panic[1]
     alert(
-        "APM v4.2 | PANIC REGIME STARTED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v4.4 | PANIC REGIME STARTED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "ATR     : " + str.tostring(atr, "#.##") +
         "  |  ATR baseline: " + str.tostring(atr_bl, "#.##") + "\n" +
         "Ratio   : " + str.tostring(atr / atr_bl, "#.##") + "x" +
@@ -368,7 +375,7 @@ if is_panic and not is_panic[1]
 
 if not is_panic and is_panic[1]
     alert(
-        "APM v4.2 | PANIC REGIME CLEARED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v4.4 | PANIC REGIME CLEARED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "ATR     : " + str.tostring(atr, "#.##") +
         "  |  ATR baseline: " + str.tostring(atr_bl, "#.##") + "\n" +
         "Ratio   : " + str.tostring(atr / atr_bl, "#.##") + "x" +
@@ -424,7 +431,7 @@ if i_show_dash and barstate.islast
          frame_width=1,  frame_color=color.new(color.gray, 40))
 
     // header
-    table.cell(tbl, 0, 0, "APM v4.2", text_color=D_BRT, bgcolor=D_HDR, text_size=size.normal, text_halign=text.align_left)
+    table.cell(tbl, 0, 0, "APM v4.4", text_color=D_BRT, bgcolor=D_HDR, text_size=size.normal, text_halign=text.align_left)
     table.cell(tbl, 1, 0, timeframe.period + " | " + syminfo.ticker, text_color=D_YEL, bgcolor=D_HDR, text_size=size.small, text_halign=text.align_right)
 
     // position
