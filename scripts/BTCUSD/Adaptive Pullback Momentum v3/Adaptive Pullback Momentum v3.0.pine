@@ -73,7 +73,7 @@ strategy(
     default_qty_value = 10000,        // overridden by risk-based sizing below
     commission_type   = strategy.commission.percent,
     commission_value  = 0.06,
-    slippage          = 1)
+    slippage          = 0)
 
 // ── Inputs ───────────────────────────────────────────────────────────────────
 var G_TREND = "Trend Filters"
