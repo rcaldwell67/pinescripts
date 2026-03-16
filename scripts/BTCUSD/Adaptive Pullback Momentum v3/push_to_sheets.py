@@ -1,5 +1,5 @@
 """
-APM v4.2  — Push backtest results to Google Sheets
+APM v3.3  — Push backtest results to Google Sheets
 ====================================================
 Sheet: https://docs.google.com/spreadsheets/d/19wjt8sWl1PddkwYbk8NgXEzoZSo6dVbec3pUdAk3-n8
 
@@ -7,7 +7,7 @@ SETUP (one-time):
   1. Go to https://console.cloud.google.com → New Project
   2. Enable "Google Sheets API" for the project
   3. Create a Service Account → generate JSON key → save as:
-       scripts/Adaptive Pullback Momentum v4/service_account.json
+       scripts/Adaptive Pullback Momentum v3/service_account.json
   4. Copy the service account email (e.g. apm-bot@your-project.iam.gserviceaccount.com)
   5. Open the Google Sheet → Share → paste the service account email → Editor
   6. pip install gspread
@@ -25,10 +25,11 @@ from datetime import datetime, timezone
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 SPREADSHEET_ID  = "19wjt8sWl1PddkwYbk8NgXEzoZSo6dVbec3pUdAk3-n8"
-TRADES_SHEET    = "Trades v4"      # tab for v4 trade-level data
-ALERTS_SHEET    = "Alerts v4"      # tab for v4 alert events
-SUMMARY_SHEET   = "Summary v4"     # tab for v4 run-level summaries
+TRADES_SHEET    = "Trades"        # tab name for trade-level data
+ALERTS_SHEET    = "Alerts"        # tab name for all alert events
+SUMMARY_SHEET   = "Summary"       # tab name for run-level summary
 
+# Path to service account JSON key (relative to this script)
 SA_KEY = Path(__file__).parent / "service_account.json"
 
 SCOPES = [
@@ -49,16 +50,19 @@ def connect():
 
 
 def get_or_create_sheet(wb, name, headers):
+    """Return worksheet, creating it with a header row if it doesn't exist."""
     try:
         ws = wb.worksheet(name)
     except gspread.WorksheetNotFound:
         ws = wb.add_worksheet(title=name, rows=5000, cols=len(headers))
         ws.append_row(headers, value_input_option="USER_ENTERED")
+        # Freeze header row
         ws.freeze(rows=1)
     return ws
 
 
 def ensure_header(ws, headers):
+    """If sheet is empty or header is missing, write it."""
     existing = ws.row_values(1)
     if existing != headers:
         ws.clear()
@@ -104,8 +108,12 @@ SUMMARY_HEADERS = [
 ]
 
 
-# ── Alert parser ───────────────────────────────────────────────────────────────
+# ── Parsers for the structured alert list produced by backtest_apm_v3.py ───────
 def parse_alerts(alerts, run_ts, symbol, interval):
+    """
+    `alerts` is the list of (ts, atype, msg) tuples from the backtest loop.
+    Returns a list of rows matching ALERTS_HEADERS.
+    """
     rows = []
     for ts, atype, msg in alerts:
         lines = {l.split(":")[0].strip(): ":".join(l.split(":")[1:]).strip()
@@ -116,6 +124,7 @@ def parse_alerts(alerts, run_ts, symbol, interval):
         if atype == "ENTRY":
             direction = "LONG" if "LONG ENTRY" in msg else "SHORT"
             entry_v   = lines.get("Entry", "").split("|")[0].strip()
+            equity_v  = lines.get("Entry", "").split("Equity: $")[-1].strip() if "Equity" in lines.get("Entry","") else ""
             stop_v    = lines.get("Stop", "").split("(")[0].strip()
             target_v  = lines.get("Target", "").split("(")[0].strip()
             rr_v      = lines.get("R:R", "").split("|")[0].strip()
@@ -144,7 +153,7 @@ def parse_alerts(alerts, run_ts, symbol, interval):
                 parts = ema_part.split("/")
                 if len(parts) == 3:
                     ema_f, ema_m, ema_s = parts
-            trail_raw    = lines.get("Trail on", "")
+            trail_raw = lines.get("Trail on", "")
             trail_act_v  = trail_raw.split("(")[0].replace("-","").replace("+","").strip() if trail_raw else ""
             trail_dist_v = trail_raw.split("Dist:")[-1].split("(")[0].strip() if "Dist:" in trail_raw else ""
             rows.append(base + [
@@ -156,9 +165,9 @@ def parse_alerts(alerts, run_ts, symbol, interval):
                 vol_v, body_v,
                 ema_f, ema_m, ema_s,
                 trail_act_v, trail_dist_v,
-                "", "", "", "", "",
-                "", "", "", "", "", "", "", "", "", "",
-                "", "", "",
+                "", "", "", "", "",        # trail fields
+                "", "", "", "", "", "", "", "", "", "", "",  # exit fields
+                "", "", "",                 # panic fields
                 msg,
             ])
 
@@ -245,13 +254,13 @@ def parse_trades(trades, run_ts, symbol, interval):
             str(t.get("entry_time", "")),
             str(t.get("exit_time", "")),
             t.get("direction", "").upper(),
-            t.get("entry", ""),
-            t.get("exit", ""),
+            t.get("entry_price", ""),
+            t.get("exit_price", ""),
             t.get("result", ""),
             t.get("dollar_pnl", ""),
-            "",
-            "",
-            "",
+            "",                              # commission not stored in original trades dict
+            "",                              # max runup not stored in original trades dict
+            "",                              # bars not stored in original trades dict
             t.get("pnl_pct", ""),
             t.get("equity", ""),
         ])
@@ -261,7 +270,8 @@ def parse_trades(trades, run_ts, symbol, interval):
 def build_summary_row(run_ts, symbol, interval, period, initial_cap, equity,
                       tdf, alerts):
     if tdf.empty:
-        ret = pf = wr = mdd = 0.0
+        ret = pf = wr = 0.0
+        mdd = 0.0
         n_longs = n_shorts = n_tp = n_sl = 0
     else:
         wins   = tdf[tdf["dollar_pnl"] > 0]
@@ -304,18 +314,19 @@ def build_summary_row(run_ts, symbol, interval, period, initial_cap, equity,
 def push_results(trades, alerts, symbol, interval, period,
                  initial_cap, final_equity):
     """
-    Called from backtest_apm_v4_30m.py after the simulation loop.
+    Call this from backtest_apm_v3.py after the simulation loop.
 
-    trades  : list of trade dicts
+    trades  : list of trade dicts (same structure backtest already builds)
     alerts  : list of (ts, atype, msg) tuples
     """
     import pandas as pd
-    tdf    = pd.DataFrame(trades) if trades else pd.DataFrame()
-    run_ts = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    tdf     = pd.DataFrame(trades)
+    run_ts  = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     print("\nConnecting to Google Sheets...")
     wb = connect()
 
+    # ── Trades sheet ──────────────────────────────────────────────────────────
     ws_trades = get_or_create_sheet(wb, TRADES_SHEET, TRADES_HEADERS)
     ensure_header(ws_trades, TRADES_HEADERS)
     trade_rows = parse_trades(trades, run_ts, symbol, interval)
@@ -323,6 +334,7 @@ def push_results(trades, alerts, symbol, interval, period,
         ws_trades.append_rows(trade_rows, value_input_option="USER_ENTERED")
         print(f"  Trades   → {len(trade_rows)} rows appended to '{TRADES_SHEET}'")
 
+    # ── Alerts sheet ──────────────────────────────────────────────────────────
     ws_alerts = get_or_create_sheet(wb, ALERTS_SHEET, ALERTS_HEADERS)
     ensure_header(ws_alerts, ALERTS_HEADERS)
     alert_rows = parse_alerts(alerts, run_ts, symbol, interval)
@@ -330,6 +342,7 @@ def push_results(trades, alerts, symbol, interval, period,
         ws_alerts.append_rows(alert_rows, value_input_option="USER_ENTERED")
         print(f"  Alerts   → {len(alert_rows)} rows appended to '{ALERTS_SHEET}'")
 
+    # ── Summary sheet ─────────────────────────────────────────────────────────
     ws_summary = get_or_create_sheet(wb, SUMMARY_SHEET, SUMMARY_HEADERS)
     ensure_header(ws_summary, SUMMARY_HEADERS)
     summary_row = build_summary_row(run_ts, symbol, interval, period,
@@ -341,30 +354,33 @@ def push_results(trades, alerts, symbol, interval, period,
     print(f"\nDone → {sheet_url}")
 
 
-# ── Standalone: re-push from saved CSV + alert txt ────────────────────────────
+# ── Standalone: push last backtest run from saved CSV + alert txt ──────────────
 if __name__ == "__main__":
+    import ast
     from pathlib import Path
 
     HERE     = Path(__file__).parent
-    CSV_FILE = HERE / "apm_v4_trades_btcusd_30m.csv"
-    TXT_FILE = HERE / "apm_v4_alerts_btcusd_30m.txt"
+    CSV_FILE = HERE / "apm_v3_trades_btcusd_15m.csv"
+    TXT_FILE = HERE / "apm_v3_alerts_btcusd_15m.txt"
 
     if not CSV_FILE.exists():
-        print(f"Run backtest_apm_v4_30m.py first to generate {CSV_FILE.name}")
+        print(f"Run backtest_apm_v3.py first to generate {CSV_FILE.name}")
         sys.exit(1)
 
     tdf    = pd.read_csv(CSV_FILE)
     trades = tdf.to_dict(orient="records")
 
+    # Re-build alerts list from the text log (type is inferred from content)
     alerts = []
     SEP = "-" * 70
     if TXT_FILE.exists():
-        raw    = TXT_FILE.read_text()
+        raw = TXT_FILE.read_text()
         blocks = [b.strip() for b in raw.split(SEP) if b.strip()]
         for block in blocks:
-            first   = block.splitlines()[0]
+            first = block.splitlines()[0]
+            # extract timestamp from "Time    : ..." line
             ts_line = [l for l in block.splitlines() if l.startswith("Time")]
-            ts      = ts_line[0].split(":", 1)[-1].strip() if ts_line else ""
+            ts = ts_line[0].split(":", 1)[-1].strip() if ts_line else ""
             if "LONG ENTRY" in first or "SHORT ENTRY" in first:
                 atype = "ENTRY"
             elif "TRAIL STOP" in first:
@@ -385,7 +401,7 @@ if __name__ == "__main__":
         trades      = trades,
         alerts      = alerts,
         symbol      = "BTC-USD",
-        interval    = "30m",
+        interval    = "15m",
         period      = "max",
         initial_cap = 10_000.0,
         final_equity= float(equity),

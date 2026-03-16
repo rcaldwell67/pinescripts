@@ -1,31 +1,31 @@
 /**
- * APM v4.2 — Google Apps Script
+ * APM v5.1 — Google Apps Script
  * ==============================
- * Polls Gmail every 1 minute for TradingView alert emails from APM v4.2
- * (BTC-USD 30m, both longs and shorts) and appends parsed rows to the
- * "Live Alerts v4" sheet in:
+ * Polls Gmail every 1 minute for TradingView alert emails from APM v5.1
+ * (BTC-USD 1h, longs only) and appends parsed rows to the
+ * "Live Alerts v5" sheet in:
  * https://docs.google.com/spreadsheets/d/19wjt8sWl1PddkwYbk8NgXEzoZSo6dVbec3pUdAk3-n8
  *
  * SETUP (one-time):
  *   1. Copy this file into a new Apps Script project bound to the Sheet:
  *      Extensions → Apps Script → paste code → Save
  *   2. In TradingView, set each alert's Message exactly as the Pine Script
- *      alert() calls produce (multi-line format with "APM v4.2 | ... |" prefix).
+ *      alert() calls produce (multi-line format with "APM v5.1 | ... |" prefix).
  *   3. Run setupTrigger() once from the Apps Script editor to install the
  *      1-minute polling trigger.
- *   4. Create a Gmail label named "apm-v4-processed" (Gmail → Settings →
+ *   4. Create a Gmail label named "apm-v5-processed" (Gmail → Settings →
  *      Labels → Create new label).
  *   5. Run processAlertEmails() manually once to confirm it works.
  *
  * Alert types parsed:
- *   LONG/SHORT ENTRY, TRAIL STOP ACTIVATED, LONG/SHORT EXIT [WIN/LOSS],
+ *   LONG ENTRY, TRAIL STOP ACTIVATED, LONG EXIT [WIN/LOSS],
  *   PANIC REGIME STARTED, PANIC REGIME CLEARED
  */
 
 var SPREADSHEET_ID   = "19wjt8sWl1PddkwYbk8NgXEzoZSo6dVbec3pUdAk3-n8";
-var LIVE_SHEET_NAME  = "Live Alerts v4";
-var PROCESSED_LABEL  = "apm-v4-processed";
-var GMAIL_QUERY      = 'from:noreply@tradingview.com subject:"APM v4.2" -label:' + PROCESSED_LABEL;
+var LIVE_SHEET_NAME  = "Live Alerts v5";
+var PROCESSED_LABEL  = "apm-v5-processed";
+var GMAIL_QUERY      = 'from:noreply@tradingview.com subject:"APM v5.1" -label:' + PROCESSED_LABEL;
 
 var LIVE_HEADERS = [
   "Received At", "Symbol", "Timeframe", "Alert Type", "Direction",
@@ -105,7 +105,7 @@ function parseAlertBody(body, date, msgId) {
   if (lines.length < 2) return null;
 
   var header = lines[0].trim();
-  if (header.indexOf("APM v4.2") === -1) return null;
+  if (header.indexOf("APM v5.1") === -1) return null;
 
   // Build key→value map from "Key   : Value" lines
   var kv = {};
@@ -132,7 +132,7 @@ function parseAlertBody(body, date, msgId) {
   else return null;
 
   // ── Parse symbol / timeframe from header
-  // Header format: "APM v4.2 | SHORT ENTRY | BTC-USD [30m]"
+  // Header format: "APM v5.1 | SHORT ENTRY | BTC-USD [1h]"
   var symParts = header.split("|");
   var symRaw   = symParts.length >= 3 ? symParts[2].trim() : "";
   var symbol   = symRaw.split("[")[0].trim();
@@ -309,7 +309,7 @@ function setupTrigger() {
 
 /** Utility: manually run once to test parsing against existing emails. */
 function testParse() {
-  var threads = GmailApp.search('from:noreply@tradingview.com subject:"APM v4.2"', 0, 3);
+  var threads = GmailApp.search('from:noreply@tradingview.com subject:"APM v5.1"', 0, 3);
   for (var i = 0; i < threads.length; i++) {
     var msgs = threads[i].getMessages();
     for (var j = 0; j < msgs.length; j++) {

@@ -4,46 +4,52 @@
 //@version=6
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Adaptive Pullback Momentum v4.1
-// 1D Look Back
-//
+// Adaptive Pullback Momentum v4.2
+// 30min Look Back
 // THESIS
 //   Most breakout strategies enter *after* the move is mature.  This strategy
 //   enters during brief pullbacks to a key moving average while the broader
 //   trend is intact, giving tighter natural stops and a higher-quality R:R.
 //
 // ENTRY LOGIC
-//   Long  : close > EMA200  |  EMA21 > EMA50  |  prev-bar low tagged EMA21
-//            then current bar recovers above EMA21 (bullish body)
-//            + RSI 42–72  |  Volume ≥ 1× VolSMA  |  ADX > 28  |  no panic
-//            + body ≥ 0.30×ATR (entry bar must have meaningful directional close)
-//   Short : mirror of the above (close < EMA200, EMA21 < EMA50, etc.)
+//   Long  : EMA21 > EMA50 > EMA200 (full stack — stricter structure)
+//            EMA21 rising over 3 bars (slope filter — no flat/reversing EMAs)
+//            RSI rising on entry bar (momentum confirmation)
+//            prev-bar low tagged EMA21 zone, current bar recovers above EMA21
+//            + RSI 42–68  |  Volume ≥ 1.2× VolSMA  |  ADX > 25  |  no panic
+//            + body ≥ 0.20×ATR  |  ATR ≥ 0.20% of price (kills low-vol entries)
+//   Short : mirror of the above
 //
 // EXIT LOGIC
 //   → Hard stop  : entry ± ATR × 2.0
-//   → Hard TP    : entry ± ATR × 1.0  (1:2 inverse R:R — viable because WR=88.5%)
-//   → Trail      : activates once price moves ATR×2.0 in favour,
-//                  then trails ATR×0.4 from best price (wide trail suits daily bars)
+//   → Hard TP    : entry ± ATR × 3.5  (1.75:1 R:R — sweep-optimised)
+//   → Trail      : activates once price moves ATR×2.5 in favour,
+//                  then trails ATR×1.5 from best price (room to breathe)
 //   → Sizing     : 1 % of equity risked per trade
 //
-// v4.1 CHANGES vs v4.0  (based on BTC-USD 1D backtest sweep, 2014-2026)
-//   ADX threshold : 25    → 28     (tighter trend filter; fewer but higher-quality trades)
-//   RSI max Long  : 68    → 72     (wider RSI window captures more valid daily setups)
-//   Min body      : 0.15× → 0.30×  (strong daily candles only; rejects weak signals)
-//   Panic mult    : 1.5×  → 2.0×   (daily ATR spikes are structurally larger; needs headroom)
-//   Stop loss     : 1.5×  → 2.0×   (wider stop accommodates daily bar noise)
-//   Take profit   : 2.0×  → 1.0×   (key 1D insight: TP×2.0 never reached in 11 yrs; tight TP wins)
-//   Trail activate: 1.5×  → 2.0×   (let daily winners breathe longer before trailing)
-//   Trail distance: 0.8×  → 0.4×   (once trailing, ATR×0.4 is sufficient on 1D)
-//   Directions    : both   (longs & shorts viable at 1D — WR 87.5% / 90.0% respectively)
-//   EMA slope     : NOT added (slope filter hurts on slow-moving daily EMAs)
-//   ATR floor     : NOT added (daily ATR is inherently meaningful; no floor needed)
-//   Result        : BTC-USD 1D 2014-2026 | +10.31% | PF=8.978 | WR=88.5% | 26 trades | MaxDD=-1.02%
+// v4.1 CHANGES vs v4.0  (BTC-USD 30m sweep: +9.48% PF=2.297 vs +2.53% PF=1.112 baseline)
+//   EMA condition : loose (close>EMA200 & EMA21>EMA50) → full stack EMA21>EMA50>EMA200
+//   EMA slope     : ADDED — EMA21 must trend in trade direction over 3 bars
+//   RSI direction : ADDED — RSI must be rising (long) / falling (short) on entry
+//   Volume mult   : 1.0× → 1.2×   (higher conviction threshold)
+//   Body filter   : 0.15× → 0.20×ATR (stricter doji rejection)
+//   ATR floor     : ADDED — ATR ≥ 0.20% of price (kills high-commission low-vol)
+//   SL multiplier : 1.5× → 2.0×   (wider stop → smaller qty → less commission)
+//   TP multiplier : 2.0× → 3.0×   (sweep-found optimal for v4.1 filter set)
+//   Trail activate: 1.5× → 2.5×   (let price run before trailing kicks in)
+//   Trail distance: 0.8× → 1.5×   (wider trail stops micro-spike exits)
+//   Panic mult    : 1.5× → 1.3×   (exit volatile regimes more aggressively)
+//
+// v4.2 CHANGES vs v4.1  (BTC-USD 30m isolation sweep: +10.41% PF=2.415 vs +9.48% PF=2.297)
+//   TP multiplier : 3.0× → 3.5×   (DI alignment / strong-close / RSI-2bar filters
+//                  each tested — all reduced PF and return, confirming v4.1 entry
+//                  logic is already optimal for this instrument/timeframe.
+//                  Sole improvement: TP×3.5 → +10.41% PF=2.415 WR=70% 20 trades)
 // ─────────────────────────────────────────────────────────────────────────────
 
 strategy(
-    title             = "Adaptive Pullback Momentum v4.1",
-    shorttitle        = "APM v4.1",
+    title             = "Adaptive Pullback Momentum v4.2",
+    shorttitle        = "APM v4.2",
     overlay           = true,
     pyramiding        = 0,
     initial_capital   = 10000,
@@ -58,33 +64,35 @@ var G_TREND = "Trend Filters"
 i_ema_fast   = input.int  (21,   "EMA Fast",            group=G_TREND, minval=5)
 i_ema_mid    = input.int  (50,   "EMA Mid",             group=G_TREND, minval=10)
 i_ema_slow   = input.int  (200,  "EMA Slow",            group=G_TREND, minval=50)
-i_adx_thresh = input.int  (28,   "ADX threshold",       group=G_TREND, minval=5,  maxval=60)
+i_adx_thresh = input.int  (25,   "ADX threshold",       group=G_TREND, minval=5,  maxval=60)
 i_adx_len    = input.int  (14,   "ADX / DI length",     group=G_TREND, minval=5)
 i_pb_pct     = input.float(0.15, "Pullback tolerance (%)", group=G_TREND, minval=0.05, maxval=3.0, step=0.05,
                  tooltip="How close the prev bar's low/high must come to EMA-fast to count as a pullback")
+i_atr_floor  = input.float(0.20, "ATR floor (% of price)", group=G_TREND, minval=0.0, maxval=2.0, step=0.05,
+                 tooltip="Skip entries where ATR/price < this value — avoids low-vol bars where commission kills edge")
 
 var G_MOM = "Momentum & Volume"
 i_rsi_len    = input.int  (14,   "RSI length",            group=G_MOM, minval=3)
 i_rsi_lo_l   = input.int  (42,   "RSI min – Long",        group=G_MOM, minval=10, maxval=70)
-i_rsi_hi_l   = input.int  (72,   "RSI max – Long",        group=G_MOM, minval=50, maxval=90)
+i_rsi_hi_l   = input.int  (68,   "RSI max – Long",        group=G_MOM, minval=50, maxval=90)
 i_rsi_lo_s   = input.int  (32,   "RSI min – Short",       group=G_MOM, minval=10, maxval=50)
 i_rsi_hi_s   = input.int  (58,   "RSI max – Short",       group=G_MOM, minval=40, maxval=80)
 i_vol_len    = input.int  (20,   "Volume SMA length",     group=G_MOM, minval=5)
-i_vol_mult   = input.float(1.0,  "Volume multiplier",     group=G_MOM, minval=0.3, maxval=5.0, step=0.1)
-i_min_body   = input.float(0.30, "Min body (×ATR)",        group=G_MOM, minval=0.0, maxval=2.0, step=0.05,
+i_vol_mult   = input.float(1.2,  "Volume multiplier",     group=G_MOM, minval=0.3, maxval=5.0, step=0.1)
+i_min_body   = input.float(0.20, "Min body (×ATR)",        group=G_MOM, minval=0.0, maxval=2.0, step=0.05,
                  tooltip="Entry bar body (|close-open|/ATR) must exceed this — filters doji / indecision candles")
 
 var G_VOL = "Volatility"
 i_atr_len    = input.int  (14,   "ATR length",            group=G_VOL, minval=3)
-i_panic_mult = input.float(2.0,  "Panic suppression mult",group=G_VOL, minval=1.0, step=0.1,
+i_panic_mult = input.float(1.3,  "Panic suppression mult",group=G_VOL, minval=1.0, step=0.1,
                  tooltip="ATR14 > ATR-60SMA × this value → skip new entries")
 
 var G_RISK = "Risk Management"
 i_sl_mult    = input.float(2.0,  "Stop loss ATR mult",    group=G_RISK, minval=0.3, step=0.1)
-i_tp_mult    = input.float(1.0,  "Take profit ATR mult",  group=G_RISK, minval=0.5, step=0.1)
-i_tr_act     = input.float(2.0,  "Trail activate ATR mult",group=G_RISK,minval=0.3, step=0.1,
+i_tp_mult    = input.float(3.5,  "Take profit ATR mult",  group=G_RISK, minval=0.5, step=0.1)
+i_tr_act     = input.float(2.5,  "Trail activate ATR mult",group=G_RISK,minval=0.3, step=0.1,
                  tooltip="Trailing stop kicks in once price moves this many ATRs in your favour")
-i_tr_dist    = input.float(0.4,  "Trail distance ATR mult",group=G_RISK,minval=0.2, step=0.1,
+i_tr_dist    = input.float(1.5,  "Trail distance ATR mult",group=G_RISK,minval=0.2, step=0.1,
                  tooltip="Once active, trail stays this many ATRs below/above the best price")
 i_risk_pct   = input.float(1.0,  "Equity risked per trade (%)",group=G_RISK,minval=0.1,maxval=20,step=0.1)
 
@@ -110,6 +118,7 @@ vol_ma   = ta.sma(volume, i_vol_len)
 // ── Regime guards ─────────────────────────────────────────────────────────────
 is_trending = adx > i_adx_thresh
 is_panic    = atr > atr_bl * i_panic_mult
+atr_floor_ok = atr / close * 100 >= i_atr_floor  // NEW: skip low-vol, high-commission bars
 
 // ── Pullback-to-EMA trigger ───────────────────────────────────────────────────
 // Long : prev bar's low came within pullback tolerance of EMA-fast FROM ABOVE,
@@ -123,94 +132,131 @@ long_pb    = low[1] <= pb_tol_up and close > ema_fast and close > open and body_
 pb_tol_dn  = ema_fast[1] * (1.0 - i_pb_pct / 100.0)
 short_pb   = high[1] >= pb_tol_dn and close < ema_fast and close < open and body_size >= i_min_body
 
+// ── NEW: Full EMA stack alignment ─────────────────────────────────────────────
+// v4.0 used loose condition (close>EMA200 & EMA21>EMA50); v4.1 requires all MAs ordered
+ema_bull_full = ema_fast > ema_mid  and ema_mid > ema_slow
+ema_bear_full = ema_fast < ema_mid  and ema_mid < ema_slow
+
+// ── NEW: EMA slope filter ─────────────────────────────────────────────────────
+// EMA-fast must be trending in trade direction over 3 bars — no flat/reversing EMAs
+ema_slope_up   = ema_fast > ema_fast[3]
+ema_slope_down = ema_fast < ema_fast[3]
+
+// ── NEW: RSI momentum direction ───────────────────────────────────────────────
+// RSI must be rising on longs / falling on shorts — confirms momentum on recovery bar
+rsi_rising  = rsi > rsi[1]
+rsi_falling = rsi < rsi[1]
+
 // ── Full entry conditions ─────────────────────────────────────────────────────
 no_pos     = strategy.position_size == 0.0
 stop_dist  = atr * i_sl_mult
 
-long_ok  = i_longs  and no_pos and not is_panic and is_trending and
-     long_pb and
-     close   > ema_slow and             // macro bullish
-     ema_fast > ema_mid  and            // medium-term structure up
+long_ok  = i_longs  and no_pos and not is_panic and is_trending and atr_floor_ok and
+     long_pb        and
+     ema_bull_full  and             // full stack: EMA21 > EMA50 > EMA200
+     ema_slope_up   and             // EMA21 rising over 3 bars
+     rsi_rising     and             // RSI momentum confirmation
      rsi     >= i_rsi_lo_l and rsi <= i_rsi_hi_l and
      volume  >= vol_ma * i_vol_mult
 
-short_ok = i_shorts and no_pos and not is_panic and is_trending and
-     short_pb and
-     close   < ema_slow and             // macro bearish
-     ema_fast < ema_mid  and            // medium-term structure down
+short_ok = i_shorts and no_pos and not is_panic and is_trending and atr_floor_ok and
+     short_pb       and
+     ema_bear_full  and             // full stack: EMA21 < EMA50 < EMA200
+     ema_slope_down and             // EMA21 falling over 3 bars
+     rsi_falling    and             // RSI momentum confirmation
      rsi     >= i_rsi_lo_s and rsi <= i_rsi_hi_s and
      volume  >= vol_ma * i_vol_mult
 
 // ── State for manual trailing stop management ─────────────────────────────────
-var float sl_price     = na
-var float tp_price     = na
-var float best_price   = na
-var float entry_p      = na
+var float sl_price    = na
+var float tp_price    = na
+var float best_price  = na
+var float entry_p     = na
 var bool  trail_active = false
 
 // ── Entries ───────────────────────────────────────────────────────────────────
 if long_ok
-    qty            = strategy.equity * i_risk_pct / 100.0 / stop_dist
-    sl_price      := close - stop_dist
-    tp_price      := close + atr * i_tp_mult
-    best_price    := close
-    trail_active  := false
+    qty          = strategy.equity * i_risk_pct / 100.0 / stop_dist
+    sl_price    := close - stop_dist
+    tp_price    := close + atr * i_tp_mult
+    best_price  := close
+    trail_active := false
     strategy.entry("Long", strategy.long, qty=qty)
-    _sd    = stop_dist
-    _tp    = close + atr * i_tp_mult
-    _rr    = i_tp_mult / i_sl_mult
-    _risk  = strategy.equity * i_risk_pct / 100.0
-    _qty   = strategy.equity * i_risk_pct / 100.0 / stop_dist
-    _atrp  = atr / close * 100
-    _vol   = volume / vol_ma
-    _body  = math.abs(close - open) / atr
     alert(
-        "APM v4.1 | LONG ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
-        "Entry   : " + str.tostring(close, "#.##") + "  |  Equity: $" + str.tostring(math.round(strategy.equity, 2), "#.##") + "\n" +
-        "Stop    : " + str.tostring(math.round(close - _sd, 2), "#.##") + "  (-" + str.tostring(math.round(_sd, 2), "#.##") + " = ATR x" + str.tostring(i_sl_mult) + ")\n" +
-        "Target  : " + str.tostring(math.round(_tp, 2), "#.##") + "  (+" + str.tostring(math.round(atr * i_tp_mult, 2), "#.##") + " = ATR x" + str.tostring(i_tp_mult) + ")\n" +
-        "R:R     : 1:" + str.tostring(math.round(_rr, 2), "#.##") + "  |  Risk: $" + str.tostring(math.round(_risk, 2), "#.##") + " (" + str.tostring(i_risk_pct) + "%)\n" +
-        "Qty     : " + str.tostring(math.round(_qty, 4), "#.####") + "\n" +
-        "ATR     : " + str.tostring(math.round(atr, 2), "#.##") + " (" + str.tostring(math.round(_atrp, 3), "#.###") + "% of price)\n" +
-        "RSI     : " + str.tostring(math.round(rsi, 2), "#.##") + " [" + str.tostring(i_rsi_lo_l) + "-" + str.tostring(i_rsi_hi_l) + "]  |  Dir: " + (rsi > rsi[1] ? "Rising" : "Falling") + "\n" +
-        "ADX     : " + str.tostring(math.round(adx, 2), "#.##") + "  DI+: " + str.tostring(math.round(di_plus, 2), "#.##") + "  DI-: " + str.tostring(math.round(di_minus, 2), "#.##") + "  [min " + str.tostring(i_adx_thresh) + "]\n" +
-        "Vol/MA  : " + str.tostring(math.round(_vol, 2), "#.##") + "x  [min " + str.tostring(i_vol_mult) + "x]\n" +
-        "Body    : " + str.tostring(math.round(_body, 3), "#.###") + "x ATR  [min " + str.tostring(i_min_body) + "x]\n" +
-        "EMA" + str.tostring(i_ema_fast) + "/" + str.tostring(i_ema_mid) + "/" + str.tostring(i_ema_slow) + ": " + str.tostring(math.round(ema_fast, 2), "#.##") + "/" + str.tostring(math.round(ema_mid, 2), "#.##") + "/" + str.tostring(math.round(ema_slow, 2), "#.##") + "  Stack: BULL\n" +
-        "Trail on: +" + str.tostring(math.round(atr * i_tr_act, 2), "#.##") + " (ATR x" + str.tostring(i_tr_act) + ")  Dist: " + str.tostring(math.round(atr * i_tr_dist, 2), "#.##") + " (ATR x" + str.tostring(i_tr_dist) + ")\n" +
-        "Time    : " + str.format_time(time, "yyyy-MM-dd HH:mm", syminfo.timezone),
+        "APM v4.2 | LONG ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "Entry   : " + str.tostring(close, "#.##") +
+        "  |  Equity: $" + str.tostring(strategy.equity, "#.##") + "\n" +
+        "Stop    : " + str.tostring(sl_price, "#.##") +
+        "  (-" + str.tostring(stop_dist, "#.##") + " = ATR x" + str.tostring(i_sl_mult, "#.#") + ")\n" +
+        "Target  : " + str.tostring(tp_price, "#.##") +
+        "  (+" + str.tostring(atr * i_tp_mult, "#.##") + " = ATR x" + str.tostring(i_tp_mult, "#.#") + ")\n" +
+        "R:R     : 1:" + str.tostring(i_tp_mult / i_sl_mult, "#.##") +
+        "  |  Risk: $" + str.tostring(strategy.equity * i_risk_pct / 100.0, "#.##") +
+        " (" + str.tostring(i_risk_pct, "#.#") + "%)\n" +
+        "Qty     : " + str.tostring(qty, "#.####") + "\n" +
+        "ATR     : " + str.tostring(atr, "#.##") +
+        " (" + str.tostring(atr / close * 100, "#.###") + "% of price)" +
+        "  |  Floor: " + (atr_floor_ok ? "OK" : "FAIL") + "\n" +
+        "RSI     : " + str.tostring(rsi, "#.##") +
+        " [" + str.tostring(i_rsi_lo_l) + "-" + str.tostring(i_rsi_hi_l) + "]" +
+        "  |  Dir: Rising\n" +
+        "ADX     : " + str.tostring(adx, "#.##") +
+        "  DI+: " + str.tostring(di_plus, "#.##") +
+        "  DI-: " + str.tostring(di_minus, "#.##") +
+        "  [min " + str.tostring(i_adx_thresh) + "]\n" +
+        "Vol/MA  : " + str.tostring(volume / vol_ma, "#.##") + "x" +
+        "  [min " + str.tostring(i_vol_mult, "#.#") + "x]\n" +
+        "Body    : " + str.tostring(body_size, "#.###") + "x ATR" +
+        "  [min " + str.tostring(i_min_body, "#.##") + "x]\n" +
+        "EMA" + str.tostring(i_ema_fast) + "/" + str.tostring(i_ema_mid) + "/" + str.tostring(i_ema_slow) +
+        ": " + str.tostring(ema_fast, "#.##") + "/" + str.tostring(ema_mid, "#.##") + "/" + str.tostring(ema_slow, "#.##") +
+        "  Stack: BULL  Slope: UP\n" +
+        "Trail on: +" + str.tostring(atr * i_tr_act, "#.##") +
+        " (ATR x" + str.tostring(i_tr_act, "#.#") + ")" +
+        "  Dist: " + str.tostring(atr * i_tr_dist, "#.##") +
+        " (ATR x" + str.tostring(i_tr_dist, "#.#") + ")",
         alert.freq_once_per_bar_close)
 
 if short_ok
-    qty            = strategy.equity * i_risk_pct / 100.0 / stop_dist
-    sl_price      := close + stop_dist
-    tp_price      := close - atr * i_tp_mult
-    best_price    := close
-    trail_active  := false
+    qty          = strategy.equity * i_risk_pct / 100.0 / stop_dist
+    sl_price    := close + stop_dist
+    tp_price    := close - atr * i_tp_mult
+    best_price  := close
+    trail_active := false
     strategy.entry("Short", strategy.short, qty=qty)
-    _sd    = stop_dist
-    _tp    = close - atr * i_tp_mult
-    _rr    = i_tp_mult / i_sl_mult
-    _risk  = strategy.equity * i_risk_pct / 100.0
-    _qty   = strategy.equity * i_risk_pct / 100.0 / stop_dist
-    _atrp  = atr / close * 100
-    _vol   = volume / vol_ma
-    _body  = math.abs(close - open) / atr
     alert(
-        "APM v4.1 | SHORT ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
-        "Entry   : " + str.tostring(close, "#.##") + "  |  Equity: $" + str.tostring(math.round(strategy.equity, 2), "#.##") + "\n" +
-        "Stop    : " + str.tostring(math.round(close + _sd, 2), "#.##") + "  (+" + str.tostring(math.round(_sd, 2), "#.##") + " = ATR x" + str.tostring(i_sl_mult) + ")\n" +
-        "Target  : " + str.tostring(math.round(_tp, 2), "#.##") + "  (-" + str.tostring(math.round(atr * i_tp_mult, 2), "#.##") + " = ATR x" + str.tostring(i_tp_mult) + ")\n" +
-        "R:R     : 1:" + str.tostring(math.round(_rr, 2), "#.##") + "  |  Risk: $" + str.tostring(math.round(_risk, 2), "#.##") + " (" + str.tostring(i_risk_pct) + "%)\n" +
-        "Qty     : " + str.tostring(math.round(_qty, 4), "#.####") + "\n" +
-        "ATR     : " + str.tostring(math.round(atr, 2), "#.##") + " (" + str.tostring(math.round(_atrp, 3), "#.###") + "% of price)\n" +
-        "RSI     : " + str.tostring(math.round(rsi, 2), "#.##") + " [" + str.tostring(i_rsi_lo_s) + "-" + str.tostring(i_rsi_hi_s) + "]  |  Dir: " + (rsi < rsi[1] ? "Falling" : "Rising") + "\n" +
-        "ADX     : " + str.tostring(math.round(adx, 2), "#.##") + "  DI+: " + str.tostring(math.round(di_plus, 2), "#.##") + "  DI-: " + str.tostring(math.round(di_minus, 2), "#.##") + "  [min " + str.tostring(i_adx_thresh) + "]\n" +
-        "Vol/MA  : " + str.tostring(math.round(_vol, 2), "#.##") + "x  [min " + str.tostring(i_vol_mult) + "x]\n" +
-        "Body    : " + str.tostring(math.round(_body, 3), "#.###") + "x ATR  [min " + str.tostring(i_min_body) + "x]\n" +
-        "EMA" + str.tostring(i_ema_fast) + "/" + str.tostring(i_ema_mid) + "/" + str.tostring(i_ema_slow) + ": " + str.tostring(math.round(ema_fast, 2), "#.##") + "/" + str.tostring(math.round(ema_mid, 2), "#.##") + "/" + str.tostring(math.round(ema_slow, 2), "#.##") + "  Stack: BEAR\n" +
-        "Trail on: -" + str.tostring(math.round(atr * i_tr_act, 2), "#.##") + " (ATR x" + str.tostring(i_tr_act) + ")  Dist: " + str.tostring(math.round(atr * i_tr_dist, 2), "#.##") + " (ATR x" + str.tostring(i_tr_dist) + ")\n" +
-        "Time    : " + str.format_time(time, "yyyy-MM-dd HH:mm", syminfo.timezone),
+        "APM v4.2 | SHORT ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "Entry   : " + str.tostring(close, "#.##") +
+        "  |  Equity: $" + str.tostring(strategy.equity, "#.##") + "\n" +
+        "Stop    : " + str.tostring(sl_price, "#.##") +
+        "  (+" + str.tostring(stop_dist, "#.##") + " = ATR x" + str.tostring(i_sl_mult, "#.#") + ")\n" +
+        "Target  : " + str.tostring(tp_price, "#.##") +
+        "  (-" + str.tostring(atr * i_tp_mult, "#.##") + " = ATR x" + str.tostring(i_tp_mult, "#.#") + ")\n" +
+        "R:R     : 1:" + str.tostring(i_tp_mult / i_sl_mult, "#.##") +
+        "  |  Risk: $" + str.tostring(strategy.equity * i_risk_pct / 100.0, "#.##") +
+        " (" + str.tostring(i_risk_pct, "#.#") + "%)\n" +
+        "Qty     : " + str.tostring(qty, "#.####") + "\n" +
+        "ATR     : " + str.tostring(atr, "#.##") +
+        " (" + str.tostring(atr / close * 100, "#.###") + "% of price)" +
+        "  |  Floor: " + (atr_floor_ok ? "OK" : "FAIL") + "\n" +
+        "RSI     : " + str.tostring(rsi, "#.##") +
+        " [" + str.tostring(i_rsi_lo_s) + "-" + str.tostring(i_rsi_hi_s) + "]" +
+        "  |  Dir: Falling\n" +
+        "ADX     : " + str.tostring(adx, "#.##") +
+        "  DI+: " + str.tostring(di_plus, "#.##") +
+        "  DI-: " + str.tostring(di_minus, "#.##") +
+        "  [min " + str.tostring(i_adx_thresh) + "]\n" +
+        "Vol/MA  : " + str.tostring(volume / vol_ma, "#.##") + "x" +
+        "  [min " + str.tostring(i_vol_mult, "#.#") + "x]\n" +
+        "Body    : " + str.tostring(body_size, "#.###") + "x ATR" +
+        "  [min " + str.tostring(i_min_body, "#.##") + "x]\n" +
+        "EMA" + str.tostring(i_ema_fast) + "/" + str.tostring(i_ema_mid) + "/" + str.tostring(i_ema_slow) +
+        ": " + str.tostring(ema_fast, "#.##") + "/" + str.tostring(ema_mid, "#.##") + "/" + str.tostring(ema_slow, "#.##") +
+        "  Stack: BEAR  Slope: DOWN\n" +
+        "Trail on: -" + str.tostring(atr * i_tr_act, "#.##") +
+        " (ATR x" + str.tostring(i_tr_act, "#.#") + ")" +
+        "  Dist: " + str.tostring(atr * i_tr_dist, "#.##") +
+        " (ATR x" + str.tostring(i_tr_dist, "#.#") + ")",
         alert.freq_once_per_bar_close)
 
 // ── Trailing stop update (runs every bar while in trade) ──────────────────────
@@ -218,90 +264,97 @@ if strategy.position_size > 0.0          // long
     best_price := math.max(best_price, high)
     entry_p    := strategy.position_avg_price
     if best_price >= entry_p + atr * i_tr_act
-        trail_sl_new = best_price - atr * i_tr_dist
-        trail_sl_new := math.max(sl_price, trail_sl_new)
+        trail_sl   = best_price - atr * i_tr_dist
+        new_sl     = math.max(sl_price, trail_sl)
         if not trail_active
             trail_active := true
-            _runup = best_price - entry_p
             alert(
-                "APM v4.1 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+                "APM v4.2 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
                 "Direction : LONG\n" +
-                "Best price: " + str.tostring(math.round(best_price, 2), "#.##") + "  |  Entry: " + str.tostring(math.round(entry_p, 2), "#.##") + "\n" +
-                "Trail SL  : " + str.tostring(math.round(trail_sl_new, 2), "#.##") + "  (best - ATR x" + str.tostring(i_tr_dist) + " = -" + str.tostring(math.round(atr * i_tr_dist, 2), "#.##") + ")\n" +
-                "Prev SL   : " + str.tostring(math.round(sl_price, 2), "#.##") + "  |  Target: " + str.tostring(math.round(tp_price, 2), "#.##") + "\n" +
-                "Runup     : +" + str.tostring(math.round(_runup, 2), "#.##") + " (" + str.tostring(math.round(_runup / entry_p * 100, 2), "#.##") + "%)\n" +
-                "Time      : " + str.format_time(time, "yyyy-MM-dd HH:mm", syminfo.timezone),
+                "Best price: " + str.tostring(best_price, "#.##") +
+                "  |  Entry: " + str.tostring(entry_p, "#.##") + "\n" +
+                "Trail SL  : " + str.tostring(new_sl, "#.##") +
+                "  (best - ATR x" + str.tostring(i_tr_dist, "#.#") + " = -" + str.tostring(atr * i_tr_dist, "#.##") + ")\n" +
+                "Prev SL   : " + str.tostring(sl_price, "#.##") +
+                "  |  Target: " + str.tostring(tp_price, "#.##") + "\n" +
+                "Runup     : +" + str.tostring(best_price - entry_p, "#.##") +
+                " (" + str.tostring((best_price - entry_p) / entry_p * 100, "#.##") + "%)",
                 alert.freq_once_per_bar_close)
-        sl_price := trail_sl_new
+        sl_price  := new_sl
     strategy.exit("Long Exit", "Long", stop=sl_price, limit=tp_price)
 
 if strategy.position_size < 0.0          // short
     best_price := math.min(best_price, low)
     entry_p    := strategy.position_avg_price
     if best_price <= entry_p - atr * i_tr_act
-        trail_sl_new = best_price + atr * i_tr_dist
-        trail_sl_new := math.min(sl_price, trail_sl_new)
+        trail_sl   = best_price + atr * i_tr_dist
+        new_sl     = math.min(sl_price, trail_sl)
         if not trail_active
             trail_active := true
-            _runup = entry_p - best_price
             alert(
-                "APM v4.1 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+                "APM v4.2 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
                 "Direction : SHORT\n" +
-                "Best price: " + str.tostring(math.round(best_price, 2), "#.##") + "  |  Entry: " + str.tostring(math.round(entry_p, 2), "#.##") + "\n" +
-                "Trail SL  : " + str.tostring(math.round(trail_sl_new, 2), "#.##") + "  (best + ATR x" + str.tostring(i_tr_dist) + " = +" + str.tostring(math.round(atr * i_tr_dist, 2), "#.##") + ")\n" +
-                "Prev SL   : " + str.tostring(math.round(sl_price, 2), "#.##") + "  |  Target: " + str.tostring(math.round(tp_price, 2), "#.##") + "\n" +
-                "Runup     : +" + str.tostring(math.round(_runup, 2), "#.##") + " (" + str.tostring(math.round(_runup / entry_p * 100, 2), "#.##") + "%)\n" +
-                "Time      : " + str.format_time(time, "yyyy-MM-dd HH:mm", syminfo.timezone),
+                "Best price: " + str.tostring(best_price, "#.##") +
+                "  |  Entry: " + str.tostring(entry_p, "#.##") + "\n" +
+                "Trail SL  : " + str.tostring(new_sl, "#.##") +
+                "  (best + ATR x" + str.tostring(i_tr_dist, "#.#") + " = +" + str.tostring(atr * i_tr_dist, "#.##") + ")\n" +
+                "Prev SL   : " + str.tostring(sl_price, "#.##") +
+                "  |  Target: " + str.tostring(tp_price, "#.##") + "\n" +
+                "Runup     : -" + str.tostring(entry_p - best_price, "#.##") +
+                " (" + str.tostring((entry_p - best_price) / entry_p * 100, "#.##") + "%)",
                 alert.freq_once_per_bar_close)
-        sl_price := trail_sl_new
+        sl_price  := new_sl
     strategy.exit("Short Exit", "Short", stop=sl_price, limit=tp_price)
 
-// ── Exit detection (closed-trade alerts) ──────────────────────────────────────
+// ── Exit detection alert ──────────────────────────────────────────────────────
 var int _prev_closed = 0
 if strategy.closedtrades > _prev_closed
-    _i   = strategy.closedtrades - 1
-    _ep  = strategy.closedtrades.entry_price(_i)
-    _xp  = strategy.closedtrades.exit_price(_i)
-    _pnl = strategy.closedtrades.profit(_i)
-    _com = strategy.closedtrades.commission(_i)
-    _mr  = strategy.closedtrades.max_runup(_i)
-    _bh  = strategy.closedtrades.exit_bar_index(_i) - strategy.closedtrades.entry_bar_index(_i)
-    _dir = strategy.closedtrades.size(_i) > 0 ? "LONG" : "SHORT"
-    _res = _pnl >= 0 ? "WIN" : "LOSS"
-    _mv  = strategy.closedtrades.size(_i) > 0 ? (_xp - _ep) / _ep * 100 : (_ep - _xp) / _ep * 100
-    _tot = strategy.closedtrades
-    _wr  = _tot == 0 ? "--" : str.tostring(math.round(strategy.wintrades / _tot * 100, 1)) + "%"
-    alert(
-        "APM v4.1 | " + _dir + " EXIT [" + _res + "] | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
-        "Entry   : " + str.tostring(math.round(_ep, 2), "#.##") + "  ->  Exit: " + str.tostring(math.round(_xp, 2), "#.##") + "\n" +
-        "Move    : " + (_mv >= 0 ? "+" : "") + str.tostring(math.round(_mv, 2), "#.##") + "%\n" +
-        "P&L     : " + (_pnl >= 0 ? "+" : "") + str.tostring(math.round(_pnl, 2), "#.##") + " USD\n" +
-        "Comm    : -" + str.tostring(math.round(_com, 2), "#.##") + " USD\n" +
-        "Max runup: " + str.tostring(math.round(_mr, 2), "#.##") + "\n" +
-        "Bars    : " + str.tostring(_bh) + "\n" +
-        "Equity  : $" + str.tostring(math.round(strategy.equity, 2), "#.##") + "\n" +
-        "Trades  : " + str.tostring(_tot) + "  |  Win rate: " + _wr + "\n" +
-        "Time    : " + str.format_time(time, "yyyy-MM-dd HH:mm", syminfo.timezone),
-        alert.freq_once_per_bar_close)
     _prev_closed := strategy.closedtrades
+    _ti      = strategy.closedtrades - 1
+    _ep      = strategy.closedtrades.entry_price(_ti)
+    _xp      = strategy.closedtrades.exit_price(_ti)
+    _pnl     = strategy.closedtrades.profit(_ti)
+    _comm    = strategy.closedtrades.commission(_ti)
+    _sz      = strategy.closedtrades.size(_ti)
+    _bars    = strategy.closedtrades.exit_bar_index(_ti) - strategy.closedtrades.entry_bar_index(_ti)
+    _runup   = strategy.closedtrades.max_runup(_ti)
+    _dir     = _sz > 0 ? "LONG" : "SHORT"
+    _res     = _pnl >= 0 ? "WIN" : "LOSS"
+    _mvpct   = _sz > 0 ? (_xp - _ep) / _ep * 100 : (_ep - _xp) / _ep * 100
+    _wr      = strategy.closedtrades > 0 ? str.tostring(math.round(strategy.wintrades / strategy.closedtrades * 100, 1), "#.#") + "%" : "--"
+    alert(
+        "APM v4.2 | " + _dir + " EXIT [" + _res + "] | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "Entry   : " + str.tostring(_ep, "#.##") +
+        "  ->  Exit: " + str.tostring(_xp, "#.##") + "\n" +
+        "Move    : " + (_mvpct >= 0 ? "+" : "") + str.tostring(_mvpct, "#.##") + "%\n" +
+        "P&L     : " + (_pnl >= 0 ? "+" : "") + str.tostring(_pnl, "#.##") + " " + syminfo.currency + "\n" +
+        "Comm    : -" + str.tostring(_comm, "#.##") + " " + syminfo.currency + "\n" +
+        "Max runup: " + str.tostring(_runup, "#.##") + "\n" +
+        "Bars    : " + str.tostring(_bars) + "\n" +
+        "Equity  : $" + str.tostring(strategy.equity, "#.##") + "\n" +
+        "Trades  : " + str.tostring(strategy.closedtrades) +
+        "  |  Win rate: " + _wr,
+        alert.freq_once_per_bar_close)
 
-// ── Panic regime alerts ────────────────────────────────────────────────────────
+// ── Panic regime alert ────────────────────────────────────────────────────────
 if is_panic and not is_panic[1]
     alert(
-        "APM v4.1 | PANIC REGIME STARTED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
-        "ATR     : " + str.tostring(math.round(atr, 2), "#.##") + "  |  ATR baseline: " + str.tostring(math.round(atr_bl, 2), "#.##") + "\n" +
-        "Ratio   : " + str.tostring(math.round(atr / atr_bl, 2), "#.##") + "x  [threshold: " + str.tostring(i_panic_mult) + "x]\n" +
-        "Status  : New entries SUSPENDED\n" +
-        "Time    : " + str.format_time(time, "yyyy-MM-dd HH:mm", syminfo.timezone),
+        "APM v4.2 | PANIC REGIME STARTED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "ATR     : " + str.tostring(atr, "#.##") +
+        "  |  ATR baseline: " + str.tostring(atr_bl, "#.##") + "\n" +
+        "Ratio   : " + str.tostring(atr / atr_bl, "#.##") + "x" +
+        "  [threshold: " + str.tostring(i_panic_mult, "#.#") + "x]\n" +
+        "Status  : New entries SUSPENDED",
         alert.freq_once_per_bar_close)
 
 if not is_panic and is_panic[1]
     alert(
-        "APM v4.1 | PANIC REGIME CLEARED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
-        "ATR     : " + str.tostring(math.round(atr, 2), "#.##") + "  |  ATR baseline: " + str.tostring(math.round(atr_bl, 2), "#.##") + "\n" +
-        "Ratio   : " + str.tostring(math.round(atr / atr_bl, 2), "#.##") + "x  [threshold: " + str.tostring(i_panic_mult) + "x]\n" +
-        "Status  : New entries RESUMED\n" +
-        "Time    : " + str.format_time(time, "yyyy-MM-dd HH:mm", syminfo.timezone),
+        "APM v4.2 | PANIC REGIME CLEARED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "ATR     : " + str.tostring(atr, "#.##") +
+        "  |  ATR baseline: " + str.tostring(atr_bl, "#.##") + "\n" +
+        "Ratio   : " + str.tostring(atr / atr_bl, "#.##") + "x" +
+        "  [threshold: " + str.tostring(i_panic_mult, "#.#") + "x]\n" +
+        "Status  : New entries RESUMED",
         alert.freq_once_per_bar_close)
 
 // ── Plots ─────────────────────────────────────────────────────────────────────
@@ -347,7 +400,7 @@ if i_show_dash and barstate.islast
         "Middle Left"  => position.middle_left
         => position.top_right
 
-    tbl = table.new(tbl_pos, columns=2, rows=20,
+    tbl = table.new(tbl_pos, columns=2, rows=22,
          border_width=1, border_color=color.new(color.gray, 60),
          frame_width=1,  frame_color=color.new(color.gray, 40))
 
@@ -379,23 +432,24 @@ if i_show_dash and barstate.islast
     table.cell(tbl, 0, 11, "Filters", text_color=D_DIM, bgcolor=D_BG, text_size=size.tiny, text_halign=text.align_left)
     table.cell(tbl, 1, 11, "",        text_color=D_DIM, bgcolor=D_BG)
 
-    _row(tbl, 12, "Trend", is_trending ? "PASS" : "FAIL", is_trending ? D_GRN : D_RED)
-    _row(tbl, 13, "Panic", is_panic    ? "ACTIVE" : "OK", is_panic    ? D_YEL : D_GRN)
+    _row(tbl, 12, "Trend",    is_trending  ? "PASS"   : "FAIL",   is_trending  ? D_GRN : D_RED)
+    _row(tbl, 13, "Panic",    is_panic     ? "ACTIVE" : "OK",     is_panic     ? D_YEL : D_GRN)
+    _row(tbl, 14, "ATR flr",  atr_floor_ok ? "PASS"   : "SKIP",   atr_floor_ok ? D_GRN : D_ORG)
 
-    macro_bull = close > ema_slow and ema_fast > ema_mid
-    macro_bear = close < ema_slow and ema_fast < ema_mid
-    _row(tbl, 14, "Macro bias", macro_bull ? "Bullish" : macro_bear ? "Bearish" : "Neutral", macro_bull ? D_GRN : macro_bear ? D_RED : D_ORG)
+    macro_bull = ema_bull_full
+    macro_bear = ema_bear_full
+    _row(tbl, 15, "Macro bias", macro_bull ? "Bullish" : macro_bear ? "Bearish" : "Neutral", macro_bull ? D_GRN : macro_bear ? D_RED : D_ORG)
 
     // performance section header
-    table.cell(tbl, 0, 15, "Performance", text_color=D_DIM, bgcolor=D_BG, text_size=size.tiny, text_halign=text.align_left)
-    table.cell(tbl, 1, 15, "",            text_color=D_DIM, bgcolor=D_BG)
+    table.cell(tbl, 0, 16, "Performance", text_color=D_DIM, bgcolor=D_BG, text_size=size.tiny, text_halign=text.align_left)
+    table.cell(tbl, 1, 16, "",            text_color=D_DIM, bgcolor=D_BG)
 
     total_trades = strategy.wintrades + strategy.losstrades
     wr_str = total_trades == 0 ? "--" : str.tostring(math.round(strategy.wintrades / total_trades * 100, 1)) + "%"
     pf_raw = strategy.grossloss == 0 ? na : strategy.grossprofit / math.abs(strategy.grossloss)
 
-    _row(tbl, 16, "Net P&L",      (strategy.netprofit >= 0 ? "+" : "") + str.tostring(strategy.netprofit, "#.##"), strategy.netprofit >= 0 ? D_GRN : D_RED)
-    _row(tbl, 17, "Win rate",     wr_str + " (" + str.tostring(strategy.wintrades) + "/" + str.tostring(total_trades) + ")", D_BRT)
-    _row(tbl, 18, "Prof. factor", na(pf_raw) ? "--" : str.tostring(pf_raw, "#.##"), na(pf_raw) ? D_DIM : pf_raw >= 1.0 ? D_GRN : D_RED)
-    _row(tbl, 19, "Max DD",       str.tostring(math.round(strategy.max_drawdown_percent, 2)) + "%", D_RED)
+    _row(tbl, 17, "Net P&L",      (strategy.netprofit >= 0 ? "+" : "") + str.tostring(strategy.netprofit, "#.##"), strategy.netprofit >= 0 ? D_GRN : D_RED)
+    _row(tbl, 18, "Win rate",     wr_str + " (" + str.tostring(strategy.wintrades) + "/" + str.tostring(total_trades) + ")", D_BRT)
+    _row(tbl, 19, "Prof. factor", na(pf_raw) ? "--" : str.tostring(pf_raw, "#.##"), na(pf_raw) ? D_DIM : pf_raw >= 1.0 ? D_GRN : D_RED)
+    _row(tbl, 20, "Max DD",       str.tostring(math.round(strategy.max_drawdown_percent, 2)) + "%", D_RED)
 

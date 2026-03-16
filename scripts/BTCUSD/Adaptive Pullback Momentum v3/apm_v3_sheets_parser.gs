@@ -1,31 +1,27 @@
 /**
- * APM v3.1 — Google Apps Script
- * ==============================
- * Polls Gmail every 1 minute for TradingView alert emails from APM v3.1
- * (BTC-USD 1h, longs only) and appends parsed rows to the
- * "Live Alerts v3" sheet in:
- * https://docs.google.com/spreadsheets/d/19wjt8sWl1PddkwYbk8NgXEzoZSo6dVbec3pUdAk3-n8
+ * APM v3.3 — TradingView Alert Email Parser
+ * ==========================================
+ * Reads unread Gmail messages from TradingView alerts, parses the
+ * structured alert body, and appends rows to the "Live Alerts" sheet.
  *
- * SETUP (one-time):
- *   1. Copy this file into a new Apps Script project bound to the Sheet:
- *      Extensions → Apps Script → paste code → Save
- *   2. In TradingView, set each alert's Message exactly as the Pine Script
- *      alert() calls produce (multi-line format with "APM v3.1 | ... |" prefix).
- *   3. Run setupTrigger() once from the Apps Script editor to install the
- *      1-minute polling trigger.
- *   4. Create a Gmail label named "apm-v3-processed" (Gmail → Settings →
- *      Labels → Create new label).
- *   5. Run processAlertEmails() manually once to confirm it works.
+ * SETUP:
+ *   1. Open the Google Sheet
+ *   2. Extensions → Apps Script → paste this file → Save
+ *   3. Run setupTrigger() once manually to install the 1-min polling trigger
+ *   4. In TradingView: Alerts → (your APM alert) → Notifications → Email ✓
+ *      The email subject must contain "APM v3.3"
  *
- * Alert types parsed:
- *   LONG ENTRY, TRAIL STOP ACTIVATED, LONG EXIT [WIN/LOSS],
- *   PANIC REGIME STARTED, PANIC REGIME CLEARED
+ * The script looks for Gmail messages:
+ *   - From: noreply@tradingview.com  (or any TradingView sender)
+ *   - Subject contains: "APM v3.3"
+ *   - Label: not yet processed (uses a "apm-processed" Gmail label)
  */
 
-var SPREADSHEET_ID   = "19wjt8sWl1PddkwYbk8NgXEzoZSo6dVbec3pUdAk3-n8";
-var LIVE_SHEET_NAME  = "Live Alerts v3";
-var PROCESSED_LABEL  = "apm-v3-processed";
-var GMAIL_QUERY      = 'from:noreply@tradingview.com subject:"APM v3.1" -label:' + PROCESSED_LABEL;
+// ── Config ────────────────────────────────────────────────────────────────────
+var SPREADSHEET_ID  = "19wjt8sWl1PddkwYbk8NgXEzoZSo6dVbec3pUdAk3-n8";
+var LIVE_SHEET_NAME = "Live Alerts";
+var GMAIL_QUERY     = 'from:noreply@tradingview.com subject:"APM v3.3" -label:apm-processed';
+var PROCESSED_LABEL = "apm-processed";
 
 var LIVE_HEADERS = [
   "Received At", "Symbol", "Timeframe", "Alert Type", "Direction",
@@ -50,7 +46,8 @@ var LIVE_HEADERS = [
   "Message ID"
 ];
 
-// ── Entry point ───────────────────────────────────────────────────────────────
+
+// ── Entry point: called by time trigger ──────────────────────────────────────
 function processAlertEmails() {
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var ws = getOrCreateSheet(ss, LIVE_SHEET_NAME, LIVE_HEADERS);
@@ -96,7 +93,8 @@ function processAlertEmails() {
   }
 }
 
-// ── Alert parser ──────────────────────────────────────────────────────────────
+
+// ── Parser ────────────────────────────────────────────────────────────────────
 function parseAlertBody(body, date, msgId) {
   // Normalise line endings
   body = body.replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
@@ -105,7 +103,7 @@ function parseAlertBody(body, date, msgId) {
   if (lines.length < 2) return null;
 
   var header = lines[0].trim();
-  if (header.indexOf("APM v3.1") === -1) return null;
+  if (header.indexOf("APM v3.3") === -1) return null;
 
   // Build key→value map from "Key   : Value" lines
   var kv = {};
@@ -132,7 +130,7 @@ function parseAlertBody(body, date, msgId) {
   else return null;
 
   // ── Parse symbol / timeframe from header
-  // Header format: "APM v3.1 | SHORT ENTRY | BTC-USD [1h]"
+  // Header format: "APM v3.3 | SHORT ENTRY | BTC-USD [15m]"
   var symParts = header.split("|");
   var symRaw   = symParts.length >= 3 ? symParts[2].trim() : "";
   var symbol   = symRaw.split("[")[0].trim();
@@ -264,6 +262,7 @@ function parseAlertBody(body, date, msgId) {
   ];
 }
 
+
 // ── Utilities ─────────────────────────────────────────────────────────────────
 function getOrCreateSheet(ss, name, headers) {
   var ws = ss.getSheetByName(name);
@@ -288,28 +287,26 @@ function getOrCreateLabel(name) {
   return GmailApp.createLabel(name);
 }
 
-// ── Setup / Utilities ─────────────────────────────────────────────────────────
-/**
- * Run this ONCE from the Apps Script editor to install the polling trigger.
- * Extensions → Apps Script → Run → setupTrigger
- */
+/** Run once manually from the Apps Script editor to install the trigger. */
 function setupTrigger() {
-  // Remove any existing triggers for this function first
-  ScriptApp.getProjectTriggers()
-    .filter(function(t){ return t.getHandlerFunction() === "processAlertEmails"; })
-    .forEach(function(t){ ScriptApp.deleteTrigger(t); });
-
+  // Remove any existing triggers for this function
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === "processAlertEmails") {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+  // Poll every minute
   ScriptApp.newTrigger("processAlertEmails")
     .timeBased()
     .everyMinutes(1)
     .create();
-
-  Logger.log("Trigger installed: processAlertEmails every 1 minute.");
+  Logger.log("Trigger installed: processAlertEmails every 1 minute");
 }
 
 /** Utility: manually run once to test parsing against existing emails. */
 function testParse() {
-  var threads = GmailApp.search('from:noreply@tradingview.com subject:"APM v3.1"', 0, 3);
+  var threads = GmailApp.search('from:noreply@tradingview.com subject:"APM v3.3"', 0, 3);
   for (var i = 0; i < threads.length; i++) {
     var msgs = threads[i].getMessages();
     for (var j = 0; j < msgs.length; j++) {

@@ -1,5 +1,5 @@
 """
-APM v4.2  — Push backtest results to Google Sheets
+APM v5.1  — Push backtest results to Google Sheets
 ====================================================
 Sheet: https://docs.google.com/spreadsheets/d/19wjt8sWl1PddkwYbk8NgXEzoZSo6dVbec3pUdAk3-n8
 
@@ -7,7 +7,7 @@ SETUP (one-time):
   1. Go to https://console.cloud.google.com → New Project
   2. Enable "Google Sheets API" for the project
   3. Create a Service Account → generate JSON key → save as:
-       scripts/Adaptive Pullback Momentum v4/service_account.json
+       scripts/Adaptive Pullback Momentum v5/service_account.json
   4. Copy the service account email (e.g. apm-bot@your-project.iam.gserviceaccount.com)
   5. Open the Google Sheet → Share → paste the service account email → Editor
   6. pip install gspread
@@ -25,9 +25,9 @@ from datetime import datetime, timezone
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 SPREADSHEET_ID  = "19wjt8sWl1PddkwYbk8NgXEzoZSo6dVbec3pUdAk3-n8"
-TRADES_SHEET    = "Trades v4"      # tab for v4 trade-level data
-ALERTS_SHEET    = "Alerts v4"      # tab for v4 alert events
-SUMMARY_SHEET   = "Summary v4"     # tab for v4 run-level summaries
+TRADES_SHEET    = "Trades v5"      # tab for v5 trade-level data
+ALERTS_SHEET    = "Alerts v5"      # tab for v5 alert events
+SUMMARY_SHEET   = "Summary v5"     # tab for v5 run-level summaries
 
 SA_KEY = Path(__file__).parent / "service_account.json"
 
@@ -304,7 +304,7 @@ def build_summary_row(run_ts, symbol, interval, period, initial_cap, equity,
 def push_results(trades, alerts, symbol, interval, period,
                  initial_cap, final_equity):
     """
-    Called from backtest_apm_v4_30m.py after the simulation loop.
+    Called from backtest_apm_v5_1h.py after the simulation loop.
 
     trades  : list of trade dicts
     alerts  : list of (ts, atype, msg) tuples
@@ -346,11 +346,11 @@ if __name__ == "__main__":
     from pathlib import Path
 
     HERE     = Path(__file__).parent
-    CSV_FILE = HERE / "apm_v4_trades_btcusd_30m.csv"
-    TXT_FILE = HERE / "apm_v4_alerts_btcusd_30m.txt"
+    CSV_FILE = HERE / "apm_v5_trades_btcusd_1h.csv"
+    TXT_FILE = HERE / "apm_v5_alerts_btcusd_1h.txt"
 
     if not CSV_FILE.exists():
-        print(f"Run backtest_apm_v4_30m.py first to generate {CSV_FILE.name}")
+        print(f"Run backtest_apm_v5_1h.py first to generate {CSV_FILE.name}")
         sys.exit(1)
 
     tdf    = pd.read_csv(CSV_FILE)
@@ -385,7 +385,7 @@ if __name__ == "__main__":
         trades      = trades,
         alerts      = alerts,
         symbol      = "BTC-USD",
-        interval    = "30m",
+        interval    = "1h",
         period      = "max",
         initial_cap = 10_000.0,
         final_equity= float(equity),

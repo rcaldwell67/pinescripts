@@ -1,0 +1,100 @@
+----------------------------------------------------------------------
+APM v3.3 | PANIC REGIME STARTED | BTC-USD [15m]
+ATR     : 551.23  |  ATR baseline: 285.40
+Ratio   : 1.93x  [threshold: 1.3x]
+Status  : New entries SUSPENDED
+Time    : 2026-03-02 18:00:00+00:00
+----------------------------------------------------------------------
+APM v3.3 | PANIC REGIME CLEARED | BTC-USD [15m]
+ATR     : 375.21  |  ATR baseline: 294.05
+Ratio   : 1.28x  [threshold: 1.3x]
+Status  : New entries RESUMED
+Time    : 2026-03-02 19:00:00+00:00
+----------------------------------------------------------------------
+APM v3.3 | PANIC REGIME STARTED | BTC-USD [15m]
+ATR     : 279.85  |  ATR baseline: 214.95
+Ratio   : 1.30x  [threshold: 1.3x]
+Status  : New entries SUSPENDED
+Time    : 2026-03-03 12:30:00+00:00
+----------------------------------------------------------------------
+APM v3.3 | PANIC REGIME CLEARED | BTC-USD [15m]
+ATR     : 255.85  |  ATR baseline: 215.17
+Ratio   : 1.19x  [threshold: 1.3x]
+Status  : New entries RESUMED
+Time    : 2026-03-03 12:45:00+00:00
+----------------------------------------------------------------------
+APM v3.3 | PANIC REGIME STARTED | BTC-USD [15m]
+ATR     : 293.46  |  ATR baseline: 221.00
+Ratio   : 1.33x  [threshold: 1.3x]
+Status  : New entries SUSPENDED
+Time    : 2026-03-03 14:30:00+00:00
+----------------------------------------------------------------------
+APM v3.3 | PANIC REGIME CLEARED | BTC-USD [15m]
+ATR     : 394.21  |  ATR baseline: 319.46
+Ratio   : 1.23x  [threshold: 1.3x]
+Status  : New entries RESUMED
+Time    : 2026-03-03 20:00:00+00:00
+----------------------------------------------------------------------
+APM v3.3 | PANIC REGIME STARTED | BTC-USD [15m]
+ATR     : 409.71  |  ATR baseline: 294.81
+Ratio   : 1.39x  [threshold: 1.3x]
+Status  : New entries SUSPENDED
+Time    : 2026-03-04 09:30:00+00:00
+----------------------------------------------------------------------
+APM v3.3 | PANIC REGIME CLEARED | BTC-USD [15m]
+ATR     : 373.36  |  ATR baseline: 293.29
+Ratio   : 1.27x  [threshold: 1.3x]
+Status  : New entries RESUMED
+Time    : 2026-03-04 12:00:00+00:00
+----------------------------------------------------------------------
+APM v3.3 | PANIC REGIME STARTED | BTC-USD [15m]
+ATR     : 415.23  |  ATR baseline: 311.26
+Ratio   : 1.33x  [threshold: 1.3x]
+Status  : New entries SUSPENDED
+Time    : 2026-03-04 15:45:00+00:00
+----------------------------------------------------------------------
+APM v3.3 | PANIC REGIME CLEARED | BTC-USD [15m]
+ATR     : 431.42  |  ATR baseline: 344.39
+Ratio   : 1.25x  [threshold: 1.3x]
+Status  : New entries RESUMED
+Time    : 2026-03-04 18:30:00+00:00
+----------------------------------------------------------------------
+APM v3.3 | PANIC REGIME STARTED | BTC-USD [15m]
+ATR     : 340.74  |  ATR baseline: 261.79
+Ratio   : 1.30x  [threshold: 1.3x]
+Status  : New entries SUSPENDED
+Time    : 2026-03-05 15:00:00+00:00
+----------------------------------------------------------------------
+APM v3.3 | PANIC REGIME CLEARED | BTC-USD [15m]
+ATR     : 355.08  |  ATR baseline: 298.15
+Ratio   : 1.19x  [threshold: 1.3x]
+Status  : New entries RESUMED
+Time    : 2026-03-05 18:30:00+00:00
+----------------------------------------------------------------------
+APM v3.3 | PANIC REGIME STARTED | BTC-USD [15m]
+ATR     : 259.31  |  ATR baseline: 199.08
+Ratio   : 1.30x  [threshold: 1.3x]
+Status  : New entries SUSPENDED
+Time    : 2026-03-06 13:45:00+00:00
+----------------------------------------------------------------------
+APM v3.3 | PANIC REGIME CLEARED | BTC-USD [15m]
+ATR     : 303.91  |  ATR baseline: 247.98
+Ratio   : 1.23x  [threshold: 1.3x]
+Status  : New entries RESUMED
+Time    : 2026-03-06 18:15:00+00:00
+----------------------------------------------------------------------
+APM v3.3 | SHORT ENTRY | BTC-USD [15m]
+Entry   : 67228.49  |  Equity: $10000.00
+Stop    : 67461.56  (+233.07 = ATR x2.0)
+Target  : 66937.16  (-291.33 = ATR x2.5)
+R:R     : 1:1.25  |  Risk: $100.00 (1.0%)
+Qty     : 0.4291
+ATR     : 116.53 (0.173% of price)  |  Floor: OK
+RSI     : 37.10 [32-58]  |  Dir: Falling
+ADX     : 37.20  DI+: 12.77  DI-: 36.02  [min 28]
+Vol/MA  : 2.75x  [min 1.2x]
+Body    : 0.498x ATR  [min 0.2x]
+EMA21/50/200: 67372.05/67555.18/68595.04  Stack: BEAR  Slope: DOWN
+Trail on: -291.33 (ATR x2.5)  Dist: 69.92 (ATR x0.6)
+Time    : 2026-03-08 00:45:00+00:00
+----------------------------------------------------------------------
