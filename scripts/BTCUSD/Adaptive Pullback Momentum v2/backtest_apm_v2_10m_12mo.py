@@ -1,14 +1,14 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# APM v2.0 — BTCUSD 10m  ·  12-Month Backtest  (Alpaca IEX)
-# Mirrors "Adaptive Pullback Momentum v2.0" Pine script parameters.
+# APM v2.7 — BTCUSD 10m  ·  12-Month Backtest  (Alpaca Crypto)
+# Mirrors "Adaptive Pullback Momentum v2.7" Pine script parameters.
 # Shorts-only (BTCUSD sub-15m longs: WR too low historically).
 #
-# Data: Alpaca IEX 5m bars → resampled to 10m (Alpaca has no native 10m)
-# Period: 2025-03-13 → 2026-03-12  (12 months)
+# Data: Alpaca Crypto 5m bars → resampled to 10m (Alpaca has no native 10m)
+# Period: 2025-03-12 → 2026-03-12  (12 months)
 #
-# Stage-3 sweep baseline (yfinance 60d):
-#   trail_act=3.5 | trail_dist=0.3 | tp=6.0 | max_bars=30
-#   Result (11T): PF=59.634 | net=+18.67% | WR=90.9% | MaxDD=-0.31%
+# v2.7 (TP sweep — net=+23.05% | WR=46.8% | PF=1.31 | 47T | MaxDD=-13.17%):
+#   adx=16 | pb=0.30 | vol=0.7 | atr_floor=0.10% | tp=6.0 | trail_dist=0.1
+#   max_bars=30 | risk=2.5%
 # ─────────────────────────────────────────────────────────────────────────────
 
 import subprocess, sys
@@ -52,14 +52,14 @@ ATR_BL_LEN = 60
 
 # ── Strategy parameters (v2.3 Stage-3 sweep-optimised starting point) ─────────
 PB_PCT         = 0.30
-ADX_THRESH     = 20
+ADX_THRESH     = 16
 ADX_SLOPE_BARS = 0       # off
 DI_SPREAD_MIN  = 0.0     # off
 EMA_SLOPE_BARS = 0       # off (stage-1 winner)
 MOMENTUM_BARS  = 5
 VOL_MULT       = 0.7
 MIN_BODY       = 0.20
-ATR_FLOOR      = 0.0015  # 0.15% of price
+ATR_FLOOR      = 0.0010  # 0.10% of price
 PANIC_MULT     = 1.5
 RSI_LO_S = 32;  RSI_HI_S = 58
 RSI_LO_L = 42;  RSI_HI_L = 68
@@ -67,10 +67,10 @@ RSI_LO_L = 42;  RSI_HI_L = 68
 SL_MULT    = 2.0
 TP_MULT    = 6.0
 TRAIL_ACT  = 3.5
-TRAIL_DIST = 0.3
+TRAIL_DIST = 0.1
 MAX_BARS   = 30
 
-RISK_PCT        = 0.01
+RISK_PCT        = 0.025
 INITIAL_CAPITAL = 10_000.0
 COMMISSION_PCT  = 0.0006
 

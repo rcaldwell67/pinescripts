@@ -33,10 +33,9 @@ import numpy as np
 import pytz, itertools
 from datetime import datetime, timezone
 from pathlib import Path
-from alpaca.data.historical import StockHistoricalDataClient
-from alpaca.data.requests import StockBarsRequest
+from alpaca.data.historical import CryptoHistoricalDataClient
+from alpaca.data.requests import CryptoBarsRequest
 from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
-from alpaca.data.enums import DataFeed
 
 _ET = pytz.timezone("America/New_York")
 
@@ -44,7 +43,7 @@ _ET = pytz.timezone("America/New_York")
 ALPACA_KEY    = "PKNIYXYVLHKHF43IIEUQIA42DJ"
 ALPACA_SECRET = "9djPy47EmNvMr6Yyfa3UpQ49ruQRWAmTmu8thmDvm34u"
 
-TICKER         = "BTCUSD"
+TICKER         = "BTC/USD"
 BACKTEST_END   = datetime(2026, 3, 14, tzinfo=timezone.utc)
 BACKTEST_START = datetime(2025, 3, 14, tzinfo=timezone.utc)
 
@@ -81,13 +80,13 @@ print(f"Stage-5 sweep: {total:,} combos")
 
 # ─── Fetch + resample ─────────────────────────────────────────────────────────
 print(f"\nFetching {TICKER} 5m ({BACKTEST_START.date()} → {BACKTEST_END.date()}) ...")
-client = StockHistoricalDataClient(ALPACA_KEY, ALPACA_SECRET)
+client = CryptoHistoricalDataClient(ALPACA_KEY, ALPACA_SECRET)
 TF5  = TimeFrame(5, TimeFrameUnit.Minute)
-req  = StockBarsRequest(
+req  = CryptoBarsRequest(
     symbol_or_symbols=TICKER, timeframe=TF5,
-    start=BACKTEST_START, end=BACKTEST_END, feed=DataFeed.IEX,
+    start=BACKTEST_START, end=BACKTEST_END,
 )
-bars = client.get_stock_bars(req)
+bars = client.get_crypto_bars(req)
 raw  = bars.df.reset_index()
 if isinstance(raw.columns, pd.MultiIndex):
     raw.columns = raw.columns.droplevel(0)

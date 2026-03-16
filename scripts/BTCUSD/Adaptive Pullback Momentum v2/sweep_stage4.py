@@ -30,10 +30,9 @@ import numpy as np
 import pytz, csv, itertools
 from datetime import datetime, timezone
 from pathlib import Path
-from alpaca.data.historical import StockHistoricalDataClient
-from alpaca.data.requests import StockBarsRequest
+from alpaca.data.historical import CryptoHistoricalDataClient
+from alpaca.data.requests import CryptoBarsRequest
 from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
-from alpaca.data.enums import DataFeed
 
 _ET = pytz.timezone("America/New_York")
 
@@ -41,7 +40,7 @@ _ET = pytz.timezone("America/New_York")
 ALPACA_KEY    = "PKNIYXYVLHKHF43IIEUQIA42DJ"
 ALPACA_SECRET = "9djPy47EmNvMr6Yyfa3UpQ49ruQRWAmTmu8thmDvm34u"
 
-TICKER         = "BTCUSD"
+TICKER         = "BTC/USD"
 BACKTEST_END   = datetime(2026, 3, 14, tzinfo=timezone.utc)
 BACKTEST_START = datetime(2025, 3, 14, tzinfo=timezone.utc)
 
@@ -78,12 +77,11 @@ print(f"Stage-4 sweep: {total:,} combos  ({len(SIGNAL_PRESETS)} signal presets �
 
 # ─── Fetch + resample ─────────────────────────────────────────────────────────
 print(f"\nFetching {TICKER} 5m ({BACKTEST_START.date()} → {BACKTEST_END.date()}) ...")
-client = StockHistoricalDataClient(ALPACA_KEY, ALPACA_SECRET)
-bars = client.get_stock_bars(StockBarsRequest(
+client = CryptoHistoricalDataClient(ALPACA_KEY, ALPACA_SECRET)
+bars = client.get_crypto_bars(CryptoBarsRequest(
     symbol_or_symbols=TICKER,
     timeframe=TimeFrame(5, TimeFrameUnit.Minute),
     start=BACKTEST_START, end=BACKTEST_END,
-    feed=DataFeed.IEX,
 ))
 raw = bars.df.reset_index()
 if isinstance(raw.columns, pd.MultiIndex):

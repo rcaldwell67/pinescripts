@@ -70,8 +70,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 strategy(
-    title             = "Adaptive Pullback Momentum v2.5",
-    shorttitle        = "APM v2.5",
+    title             = "Adaptive Pullback Momentum v2.7",
+    shorttitle        = "APM v2.7",
     overlay           = true,
     pyramiding        = 0,
     initial_capital   = 10000,
@@ -86,7 +86,7 @@ var G_TREND = "Trend Filters"
 i_ema_fast   = input.int  (21,   "EMA Fast",            group=G_TREND, minval=5)
 i_ema_mid    = input.int  (50,   "EMA Mid",             group=G_TREND, minval=10)
 i_ema_slow   = input.int  (200,  "EMA Slow",            group=G_TREND, minval=50)
-i_adx_thresh = input.int  (17,   "ADX threshold",       group=G_TREND, minval=5,  maxval=60)
+i_adx_thresh = input.int  (16,   "ADX threshold",       group=G_TREND, minval=5,  maxval=60)
 i_adx_len    = input.int  (14,   "ADX / DI length",     group=G_TREND, minval=5)
 i_pb_pct     = input.float(0.30, "Pullback tolerance (%)", group=G_TREND, minval=0.05, maxval=3.0, step=0.05,
                  tooltip="How close the prev bar's low/high must come to EMA-fast to count as a pullback")
@@ -104,20 +104,29 @@ i_min_body   = input.float(0.20, "Min body (×ATR)",        group=G_MOM, minval=
 
 var G_VOL = "Volatility"
 i_atr_len    = input.int  (14,   "ATR length",            group=G_VOL, minval=3)
-i_atr_floor  = input.float(0.15, "ATR floor (% of price)", group=G_VOL, minval=0.0, maxval=2.0, step=0.05,
+i_atr_floor  = input.float(0.10, "ATR floor (% of price)", group=G_VOL, minval=0.0, maxval=2.0, step=0.05,
                  tooltip="ATR/price must exceed this % — filters low-volatility entries where commission drag dominates")
 i_panic_mult = input.float(1.5,  "Panic suppression mult",group=G_VOL, minval=1.0, step=0.1,
                  tooltip="ATR14 > ATR-60SMA × this value → skip new entries")
 
+var G_EXEC = "Execution Filters"
+i_use_session = input.bool (true, "Use Session Filter", group=G_EXEC,
+                 tooltip="Restrict entries to a fixed ET session window (as used in best stage-5 sweep).")
+i_session_start = input.int(9,    "Session Start (ET hour)", group=G_EXEC, minval=0, maxval=23)
+i_session_end   = input.int(14,   "Session End (ET hour)",   group=G_EXEC, minval=1, maxval=24)
+i_use_momentum  = input.bool(true, "Use Momentum Bars Filter", group=G_EXEC,
+                 tooltip="Require close to be beyond close[n] in trade direction. Light filter from sweep kernel.")
+i_mom_bars      = input.int (5,    "Momentum bars", group=G_EXEC, minval=1, maxval=50)
+
 var G_RISK = "Risk Management"
 i_sl_mult    = input.float(2.0,  "Stop loss ATR mult",    group=G_RISK, minval=0.3, step=0.1)
-i_tp_mult    = input.float(9.0,  "Take profit ATR mult",  group=G_RISK, minval=0.5, step=0.1)
+i_tp_mult    = input.float(6.0,  "Take profit ATR mult",  group=G_RISK, minval=0.5, step=0.1)
 i_tr_act     = input.float(3.5,  "Trail activate ATR mult",group=G_RISK,minval=0.3, step=0.1,
                  tooltip="Trailing stop kicks in once price moves this many ATRs in your favour")
-i_tr_dist    = input.float(0.2,  "Trail distance ATR mult",group=G_RISK,minval=0.2, step=0.1,
+i_tr_dist    = input.float(0.1,  "Trail distance ATR mult",group=G_RISK,minval=0.1, step=0.1,
                  tooltip="Once active, trail stays this many ATRs below/above the best price")
 i_risk_pct   = input.float(2.5,  "Equity risked per trade (%)",group=G_RISK,minval=0.1,maxval=20,step=0.1)
-i_max_bars   = input.int  (20,   "Max bars in trade (0=off)",  group=G_RISK, minval=0, maxval=500,
+i_max_bars   = input.int  (30,   "Max bars in trade (0=off)",  group=G_RISK, minval=0, maxval=500,
                  tooltip="Exit at bar close after this many bars. 0 = disabled. Prevents stalled trades from reversing.")
 
 var G_DISP = "Display"
@@ -151,6 +160,9 @@ ema_slope_down = ema_fast < ema_fast[3]                        // EMA21 falling 
 rsi_rising     = rsi > rsi[1]                                  // RSI momentum up
 rsi_falling    = rsi < rsi[1]                                  // RSI momentum down
 atr_floor_ok   = atr / close * 100 >= i_atr_floor             // min volatility filter
+session_ok     = not i_use_session or (hour(time, "America/New_York") >= i_session_start and hour(time, "America/New_York") < i_session_end)
+mom_short_ok   = not i_use_momentum or close < close[i_mom_bars]
+mom_long_ok    = not i_use_momentum or close > close[i_mom_bars]
 
 // ── Pullback-to-EMA trigger ───────────────────────────────────────────────────
 // Long : prev bar's low came within pullback tolerance of EMA-fast FROM ABOVE,
@@ -168,15 +180,15 @@ short_pb   = high[1] >= pb_tol_dn and close < ema_fast and close < open and body
 no_pos     = strategy.position_size == 0.0
 stop_dist  = atr * i_sl_mult
 
-long_ok  = i_longs  and no_pos and not is_panic and is_trending and
+long_ok  = i_longs  and no_pos and not is_panic and is_trending and session_ok and
      long_pb and
-     ema_bull_full and ema_slope_up and rsi_rising and atr_floor_ok and
+    ema_bull_full and ema_slope_up and rsi_rising and atr_floor_ok and mom_long_ok and
      rsi >= i_rsi_lo_l and rsi <= i_rsi_hi_l and
      volume >= vol_ma * i_vol_mult
 
-short_ok = i_shorts and no_pos and not is_panic and is_trending and
+short_ok = i_shorts and no_pos and not is_panic and is_trending and session_ok and
      short_pb and
-     ema_bear_full and ema_slope_down and rsi_falling and atr_floor_ok and
+    ema_bear_full and ema_slope_down and rsi_falling and atr_floor_ok and mom_short_ok and
      rsi >= i_rsi_lo_s and rsi <= i_rsi_hi_s and
      volume >= vol_ma * i_vol_mult
 
@@ -197,7 +209,7 @@ if long_ok
     trail_active := false
     strategy.entry("Long", strategy.long, qty=qty)
     alert(
-        "APM v2.5 | LONG ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v2.7 | LONG ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "Entry   : " + str.tostring(close, "#.##") +
         "  |  Equity: $" + str.tostring(strategy.equity, "#.##") + "\n" +
         "Stop    : " + str.tostring(sl_price, "#.##") +
@@ -228,7 +240,9 @@ if long_ok
         "Trail on: +" + str.tostring(atr * i_tr_act, "#.##") +
         " (ATR x" + str.tostring(i_tr_act, "#.#") + ")" +
         "  Dist: " + str.tostring(atr * i_tr_dist, "#.##") +
-        " (ATR x" + str.tostring(i_tr_dist, "#.#") + ")",
+        " (ATR x" + str.tostring(i_tr_dist, "#.#") + ")\n" +
+        "Session : " + (session_ok ? "OK" : "OUT") +
+        "  |  Momentum bars: " + str.tostring(i_mom_bars),
         alert.freq_once_per_bar_close)
 
 if short_ok
@@ -239,7 +253,7 @@ if short_ok
     trail_active := false
     strategy.entry("Short", strategy.short, qty=qty)
     alert(
-        "APM v2.5 | SHORT ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v2.7 | SHORT ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "Entry   : " + str.tostring(close, "#.##") +
         "  |  Equity: $" + str.tostring(strategy.equity, "#.##") + "\n" +
         "Stop    : " + str.tostring(sl_price, "#.##") +
@@ -270,7 +284,9 @@ if short_ok
         "Trail on: -" + str.tostring(atr * i_tr_act, "#.##") +
         " (ATR x" + str.tostring(i_tr_act, "#.#") + ")" +
         "  Dist: " + str.tostring(atr * i_tr_dist, "#.##") +
-        " (ATR x" + str.tostring(i_tr_dist, "#.#") + ")",
+        " (ATR x" + str.tostring(i_tr_dist, "#.#") + ")\n" +
+        "Session : " + (session_ok ? "OK" : "OUT") +
+        "  |  Momentum bars: " + str.tostring(i_mom_bars),
         alert.freq_once_per_bar_close)
 
 // ── Trailing stop update (runs every bar while in trade) ──────────────────────
@@ -284,7 +300,7 @@ if strategy.position_size > 0.0          // long
         if not trail_active
             trail_active := true
             alert(
-                "APM v2.5 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+                "APM v2.7 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
                 "Direction : LONG\n" +
                 "Best price: " + str.tostring(best_price, "#.##") +
                 "  |  Entry: " + str.tostring(entry_p, "#.##") + "\n" +
@@ -310,7 +326,7 @@ if strategy.position_size < 0.0          // short
         if not trail_active
             trail_active := true
             alert(
-                "APM v2.5 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+                "APM v2.7 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
                 "Direction : SHORT\n" +
                 "Best price: " + str.tostring(best_price, "#.##") +
                 "  |  Entry: " + str.tostring(entry_p, "#.##") + "\n" +
@@ -346,7 +362,7 @@ if strategy.closedtrades > _prev_closed
     _mvpct   = _sz > 0 ? (_xp - _ep) / _ep * 100 : (_ep - _xp) / _ep * 100
     _wr      = strategy.closedtrades > 0 ? str.tostring(math.round(strategy.wintrades / strategy.closedtrades * 100, 1), "#.#") + "%" : "--"
     alert(
-        "APM v2.5 | " + _dir + " EXIT [" + _res + "] | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v2.7 | " + _dir + " EXIT [" + _res + "] | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "Entry   : " + str.tostring(_ep, "#.##") +
         "  ->  Exit: " + str.tostring(_xp, "#.##") + "\n" +
         "Move    : " + (_mvpct >= 0 ? "+" : "") + str.tostring(_mvpct, "#.##") + "%\n" +
@@ -362,7 +378,7 @@ if strategy.closedtrades > _prev_closed
 // ── Panic regime alert ────────────────────────────────────────────────────────
 if is_panic and not is_panic[1]
     alert(
-        "APM v2.5 | PANIC REGIME STARTED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v2.7 | PANIC REGIME STARTED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "ATR     : " + str.tostring(atr, "#.##") +
         "  |  ATR baseline: " + str.tostring(atr_bl, "#.##") + "\n" +
         "Ratio   : " + str.tostring(atr / atr_bl, "#.##") + "x" +
@@ -372,7 +388,7 @@ if is_panic and not is_panic[1]
 
 if not is_panic and is_panic[1]
     alert(
-        "APM v2.5 | PANIC REGIME CLEARED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v2.7 | PANIC REGIME CLEARED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "ATR     : " + str.tostring(atr, "#.##") +
         "  |  ATR baseline: " + str.tostring(atr_bl, "#.##") + "\n" +
         "Ratio   : " + str.tostring(atr / atr_bl, "#.##") + "x" +
@@ -428,7 +444,7 @@ if i_show_dash and barstate.islast
          frame_width=1,  frame_color=color.new(color.gray, 40))
 
     // header
-    table.cell(tbl, 0, 0, "APM v2.5", text_color=D_BRT, bgcolor=D_HDR, text_size=size.normal, text_halign=text.align_left)
+    table.cell(tbl, 0, 0, "APM v2.7", text_color=D_BRT, bgcolor=D_HDR, text_size=size.normal, text_halign=text.align_left)
     table.cell(tbl, 1, 0, timeframe.period + " | " + syminfo.ticker, text_color=D_YEL, bgcolor=D_HDR, text_size=size.small, text_halign=text.align_right)
 
     // position
