@@ -30,7 +30,7 @@ warnings.filterwarnings("ignore")
 _ET = pytz.timezone("America/New_York")
 
 # ─── Configuration ─────────────────────────────────────────────────────────────
-TICKER   = "BTCUSD"
+TICKER   = "BTC-USD"
 PERIOD   = "60d"       # yfinance max for 5m data
 INTERVAL = "5m"
 
@@ -451,6 +451,16 @@ for i, t in tdf.iterrows():
 out_csv = "apm_v1_ytd_trades_btcusd_5m.csv"
 tdf.to_csv(out_csv, index=False)
 print(f"\nTrade log saved → {out_csv}")
+
+# ─── Dashboard export ──────────────────────────────────────────────────────────
+from pathlib import Path as _Path
+_dash_out = _Path(__file__).resolve().parent.parent.parent.parent / "docs" / "data" / "btcusd" / "v1_trades.csv"
+_dash = tdf.rename(columns={"entry": "entry_price", "exit": "exit_price"})[
+    ["entry_time", "exit_time", "direction", "entry_price", "exit_price",
+     "result", "pnl_pct", "dollar_pnl", "equity"]
+].copy()
+_dash.to_csv(_dash_out, index=False)
+print(f"Dashboard export  → {_dash_out}")
 
 # ─── Equity curve chart ────────────────────────────────────────────────────────
 eq_df = pd.DataFrame(eqcurve).set_index("time")
