@@ -3,7 +3,7 @@ Entry   : 1.38  |  Equity: $10000.00
 Stop    : 1.34  (-0.04 = ATR x1.5)
 Target  : 1.48  (+0.10 = ATR x3.5)
 R:R     : 1:2.33  |  Risk: $100.00 (1.0%)
-Qty     : 2256.2613
+Qty     : 2256.2442
 ATR     : 0.03 (2.141% of price)
 RSI     : 60.04 [42.0-75.0]  |  Dir: Rising
 ADX     : 23.16  DI+: 38.05  DI-: 29.30  [min 20.0]
@@ -29,7 +29,7 @@ Entry   : 1.97  |  Equity: $9896.32
 Stop    : 1.91  (-0.06 = ATR x1.5)
 Target  : 2.10  (+0.13 = ATR x3.5)
 R:R     : 1:2.33  |  Risk: $98.96 (1.0%)
-Qty     : 1762.3084
+Qty     : 1762.3195
 ATR     : 0.04 (1.903% of price)
 RSI     : 73.03 [42.0-75.0]  |  Dir: Rising
 ADX     : 38.42  DI+: 31.59  DI-: 10.37  [min 20.0]
@@ -55,7 +55,7 @@ Entry   : 1.94  |  Equity: $9793.26
 Stop    : 1.87  (-0.07 = ATR x1.5)
 Target  : 2.09  (+0.15 = ATR x3.5)
 R:R     : 1:2.33  |  Risk: $97.93 (1.0%)
-Qty     : 1496.5360
+Qty     : 1496.5434
 ATR     : 0.04 (2.253% of price)
 RSI     : 57.95 [42.0-75.0]  |  Dir: Rising
 ADX     : 33.97  DI+: 21.79  DI-: 21.68  [min 20.0]
@@ -81,10 +81,10 @@ Entry   : 2.62  |  Equity: $9799.39
 Stop    : 2.58  (-0.03 = ATR x1.5)
 Target  : 2.69  (+0.08 = ATR x3.5)
 R:R     : 1:2.33  |  Risk: $97.99 (1.0%)
-Qty     : 2930.9316
+Qty     : 2930.9419
 ATR     : 0.02 (0.852% of price)
 RSI     : 67.32 [42.0-75.0]  |  Dir: Rising
-ADX     : 22.33  DI+: 21.93  DI-: 7.94  [min 20.0]
+ADX     : 20.85  DI+: 21.80  DI-: 8.07  [min 20.0]
 Vol/MA  : 1.45x  [min 1.0x]
 Body    : 0.688x ATR  [min 0.2x]
 EMA21/50/200: 2.57/2.56/2.46  Stack: BULL
@@ -107,10 +107,10 @@ Entry   : 2.74  |  Equity: $10018.70
 Stop    : 2.68  (-0.05 = ATR x1.5)
 Target  : 2.85  (+0.12 = ATR x3.5)
 R:R     : 1:2.33  |  Risk: $100.19 (1.0%)
-Qty     : 1958.8616
+Qty     : 1958.8873
 ATR     : 0.03 (1.247% of price)
 RSI     : 65.70 [42.0-75.0]  |  Dir: Rising
-ADX     : 36.12  DI+: 35.10  DI-: 14.55  [min 20.0]
+ADX     : 35.73  DI+: 35.09  DI-: 14.57  [min 20.0]
 Vol/MA  : 1.01x  [min 1.0x]
 Body    : 1.101x ATR  [min 0.2x]
 EMA21/50/200: 2.67/2.65/2.50  Stack: BULL
@@ -145,10 +145,10 @@ Entry   : 2.42  |  Equity: $9912.14
 Stop    : 2.35  (-0.07 = ATR x1.5)
 Target  : 2.59  (+0.17 = ATR x3.5)
 R:R     : 1:2.33  |  Risk: $99.12 (1.0%)
-Qty     : 1385.8356
+Qty     : 1385.8354
 ATR     : 0.05 (1.969% of price)
 RSI     : 63.53 [42.0-75.0]  |  Dir: Rising
-ADX     : 21.65  DI+: 21.10  DI-: 23.45  [min 20.0]
+ADX     : 21.12  DI+: 20.83  DI-: 23.72  [min 20.0]
 Vol/MA  : 1.69x  [min 1.0x]
 Body    : 0.488x ATR  [min 0.2x]
 EMA21/50/200: 2.37/2.33/2.36  Stack: BULL
@@ -158,7 +158,7 @@ Time    : 2005-07-08 00:00:00
 APM v6.1 | LONG EXIT [WIN] | CLM [1D]
 Entry   : 2.42  ->  Exit: 2.52
 Move    : +4.08%
-P&L     : +132.68 USD
+P&L     : +132.69 USD
 Comm    : -4.11 USD
 Max runup: 0.13
 Bars    : 25
@@ -183,7 +183,7 @@ Entry   : 2.67  |  Equity: $10044.83
 Stop    : 2.63  (-0.04 = ATR x1.5)
 Target  : 2.76  (+0.09 = ATR x3.5)
 R:R     : 1:2.33  |  Risk: $100.45 (1.0%)
-Qty     : 2719.3339
+Qty     : 2719.3425
 ATR     : 0.02 (0.922% of price)
 RSI     : 61.44 [42.0-75.0]  |  Dir: Rising
 ADX     : 21.50  DI+: 16.55  DI-: 11.43  [min 20.0]
@@ -209,7 +209,7 @@ Entry   : 2.82  |  Equity: $10249.41
 Stop    : 2.77  (-0.05 = ATR x1.5)
 Target  : 2.95  (+0.13 = ATR x3.5)
 R:R     : 1:2.33  |  Risk: $102.49 (1.0%)
-Qty     : 1888.8914
+Qty     : 1888.8915
 ATR     : 0.04 (1.281% of price)
 RSI     : 72.17 [42.0-75.0]  |  Dir: Rising
 ADX     : 26.68  DI+: 18.36  DI-: 15.71  [min 20.0]
@@ -222,20 +222,20 @@ Time    : 2006-07-17 00:00:00
 APM v6.1 | LONG EXIT [WIN] | CLM [1D]
 Entry   : 2.82  ->  Exit: 2.96
 Move    : +4.81%
-P&L     : +249.96 USD
+P&L     : +249.95 USD
 Comm    : -6.56 USD
 Max runup: 0.16
 Bars    : 14
-Equity  : $10499.36
+Equity  : $10499.37
 Trades  : 8  |  Win rate: 62.5%
 Time    : 2006-08-04 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | CLM [1D]
-Entry   : 3.16  |  Equity: $10499.36
+Entry   : 3.16  |  Equity: $10499.37
 Stop    : 3.08  (-0.08 = ATR x1.5)
 Target  : 3.35  (+0.19 = ATR x3.5)
 R:R     : 1:2.33  |  Risk: $104.99 (1.0%)
-Qty     : 1310.4925
+Qty     : 1310.4939
 ATR     : 0.05 (1.691% of price)
 RSI     : 72.77 [42.0-75.0]  |  Dir: Rising
 ADX     : 23.83  DI+: 22.02  DI-: 22.94  [min 20.0]
@@ -252,7 +252,7 @@ P&L     : +239.87 USD
 Comm    : -5.11 USD
 Max runup: 0.22
 Bars    : 24
-Equity  : $10739.23
+Equity  : $10739.24
 Trades  : 9  |  Win rate: 66.7%
 Time    : 2006-10-13 00:00:00
 ----------------------------------------------------------------------
@@ -281,11 +281,11 @@ Status  : New entries RESUMED
 Time    : 2007-08-27 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | CLM [1D]
-Entry   : 1.88  |  Equity: $10739.23
+Entry   : 1.88  |  Equity: $10739.24
 Stop    : 1.80  (-0.08 = ATR x1.5)
 Target  : 2.07  (+0.19 = ATR x3.5)
 R:R     : 1:2.33  |  Risk: $107.39 (1.0%)
-Qty     : 1322.2236
+Qty     : 1322.2213
 ATR     : 0.05 (2.873% of price)
 RSI     : 64.00 [42.0-75.0]  |  Dir: Rising
 ADX     : 29.87  DI+: 25.30  DI-: 13.47  [min 20.0]
@@ -302,16 +302,16 @@ P&L     : +247.44 USD
 Comm    : -3.14 USD
 Max runup: 0.25
 Bars    : 7
-Equity  : $10986.67
+Equity  : $10986.68
 Trades  : 10  |  Win rate: 70.0%
 Time    : 2009-07-30 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | CLM [1D]
-Entry   : 2.43  |  Equity: $10986.67
+Entry   : 2.43  |  Equity: $10986.68
 Stop    : 2.33  (-0.10 = ATR x1.5)
 Target  : 2.65  (+0.22 = ATR x3.5)
 R:R     : 1:2.33  |  Risk: $109.87 (1.0%)
-Qty     : 1143.3900
+Qty     : 1143.3886
 ATR     : 0.06 (2.640% of price)
 RSI     : 60.95 [42.0-75.0]  |  Dir: Rising
 ADX     : 21.63  DI+: 25.10  DI-: 22.39  [min 20.0]
@@ -328,7 +328,7 @@ P&L     : +129.40 USD
 Comm    : -3.41 USD
 Max runup: 0.12
 Bars    : 25
-Equity  : $11116.07
+Equity  : $11116.08
 Trades  : 11  |  Win rate: 72.7%
 Time    : 2011-05-09 00:00:00
 ----------------------------------------------------------------------
@@ -357,14 +357,14 @@ Status  : New entries RESUMED
 Time    : 2012-05-25 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | CLM [1D]
-Entry   : 2.34  |  Equity: $11116.07
+Entry   : 2.34  |  Equity: $11116.08
 Stop    : 2.29  (-0.05 = ATR x1.5)
 Target  : 2.45  (+0.11 = ATR x3.5)
 R:R     : 1:2.33  |  Risk: $111.16 (1.0%)
-Qty     : 2316.9560
+Qty     : 2316.9502
 ATR     : 0.03 (1.366% of price)
 RSI     : 64.12 [42.0-75.0]  |  Dir: Rising
-ADX     : 63.08  DI+: 30.57  DI-: 26.61  [min 20.0]
+ADX     : 63.09  DI+: 30.57  DI-: 26.61  [min 20.0]
 Vol/MA  : 1.26x  [min 1.0x]
 Body    : 0.283x ATR  [min 0.2x]
 EMA21/50/200: 2.30/2.26/2.13  Stack: BULL
@@ -378,7 +378,7 @@ P&L     : -117.61 USD
 Comm    : -6.44 USD
 Max runup: 0.02
 Bars    : 2
-Equity  : $10998.47
+Equity  : $10998.48
 Trades  : 12  |  Win rate: 66.7%
 Time    : 2012-10-15 00:00:00
 ----------------------------------------------------------------------
@@ -395,11 +395,11 @@ Status  : New entries RESUMED
 Time    : 2012-11-23 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | CLM [1D]
-Entry   : 2.17  |  Equity: $10998.47
+Entry   : 2.17  |  Equity: $10998.48
 Stop    : 2.12  (-0.06 = ATR x1.5)
 Target  : 2.31  (+0.14 = ATR x3.5)
 R:R     : 1:2.33  |  Risk: $109.98 (1.0%)
-Qty     : 1881.2978
+Qty     : 1881.3107
 ATR     : 0.04 (1.793% of price)
 RSI     : 52.81 [42.0-75.0]  |  Dir: Rising
 ADX     : 35.63  DI+: 22.36  DI-: 30.11  [min 20.0]
@@ -416,16 +416,16 @@ P&L     : +251.57 USD
 Comm    : -5.06 USD
 Max runup: 0.14
 Bars    : 21
-Equity  : $11250.04
+Equity  : $11250.05
 Trades  : 13  |  Win rate: 69.2%
 Time    : 2013-03-25 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | CLM [1D]
-Entry   : 2.58  |  Equity: $11250.04
+Entry   : 2.58  |  Equity: $11250.05
 Stop    : 2.53  (-0.05 = ATR x1.5)
 Target  : 2.71  (+0.12 = ATR x3.5)
 R:R     : 1:2.33  |  Risk: $112.50 (1.0%)
-Qty     : 2149.1038
+Qty     : 2149.1059
 ATR     : 0.03 (1.351% of price)
 RSI     : 60.66 [42.0-75.0]  |  Dir: Rising
 ADX     : 20.70  DI+: 24.12  DI-: 13.44  [min 20.0]
@@ -442,7 +442,7 @@ P&L     : +255.68 USD
 Comm    : -6.82 USD
 Max runup: 0.21
 Bars    : 21
-Equity  : $11505.72
+Equity  : $11505.73
 Trades  : 14  |  Win rate: 71.4%
 Time    : 2013-10-22 00:00:00
 ----------------------------------------------------------------------
@@ -459,11 +459,11 @@ Status  : New entries RESUMED
 Time    : 2014-10-30 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | CLM [1D]
-Entry   : 2.54  |  Equity: $11505.72
+Entry   : 2.54  |  Equity: $11505.73
 Stop    : 2.49  (-0.05 = ATR x1.5)
 Target  : 2.67  (+0.12 = ATR x3.5)
 R:R     : 1:2.33  |  Risk: $115.06 (1.0%)
-Qty     : 2150.0991
+Qty     : 2150.1105
 ATR     : 0.04 (1.404% of price)
 RSI     : 60.13 [42.0-75.0]  |  Dir: Rising
 ADX     : 22.48  DI+: 18.15  DI-: 22.62  [min 20.0]
@@ -480,7 +480,7 @@ P&L     : +261.75 USD
 Comm    : -6.72 USD
 Max runup: 0.14
 Bars    : 21
-Equity  : $11767.47
+Equity  : $11767.48
 Trades  : 15  |  Win rate: 73.3%
 Time    : 2015-05-04 00:00:00
 ----------------------------------------------------------------------
@@ -497,11 +497,11 @@ Status  : New entries RESUMED
 Time    : 2015-07-21 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | CLM [1D]
-Entry   : 2.35  |  Equity: $11767.47
+Entry   : 2.35  |  Equity: $11767.48
 Stop    : 2.28  (-0.07 = ATR x1.5)
 Target  : 2.50  (+0.15 = ATR x3.5)
 R:R     : 1:2.33  |  Risk: $117.67 (1.0%)
-Qty     : 1806.4414
+Qty     : 1806.4452
 ATR     : 0.04 (1.848% of price)
 RSI     : 66.13 [42.0-75.0]  |  Dir: Rising
 ADX     : 53.93  DI+: 25.26  DI-: 20.93  [min 20.0]
@@ -518,16 +518,16 @@ P&L     : +269.32 USD
 Comm    : -5.26 USD
 Max runup: 0.17
 Bars    : 10
-Equity  : $12036.79
+Equity  : $12036.80
 Trades  : 16  |  Win rate: 75.0%
 Time    : 2016-05-06 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | CLM [1D]
-Entry   : 2.76  |  Equity: $12036.79
+Entry   : 2.76  |  Equity: $12036.80
 Stop    : 2.66  (-0.10 = ATR x1.5)
 Target  : 3.00  (+0.24 = ATR x3.5)
 R:R     : 1:2.33  |  Risk: $120.37 (1.0%)
-Qty     : 1175.8106
+Qty     : 1175.8115
 ATR     : 0.07 (2.474% of price)
 RSI     : 52.36 [42.0-75.0]  |  Dir: Rising
 ADX     : 33.22  DI+: 26.97  DI-: 39.45  [min 20.0]
@@ -544,16 +544,16 @@ P&L     : -124.19 USD
 Comm    : -3.82 USD
 Max runup: 0.07
 Bars    : 7
-Equity  : $11912.60
+Equity  : $11912.61
 Trades  : 17  |  Win rate: 70.6%
 Time    : 2016-08-22 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | CLM [1D]
-Entry   : 2.75  |  Equity: $11912.60
+Entry   : 2.75  |  Equity: $11912.61
 Stop    : 2.71  (-0.04 = ATR x1.5)
 Target  : 2.84  (+0.10 = ATR x3.5)
 R:R     : 1:2.33  |  Risk: $119.13 (1.0%)
-Qty     : 2889.5423
+Qty     : 2889.5382
 ATR     : 0.03 (1.000% of price)
 RSI     : 68.83 [42.0-75.0]  |  Dir: Rising
 ADX     : 25.10  DI+: 25.57  DI-: 6.89  [min 20.0]
@@ -570,7 +570,7 @@ P&L     : +268.26 USD
 Comm    : -9.70 USD
 Max runup: 0.10
 Bars    : 13
-Equity  : $12180.86
+Equity  : $12180.87
 Trades  : 18  |  Win rate: 72.2%
 Time    : 2017-02-28 00:00:00
 ----------------------------------------------------------------------
@@ -599,11 +599,11 @@ Status  : New entries RESUMED
 Time    : 2017-06-23 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | CLM [1D]
-Entry   : 3.09  |  Equity: $12180.86
+Entry   : 3.09  |  Equity: $12180.87
 Stop    : 3.06  (-0.03 = ATR x1.5)
 Target  : 3.17  (+0.08 = ATR x3.5)
 R:R     : 1:2.33  |  Risk: $121.81 (1.0%)
-Qty     : 3532.2145
+Qty     : 3532.2350
 ATR     : 0.02 (0.744% of price)
 RSI     : 66.05 [42.0-75.0]  |  Dir: Rising
 ADX     : 20.42  DI+: 21.97  DI-: 18.28  [min 20.0]
@@ -641,10 +641,10 @@ Entry   : 3.43  |  Equity: $12046.03
 Stop    : 3.36  (-0.07 = ATR x1.5)
 Target  : 3.60  (+0.16 = ATR x3.5)
 R:R     : 1:2.33  |  Risk: $120.46 (1.0%)
-Qty     : 1708.2049
+Qty     : 1708.2126
 ATR     : 0.05 (1.370% of price)
-RSI     : 57.16 [42.0-75.0]  |  Dir: Rising
-ADX     : 27.25  DI+: 18.32  DI-: 25.43  [min 20.0]
+RSI     : 57.15 [42.0-75.0]  |  Dir: Rising
+ADX     : 27.21  DI+: 18.33  DI-: 25.42  [min 20.0]
 Vol/MA  : 1.04x  [min 1.0x]
 Body    : 0.470x ATR  [min 0.2x]
 EMA21/50/200: 3.39/3.38/3.18  Stack: BULL
@@ -658,7 +658,7 @@ P&L     : +220.49 USD
 Comm    : -7.17 USD
 Max runup: 0.14
 Bars    : 25
-Equity  : $12266.52
+Equity  : $12266.53
 Trades  : 20  |  Win rate: 70.0%
 Time    : 2018-05-09 00:00:00
 ----------------------------------------------------------------------
@@ -675,14 +675,14 @@ Status  : New entries RESUMED
 Time    : 2018-11-05 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | CLM [1D]
-Entry   : 3.38  |  Equity: $12266.52
+Entry   : 3.38  |  Equity: $12266.53
 Stop    : 3.35  (-0.03 = ATR x1.5)
 Target  : 3.45  (+0.07 = ATR x3.5)
 R:R     : 1:2.33  |  Risk: $122.67 (1.0%)
-Qty     : 3871.9960
+Qty     : 3871.9915
 ATR     : 0.02 (0.625% of price)
 RSI     : 65.83 [42.0-75.0]  |  Dir: Rising
-ADX     : 27.99  DI+: 23.05  DI-: 11.48  [min 20.0]
+ADX     : 29.58  DI+: 23.28  DI-: 11.24  [min 20.0]
 Vol/MA  : 1.06x  [min 1.0x]
 Body    : 0.781x ATR  [min 0.2x]
 EMA21/50/200: 3.35/3.33/3.23  Stack: BULL
@@ -696,19 +696,19 @@ P&L     : -138.30 USD
 Comm    : -15.63 USD
 Max runup: 0.03
 Bars    : 4
-Equity  : $12128.22
+Equity  : $12128.23
 Trades  : 21  |  Win rate: 66.7%
 Time    : 2019-05-06 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | CLM [1D]
-Entry   : 3.42  |  Equity: $12128.22
+Entry   : 3.42  |  Equity: $12128.23
 Stop    : 3.37  (-0.06 = ATR x1.5)
 Target  : 3.55  (+0.13 = ATR x3.5)
 R:R     : 1:2.33  |  Risk: $121.28 (1.0%)
-Qty     : 2178.3221
+Qty     : 2178.3156
 ATR     : 0.04 (1.084% of price)
 RSI     : 53.19 [42.0-75.0]  |  Dir: Rising
-ADX     : 21.69  DI+: 20.51  DI-: 26.27  [min 20.0]
+ADX     : 23.19  DI+: 20.82  DI-: 25.96  [min 20.0]
 Vol/MA  : 1.25x  [min 1.0x]
 Body    : 1.014x ATR  [min 0.2x]
 EMA21/50/200: 3.41/3.40/3.29  Stack: BULL
@@ -722,7 +722,7 @@ P&L     : -178.31 USD
 Comm    : -8.85 USD
 Max runup: 0.02
 Bars    : 4
-Equity  : $11949.91
+Equity  : $11949.93
 Trades  : 22  |  Win rate: 63.6%
 Time    : 2019-08-14 00:00:00
 ----------------------------------------------------------------------
@@ -739,14 +739,14 @@ Status  : New entries RESUMED
 Time    : 2020-04-07 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | CLM [1D]
-Entry   : 4.16  |  Equity: $11949.91
+Entry   : 4.16  |  Equity: $11949.93
 Stop    : 4.06  (-0.10 = ATR x1.5)
 Target  : 4.39  (+0.23 = ATR x3.5)
 R:R     : 1:2.33  |  Risk: $119.50 (1.0%)
-Qty     : 1232.1674
+Qty     : 1232.1702
 ATR     : 0.06 (1.555% of price)
 RSI     : 61.64 [42.0-75.0]  |  Dir: Rising
-ADX     : 25.00  DI+: 32.35  DI-: 20.45  [min 20.0]
+ADX     : 22.80  DI+: 31.77  DI-: 21.03  [min 20.0]
 Vol/MA  : 1.25x  [min 1.0x]
 Body    : 1.135x ATR  [min 0.2x]
 EMA21/50/200: 4.07/4.01/3.59  Stack: BULL
@@ -760,7 +760,7 @@ P&L     : -125.58 USD
 Comm    : -6.08 USD
 Max runup: 0.04
 Bars    : 6
-Equity  : $11824.34
+Equity  : $11824.35
 Trades  : 23  |  Win rate: 60.9%
 Time    : 2020-09-17 00:00:00
 ----------------------------------------------------------------------
@@ -789,14 +789,14 @@ Status  : New entries RESUMED
 Time    : 2021-02-24 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | CLM [1D]
-Entry   : 5.36  |  Equity: $11824.34
+Entry   : 5.36  |  Equity: $11824.35
 Stop    : 5.18  (-0.18 = ATR x1.5)
 Target  : 5.78  (+0.42 = ATR x3.5)
 R:R     : 1:2.33  |  Risk: $118.24 (1.0%)
-Qty     : 653.4847
+Qty     : 653.4859
 ATR     : 0.12 (2.252% of price)
 RSI     : 63.79 [42.0-75.0]  |  Dir: Rising
-ADX     : 32.85  DI+: 23.33  DI-: 30.65  [min 20.0]
+ADX     : 32.86  DI+: 23.33  DI-: 30.65  [min 20.0]
 Vol/MA  : 1.35x  [min 1.0x]
 Body    : 0.266x ATR  [min 0.2x]
 EMA21/50/200: 5.20/5.12/4.37  Stack: BULL
@@ -810,7 +810,7 @@ P&L     : +157.04 USD
 Comm    : -4.30 USD
 Max runup: 0.29
 Bars    : 25
-Equity  : $11981.38
+Equity  : $11981.39
 Trades  : 24  |  Win rate: 62.5%
 Time    : 2021-04-13 00:00:00
 ----------------------------------------------------------------------
@@ -839,11 +839,11 @@ Status  : New entries RESUMED
 Time    : 2024-08-08 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | CLM [1D]
-Entry   : 5.72  |  Equity: $11981.38
+Entry   : 5.72  |  Equity: $11981.39
 Stop    : 5.61  (-0.11 = ATR x1.5)
 Target  : 5.97  (+0.25 = ATR x3.5)
 R:R     : 1:2.33  |  Risk: $119.81 (1.0%)
-Qty     : 1109.8253
+Qty     : 1109.8272
 ATR     : 0.07 (1.258% of price)
 RSI     : 55.04 [42.0-75.0]  |  Dir: Rising
 ADX     : 25.78  DI+: 15.10  DI-: 29.07  [min 20.0]
@@ -860,7 +860,7 @@ P&L     : +271.78 USD
 Comm    : -7.79 USD
 Max runup: 0.34
 Bars    : 20
-Equity  : $12253.16
+Equity  : $12253.17
 Trades  : 25  |  Win rate: 64.0%
 Time    : 2024-10-09 00:00:00
 ----------------------------------------------------------------------
@@ -877,14 +877,14 @@ Status  : New entries RESUMED
 Time    : 2024-12-23 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | CLM [1D]
-Entry   : 6.96  |  Equity: $12253.16
+Entry   : 6.96  |  Equity: $12253.17
 Stop    : 6.76  (-0.19 = ATR x1.5)
 Target  : 7.41  (+0.45 = ATR x3.5)
 R:R     : 1:2.33  |  Risk: $122.53 (1.0%)
-Qty     : 635.3278
+Qty     : 635.3295
 ATR     : 0.13 (1.848% of price)
 RSI     : 56.32 [42.0-75.0]  |  Dir: Rising
-ADX     : 27.97  DI+: 21.20  DI-: 23.17  [min 20.0]
+ADX     : 31.91  DI+: 20.26  DI-: 24.11  [min 20.0]
 Vol/MA  : 2.50x  [min 1.0x]
 Body    : 0.310x ATR  [min 0.2x]
 EMA21/50/200: 6.87/6.82/6.06  Stack: BULL
@@ -898,16 +898,16 @@ P&L     : +237.90 USD
 Comm    : -5.45 USD
 Max runup: 0.41
 Bars    : 25
-Equity  : $12491.06
+Equity  : $12491.07
 Trades  : 26  |  Win rate: 65.4%
 Time    : 2025-02-20 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | CLM [1D]
-Entry   : 7.39  |  Equity: $12491.06
+Entry   : 7.39  |  Equity: $12491.07
 Stop    : 7.29  (-0.10 = ATR x1.5)
 Target  : 7.64  (+0.24 = ATR x3.5)
 R:R     : 1:2.33  |  Risk: $124.91 (1.0%)
-Qty     : 1203.6507
+Qty     : 1203.6509
 ATR     : 0.07 (0.936% of price)
 RSI     : 61.14 [42.0-75.0]  |  Dir: Rising
 ADX     : 24.56  DI+: 22.59  DI-: 21.51  [min 20.0]
@@ -924,16 +924,16 @@ P&L     : +280.60 USD
 Comm    : -10.85 USD
 Max runup: 0.25
 Bars    : 17
-Equity  : $12771.66
+Equity  : $12771.67
 Trades  : 27  |  Win rate: 66.7%
 Time    : 2025-09-15 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | CLM [1D]
-Entry   : 7.81  |  Equity: $12771.66
+Entry   : 7.81  |  Equity: $12771.67
 Stop    : 7.68  (-0.13 = ATR x1.5)
-Target  : 8.11  (+0.29 = ATR x3.5)
+Target  : 8.10  (+0.29 = ATR x3.5)
 R:R     : 1:2.33  |  Risk: $127.72 (1.0%)
-Qty     : 1013.1660
+Qty     : 1013.1678
 ATR     : 0.08 (1.076% of price)
 RSI     : 62.29 [42.0-75.0]  |  Dir: Rising
 ADX     : 35.51  DI+: 23.89  DI-: 17.18  [min 20.0]
@@ -950,7 +950,7 @@ P&L     : -137.14 USD
 Comm    : -9.42 USD
 Max runup: 0.03
 Bars    : 4
-Equity  : $12634.52
+Equity  : $12634.54
 Trades  : 28  |  Win rate: 64.3%
 Time    : 2025-10-17 00:00:00
 ----------------------------------------------------------------------

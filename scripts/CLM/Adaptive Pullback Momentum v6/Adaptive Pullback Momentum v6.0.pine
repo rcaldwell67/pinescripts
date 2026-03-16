@@ -4,7 +4,7 @@
 //@version=6
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Adaptive Pullback Momentum v4.0
+// Adaptive Pullback Momentum v6.0
 // 1D Look Back
 // THESIS
 //   Most breakout strategies enter *after* the move is mature.  This strategy
@@ -25,7 +25,7 @@
 //                  then trails ATR×0.4 from best price (wide trail suits daily bars)
 //   → Sizing     : 1 % of equity risked per trade
 //
-// v4.1 CHANGES vs v4.0  (based on CLM 1D backtest sweep, 2014-2026)
+// v6.1 CHANGES vs v6.0  (based on CLM 1D backtest sweep, 2014-2026)
 //   ADX threshold : 25    → 28     (tighter trend filter; fewer but higher-quality trades)
 //   RSI max Long  : 68    → 72     (wider RSI window captures more valid daily setups)
 //   Min body      : 0.15× → 0.30×  (strong daily candles only; rejects weak signals)
@@ -51,21 +51,21 @@
 //   Result (best, 7 trades) : CLM 1D full history | PF=3.60 | net=+9.06% | WR=57.1% | MaxDD=-1.11%
 //   Alt-1 (27 trades)      : AT=20, PB=0.25, TP=2.5, SL=1.5 | PF=2.08 | net=+14.6% | MaxDD=-4.62%
 //
-// v4.2 Stage-3 sweep (sweep_stage3.py, 14,580 combos — best by Calmar=6.046):
+// v6.2 Stage-3 sweep (sweep_stage3.py, 14,580 combos — best by Calmar=6.046):
 //   PB=0.30 | TP=3.0 | SL=1.5 | MaxB=25 | RSI L:42-75 | MB=0.20 | VO=1.0
 //   Result (30 trades): PF=2.60 | net=+21.8% | WR=63.3% | MaxDD=-3.61% | Calmar=6.05
 //   Key insight: MaxB=25 converts the 2021 stalled trade (27 bars, reversed before TP)
 //   into a profitable exit, yielding a $267 swing on that single trade.
 //
-// v4.3 Stage-4 sweep (sweep_stage4.py, 720 combos — best by Calmar=7.308):
+// v6.3 Stage-4 sweep (sweep_stage4.py, 720 combos — best by Calmar=7.308):
 //   em_slope=8 (EMA_MID(34) rising vs 8 bars ago) | TP=3.5
 //   Result (28 trades): PF=3.076 | net=+26.35% | WR=64.3% | MaxDD=-3.60% | Calmar=7.308
 //   Key insight: EMA_MID slope filter removes 2 choppy-trend entries; TP=3.5 captures larger moves.
 // ─────────────────────────────────────────────────────────────────────────────
 
 strategy(
-    title             = "Adaptive Pullback Momentum v4.1",
-    shorttitle        = "APM v4.1",
+    title             = "Adaptive Pullback Momentum v6.1",
+    shorttitle        = "APM v6.1",
     overlay           = true,
     pyramiding        = 0,
     initial_capital   = 10000,
@@ -193,7 +193,7 @@ if long_ok
     _vol   = volume / vol_ma
     _body  = math.abs(close - open) / atr
     alert(
-        "APM v4.1 | LONG ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v6.1 | LONG ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "Entry   : " + str.tostring(close, "#.##") + "  |  Equity: $" + str.tostring(math.round(strategy.equity, 2), "#.##") + "\n" +
         "Stop    : " + str.tostring(math.round(close - _sd, 2), "#.##") + "  (-" + str.tostring(math.round(_sd, 2), "#.##") + " = ATR x" + str.tostring(i_sl_mult) + ")\n" +
         "Target  : " + str.tostring(math.round(_tp, 2), "#.##") + "  (+" + str.tostring(math.round(atr * i_tp_mult, 2), "#.##") + " = ATR x" + str.tostring(i_tp_mult) + ")\n" +
@@ -225,7 +225,7 @@ if short_ok
     _vol   = volume / vol_ma
     _body  = math.abs(close - open) / atr
     alert(
-        "APM v4.1 | SHORT ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v6.1 | SHORT ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "Entry   : " + str.tostring(close, "#.##") + "  |  Equity: $" + str.tostring(math.round(strategy.equity, 2), "#.##") + "\n" +
         "Stop    : " + str.tostring(math.round(close + _sd, 2), "#.##") + "  (+" + str.tostring(math.round(_sd, 2), "#.##") + " = ATR x" + str.tostring(i_sl_mult) + ")\n" +
         "Target  : " + str.tostring(math.round(_tp, 2), "#.##") + "  (-" + str.tostring(math.round(atr * i_tp_mult, 2), "#.##") + " = ATR x" + str.tostring(i_tp_mult) + ")\n" +
@@ -253,7 +253,7 @@ if strategy.position_size > 0.0          // long
             trail_active := true
             _runup = best_price - entry_p
             alert(
-                "APM v4.1 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+                "APM v6.1 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
                 "Direction : LONG\n" +
                 "Best price: " + str.tostring(math.round(best_price, 2), "#.##") + "  |  Entry: " + str.tostring(math.round(entry_p, 2), "#.##") + "\n" +
                 "Trail SL  : " + str.tostring(math.round(trail_sl_new, 2), "#.##") + "  (best - ATR x" + str.tostring(i_tr_dist) + " = -" + str.tostring(math.round(atr * i_tr_dist, 2), "#.##") + ")\n" +
@@ -278,7 +278,7 @@ if strategy.position_size < 0.0          // short
             trail_active := true
             _runup = entry_p - best_price
             alert(
-                "APM v4.1 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+                "APM v6.1 | TRAIL STOP ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
                 "Direction : SHORT\n" +
                 "Best price: " + str.tostring(math.round(best_price, 2), "#.##") + "  |  Entry: " + str.tostring(math.round(entry_p, 2), "#.##") + "\n" +
                 "Trail SL  : " + str.tostring(math.round(trail_sl_new, 2), "#.##") + "  (best + ATR x" + str.tostring(i_tr_dist) + " = +" + str.tostring(math.round(atr * i_tr_dist, 2), "#.##") + ")\n" +
@@ -311,7 +311,7 @@ if strategy.closedtrades > _prev_closed
     _tot = strategy.closedtrades
     _wr  = _tot == 0 ? "--" : str.tostring(math.round(strategy.wintrades / _tot * 100, 1)) + "%"
     alert(
-        "APM v4.1 | " + _dir + " EXIT [" + _res + "] | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v6.1 | " + _dir + " EXIT [" + _res + "] | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "Entry   : " + str.tostring(math.round(_ep, 2), "#.##") + "  ->  Exit: " + str.tostring(math.round(_xp, 2), "#.##") + "\n" +
         "Move    : " + (_mv >= 0 ? "+" : "") + str.tostring(math.round(_mv, 2), "#.##") + "%\n" +
         "P&L     : " + (_pnl >= 0 ? "+" : "") + str.tostring(math.round(_pnl, 2), "#.##") + " USD\n" +
@@ -327,7 +327,7 @@ if strategy.closedtrades > _prev_closed
 // ── Panic regime alerts ────────────────────────────────────────────────────────
 if is_panic and not is_panic[1]
     alert(
-        "APM v4.1 | PANIC REGIME STARTED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v6.1 | PANIC REGIME STARTED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "ATR     : " + str.tostring(math.round(atr, 2), "#.##") + "  |  ATR baseline: " + str.tostring(math.round(atr_bl, 2), "#.##") + "\n" +
         "Ratio   : " + str.tostring(math.round(atr / atr_bl, 2), "#.##") + "x  [threshold: " + str.tostring(i_panic_mult) + "x]\n" +
         "Status  : New entries SUSPENDED\n" +
@@ -336,7 +336,7 @@ if is_panic and not is_panic[1]
 
 if not is_panic and is_panic[1]
     alert(
-        "APM v4.1 | PANIC REGIME CLEARED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
+        "APM v6.1 | PANIC REGIME CLEARED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
         "ATR     : " + str.tostring(math.round(atr, 2), "#.##") + "  |  ATR baseline: " + str.tostring(math.round(atr_bl, 2), "#.##") + "\n" +
         "Ratio   : " + str.tostring(math.round(atr / atr_bl, 2), "#.##") + "x  [threshold: " + str.tostring(i_panic_mult) + "x]\n" +
         "Status  : New entries RESUMED\n" +
@@ -391,7 +391,7 @@ if i_show_dash and barstate.islast
          frame_width=1,  frame_color=color.new(color.gray, 40))
 
     // header
-    table.cell(tbl, 0, 0, "APM v4.1", text_color=D_BRT, bgcolor=D_HDR, text_size=size.normal, text_halign=text.align_left)
+    table.cell(tbl, 0, 0, "APM v6.1", text_color=D_BRT, bgcolor=D_HDR, text_size=size.normal, text_halign=text.align_left)
     table.cell(tbl, 1, 0, timeframe.period + " | " + syminfo.ticker, text_color=D_YEL, bgcolor=D_HDR, text_size=size.small, text_halign=text.align_right)
 
     // position
