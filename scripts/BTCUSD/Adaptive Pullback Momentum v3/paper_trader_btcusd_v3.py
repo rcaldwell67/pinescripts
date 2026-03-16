@@ -1,11 +1,11 @@
 """
 paper_trader_btcusd_v3.py — APM v3.0 paper trading bot, BTC/USD 15m (shorts only).
 
-Run every 15 minutes via GitHub Actions (or cron). Evaluates APM v3.3 short
+Run every 15 minutes via GitHub Actions (or cron). Evaluates APM v3.4 short
 entry conditions and manages any open short position (trailing stop).
 
-Strategy parameters (Pine v3.3 15m, sweep-optimised):
-    ADX=28 | PB=0.15% | SL×2.0 | TP×2.5 | TRAIL_ACT=2.5× | TRAIL_DIST=0.6×
+Strategy parameters (Pine v3.4 15m, sweep-optimised):
+    ADX=28 | PB=0.15% | SL×2.0 | TP×2.0 | TRAIL_ACT=1.5× | TRAIL_DIST=1.5×
     ATR_FLOOR=0.15% | PANIC=1.3× | VOL=1.2× | MIN_BODY=0.20×
 
 State:  docs/data/btcusd/v3_paper_state.json
@@ -75,7 +75,7 @@ API_KEY    = (os.environ.get("ALPACA_PAPER_API_KEY")
 API_SECRET = (os.environ.get("ALPACA_PAPER_API_SECRET")
               or os.environ.get("ALPACA_API_SECRET", ""))
 
-# ── APM v3.3 parameters (BTC/USD 15m — sweep-optimised) ──────────────────────
+# ── APM v3.4 parameters (BTC/USD 15m — sweep-optimised) ──────────────────────
 SYMBOL          = "BTC/USD"
 INITIAL_CAPITAL = 10_000.0
 COMMISSION_PCT  = 0.0006
@@ -102,9 +102,9 @@ RSI_LO_L = 42; RSI_HI_L = 68
 RSI_LO_S = 32; RSI_HI_S = 58
 
 SL_MULT    = 2.0
-TP_MULT    = 2.5
-TRAIL_ACT  = 2.5
-TRAIL_DIST = 0.6
+TP_MULT    = 2.0
+TRAIL_ACT  = 1.5
+TRAIL_DIST = 1.5
 
 TRADE_LONGS  = False
 TRADE_SHORTS = True
@@ -209,7 +209,7 @@ def compute_indicators(df: pd.DataFrame) -> pd.DataFrame:
 
 # ── Signal evaluation ─────────────────────────────────────────────────────────
 def check_signal(df: pd.DataFrame) -> dict | None:
-    """Evaluate APM v3.3 short entry on the most recent completed 15m bar."""
+    """Evaluate APM v3.4 short entry on the most recent completed 15m bar."""
     if len(df) < 5:
         return None
 
@@ -404,7 +404,7 @@ def _record_closed_trade(state: dict, pos: dict, exit_price: float,
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 def main():
-    log.info("=== APM v3.3 Paper Trader — %s 15m (shorts only) ===", SYMBOL)
+    log.info("=== APM v3.4 Paper Trader — %s 15m (shorts only) ===", SYMBOL)
 
     if not API_KEY or not API_SECRET:
         log.error("Missing credentials — set ALPACA_PAPER_API_KEY / ALPACA_PAPER_API_SECRET.")

@@ -1,5 +1,5 @@
 /**
- * APM v3.3 — TradingView Alert Email Parser
+ * APM v3.4 — TradingView Alert Email Parser
  * ==========================================
  * Reads unread Gmail messages from TradingView alerts, parses the
  * structured alert body, and appends rows to the "Live Alerts" sheet.
@@ -9,18 +9,18 @@
  *   2. Extensions → Apps Script → paste this file → Save
  *   3. Run setupTrigger() once manually to install the 1-min polling trigger
  *   4. In TradingView: Alerts → (your APM alert) → Notifications → Email ✓
- *      The email subject must contain "APM v3.3"
+ *      The email subject must contain "APM v3.4"
  *
  * The script looks for Gmail messages:
  *   - From: noreply@tradingview.com  (or any TradingView sender)
- *   - Subject contains: "APM v3.3"
+ *   - Subject contains: "APM v3.4"
  *   - Label: not yet processed (uses a "apm-processed" Gmail label)
  */
 
 // ── Config ────────────────────────────────────────────────────────────────────
 var SPREADSHEET_ID  = "19wjt8sWl1PddkwYbk8NgXEzoZSo6dVbec3pUdAk3-n8";
 var LIVE_SHEET_NAME = "Live Alerts";
-var GMAIL_QUERY     = 'from:noreply@tradingview.com subject:"APM v3.3" -label:apm-processed';
+var GMAIL_QUERY     = 'from:noreply@tradingview.com subject:"APM v3.4" -label:apm-processed';
 var PROCESSED_LABEL = "apm-processed";
 
 var LIVE_HEADERS = [
@@ -103,7 +103,7 @@ function parseAlertBody(body, date, msgId) {
   if (lines.length < 2) return null;
 
   var header = lines[0].trim();
-  if (header.indexOf("APM v3.3") === -1) return null;
+  if (header.indexOf("APM v3.4") === -1) return null;
 
   // Build key→value map from "Key   : Value" lines
   var kv = {};
@@ -130,7 +130,7 @@ function parseAlertBody(body, date, msgId) {
   else return null;
 
   // ── Parse symbol / timeframe from header
-  // Header format: "APM v3.3 | SHORT ENTRY | BTC-USD [15m]"
+  // Header format: "APM v3.4 | SHORT ENTRY | BTC-USD [15m]"
   var symParts = header.split("|");
   var symRaw   = symParts.length >= 3 ? symParts[2].trim() : "";
   var symbol   = symRaw.split("[")[0].trim();
@@ -306,7 +306,7 @@ function setupTrigger() {
 
 /** Utility: manually run once to test parsing against existing emails. */
 function testParse() {
-  var threads = GmailApp.search('from:noreply@tradingview.com subject:"APM v3.3"', 0, 3);
+  var threads = GmailApp.search('from:noreply@tradingview.com subject:"APM v3.4"', 0, 3);
   for (var i = 0; i < threads.length; i++) {
     var msgs = threads[i].getMessages();
     for (var j = 0; j < msgs.length; j++) {

@@ -366,7 +366,7 @@ t_final, eq_final, eqc_final = run_sim(df, FALSE, final_ss, best_sl, best_tp, be
 ret_f, pf_f, wr_f, mdd_f = quick_stats(t_final, eq_final)
 
 print("\n" + "="*60)
-print(f"  APM v3.3  |  {TICKER} {INTERVAL}  (SHORTS ONLY)")
+    print(f"  APM v3.4  |  {TICKER} {INTERVAL}  (SHORTS ONLY)")
 print("="*60)
 print(f"  Initial capital :  ${INITIAL_CAP:>10,.2f}")
 print(f"  Final equity    :  ${eq_final:>10,.2f}")
@@ -409,7 +409,7 @@ ax2.fill_between(eq_df.index, dd.values, 0, color="#fc8181", alpha=0.6)
 ax2.set_ylabel("Drawdown %")
 ax2.set_ylim(min(dd.min()*1.1, -0.5), 1)
 ax1.set_title(
-    f"APM v3.3 Shorts-Only  |  {TICKER} {INTERVAL}  |  "
+    f"APM v3.4 Shorts-Only  |  {TICKER} {INTERVAL}  |  "
     f"Ret={ret_f:+.2f}%  PF={pf_f:.3f}  WR={wr_f:.1f}%  "
     f"Trades={len(t_final)}  MaxDD={mdd_f:.2f}%",
     color="#48bb78" if ret_f>=0 else "#fc8181", fontsize=10)

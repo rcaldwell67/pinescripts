@@ -1,4 +1,4 @@
-# APM v3.3  —  BTC-USD 15m  (shorts only, sweep-optimised params)
+# APM v3.4  —  BTC-USD 15m  (shorts only, sweep-optimised params)
 # Timeframe: 15m  |  Ticker: BTC-USD  |  Period: max
 
 import subprocess, sys
@@ -22,7 +22,7 @@ RISK_PCT    = 0.01        # 1% equity per trade
 EMA_FAST    = 21
 EMA_MID     = 50
 EMA_SLOW    = 200
-ADX_THRESH  = 28          # v3.3: raised from 25 — higher trend quality, WR 60%→70%
+ADX_THRESH  = 28
 ADX_LEN     = 14
 PB_PCT      = 0.15        # %
 RSI_LEN     = 14
@@ -31,14 +31,14 @@ RSI_LO_S    = 32;  RSI_HI_S = 58
 VOL_LEN     = 20
 VOL_MULT    = 1.2
 ATR_LEN     = 14
-ATR_FLOOR   = 0.0015      # v3.3: 0.15% (was 0.20% — too aggressive for 15m shorts)
+ATR_FLOOR   = 0.0015
 PANIC_MULT  = 1.3
 MIN_BODY    = 0.20        # fraction of ATR
 SL_MULT     = 2.0
-TP_MULT     = 2.5          # v3.3: 2.5× (was 3.5× — TP hit only 5/30 times at 15m)
-TRAIL_ACT   = 2.5
-TRAIL_DIST  = 0.6          # v3.3: 0.6× (was 1.5× — tighter lock-in on 15m)
-TRADE_LONGS = False        # v3.3: longs disabled — WR=23% PF=0.189 at 15m
+TP_MULT     = 2.0
+TRAIL_ACT   = 1.5
+TRAIL_DIST  = 1.5
+TRADE_LONGS = False
 
 # ── Download ──────────────────────────────────────────────────────────────────
 print(f"Downloading {TICKER} {INTERVAL} period='{PERIOD}'...")
@@ -151,7 +151,7 @@ def entry_alert(direction, row, ts, cl, av, atr_bl_v, sd, qty, equity_at_entry, 
     trail_sign= "+" if direction == "long" else "-"
     body_v    = abs(float(df_row["Close"]) - float(df_row["Open"])) / av
     lines = [
-        f"APM v3.3 | {dir_label} ENTRY | {TICKER} [{INTERVAL}]",
+        f"APM v3.4 | {dir_label} ENTRY | {TICKER} [{INTERVAL}]",
         f"Entry   : {cl:.2f}  |  Equity: ${equity_at_entry:.2f}",
         f"Stop    : {sl:.2f}  ({sl_sign}{sd:.2f} = ATR x{SL_MULT})",
         f"Target  : {tp:.2f}  ({tp_sign}{av * TP_MULT:.2f} = ATR x{TP_MULT})",
@@ -175,7 +175,7 @@ def trail_alert(direction, best, entry, new_sl, old_sl, tp, runup, av, ts):
     runup_pct = abs(runup) / entry * 100
     runup_sign= "+" if direction == "long" else "-"
     lines = [
-        f"APM v3.3 | TRAIL STOP ACTIVATED | {TICKER} [{INTERVAL}]",
+        f"APM v3.4 | TRAIL STOP ACTIVATED | {TICKER} [{INTERVAL}]",
         f"Direction : {dir_label}",
         f"Best price: {best:.2f}  |  Entry: {entry:.2f}",
         f"Trail SL  : {new_sl:.2f}  (best {dist_sign} ATR x{TRAIL_DIST} = {dist_sign}{dist_v:.2f})",
@@ -194,7 +194,7 @@ def exit_alert(direction, ep, xp, pnl_dollar, comm_dollar, max_runup,
     pnl_sign  = "+" if pnl_dollar >= 0 else ""
     mv_sign   = "+" if mvpct >= 0 else ""
     lines = [
-        f"APM v3.3 | {dir_label} EXIT [{result}] | {TICKER} [{INTERVAL}]",
+        f"APM v3.4 | {dir_label} EXIT [{result}] | {TICKER} [{INTERVAL}]",
         f"Entry   : {ep:.2f}  ->  Exit: {xp:.2f}",
         f"Move    : {mv_sign}{mvpct:.2f}%",
         f"P&L     : {pnl_sign}{pnl_dollar:.2f} USD",
@@ -211,7 +211,7 @@ def panic_alert(started, atr_v, atr_bl_v, ts):
     state_label = "PANIC REGIME STARTED" if started else "PANIC REGIME CLEARED"
     status      = "New entries SUSPENDED" if started else "New entries RESUMED"
     lines = [
-        f"APM v3.3 | {state_label} | {TICKER} [{INTERVAL}]",
+        f"APM v3.4 | {state_label} | {TICKER} [{INTERVAL}]",
         f"ATR     : {atr_v:.2f}  |  ATR baseline: {atr_bl_v:.2f}",
         f"Ratio   : {atr_v/atr_bl_v:.2f}x  [threshold: {PANIC_MULT}x]",
         f"Status  : {status}",
@@ -349,7 +349,7 @@ else:
         if dd < mdd: mdd = dd
 
     print("=" * 55)
-    print(f"  APM v3.3  |  {TICKER} {INTERVAL}  (shorts only)")
+    print(f"  APM v3.4  |  {TICKER} {INTERVAL}  (shorts only)")
     print("=" * 55)
     print(f"  Initial capital :  ${INITIAL_CAP:>10,.2f}")
     print(f"  Final equity    :  ${equity:>10,.2f}")
