@@ -131,6 +131,11 @@
       <span class="bal-label">Ending Balance</span>
       <span class="bal-value" id="endingBalanceVal">—</span>
     </div>
+    <div class="bal-divider"></div>
+    <div class="bal-item">
+      <span class="bal-label">Total Equity</span>
+      <span class="bal-value" id="totalEquityVal">—</span>
+    </div>
   </div>
   <span id="lastUpdated"></span>
 </header>
@@ -954,12 +959,31 @@ function renderComparisonTable() {
 }
 
 function updateBalanceBar(rows) {
-  const el = document.getElementById('endingBalanceVal');
-  if (!rows || !rows.length) { el.textContent = '—'; el.className = 'bal-value neutral'; return; }
-  const eq = rows[rows.length - 1].equity;
-  if (isNaN(eq)) { el.textContent = '—'; el.className = 'bal-value neutral'; return; }
-  el.textContent = '$' + eq.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  el.className = 'bal-value ' + (eq > INITIAL_CAPITAL ? 'positive' : eq < INITIAL_CAPITAL ? 'negative' : 'neutral');
+  const endEl   = document.getElementById('endingBalanceVal');
+  const totalEl = document.getElementById('totalEquityVal');
+  const vers = INSTRUMENTS[activeSym].versions;
+  const fmtBal = (n, el) => {
+    el.textContent = '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    el.className = 'bal-value ' + (n > INITIAL_CAPITAL ? 'positive' : n < INITIAL_CAPITAL ? 'negative' : 'neutral');
+  };
+
+  // Ending Balance — only meaningful when a single version is selected
+  if (!rows || !rows.length) {
+    endEl.textContent = '—'; endEl.className = 'bal-value neutral';
+  } else {
+    const eq = rows[rows.length - 1].equity;
+    isNaN(eq) ? (endEl.textContent = '—', endEl.className = 'bal-value neutral') : fmtBal(eq, endEl);
+  }
+
+  // Total Equity — sum net profits from every loaded version + one INITIAL_CAPITAL base
+  const totalNetProfit = Object.values(loaded[activeSym])
+    .filter(v => v && v.length)
+    .reduce((sum, v) => sum + (v[v.length - 1].equity - INITIAL_CAPITAL), 0);
+  if (totalNetProfit === 0 && Object.values(loaded[activeSym]).every(v => !v?.length)) {
+    totalEl.textContent = '—'; totalEl.className = 'bal-value neutral';
+  } else {
+    fmtBal(INITIAL_CAPITAL + totalNetProfit, totalEl);
+  }
 }
 
 function render() {
