@@ -1,1 +1,1 @@
-entry_time,exit_time,direction,entry,exit,result,pnl_pct,dollar_pnl,equity
+entry_time,exit_time,direction,entry,exit,pnl,equity,exit_reason

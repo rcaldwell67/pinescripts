@@ -271,3 +271,15 @@ print(tdf.to_string(index=False))
 out = "apm_v4_v46_trades_clm_30m.csv"
 tdf.to_csv(out, index=False)
 print(f"\nSaved: {out}")
+
+# ── Sync to dashboard (remap to standard schema) ──────────────────────────────
+from pathlib import Path
+docs_csv = Path(__file__).parent.parent.parent.parent / "docs" / "data" / "clm" / "v4_trades.csv"
+if docs_csv.parent.exists():
+    doc_df = tdf.rename(columns={"ts": "exit_time", "dir": "direction",
+                                  "reason": "result", "dp": "dollar_pnl"})
+    doc_df.insert(0, "entry_time", doc_df["exit_time"])   # v4 backtest has no entry_time
+    doc_df = doc_df[["entry_time", "exit_time", "direction",
+                      "entry", "exit", "result", "pnl_pct", "dollar_pnl", "equity"]]
+    doc_df.to_csv(docs_csv, index=False)
+    print(f"Synced  → {docs_csv.relative_to(Path(__file__).parent.parent.parent.parent)}")

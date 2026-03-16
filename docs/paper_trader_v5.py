@@ -68,7 +68,7 @@ STATE_FILE  = _DOCS / "data" / "clm" / "v5_paper_state.json"
 TRADES_FILE = _DOCS / "data" / "clm" / "v5_trades_paper.csv"
 TRADES_COLS = [
     "entry_time", "exit_time", "direction", "entry", "exit",
-    "result", "pnl_pct", "dollar_pnl", "equity",
+    "pnl", "equity", "exit_reason",
 ]
 
 # ── Credentials ───────────────────────────────────────────────────────────────
@@ -526,10 +526,9 @@ def main():
                 "direction":  direction,
                 "entry":      round(entry, 4),
                 "exit":       round(exit_price, 4),
-                "result":     result,
-                "pnl_pct":    round(pnl_pct * 100, 3),
-                "dollar_pnl": round(dollar_pnl, 2),
+                "pnl":        round(dollar_pnl, 2),
                 "equity":     round(state["equity"], 2),
+                "exit_reason": result,
             })
             state["position"]    = None
             state["last_bar_ts"] = last_bar_ts

@@ -469,6 +469,13 @@ else:
     tdf.to_csv(out_csv, index=False)
     print(f"\n  Saved → {out_csv}")
 
+    # ── Sync to dashboard ──────────────────────────────────────────────────
+    from pathlib import Path
+    docs_csv = Path(__file__).parent.parent.parent.parent / "docs" / "data" / "clm" / "v5_trades.csv"
+    if docs_csv.parent.exists():
+        tdf.to_csv(docs_csv, index=False)
+        print(f"  Synced  → {docs_csv.relative_to(Path(__file__).parent.parent.parent.parent)}")
+
 print(f"{'='*55}")
 
 # ── Write alert log ────────────────────────────────────────────────────────────
