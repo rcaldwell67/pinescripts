@@ -408,8 +408,14 @@ function renderCards(rows) {
   const cardEl = document.getElementById('cards');
   const vers = INSTRUMENTS[activeSym].versions;
   if (activeTab === 'all') {
-    cardEl.innerHTML = Object.entries(vers).filter(([v])=>loaded[activeSym][v]?.length).map(([v,cfg])=>{
-      const m = calcMetrics(loaded[activeSym][v]);
+    cardEl.innerHTML = Object.entries(vers).map(([v,cfg])=>{
+      const r = loaded[activeSym][v];
+      if (!r?.length) return `<div class="card" style="border-top:2px solid ${cfg.color};opacity:0.5">
+        <div class="label">${cfg.label}</div>
+        <div class="value neutral">—</div>
+        <div class="sub">No data yet</div>
+      </div>`;
+      const m = calcMetrics(r);
       return `<div class="card" style="border-top:2px solid ${cfg.color}">
         <div class="label">${cfg.label}</div>
         <div class="value ${clsVal(m.netPnl)}">${fmtPct(m.netPnlPct)}</div>
@@ -944,24 +950,24 @@ document.getElementById('chartRangeBtns')?.addEventListener('click', e => {
 function renderComparisonTable() {
   const el=document.getElementById('cmpTable');
   const vers=INSTRUMENTS[activeSym].versions;
-  const vkeys=Object.keys(vers).filter(v=>loaded[activeSym][v]?.length);
-  const items=vkeys.map(v=>({ v, m:calcMetrics(loaded[activeSym][v]), cfg:vers[v] }));
-  if (!items.length) { el.innerHTML=''; return; }
+  const vkeys=Object.keys(vers);
+  const items=vkeys.map(v=>({ v, m: loaded[activeSym][v]?.length ? calcMetrics(loaded[activeSym][v]) : null, cfg:vers[v] }));
+  const nd = '—';
   const rows=[
-    ['Timeframe',       m=>m.cfg.tf],
-    ['Trades',          m=>m.m.n],
-    ['Win Rate',        m=>m.m.winRate.toFixed(1)+'%'],
-    ['Net P&L',         m=>fmt$(m.m.netPnl)],
-    ['Net Return',      m=>fmtPct(m.m.netPnlPct)],
-    ['Profit Factor',   m=>m.m.pf===Infinity?'∞':m.m.pf.toFixed(3)],
-    ['Max Drawdown',    m=>'-'+m.m.maxDD.toFixed(2)+'%'],
-    ['Avg Win',         m=>fmt$(m.m.avgWin)],
-    ['Avg Loss',        m=>fmt$(m.m.avgLoss)],
-    ['Longs / Shorts',  m=>`${m.m.longs} / ${m.m.shorts}`],
-    ['TP / SL / Trail', m=>`${m.m.tpCount} / ${m.m.slCount} / ${m.m.trailCount}`],
+    ['Timeframe',       i=>i.cfg.tf],
+    ['Trades',          i=>i.m ? i.m.n : nd],
+    ['Win Rate',        i=>i.m ? i.m.winRate.toFixed(1)+'%' : nd],
+    ['Net P&L',         i=>i.m ? fmt$(i.m.netPnl) : nd],
+    ['Net Return',      i=>i.m ? fmtPct(i.m.netPnlPct) : nd],
+    ['Profit Factor',   i=>i.m ? (i.m.pf===Infinity?'∞':i.m.pf.toFixed(3)) : nd],
+    ['Max Drawdown',    i=>i.m ? '-'+i.m.maxDD.toFixed(2)+'%' : nd],
+    ['Avg Win',         i=>i.m ? fmt$(i.m.avgWin) : nd],
+    ['Avg Loss',        i=>i.m ? fmt$(i.m.avgLoss) : nd],
+    ['Longs / Shorts',  i=>i.m ? `${i.m.longs} / ${i.m.shorts}` : nd],
+    ['TP / SL / Trail', i=>i.m ? `${i.m.tpCount} / ${i.m.slCount} / ${i.m.trailCount}` : nd],
   ];
   el.innerHTML=`<thead><tr><th>Metric</th>${items.map(i=>`<th><span class="pill" style="background:${i.cfg.color}22;color:${i.cfg.color};border-color:${i.cfg.color}">${i.cfg.label}</span></th>`).join('')}</tr></thead>
-  <tbody>${rows.map(([label,fn])=>`<tr><td>${label}</td>${items.map(i=>`<td>${fn(i)}</td>`).join('')}</tr>`).join('')}</tbody>`;
+  <tbody>${rows.map(([label,fn])=>`<tr><td>${label}</td>${items.map(i=>`<td style="${!i.m&&label!=='Timeframe'?'opacity:0.4':''}">` + fn(i) + `</td>`).join('')}</tr>`).join('')}</tbody>`;
 }
 
 function updateBalanceBar(rows) {
