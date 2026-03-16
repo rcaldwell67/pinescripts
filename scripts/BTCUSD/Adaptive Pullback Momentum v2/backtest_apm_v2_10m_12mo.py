@@ -12,7 +12,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 import subprocess, sys
-for pkg in ["alpaca-py", "pandas", "numpy", "matplotlib", "pytz"]:
+for pkg in ["alpaca-py", "pandas", "numpy", "matplotlib", "pytz", "python-dotenv"]:
     subprocess.check_call([sys.executable, "-m", "pip", "install", pkg, "-q"])
 
 import pandas as pd
@@ -26,19 +26,22 @@ import warnings
 warnings.filterwarnings("ignore")
 
 from datetime import datetime, timezone, timedelta
-from alpaca.data.historical import StockHistoricalDataClient
-from alpaca.data.requests import StockBarsRequest
+from alpaca.data.historical import CryptoHistoricalDataClient
+from alpaca.data.requests import CryptoBarsRequest
 from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
-from alpaca.data.enums import DataFeed
+from dotenv import load_dotenv
+import os
 
 _ET = pytz.timezone("America/New_York")
 
 # ─── Alpaca credentials ────────────────────────────────────────────────────────
-ALPACA_KEY    = "PKNIYXYVLHKHF43IIEUQIA42DJ"
-ALPACA_SECRET = "9djPy47EmNvMr6Yyfa3UpQ49ruQRWAmTmu8thmDvm34u"
+_env = __import__('pathlib').Path(__file__).resolve().parent.parent.parent.parent / ".env"
+load_dotenv(_env)
+ALPACA_KEY    = os.getenv("ALPACA_PAPER_API_KEY", "")
+ALPACA_SECRET = os.getenv("ALPACA_PAPER_API_SECRET", "")
 
 # ─── Configuration ─────────────────────────────────────────────────────────────
-TICKER   = "BTCUSD"
+TICKER   = "BTC/USD"
 
 BACKTEST_END   = datetime(2026, 3, 12, tzinfo=timezone.utc)
 BACKTEST_START = datetime(2025, 3, 12, tzinfo=timezone.utc)
@@ -82,16 +85,15 @@ CONSEC_LOSS_COOLDOWN = 1
 
 # ─── Download 5m data via Alpaca ───────────────────────────────────────────────
 print(f"Downloading {TICKER} 5m via Alpaca  ({BACKTEST_START.date()} → {BACKTEST_END.date()}) ...")
-client = StockHistoricalDataClient(ALPACA_KEY, ALPACA_SECRET)
+client = CryptoHistoricalDataClient(ALPACA_KEY, ALPACA_SECRET)
 TF5 = TimeFrame(5, TimeFrameUnit.Minute)
-req = StockBarsRequest(
+req = CryptoBarsRequest(
     symbol_or_symbols=TICKER,
     timeframe=TF5,
     start=BACKTEST_START,
     end=BACKTEST_END,
-    feed=DataFeed.IEX,
 )
-bars = client.get_stock_bars(req)
+bars = client.get_crypto_bars(req)
 raw  = bars.df.reset_index()
 if isinstance(raw.columns, pd.MultiIndex):
     raw.columns = raw.columns.droplevel(0)
@@ -364,6 +366,13 @@ out_csv = _dir / "apm_v2_12mo_trades_btcusd_10m.csv"
 tdf[["entry_time", "exit_time", "direction", "entry", "exit",
      "result", "pnl_pct", "dollar_pnl", "equity"]].to_csv(out_csv, index=False)
 print(f"\nTrade log saved → {out_csv.name}")
+
+# ─── Dashboard export ─────────────────────────────────────────────────────────
+from pathlib import Path as _Path
+_dash_out = _Path(__file__).resolve().parent.parent.parent.parent / "docs" / "data" / "btcusd" / "v2_trades.csv"
+tdf[["entry_time", "exit_time", "direction", "entry", "exit",
+     "result", "pnl_pct", "dollar_pnl", "equity"]].to_csv(_dash_out, index=False)
+print(f"Dashboard export  → {_dash_out}")
 
 # ─── Equity curve plot ────────────────────────────────────────────────────────
 edf = pd.DataFrame(eqcurve).set_index("time")

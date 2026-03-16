@@ -38,7 +38,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # ─── Configuration ─────────────────────────────────────────────────────────────
-TICKER   = "BTCUSD"
+TICKER   = "BTC-USD"
 PERIOD   = "60d"    # max intraday window from yfinance; 5m data resampled → 10m
 INTERVAL = "10m"    # logical timeframe (data sourced as 5m and resampled)
 
@@ -479,6 +479,13 @@ for direction in ["long", "short"]:
 out_csv = f"apm_v2_trades_{TICKER.lower()}_{INTERVAL}.csv"
 tdf.to_csv(out_csv, index=False)
 print(f"\nTrades CSV → {out_csv}")
+
+# ─── Dashboard export ──────────────────────────────────────────────────────────
+from pathlib import Path as _Path
+_dash_out = _Path(__file__).resolve().parent.parent.parent.parent / "docs" / "data" / "btcusd" / "v2_trades.csv"
+tdf[["entry_time", "exit_time", "direction", "entry", "exit",
+     "result", "pnl_pct", "dollar_pnl", "equity"]].to_csv(_dash_out, index=False)
+print(f"Dashboard export  → {_dash_out}")
 
 # ─── Alert log ────────────────────────────────────────────────────────────────
 alert_lines = []
