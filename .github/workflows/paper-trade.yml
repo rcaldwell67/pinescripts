@@ -35,37 +35,37 @@ jobs:
         env:
           ALPACA_PAPER_API_KEY:    ${{ secrets.ALPACA_PAPER_API_KEY }}
           ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
-        run: python docs/paper_trader_v6.py
+        run: python "scripts/CLM/Adaptive Pullback Momentum v6/paper_trader_clm_v6.py"
 
       - name: Run paper trader v5 (CLM 1h — APM v5.3)
         env:
           ALPACA_PAPER_API_KEY:    ${{ secrets.ALPACA_PAPER_API_KEY }}
           ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
-        run: python docs/paper_trader_v5.py
+        run: python "scripts/CLM/Adaptive Pullback Momentum v5/paper_trader_clm_v5.py"
 
       - name: Run paper trader v4 (CLM 30m — APM v4.6)
         env:
           ALPACA_PAPER_API_KEY:    ${{ secrets.ALPACA_PAPER_API_KEY }}
           ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
-        run: python docs/paper_trader_v4.py
+        run: python "scripts/CLM/Adaptive Pullback Momentum v4/paper_trader_clm_v4.py"
 
       - name: Run paper trader v3 (CLM 15m)
         env:
           ALPACA_PAPER_API_KEY:    ${{ secrets.ALPACA_PAPER_API_KEY }}
           ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
-        run: python docs/paper_trader_v3.py
+        run: python "scripts/CLM/Adaptive Pullback Momentum v3/paper_trader_clm_v3.py"
 
       - name: Run paper trader v2 (CLM 10m)
         env:
           ALPACA_PAPER_API_KEY:    ${{ secrets.ALPACA_PAPER_API_KEY }}
           ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
-        run: python docs/paper_trader_v2.py
+        run: python "scripts/CLM/Adaptive Pullback Momentum v2/paper_trader_clm_v2.py"
 
       - name: Run paper trader v1 (CLM)
         env:
           ALPACA_PAPER_API_KEY:    ${{ secrets.ALPACA_PAPER_API_KEY }}
           ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
-        run: python docs/paper_trader_v1.py
+        run: python "scripts/CLM/Adaptive Pullback Momentum v1/paper_trader_clm_v1.py"
 
       - name: Commit trade data (if changed)
         run: |
