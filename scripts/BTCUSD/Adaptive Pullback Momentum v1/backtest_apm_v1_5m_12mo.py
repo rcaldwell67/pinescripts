@@ -1,23 +1,28 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# APM v1.1 — BTCUSD 5m  ·  12-Month Backtest
-# Mirrors "Adaptive Pullback Momentum v1.1 · 5m" Pine script exactly.
+# APM v1.2 — BTCUSD 5m  ·  12-Month Backtest
+# Mirrors "Adaptive Pullback Momentum v1.2 · 5m" parameters.
 # Shorts-only (BTCUSD sub-15m longs: win-rate too low historically).
 #
-# v1.1 CHANGES vs v1.0  (sweep_20pct_target.py: 2471 combos ≥ 20%):
-#   ADX threshold : 18 → 15    (slightly wider trend filter, more quality entries)
-#   PB tolerance  : 0.25% → 0.40%  (wider pullback zone — BTCUSD tick noise)
-#   SL mult       : (kept wide at) 4.0× (fewer SL exits, 79% WR)
-#   TP mult       : 6.0× → 8.0×  (BTCUSD big moves run 8×ATR on 5m)
-#   Trail activate: 2.5× → 3.5×  (let winners breathe more before trailing)
-#   Trail distance: 0.1× (kept — tight lock-in on 5m moves)
-#   Risk per trade: 1.0% → 2.0%  (sweep optimum; doubles compounding)
-#   MACRO_EMA     : 400 → 0 (off — signal count too low with macro filter)
+# v1.2 CHANGES vs v1.1  (sweep12_s1→s4 cascade params validated on YTD data):
+#   ADX threshold : 15 → 18    (stricter trend quality; fewer but better entries)
+#   PB tolerance  : 0.40% → 0.25%  (tighter pullback zone; less noise)
+#   TP mult       : 8.0× → 6.0×  (6× is where most 5m moves terminate)
+#   SL mult       : 4.0× (wider stop keeps WR high — less noise-driven SL exits)
+#   MACRO_EMA     : 0 (off) → 400  (macro bear filter; avoids shorting in uptrends)
+#   RISK_PCT      : 2% → 3.5%  (same WR/PF — only scales $ outcome)
+#
+# YTD (Jan-Mar 2026) result with these params:
+#   9 trades, 88.9% WR, PF=6.713, net=+$2,829 (+28.3%), MaxDD=-4.05%, Calmar=6.985
+#
+# NOTE: 12-month results are weaker (BTC was in bull uptrend Mar-Dec 2025,
+# making shorts-only challenging). The MACRO_EMA=400 filter helps avoid the
+# worst months but cannot fully neutralise a 9-month uptrend.
 #
 # Data: Alpaca 5m bars — full 12-month window (no 60-day cap)
 # ─────────────────────────────────────────────────────────────────────────────
 
 import subprocess, sys
-for pkg in ["alpaca-py", "pandas", "numpy", "matplotlib", "pytz"]:
+for pkg in ["alpaca-py", "pandas", "numpy", "matplotlib", "pytz", "python-dotenv"]:
     subprocess.check_call([sys.executable, "-m", "pip", "install", pkg, "-q"])
 
 import pandas as pd
@@ -31,19 +36,22 @@ import warnings
 warnings.filterwarnings("ignore")
 
 from datetime import datetime, timezone, timedelta
-from alpaca.data.historical import StockHistoricalDataClient
-from alpaca.data.requests import StockBarsRequest
+from alpaca.data.historical import CryptoHistoricalDataClient
+from alpaca.data.requests import CryptoBarsRequest
 from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
-from alpaca.data.enums import DataFeed
+from dotenv import load_dotenv
+import os
 
 _ET = pytz.timezone("America/New_York")
 
 # ─── Alpaca credentials ────────────────────────────────────────────────────────
-ALPACA_KEY    = "PKNIYXYVLHKHF43IIEUQIA42DJ"
-ALPACA_SECRET = "9djPy47EmNvMr6Yyfa3UpQ49ruQRWAmTmu8thmDvm34u"
+_env = __import__('pathlib').Path(__file__).resolve().parent.parent.parent.parent / ".env"
+load_dotenv(_env)
+ALPACA_KEY    = os.getenv("ALPACA_PAPER_API_KEY", "")
+ALPACA_SECRET = os.getenv("ALPACA_PAPER_API_SECRET", "")
 
-# ─── Configuration ─────────────────────────────────────────────────────────────
-TICKER   = "BTCUSD"
+# ─── Configuration ────────────────────────────────────────────────────────────
+TICKER   = "BTC/USD"
 INTERVAL = "5m"
 
 BACKTEST_END   = datetime(2026, 3, 12, tzinfo=timezone.utc)
@@ -54,8 +62,8 @@ ADX_LEN  = 14;  RSI_LEN = 14;  ATR_LEN  = 14;  VOL_LEN = 20
 ATR_BL_LEN = 60
 
 # ── Strategy parameters (Pine v1.1 5m  — sweep_20pct_target.py optimised) ─────
-PB_PCT         = 0.40    # pullback tolerance (%) — wider for BTCUSD tick noise
-ADX_THRESH     = 15
+PB_PCT         = 0.25    # sweep12_s2: tighter pullback zone (was 0.40)
+ADX_THRESH     = 18      # sweep12_s2: stricter trend quality (was 15)
 ADX_SLOPE_BARS = 0       # off
 DI_SPREAD_MIN  = 0.0     # off
 EMA_SLOPE_BARS = 3
@@ -68,13 +76,13 @@ RSI_LO_S       = 30;  RSI_HI_S = 58
 RSI_LO_L       = 42;  RSI_HI_L = 68
 
 SL_MULT    = 4.0
-TP_MULT    = 8.0   # BTCUSD 5m big moves run 8×ATR (sweep peak)
-TRAIL_ACT  = 3.5   # let winners breathe before trailing
-TRAIL_DIST = 0.1   # tight lock-in once active
-MACRO_EMA  = 0     # off — signal count too low with macro filter
+TP_MULT    = 6.0   # sweep12_s1: 6× is where most 5m moves terminate (was 8.0)
+TRAIL_ACT  = 3.5   # sweep12_s3: confirmed optimal
+TRAIL_DIST = 0.1   # sweep12_s3: confirmed optimal
+MACRO_EMA  = 400   # sweep12_s4: best Calmar — macro bear filter (was 0/off)
 MAX_BARS   = 0     # 0 = disabled
 
-RISK_PCT        = 0.02  # 2% — sweep optimum; doubles compounding vs 1%
+RISK_PCT        = 0.035  # 3.5% — sweep_20pct_nommacro optimum: same WR/PF, MaxDD~7.6%
 INITIAL_CAPITAL = 10_000.0
 COMMISSION_PCT  = 0.0006
 
@@ -89,16 +97,15 @@ CONSEC_LOSS_COOLDOWN = 1
 
 # ─── Download 5m data via Alpaca ───────────────────────────────────────────────
 print(f"Downloading {TICKER} {INTERVAL} via Alpaca  ({BACKTEST_START.date()} → {BACKTEST_END.date()}) ...")
-client = StockHistoricalDataClient(ALPACA_KEY, ALPACA_SECRET)
+client = CryptoHistoricalDataClient(ALPACA_KEY, ALPACA_SECRET)
 TF5 = TimeFrame(5, TimeFrameUnit.Minute)
-req = StockBarsRequest(
+req = CryptoBarsRequest(
     symbol_or_symbols=TICKER,
     timeframe=TF5,
     start=BACKTEST_START,
     end=BACKTEST_END,
-    feed=DataFeed.IEX,
 )
-bars = client.get_stock_bars(req)
+bars = client.get_crypto_bars(req)
 raw = bars.df.reset_index(level=0, drop=True)   # drop symbol level
 raw.index.name = "timestamp"
 
@@ -429,7 +436,7 @@ avg_dur = (pd.to_datetime(tdf["exit_time"]) - pd.to_datetime(tdf["entry_time"]))
 
 print(f"""
 ╔══════════════════════════════════════════════════════╗
-║   APM v1.1 · 5m  ·  BTCUSD  ·  12-Month Backtest       ║
+║   APM v1.2 · 5m  ·  BTCUSD  ·  12-Month Backtest       ║
 ╠══════════════════════════════════════════════════════╣
 ║  Window  : {str(df.index[0].date()):>10} → {str(df.index[-1].date()):<10}             ║
 ║  Trades  : {total:<5}  (Longs: {tdf[tdf['direction']=='long'].shape[0]}  Shorts: {tdf[tdf['direction']=='short'].shape[0]})           ║
@@ -474,6 +481,15 @@ out_csv = "apm_v1_12mo_trades_btcusd_5m.csv"
 tdf.drop(columns=["month"], inplace=True)
 tdf.to_csv(out_csv, index=False)
 print(f"\nTrade log saved → {out_csv}")
+
+# ─── Dashboard export ──────────────────────────────────────────────────────────
+from pathlib import Path as _Path
+_dash_out = _Path(__file__).resolve().parent.parent.parent.parent / "docs" / "data" / "btcusd" / "v1_trades.csv"
+tdf.rename(columns={"entry": "entry_price", "exit": "exit_price"})[
+    ["entry_time", "exit_time", "direction", "entry_price", "exit_price",
+     "result", "pnl_pct", "dollar_pnl", "equity"]
+].to_csv(_dash_out, index=False)
+print(f"Dashboard export  → {_dash_out}")
 
 # ─── Equity curve chart ────────────────────────────────────────────────────────
 eq_df = pd.DataFrame(eqcurve).set_index("time")

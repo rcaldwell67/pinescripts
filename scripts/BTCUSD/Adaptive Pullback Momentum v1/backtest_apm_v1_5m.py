@@ -40,27 +40,28 @@ EMA_FAST = 21;  EMA_MID = 50;  EMA_SLOW = 200
 ADX_LEN  = 14;  RSI_LEN = 14;  ATR_LEN  = 14;  VOL_LEN = 20
 ATR_BL_LEN = 60
 
-# ── Strategy parameters (Pine v1.0 5m defaults) ──────────────────────────────
-PB_PCT         = 0.20    # pullback tolerance (%) — tighter than 10m (0.30)
-ADX_THRESH     = 20
-ADX_SLOPE_BARS = 0       # off — sweep showed not beneficial on BTCUSD
-DI_SPREAD_MIN  = 0.0     # off — sweep showed DI spread hurts entries on BTCUSD
+# ── Strategy parameters (v1.2 — sweep12 cascade on 12-month Alpaca data) ────────────
+PB_PCT         = 0.25    # sweep12_s2: tighter pullback (was 0.20)
+ADX_THRESH     = 18      # sweep12_s2: stricter trend quality (was 20)
+ADX_SLOPE_BARS = 0       # off
+DI_SPREAD_MIN  = 0.0     # off
 EMA_SLOPE_BARS = 3       # EMA21 must be below its value 3 bars ago (shorts)
 MOMENTUM_BARS  = 5       # close < close[5] for shorts
-VOL_MULT       = 0.7
-MIN_BODY       = 0.15    # |close-open| / ATR must be >= this
-ATR_FLOOR      = 0.0015  # ATR / price >= 0.15%
+VOL_MULT       = 0.3     # sweep12_s2: loosened (was 0.7)
+MIN_BODY       = 0.15
+ATR_FLOOR      = 0.001   # sweep12_s2: 0.10% floor (was 0.0015)
 PANIC_MULT     = 1.5
 RSI_LO_S       = 30;  RSI_HI_S = 58
 RSI_LO_L       = 42;  RSI_HI_L = 68
 
-SL_MULT    = 2.0
-TP_MULT    = 6.0
-TRAIL_ACT  = 3.5    # trail activates at entry - ATR × 3.5 (shorts)
-TRAIL_DIST = 0.3    # trail stays ATR × 0.3 from best price
-MAX_BARS   = 30     # 30 × 5m = 2.5 hours
+SL_MULT    = 4.0         # sweep12_s1: wider stop keeps WR high (was 2.0)
+TP_MULT    = 6.0         # sweep12_s1: confirmed (was already 6.0)
+TRAIL_ACT  = 3.5         # sweep12_s3: confirmed
+TRAIL_DIST = 0.1         # sweep12_s3: tighter lock-in (was 0.3)
+MAX_BARS   = 0           # sweep12_s1: disabled (was 30)
+MACRO_EMA  = 400         # sweep12_s4: macro bear filter (was absent)
 
-RISK_PCT        = 0.01          # 1% equity per trade
+RISK_PCT        = 0.035         # 3.5% — sweep_20pct_nommacro optimum (same WR/PF, MaxDD~7.6%)
 INITIAL_CAPITAL = 10_000.0
 COMMISSION_PCT  = 0.0006        # 0.06% per side (both in + out)
 
@@ -94,6 +95,8 @@ print(f"5m bars available: {len(df)}  |  {df.index[0]} → {df.index[-1]}")
 df["EMA_FAST"] = df["Close"].ewm(span=EMA_FAST, adjust=False).mean()
 df["EMA_MID"]  = df["Close"].ewm(span=EMA_MID,  adjust=False).mean()
 df["EMA_SLOW"] = df["Close"].ewm(span=EMA_SLOW, adjust=False).mean()
+if MACRO_EMA > 0:
+    df["EMA_MACRO"] = df["Close"].ewm(span=MACRO_EMA, adjust=False).mean()
 
 delta  = df["Close"].diff()
 avg_g  = delta.clip(lower=0).ewm(alpha=1/RSI_LEN, adjust=False).mean()
@@ -129,6 +132,7 @@ tol = PB_PCT / 100.0
 is_trending = df["ADX"] > ADX_THRESH
 is_panic    = df["ATR"] > df["ATR_BL"] * PANIC_MULT
 atr_fl      = df["ATR"] / df["Close"] >= ATR_FLOOR
+macro_bear  = (df["Close"] < df["EMA_MACRO"]) if MACRO_EMA > 0 else pd.Series(True, index=df.index)
 
 ema_bull = (df["EMA_FAST"] > df["EMA_MID"]) & (df["EMA_MID"] > df["EMA_SLOW"])
 ema_bear = (df["EMA_FAST"] < df["EMA_MID"]) & (df["EMA_MID"] < df["EMA_SLOW"])
@@ -182,7 +186,8 @@ short_signal = (
     mom_ok_s        &
     session_ok      &
     ~is_panic       &
-    atr_fl
+    atr_fl          &
+    macro_bear
 )
 
 long_signal = (
