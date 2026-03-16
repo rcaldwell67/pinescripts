@@ -1,0 +1,944 @@
+APM v6.1 | SHORT ENTRY | BTC-USD [1D]
+Entry   : 342.42  |  Equity: $10000.00
+Stop    : 371.67  (+29.26 = ATR x2.0)
+Target  : 327.79  (-14.63 = ATR x1.0)
+R:R     : 1:0.50  |  Risk: $100.00 (1.0%)
+Qty     : 3.4178
+ATR     : 14.63 (4.272% of price)
+RSI     : 40.02 [32.0-58.0]  |  Dir: Falling
+ADX     : 30.15  DI+: 19.55  DI-: 24.77  [min 28.0]
+Vol/MA  : 1.08x  [min 1.0x]
+Body    : 0.506x ATR  [min 0.3x]
+EMA21/50/200: 349.78/372.01/421.32  Stack: BEAR
+Trail on: -29.26 (ATR x2.0)  Dist: 5.85 (ATR x0.4)
+Time    : 2014-11-07 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | SHORT EXIT [LOSS] | BTC-USD [1D]
+Entry   : 342.42  ->  Exit: 371.67
+Move    : -8.54%
+P&L     : -101.46 USD
+Comm    : -1.46 USD
+Max runup: 0.26
+Bars    : 3
+Equity  : $9898.54
+Trades  : 1  |  Win rate: 0.0%
+Time    : 2014-11-10 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | SHORT ENTRY | BTC-USD [1D]
+Entry   : 357.84  |  Equity: $9898.54
+Stop    : 401.96  (+44.12 = ATR x2.0)
+Target  : 335.78  (-22.06 = ATR x1.0)
+R:R     : 1:0.50  |  Risk: $98.99 (1.0%)
+Qty     : 2.2437
+ATR     : 22.06 (6.164% of price)
+RSI     : 44.54 [32.0-58.0]  |  Dir: Falling
+ADX     : 31.34  DI+: 29.81  DI-: 20.07  [min 28.0]
+Vol/MA  : 1.08x  [min 1.0x]
+Body    : 1.019x ATR  [min 0.3x]
+EMA21/50/200: 371.89/375.68/416.39  Stack: BEAR
+Trail on: -44.12 (ATR x2.0)  Dist: 8.82 (ATR x0.4)
+Time    : 2014-11-20 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | SHORT EXIT [WIN] | BTC-USD [1D]
+Entry   : 357.84  ->  Exit: 335.78
+Move    : +6.16%
+P&L     : +48.56 USD
+Comm    : -0.93 USD
+Max runup: 30.78
+Bars    : 26
+Equity  : $9947.09
+Trades  : 2  |  Win rate: 50.0%
+Time    : 2014-12-16 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | SHORT ENTRY | BTC-USD [1D]
+Entry   : 233.91  |  Equity: $9947.09
+Stop    : 277.71  (+43.80 = ATR x2.0)
+Target  : 212.02  (-21.90 = ATR x1.0)
+R:R     : 1:0.50  |  Risk: $99.47 (1.0%)
+Qty     : 2.2712
+ATR     : 21.90 (9.362% of price)
+RSI     : 43.91 [32.0-58.0]  |  Dir: Falling
+ADX     : 36.10  DI+: 28.99  DI-: 26.86  [min 28.0]
+Vol/MA  : 1.11x  [min 1.0x]
+Body    : 1.344x ATR  [min 0.3x]
+EMA21/50/200: 248.22/278.37/357.68  Stack: BEAR
+Trail on: -43.80 (ATR x2.0)  Dist: 8.76 (ATR x0.4)
+Time    : 2015-01-28 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | SHORT EXIT [WIN] | BTC-USD [1D]
+Entry   : 233.91  ->  Exit: 212.02
+Move    : +9.36%
+P&L     : +49.13 USD
+Comm    : -0.61 USD
+Max runup: 21.90
+Bars    : 4
+Equity  : $9996.22
+Trades  : 3  |  Win rate: 66.7%
+Time    : 2015-02-01 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME STARTED | BTC-USD [1D]
+ATR     : 11.04  |  ATR baseline: 5.30
+Ratio   : 2.08x  [threshold: 2.0x]
+Status  : New entries SUSPENDED
+Time    : 2015-07-13 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME CLEARED | BTC-USD [1D]
+ATR     : 10.71  |  ATR baseline: 5.45
+Ratio   : 1.97x  [threshold: 2.0x]
+Status  : New entries RESUMED
+Time    : 2015-07-15 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME STARTED | BTC-USD [1D]
+ATR     : 11.09  |  ATR baseline: 5.53
+Ratio   : 2.01x  [threshold: 2.0x]
+Status  : New entries SUSPENDED
+Time    : 2015-07-16 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME CLEARED | BTC-USD [1D]
+ATR     : 10.88  |  ATR baseline: 5.61
+Ratio   : 1.94x  [threshold: 2.0x]
+Status  : New entries RESUMED
+Time    : 2015-07-17 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME STARTED | BTC-USD [1D]
+ATR     : 15.81  |  ATR baseline: 6.46
+Ratio   : 2.45x  [threshold: 2.0x]
+Status  : New entries SUSPENDED
+Time    : 2015-11-03 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME CLEARED | BTC-USD [1D]
+ATR     : 21.95  |  ATR baseline: 11.38
+Ratio   : 1.93x  [threshold: 2.0x]
+Status  : New entries RESUMED
+Time    : 2015-11-19 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG ENTRY | BTC-USD [1D]
+Entry   : 352.68  |  Equity: $9996.22
+Stop    : 315.59  (-37.09 = ATR x2.0)
+Target  : 371.23  (+18.55 = ATR x1.0)
+R:R     : 1:0.50  |  Risk: $99.96 (1.0%)
+Qty     : 2.6951
+ATR     : 18.55 (5.258% of price)
+RSI     : 59.14 [42.0-72.0]  |  Dir: Rising
+ADX     : 28.14  DI+: 35.02  DI-: 19.18  [min 28.0]
+Vol/MA  : 1.95x  [min 1.0x]
+Body    : 1.315x ATR  [min 0.3x]
+EMA21/50/200: 331.49/313.73/278.86  Stack: BULL
+Trail on: +37.09 (ATR x2.0)  Dist: 7.42 (ATR x0.4)
+Time    : 2015-11-26 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG EXIT [WIN] | BTC-USD [1D]
+Entry   : 352.68  ->  Exit: 371.23
+Move    : +5.26%
+P&L     : +48.81 USD
+Comm    : -1.17 USD
+Max runup: 19.26
+Bars    : 3
+Equity  : $10045.03
+Trades  : 4  |  Win rate: 75.0%
+Time    : 2015-11-29 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME STARTED | BTC-USD [1D]
+ATR     : 13.08  |  ATR baseline: 6.31
+Ratio   : 2.07x  [threshold: 2.0x]
+Status  : New entries SUSPENDED
+Time    : 2016-05-29 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME CLEARED | BTC-USD [1D]
+ATR     : 15.72  |  ATR baseline: 8.15
+Ratio   : 1.93x  [threshold: 2.0x]
+Status  : New entries RESUMED
+Time    : 2016-06-09 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME STARTED | BTC-USD [1D]
+ATR     : 20.49  |  ATR baseline: 8.78
+Ratio   : 2.33x  [threshold: 2.0x]
+Status  : New entries SUSPENDED
+Time    : 2016-06-12 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME CLEARED | BTC-USD [1D]
+ATR     : 38.13  |  ATR baseline: 19.54
+Ratio   : 1.95x  [threshold: 2.0x]
+Status  : New entries RESUMED
+Time    : 2016-07-04 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME STARTED | BTC-USD [1D]
+ATR     : 16.94  |  ATR baseline: 7.35
+Ratio   : 2.30x  [threshold: 2.0x]
+Status  : New entries SUSPENDED
+Time    : 2016-11-03 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME CLEARED | BTC-USD [1D]
+ATR     : 15.82  |  ATR baseline: 7.95
+Ratio   : 1.99x  [threshold: 2.0x]
+Status  : New entries RESUMED
+Time    : 2016-11-08 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME STARTED | BTC-USD [1D]
+ATR     : 16.93  |  ATR baseline: 8.09
+Ratio   : 2.09x  [threshold: 2.0x]
+Status  : New entries SUSPENDED
+Time    : 2016-11-09 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME CLEARED | BTC-USD [1D]
+ATR     : 15.68  |  ATR baseline: 8.30
+Ratio   : 1.89x  [threshold: 2.0x]
+Status  : New entries RESUMED
+Time    : 2016-11-11 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME STARTED | BTC-USD [1D]
+ATR     : 49.37  |  ATR baseline: 16.51
+Ratio   : 2.99x  [threshold: 2.0x]
+Status  : New entries SUSPENDED
+Time    : 2017-01-05 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME CLEARED | BTC-USD [1D]
+ATR     : 52.04  |  ATR baseline: 26.08
+Ratio   : 2.00x  [threshold: 2.0x]
+Status  : New entries RESUMED
+Time    : 2017-01-19 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG ENTRY | BTC-USD [1D]
+Entry   : 1188.49  |  Equity: $10045.03
+Stop    : 1106.63  (-81.86 = ATR x2.0)
+Target  : 1229.42  (+40.93 = ATR x1.0)
+R:R     : 1:0.50  |  Risk: $100.45 (1.0%)
+Qty     : 1.2271
+ATR     : 40.93 (3.444% of price)
+RSI     : 56.00 [42.0-72.0]  |  Dir: Rising
+ADX     : 39.01  DI+: 26.87  DI-: 26.12  [min 28.0]
+Vol/MA  : 1.08x  [min 1.0x]
+Body    : 0.932x ATR  [min 0.3x]
+EMA21/50/200: 1169.86/1080.64/854.52  Stack: BULL
+Trail on: +81.86 (ATR x2.0)  Dist: 16.37 (ATR x0.4)
+Time    : 2017-03-09 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | TRAIL STOP ACTIVATED | BTC-USD [1D]
+Direction : LONG
+Best price: 1270.47  |  Entry: 1188.49
+Trail SL  : 1254.10  (best - ATR x0.4 = -20.72)
+Prev SL   : 1106.63  |  Target: 1229.42
+Runup     : +81.98 (6.90%)
+Time      : 2017-03-10 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG EXIT [LOSS] | BTC-USD [1D]
+Entry   : 1188.49  ->  Exit: 1189.36
+Move    : +0.07%
+P&L     : -0.68 USD
+Comm    : -1.75 USD
+Max runup: 81.98
+Bars    : 1
+Equity  : $10044.35
+Trades  : 5  |  Win rate: 60.0%
+Time    : 2017-03-10 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG ENTRY | BTC-USD [1D]
+Entry   : 1175.83  |  Equity: $10044.35
+Stop    : 1068.54  (-107.29 = ATR x2.0)
+Target  : 1229.47  (+53.64 = ATR x1.0)
+R:R     : 1:0.50  |  Risk: $100.44 (1.0%)
+Qty     : 0.9362
+ATR     : 53.64 (4.562% of price)
+RSI     : 53.41 [42.0-72.0]  |  Dir: Rising
+ADX     : 36.62  DI+: 26.71  DI-: 17.18  [min 28.0]
+Vol/MA  : 1.23x  [min 1.0x]
+Body    : 1.109x ATR  [min 0.3x]
+EMA21/50/200: 1166.01/1085.74/860.30  Stack: BULL
+Trail on: +107.29 (ATR x2.0)  Dist: 21.46 (ATR x0.4)
+Time    : 2017-03-11 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG EXIT [WIN] | BTC-USD [1D]
+Entry   : 1175.83  ->  Exit: 1229.47
+Move    : +4.56%
+P&L     : +48.87 USD
+Comm    : -1.35 USD
+Max runup: 61.54
+Bars    : 2
+Equity  : $10093.22
+Trades  : 6  |  Win rate: 66.7%
+Time    : 2017-03-13 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME STARTED | BTC-USD [1D]
+ATR     : 107.05  |  ATR baseline: 53.01
+Ratio   : 2.02x  [threshold: 2.0x]
+Status  : New entries SUSPENDED
+Time    : 2017-05-23 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME CLEARED | BTC-USD [1D]
+ATR     : 176.97  |  ATR baseline: 88.66
+Ratio   : 2.00x  [threshold: 2.0x]
+Status  : New entries RESUMED
+Time    : 2017-06-10 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME STARTED | BTC-USD [1D]
+ATR     : 197.14  |  ATR baseline: 93.53
+Ratio   : 2.11x  [threshold: 2.0x]
+Status  : New entries SUSPENDED
+Time    : 2017-06-12 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME CLEARED | BTC-USD [1D]
+ATR     : 209.23  |  ATR baseline: 107.62
+Ratio   : 1.94x  [threshold: 2.0x]
+Status  : New entries RESUMED
+Time    : 2017-06-17 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG ENTRY | BTC-USD [1D]
+Entry   : 4376.53  |  Equity: $10093.22
+Stop    : 3832.87  (-543.66 = ATR x2.0)
+Target  : 4648.36  (+271.83 = ATR x1.0)
+R:R     : 1:0.50  |  Risk: $100.93 (1.0%)
+Qty     : 0.1857
+ATR     : 271.83 (6.211% of price)
+RSI     : 55.90 [42.0-72.0]  |  Dir: Rising
+ADX     : 30.24  DI+: 21.49  DI-: 24.71  [min 28.0]
+Vol/MA  : 1.13x  [min 1.0x]
+Body    : 0.545x ATR  [min 0.3x]
+EMA21/50/200: 4292.86/3774.73/2502.94  Stack: BULL
+Trail on: +543.66 (ATR x2.0)  Dist: 108.73 (ATR x0.4)
+Time    : 2017-09-05 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG EXIT [WIN] | BTC-USD [1D]
+Entry   : 4376.53  ->  Exit: 4648.36
+Move    : +6.21%
+P&L     : +49.46 USD
+Comm    : -1.01 USD
+Max runup: 278.51
+Bars    : 2
+Equity  : $10142.68
+Trades  : 7  |  Win rate: 71.4%
+Time    : 2017-09-07 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG ENTRY | BTC-USD [1D]
+Entry   : 6559.49  |  Equity: $10142.68
+Stop    : 5553.26  (-1006.23 = ATR x2.0)
+Target  : 7062.61  (+503.12 = ATR x1.0)
+R:R     : 1:0.50  |  Risk: $101.43 (1.0%)
+Qty     : 0.1008
+ATR     : 503.12 (7.670% of price)
+RSI     : 53.05 [42.0-72.0]  |  Dir: Rising
+ADX     : 31.83  DI+: 23.04  DI-: 25.88  [min 28.0]
+Vol/MA  : 1.83x  [min 1.0x]
+Body    : 1.235x ATR  [min 0.3x]
+EMA21/50/200: 6498.02/5815.33/3931.53  Stack: BULL
+Trail on: +1006.23 (ATR x2.0)  Dist: 201.25 (ATR x0.4)
+Time    : 2017-11-13 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG EXIT [WIN] | BTC-USD [1D]
+Entry   : 6559.49  ->  Exit: 7062.61
+Move    : +7.67%
+P&L     : +49.89 USD
+Comm    : -0.82 USD
+Max runup: 782.76
+Bars    : 2
+Equity  : $10192.57
+Trades  : 8  |  Win rate: 75.0%
+Time    : 2017-11-15 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG ENTRY | BTC-USD [1D]
+Entry   : 7315.54  |  Equity: $10192.57
+Stop    : 6306.63  (-1008.91 = ATR x2.0)
+Target  : 7820.00  (+504.46 = ATR x1.0)
+R:R     : 1:0.50  |  Risk: $101.93 (1.0%)
+Qty     : 0.1010
+ATR     : 504.46 (6.896% of price)
+RSI     : 62.01 [42.0-72.0]  |  Dir: Rising
+ADX     : 28.65  DI+: 27.99  DI-: 22.26  [min 28.0]
+Vol/MA  : 1.17x  [min 1.0x]
+Body    : 1.350x ATR  [min 0.3x]
+EMA21/50/200: 6583.72/5905.07/3991.85  Stack: BULL
+Trail on: +1008.91 (ATR x2.0)  Dist: 201.78 (ATR x0.4)
+Time    : 2017-11-15 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG EXIT [WIN] | BTC-USD [1D]
+Entry   : 7315.54  ->  Exit: 7820.00
+Move    : +6.90%
+P&L     : +50.05 USD
+Comm    : -0.92 USD
+Max runup: 651.84
+Bars    : 1
+Equity  : $10242.62
+Trades  : 9  |  Win rate: 77.8%
+Time    : 2017-11-16 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME STARTED | BTC-USD [1D]
+ATR     : 807.23  |  ATR baseline: 403.47
+Ratio   : 2.00x  [threshold: 2.0x]
+Status  : New entries SUSPENDED
+Time    : 2017-12-06 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME CLEARED | BTC-USD [1D]
+ATR     : 1726.63  |  ATR baseline: 893.90
+Ratio   : 1.93x  [threshold: 2.0x]
+Status  : New entries RESUMED
+Time    : 2017-12-29 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG ENTRY | BTC-USD [1D]
+Entry   : 14982.10  |  Equity: $10242.62
+Stop    : 11489.50  (-3492.60 = ATR x2.0)
+Target  : 16728.40  (+1746.30 = ATR x1.0)
+R:R     : 1:0.50  |  Risk: $102.43 (1.0%)
+Qty     : 0.0293
+ATR     : 1746.30 (11.656% of price)
+RSI     : 51.77 [42.0-72.0]  |  Dir: Rising
+ADX     : 30.29  DI+: 21.89  DI-: 25.52  [min 28.0]
+Vol/MA  : 1.17x  [min 1.0x]
+Body    : 0.777x ATR  [min 0.3x]
+EMA21/50/200: 14787.94/13121.92/7634.11  Stack: BULL
+Trail on: +3492.60 (ATR x2.0)  Dist: 698.52 (ATR x0.4)
+Time    : 2018-01-02 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG EXIT [WIN] | BTC-USD [1D]
+Entry   : 14982.10  ->  Exit: 16728.40
+Move    : +11.66%
+P&L     : +50.66 USD
+Comm    : -0.56 USD
+Max runup: 2723.10
+Bars    : 3
+Equity  : $10293.27
+Trades  : 10  |  Win rate: 80.0%
+Time    : 2018-01-05 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME STARTED | BTC-USD [1D]
+ATR     : 309.17  |  ATR baseline: 153.17
+Ratio   : 2.02x  [threshold: 2.0x]
+Status  : New entries SUSPENDED
+Time    : 2018-11-28 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME CLEARED | BTC-USD [1D]
+ATR     : 306.18  |  ATR baseline: 155.23
+Ratio   : 1.97x  [threshold: 2.0x]
+Status  : New entries RESUMED
+Time    : 2018-11-29 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | SHORT ENTRY | BTC-USD [1D]
+Entry   : 3815.49  |  Equity: $10293.27
+Stop    : 4304.50  (+489.00 = ATR x2.0)
+Target  : 3570.99  (-244.50 = ATR x1.0)
+R:R     : 1:0.50  |  Risk: $102.93 (1.0%)
+Qty     : 0.2105
+ATR     : 244.50 (6.408% of price)
+RSI     : 46.99 [32.0-58.0]  |  Dir: Falling
+ADX     : 34.81  DI+: 28.08  DI-: 23.94  [min 28.0]
+Vol/MA  : 1.10x  [min 1.0x]
+Body    : 1.086x ATR  [min 0.3x]
+EMA21/50/200: 3844.84/4372.05/5994.53  Stack: BEAR
+Trail on: -489.00 (ATR x2.0)  Dist: 97.80 (ATR x0.4)
+Time    : 2018-12-25 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | SHORT EXIT [WIN] | BTC-USD [1D]
+Entry   : 3815.49  ->  Exit: 3570.99
+Move    : +6.41%
+P&L     : +50.53 USD
+Comm    : -0.93 USD
+Max runup: 270.56
+Bars    : 19
+Equity  : $10343.80
+Trades  : 11  |  Win rate: 81.8%
+Time    : 2019-01-13 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME STARTED | BTC-USD [1D]
+ATR     : 330.54  |  ATR baseline: 138.32
+Ratio   : 2.39x  [threshold: 2.0x]
+Status  : New entries SUSPENDED
+Time    : 2019-05-13 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME CLEARED | BTC-USD [1D]
+ATR     : 391.73  |  ATR baseline: 202.97
+Ratio   : 1.93x  [threshold: 2.0x]
+Status  : New entries RESUMED
+Time    : 2019-05-25 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME STARTED | BTC-USD [1D]
+ATR     : 418.24  |  ATR baseline: 208.76
+Ratio   : 2.00x  [threshold: 2.0x]
+Status  : New entries SUSPENDED
+Time    : 2019-05-26 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME CLEARED | BTC-USD [1D]
+ATR     : 405.40  |  ATR baseline: 214.36
+Ratio   : 1.89x  [threshold: 2.0x]
+Status  : New entries RESUMED
+Time    : 2019-05-27 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME STARTED | BTC-USD [1D]
+ATR     : 745.88  |  ATR baseline: 351.59
+Ratio   : 2.12x  [threshold: 2.0x]
+Status  : New entries SUSPENDED
+Time    : 2019-06-27 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME CLEARED | BTC-USD [1D]
+ATR     : 877.74  |  ATR baseline: 446.06
+Ratio   : 1.97x  [threshold: 2.0x]
+Status  : New entries RESUMED
+Time    : 2019-07-05 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG ENTRY | BTC-USD [1D]
+Entry   : 10142.00  |  Equity: $10343.80
+Stop    : 9495.62  (-646.38 = ATR x2.0)
+Target  : 10465.19  (+323.19 = ATR x1.0)
+R:R     : 1:0.50  |  Risk: $103.44 (1.0%)
+Qty     : 0.1600
+ATR     : 323.19 (3.187% of price)
+RSI     : 61.30 [42.0-72.0]  |  Dir: Rising
+ADX     : 31.93  DI+: 23.43  DI-: 19.63  [min 28.0]
+Vol/MA  : 1.26x  [min 1.0x]
+Body    : 1.395x ATR  [min 0.3x]
+EMA21/50/200: 9713.14/9107.73/8545.04  Stack: BULL
+Trail on: +646.38 (ATR x2.0)  Dist: 129.28 (ATR x0.4)
+Time    : 2020-02-18 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG EXIT [LOSS] | BTC-USD [1D]
+Entry   : 10142.00  ->  Exit: 9495.62
+Move    : -6.37%
+P&L     : -105.32 USD
+Comm    : -1.89 USD
+Max runup: 49.68
+Bars    : 7
+Equity  : $10238.48
+Trades  : 12  |  Win rate: 75.0%
+Time    : 2020-02-25 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME STARTED | BTC-USD [1D]
+ATR     : 619.93  |  ATR baseline: 306.05
+Ratio   : 2.03x  [threshold: 2.0x]
+Status  : New entries SUSPENDED
+Time    : 2020-03-13 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME CLEARED | BTC-USD [1D]
+ATR     : 611.38  |  ATR baseline: 311.40
+Ratio   : 1.96x  [threshold: 2.0x]
+Status  : New entries RESUMED
+Time    : 2020-03-14 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME STARTED | BTC-USD [1D]
+ATR     : 1917.92  |  ATR baseline: 927.10
+Ratio   : 2.07x  [threshold: 2.0x]
+Status  : New entries SUSPENDED
+Time    : 2021-01-05 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | PANIC REGIME CLEARED | BTC-USD [1D]
+ATR     : 3182.06  |  ATR baseline: 1596.96
+Ratio   : 1.99x  [threshold: 2.0x]
+Status  : New entries RESUMED
+Time    : 2021-01-23 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG ENTRY | BTC-USD [1D]
+Entry   : 42816.50  |  Equity: $10238.48
+Stop    : 38243.15  (-4573.35 = ATR x2.0)
+Target  : 45103.18  (+2286.68 = ATR x1.0)
+R:R     : 1:0.50  |  Risk: $102.38 (1.0%)
+Qty     : 0.0224
+ATR     : 2286.68 (5.341% of price)
+RSI     : 68.04 [42.0-72.0]  |  Dir: Rising
+ADX     : 30.37  DI+: 30.64  DI-: 13.77  [min 28.0]
+Vol/MA  : 1.36x  [min 1.0x]
+Body    : 0.853x ATR  [min 0.3x]
+EMA21/50/200: 38020.02/37073.14/38715.70  Stack: BULL
+Trail on: +4573.35 (ATR x2.0)  Dist: 914.67 (ATR x0.4)
+Time    : 2021-08-06 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG EXIT [WIN] | BTC-USD [1D]
+Entry   : 42816.50  ->  Exit: 45103.18
+Move    : +5.34%
+P&L     : +50.01 USD
+Comm    : -1.18 USD
+Max runup: 2465.85
+Bars    : 2
+Equity  : $10288.49
+Trades  : 13  |  Win rate: 76.9%
+Time    : 2021-08-08 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG ENTRY | BTC-USD [1D]
+Entry   : 60622.14  |  Equity: $10288.49
+Stop    : 54740.56  (-5881.58 = ATR x2.0)
+Target  : 63562.92  (+2940.79 = ATR x1.0)
+R:R     : 1:0.50  |  Risk: $102.88 (1.0%)
+Qty     : 0.0175
+ATR     : 2940.79 (4.851% of price)
+RSI     : 56.75 [42.0-72.0]  |  Dir: Rising
+ADX     : 39.90  DI+: 25.72  DI-: 15.51  [min 28.0]
+Vol/MA  : 1.19x  [min 1.0x]
+Body    : 0.732x ATR  [min 0.3x]
+EMA21/50/200: 58882.40/54155.72/45800.56  Stack: BULL
+Trail on: +5881.58 (ATR x2.0)  Dist: 1176.32 (ATR x0.4)
+Time    : 2021-10-28 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG EXIT [WIN] | BTC-USD [1D]
+Entry   : 60622.14  ->  Exit: 63562.92
+Move    : +4.85%
+P&L     : +50.14 USD
+Comm    : -1.30 USD
+Max runup: 3620.66
+Bars    : 5
+Equity  : $10338.63
+Trades  : 14  |  Win rate: 78.6%
+Time    : 2021-11-02 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG ENTRY | BTC-USD [1D]
+Entry   : 63226.40  |  Equity: $10338.63
+Stop    : 57570.10  (-5656.30 = ATR x2.0)
+Target  : 66054.55  (+2828.15 = ATR x1.0)
+R:R     : 1:0.50  |  Risk: $103.39 (1.0%)
+Qty     : 0.0183
+ATR     : 2828.15 (4.473% of price)
+RSI     : 61.03 [42.0-72.0]  |  Dir: Rising
+ADX     : 35.17  DI+: 24.57  DI-: 13.86  [min 28.0]
+Vol/MA  : 1.02x  [min 1.0x]
+Body    : 0.800x ATR  [min 0.3x]
+EMA21/50/200: 60048.82/55567.49/46587.48  Stack: BULL
+Trail on: +5656.30 (ATR x2.0)  Dist: 1131.26 (ATR x0.4)
+Time    : 2021-11-02 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG EXIT [WIN] | BTC-USD [1D]
+Entry   : 63226.40  ->  Exit: 66054.55
+Move    : +4.47%
+P&L     : +50.28 USD
+Comm    : -1.42 USD
+Max runup: 4447.34
+Bars    : 6
+Equity  : $10388.91
+Trades  : 15  |  Win rate: 80.0%
+Time    : 2021-11-08 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | SHORT ENTRY | BTC-USD [1D]
+Entry   : 47588.86  |  Equity: $10388.91
+Stop    : 52309.22  (+4720.37 = ATR x2.0)
+Target  : 45228.67  (-2360.18 = ATR x1.0)
+R:R     : 1:0.50  |  Risk: $103.89 (1.0%)
+Qty     : 0.0220
+ATR     : 2360.18 (4.960% of price)
+RSI     : 40.84 [32.0-58.0]  |  Dir: Falling
+ADX     : 28.56  DI+: 18.81  DI-: 31.57  [min 28.0]
+Vol/MA  : 1.20x  [min 1.0x]
+Body    : 1.310x ATR  [min 0.3x]
+EMA21/50/200: 49798.83/52200.08/49814.97  Stack: BEAR
+Trail on: -4720.37 (ATR x2.0)  Dist: 944.07 (ATR x0.4)
+Time    : 2021-12-28 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | TRAIL STOP ACTIVATED | BTC-USD [1D]
+Direction : SHORT
+Best price: 42798.22  |  Entry: 47588.86
+Trail SL  : 43742.30  (best + ATR x0.4 = +899.39)
+Prev SL   : 52309.22  |  Target: 45228.67
+Runup     : +4790.63 (10.07%)
+Time      : 2022-01-05 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | SHORT EXIT [WIN] | BTC-USD [1D]
+Entry   : 47588.86  ->  Exit: 45899.36
+Move    : +3.55%
+P&L     : +35.95 USD
+Comm    : -1.23 USD
+Max runup: 4790.63
+Bars    : 8
+Equity  : $10424.86
+Trades  : 16  |  Win rate: 81.2%
+Time    : 2022-01-05 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | SHORT ENTRY | BTC-USD [1D]
+Entry   : 29799.08  |  Equity: $10424.86
+Stop    : 32920.22  (+3121.14 = ATR x2.0)
+Target  : 28238.51  (-1560.57 = ATR x1.0)
+R:R     : 1:0.50  |  Risk: $104.25 (1.0%)
+Qty     : 0.0334
+ATR     : 1560.57 (5.237% of price)
+RSI     : 43.55 [32.0-58.0]  |  Dir: Falling
+ADX     : 34.30  DI+: 21.27  DI-: 26.76  [min 28.0]
+Vol/MA  : 1.33x  [min 1.0x]
+Body    : 1.277x ATR  [min 0.3x]
+EMA21/50/200: 30769.16/33757.09/40457.16  Stack: BEAR
+Trail on: -3121.14 (ATR x2.0)  Dist: 624.23 (ATR x0.4)
+Time    : 2022-06-01 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | SHORT EXIT [WIN] | BTC-USD [1D]
+Entry   : 29799.08  ->  Exit: 28238.51
+Move    : +5.24%
+P&L     : +50.96 USD
+Comm    : -1.16 USD
+Max runup: 1562.87
+Bars    : 10
+Equity  : $10475.82
+Trades  : 17  |  Win rate: 82.4%
+Time    : 2022-06-11 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | SHORT ENTRY | BTC-USD [1D]
+Entry   : 20860.45  |  Equity: $10475.82
+Stop    : 23123.72  (+2263.27 = ATR x2.0)
+Target  : 19728.81  (-1131.64 = ATR x1.0)
+R:R     : 1:0.50  |  Risk: $104.76 (1.0%)
+Qty     : 0.0463
+ATR     : 1131.64 (5.425% of price)
+RSI     : 42.81 [32.0-58.0]  |  Dir: Falling
+ADX     : 31.94  DI+: 21.73  DI-: 26.01  [min 28.0]
+Vol/MA  : 1.13x  [min 1.0x]
+Body    : 0.646x ATR  [min 0.3x]
+EMA21/50/200: 21305.93/24444.15/34779.21  Stack: BEAR
+Trail on: -2263.27 (ATR x2.0)  Dist: 452.65 (ATR x0.4)
+Time    : 2022-07-10 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | SHORT EXIT [WIN] | BTC-USD [1D]
+Entry   : 20860.45  ->  Exit: 19728.81
+Move    : +5.42%
+P&L     : +51.25 USD
+Comm    : -1.13 USD
+Max runup: 1551.92
+Bars    : 2
+Equity  : $10527.07
+Trades  : 18  |  Win rate: 83.3%
+Time    : 2022-07-12 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG ENTRY | BTC-USD [1D]
+Entry   : 24307.84  |  Equity: $10527.07
+Stop    : 22903.77  (-1404.07 = ATR x2.0)
+Target  : 25009.88  (+702.03 = ATR x1.0)
+R:R     : 1:0.50  |  Risk: $105.27 (1.0%)
+Qty     : 0.0750
+ATR     : 702.03 (2.888% of price)
+RSI     : 67.99 [42.0-72.0]  |  Dir: Rising
+ADX     : 37.28  DI+: 41.70  DI-: 16.66  [min 28.0]
+Vol/MA  : 1.32x  [min 1.0x]
+Body    : 2.973x ATR  [min 0.3x]
+EMA21/50/200: 22425.71/21206.15/21433.03  Stack: BULL
+Trail on: +1404.07 (ATR x2.0)  Dist: 280.81 (ATR x0.4)
+Time    : 2023-02-15 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG EXIT [WIN] | BTC-USD [1D]
+Entry   : 24307.84  ->  Exit: 25009.88
+Move    : +2.89%
+P&L     : +50.42 USD
+Comm    : -2.22 USD
+Max runup: 826.28
+Bars    : 1
+Equity  : $10577.49
+Trades  : 19  |  Win rate: 84.2%
+Time    : 2023-02-16 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | SHORT ENTRY | BTC-USD [1D]
+Entry   : 25931.47  |  Equity: $10577.49
+Stop    : 27444.24  (+1512.76 = ATR x2.0)
+Target  : 25175.09  (-756.38 = ATR x1.0)
+R:R     : 1:0.50  |  Risk: $105.77 (1.0%)
+Qty     : 0.0699
+ATR     : 756.38 (2.917% of price)
+RSI     : 36.63 [32.0-58.0]  |  Dir: Falling
+ADX     : 29.94  DI+: 23.27  DI-: 31.20  [min 28.0]
+Vol/MA  : 1.39x  [min 1.0x]
+Body    : 1.812x ATR  [min 0.3x]
+EMA21/50/200: 27103.07/27979.87/27168.62  Stack: BEAR
+Trail on: -1512.76 (ATR x2.0)  Dist: 302.55 (ATR x0.4)
+Time    : 2023-08-31 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | SHORT EXIT [WIN] | BTC-USD [1D]
+Entry   : 25931.47  ->  Exit: 25175.09
+Move    : +2.92%
+P&L     : +50.74 USD
+Comm    : -2.14 USD
+Max runup: 1001.18
+Bars    : 11
+Equity  : $10628.23
+Trades  : 20  |  Win rate: 85.0%
+Time    : 2023-09-11 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG ENTRY | BTC-USD [1D]
+Entry   : 37432.34  |  Equity: $10628.23
+Stop    : 34901.98  (-2530.36 = ATR x2.0)
+Target  : 38697.52  (+1265.18 = ATR x1.0)
+R:R     : 1:0.50  |  Risk: $106.28 (1.0%)
+Qty     : 0.0420
+ATR     : 1265.18 (3.380% of price)
+RSI     : 60.67 [42.0-72.0]  |  Dir: Rising
+ADX     : 56.18  DI+: 23.55  DI-: 12.38  [min 28.0]
+Vol/MA  : 1.26x  [min 1.0x]
+Body    : 1.325x ATR  [min 0.3x]
+EMA21/50/200: 35969.39/33571.10/29440.76  Stack: BULL
+Trail on: +2530.36 (ATR x2.0)  Dist: 506.07 (ATR x0.4)
+Time    : 2023-11-22 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG EXIT [WIN] | BTC-USD [1D]
+Entry   : 37432.34  ->  Exit: 38697.52
+Move    : +3.38%
+P&L     : +51.22 USD
+Comm    : -1.92 USD
+Max runup: 1521.77
+Bars    : 9
+Equity  : $10679.45
+Trades  : 21  |  Win rate: 85.7%
+Time    : 2023-12-01 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG ENTRY | BTC-USD [1D]
+Entry   : 42890.74  |  Equity: $10679.45
+Stop    : 39994.81  (-2895.93 = ATR x2.0)
+Target  : 44338.71  (+1447.97 = ATR x1.0)
+R:R     : 1:0.50  |  Risk: $106.79 (1.0%)
+Qty     : 0.0369
+ATR     : 1447.97 (3.376% of price)
+RSI     : 63.37 [42.0-72.0]  |  Dir: Rising
+ADX     : 44.96  DI+: 31.18  DI-: 20.00  [min 28.0]
+Vol/MA  : 1.16x  [min 1.0x]
+Body    : 0.982x ATR  [min 0.3x]
+EMA21/50/200: 40828.96/37778.60/31551.58  Stack: BULL
+Trail on: +2895.93 (ATR x2.0)  Dist: 579.19 (ATR x0.4)
+Time    : 2023-12-13 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG EXIT [WIN] | BTC-USD [1D]
+Entry   : 42890.74  ->  Exit: 44338.71
+Move    : +3.38%
+P&L     : +51.47 USD
+Comm    : -1.93 USD
+Max runup: 1477.21
+Bars    : 9
+Equity  : $10730.92
+Trades  : 22  |  Win rate: 86.4%
+Time    : 2023-12-22 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG ENTRY | BTC-USD [1D]
+Entry   : 67913.67  |  Equity: $10730.92
+Stop    : 59954.00  (-7959.67 = ATR x2.0)
+Target  : 71893.51  (+3979.84 = ATR x1.0)
+R:R     : 1:0.50  |  Risk: $107.31 (1.0%)
+Qty     : 0.0135
+ATR     : 3979.84 (5.860% of price)
+RSI     : 56.49 [42.0-72.0]  |  Dir: Rising
+ADX     : 42.64  DI+: 15.56  DI-: 20.60  [min 28.0]
+Vol/MA  : 1.22x  [min 1.0x]
+Body    : 1.503x ATR  [min 0.3x]
+EMA21/50/200: 65459.79/58983.46/44584.64  Stack: BULL
+Trail on: +7959.67 (ATR x2.0)  Dist: 1591.93 (ATR x0.4)
+Time    : 2024-03-20 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG EXIT [WIN] | BTC-USD [1D]
+Entry   : 67913.67  ->  Exit: 71893.51
+Move    : +5.86%
+P&L     : +52.52 USD
+Comm    : -1.13 USD
+Max runup: 4801.69
+Bars    : 19
+Equity  : $10783.44
+Trades  : 23  |  Win rate: 87.0%
+Time    : 2024-04-08 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG ENTRY | BTC-USD [1D]
+Entry   : 99920.71  |  Equity: $10783.44
+Stop    : 91721.65  (-8199.06 = ATR x2.0)
+Target  : 104020.24  (+4099.53 = ATR x1.0)
+R:R     : 1:0.50  |  Risk: $107.83 (1.0%)
+Qty     : 0.0132
+ATR     : 4099.53 (4.103% of price)
+RSI     : 66.25 [42.0-72.0]  |  Dir: Rising
+ADX     : 45.21  DI+: 28.41  DI-: 9.58  [min 28.0]
+Vol/MA  : 1.32x  [min 1.0x]
+Body    : 0.694x ATR  [min 0.3x]
+EMA21/50/200: 94004.06/85506.15/69887.07  Stack: BULL
+Trail on: +8199.06 (ATR x2.0)  Dist: 1639.81 (ATR x0.4)
+Time    : 2024-12-06 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | LONG EXIT [WIN] | BTC-USD [1D]
+Entry   : 99920.71  ->  Exit: 104020.24
+Move    : +4.10%
+P&L     : +52.31 USD
+Comm    : -1.61 USD
+Max runup: 5126.83
+Bars    : 9
+Equity  : $10835.75
+Trades  : 24  |  Win rate: 87.5%
+Time    : 2024-12-15 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | SHORT ENTRY | BTC-USD [1D]
+Entry   : 101663.19  |  Equity: $10835.75
+Stop    : 109446.27  (+7783.08 = ATR x2.0)
+Target  : 97771.65  (-3891.54 = ATR x1.0)
+R:R     : 1:0.50  |  Risk: $108.36 (1.0%)
+Qty     : 0.0139
+ATR     : 3891.54 (3.828% of price)
+RSI     : 38.89 [32.0-58.0]  |  Dir: Falling
+ADX     : 28.99  DI+: 13.26  DI-: 29.16  [min 28.0]
+Vol/MA  : 1.05x  [min 1.0x]
+Body    : 0.346x ATR  [min 0.3x]
+EMA21/50/200: 106470.10/109660.93/107940.32  Stack: BEAR
+Trail on: -7783.08 (ATR x2.0)  Dist: 1556.62 (ATR x0.4)
+Time    : 2025-11-12 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | SHORT EXIT [WIN] | BTC-USD [1D]
+Entry   : 101663.19  ->  Exit: 97771.65
+Move    : +3.83%
+P&L     : +52.51 USD
+Comm    : -1.67 USD
+Max runup: 7662.45
+Bars    : 2
+Equity  : $10888.26
+Trades  : 25  |  Win rate: 88.0%
+Time    : 2025-11-14 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | SHORT ENTRY | BTC-USD [1D]
+Entry   : 90270.41  |  Equity: $10888.26
+Stop    : 97548.46  (+7278.04 = ATR x2.0)
+Target  : 86631.39  (-3639.02 = ATR x1.0)
+R:R     : 1:0.50  |  Risk: $108.88 (1.0%)
+Qty     : 0.0150
+ATR     : 3639.02 (4.031% of price)
+RSI     : 44.66 [32.0-58.0]  |  Dir: Falling
+ADX     : 28.21  DI+: 16.84  DI-: 23.32  [min 28.0]
+Vol/MA  : 1.28x  [min 1.0x]
+Body    : 0.616x ATR  [min 0.3x]
+EMA21/50/200: 91678.98/96403.18/103483.77  Stack: BEAR
+Trail on: -7278.04 (ATR x2.0)  Dist: 1455.61 (ATR x0.4)
+Time    : 2025-12-12 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | SHORT EXIT [WIN] | BTC-USD [1D]
+Entry   : 90270.41  ->  Exit: 86631.39
+Move    : +4.03%
+P&L     : +52.85 USD
+Comm    : -1.59 USD
+Max runup: 4966.34
+Bars    : 3
+Equity  : $10941.12
+Trades  : 26  |  Win rate: 88.5%
+Time    : 2025-12-15 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | SHORT ENTRY | BTC-USD [1D]
+Entry   : 88310.91  |  Equity: $10941.12
+Stop    : 93127.88  (+4816.97 = ATR x2.0)
+Target  : 85902.42  (-2408.49 = ATR x1.0)
+R:R     : 1:0.50  |  Risk: $109.41 (1.0%)
+Qty     : 0.0227
+ATR     : 2408.49 (2.727% of price)
+RSI     : 39.61 [32.0-58.0]  |  Dir: Falling
+ADX     : 31.54  DI+: 23.38  DI-: 28.51  [min 28.0]
+Vol/MA  : 1.43x  [min 1.0x]
+Body    : 1.762x ATR  [min 0.3x]
+EMA21/50/200: 92060.63/92183.22/99233.38  Stack: BEAR
+Trail on: -4816.97 (ATR x2.0)  Dist: 963.39 (ATR x0.4)
+Time    : 2026-01-20 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | TRAIL STOP ACTIVATED | BTC-USD [1D]
+Direction : SHORT
+Best price: 83250.60  |  Entry: 88310.91
+Trail SL  : 84214.00  (best + ATR x0.4 = +1029.38)
+Prev SL   : 93127.88  |  Target: 85902.42
+Runup     : +5060.30 (5.73%)
+Time      : 2026-01-29 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | SHORT EXIT [LOSS] | BTC-USD [1D]
+Entry   : 88310.91  ->  Exit: 89169.85
+Move    : -0.97%
+P&L     : -21.93 USD
+Comm    : -2.42 USD
+Max runup: 5060.30
+Bars    : 9
+Equity  : $10919.19
+Trades  : 27  |  Win rate: 85.2%
+Time    : 2026-01-29 00:00:00
+----------------------------------------------------------------------
+APM v6.1 | SHORT ENTRY | BTC-USD [1D]
+Entry   : 68136.49  |  Equity: $10919.19
+Stop    : 75232.25  (+7095.76 = ATR x2.0)
+Target  : 64588.61  (-3547.88 = ATR x1.0)
+R:R     : 1:0.50  |  Risk: $109.19 (1.0%)
+Qty     : 0.0154
+ATR     : 3547.88 (5.207% of price)
+RSI     : 46.22 [32.0-58.0]  |  Dir: Falling
+ADX     : 38.54  DI+: 19.91  DI-: 24.34  [min 28.0]
+Vol/MA  : 1.04x  [min 1.0x]
+Body    : 0.763x ATR  [min 0.3x]
+EMA21/50/200: 69053.93/74030.73/89535.11  Stack: BEAR
+Trail on: -7095.76 (ATR x2.0)  Dist: 1419.15 (ATR x0.4)
+Time    : 2026-03-06 00:00:00
