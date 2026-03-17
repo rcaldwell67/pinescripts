@@ -17,7 +17,7 @@ PERIOD      = "max"
 INTERVAL    = "15m"
 INITIAL_CAP = 10_000.0
 COMM        = 0.0006      # 0.06% per side
-RISK_PCT    = 0.01        # 1% equity per trade
+RISK_PCT    = 0.03        # 3% equity per trade (matches Pine default)
 
 EMA_FAST    = 21
 EMA_MID     = 50

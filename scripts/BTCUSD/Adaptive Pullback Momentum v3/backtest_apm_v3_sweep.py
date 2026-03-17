@@ -28,7 +28,7 @@ PERIOD      = "max"
 INTERVAL    = "15m"
 INITIAL_CAP = 10_000.0
 COMM        = 0.0006
-RISK_PCT    = 0.01
+RISK_PCT    = 0.03
 
 # v3.2 baseline params
 PB_PCT      = 0.15

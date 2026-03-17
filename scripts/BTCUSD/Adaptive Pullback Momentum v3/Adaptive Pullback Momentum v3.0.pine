@@ -58,8 +58,8 @@
 //   TP multiplier : 2.5× → 2.0×
 //   Trail activate: 2.5× → 1.5×
 //   Trail distance: 0.6× → 1.5×
-//   Result @1% risk: net +6.92%  PF 2.385  WR 81.0% (21 trades)
-//   Default profile: 3% risk target (~3x return, ~3x drawdown)
+//   Result @1% risk: net +10.20%  PF 4.776  WR 86.4% (22 trades)
+//   Default profile: 3% risk -> net +25.54%  PF 4.410  WR 86.4% (22 trades)
 // ─────────────────────────────────────────────────────────────────────────────
 
 strategy("Adaptive Pullback Momentum v3.4", shorttitle="APM v3.4", overlay=true, pyramiding=0, process_orders_on_close=true, calc_on_order_fills=true, initial_capital=10000, default_qty_type=strategy.cash, default_qty_value=10000, commission_type=strategy.commission.percent, commission_value=0.06, slippage=1, margin_long=20, margin_short=20)
