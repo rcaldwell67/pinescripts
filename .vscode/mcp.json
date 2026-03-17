@@ -9,8 +9,9 @@
        "args": ["./node_modules/mcp-server-pinescript/index.js"]
       },
       "alpaca-mcp": {
+        "type": "stdio",
         "command": "node",
-        "args": ["./node_modules/alpaca-mcp/dist/index.js"],
+        "args": ["./.vscode/alpaca-mcp-wrapper.mjs"],
         "envFile": "${workspaceFolder}/.env"
       }
     }
