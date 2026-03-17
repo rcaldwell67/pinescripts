@@ -25,7 +25,7 @@
 //   → Hard TP    : entry ± ATR × 2.0  (1:1 R:R — 15m sweep-optimised)
 //   → Trail      : activates once price moves ATR×1.5 in favour,
 //                  then trails ATR×1.5 from best price (best net return in latest sweep)
-//   → Sizing     : 1 % of equity risked per trade
+//   → Sizing     : 3 % of equity risked per trade (aggressive profile)
 //
 // v3.1 CHANGES vs v3.0  (BTC-USD 15m sweep)
 //   PB tolerance : 0.30% → 0.15%  (tighter pullback = fewer, higher-quality entries)
@@ -58,7 +58,8 @@
 //   TP multiplier : 2.5× → 2.0×
 //   Trail activate: 2.5× → 1.5×
 //   Trail distance: 0.6× → 1.5×
-//   Result        : net +6.92%  PF 2.385  WR 81.0% (21 trades)
+//   Result @1% risk: net +6.92%  PF 2.385  WR 81.0% (21 trades)
+//   Default profile: 3% risk target (~3x return, ~3x drawdown)
 // ─────────────────────────────────────────────────────────────────────────────
 
 strategy(
@@ -110,7 +111,7 @@ i_tr_act     = input.float(1.5,  "Trail activate ATR mult",group=G_RISK,minval=0
                  tooltip="Trailing stop kicks in once price moves this many ATRs in your favour")
 i_tr_dist    = input.float(1.5,  "Trail distance ATR mult",group=G_RISK,minval=0.2, step=0.1,
                  tooltip="Once active, trail stays this many ATRs below/above the best price")
-i_risk_pct   = input.float(1.0,  "Equity risked per trade (%)",group=G_RISK,minval=0.1,maxval=20,step=0.1)
+i_risk_pct   = input.float(3.0,  "Equity risked per trade (%)",group=G_RISK,minval=0.1,maxval=20,step=0.1)
 
 var G_DISP = "Display"
 i_longs      = input.bool(false, "Trade Longs",   group=G_DISP)

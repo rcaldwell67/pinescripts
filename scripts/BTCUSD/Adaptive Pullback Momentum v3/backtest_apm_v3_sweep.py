@@ -366,7 +366,7 @@ t_final, eq_final, eqc_final = run_sim(df, FALSE, final_ss, best_sl, best_tp, be
 ret_f, pf_f, wr_f, mdd_f = quick_stats(t_final, eq_final)
 
 print("\n" + "="*60)
-    print(f"  APM v3.4  |  {TICKER} {INTERVAL}  (SHORTS ONLY)")
+print(f"  APM v3.4  |  {TICKER} {INTERVAL}  (SHORTS ONLY)")
 print("="*60)
 print(f"  Initial capital :  ${INITIAL_CAP:>10,.2f}")
 print(f"  Final equity    :  ${eq_final:>10,.2f}")
