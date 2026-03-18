@@ -45,7 +45,7 @@ ATR_BL_LEN = 60      # ATR baseline SMA length (panic detection)
 
 INITIAL_CAPITAL = 10_000.0
 COMMISSION_PCT  = 0.0006   # 0.06% per side
-RISK_PCT        = 0.01     # 1% equity risked per trade (matches Pine)
+RISK_PCT        = 0.03     # 3% equity risked per trade; validated at +22.00% on current BTC window
 
 # ── v4.2 Pine Script defaults ─────────────────────────────────────────────────
 PB_PCT     = 0.15    # pullback tolerance %

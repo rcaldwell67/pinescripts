@@ -77,11 +77,11 @@ API_KEY    = (os.environ.get("ALPACA_PAPER_API_KEY")
 API_SECRET = (os.environ.get("ALPACA_PAPER_API_SECRET")
               or os.environ.get("ALPACA_API_SECRET", ""))
 
-# ── APM v4.2 parameters (BTC/USD 30m — sweep-optimised) ──────────────────────
+# ── APM v4.2 parameters (BTC/USD 30m — +20% sizing calibration) ──────────────
 SYMBOL          = "BTC/USD"
 INITIAL_CAPITAL = 10_000.0
 COMMISSION_PCT  = 0.0006
-RISK_PCT        = 0.01
+RISK_PCT        = 0.03
 LEV_CAP         = 5.0
 
 EMA_FAST_LEN = 21

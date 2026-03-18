@@ -42,7 +42,7 @@
 //   Key changes : ADX 18→15, PB 0.25%→0.40%, TP ×6→×8, Trail_act 2.5→3.5, Risk 1%→2%, Macro OFF
 // ─────────────────────────────────────────────────────────────────────────────
 
-strategy("Adaptive Pullback Momentum v1.1 · 5m", shorttitle="APM v1.1 5m", overlay=true, pyramiding=0, initial_capital=10000, default_qty_type=strategy.cash, default_qty_value=10000, commission_type=strategy.commission.percent, commission_value=0.06, slippage=1)
+strategy("Adaptive Pullback Momentum v1.1 · 5m", shorttitle="APM v1.1 5m", overlay=true, pyramiding=0, initial_capital=10000, default_qty_type=strategy.cash, default_qty_value=10000, commission_type=strategy.commission.percent, commission_value=0.06, slippage=1, margin_long=20, margin_short=20)
 
 // ── Inputs ────────────────────────────────────────────────────────────────────
 var G_TREND = "Trend Filters"
@@ -165,6 +165,9 @@ short_pb = high[1] >= pb_tol_dn and close < ema_fast and close < open and body_s
 // ── Full entry conditions ─────────────────────────────────────────────────────
 no_pos    = strategy.position_size == 0.0
 stop_dist = atr * i_sl_mult
+risk_qty  = stop_dist == 0.0 ? 0.0 : strategy.equity * i_risk_pct / 100.0 / stop_dist
+max_qty   = close == 0.0 ? 0.0 : strategy.equity * 5.0 / close
+entry_qty = math.min(risk_qty, max_qty)
 
 long_ok = i_longs and no_pos and not is_panic and is_trending and adx_rising and atr_floor_ok and in_session and long_pb and ema_bull_full and ema_slope_up and rsi_rising and di_bull_dom and mom_bull and rsi >= i_rsi_lo_l and rsi <= i_rsi_hi_l and volume >= vol_ma * i_vol_mult
 
@@ -180,7 +183,7 @@ var int   bars_in_trade = 0
 
 // ── Entries ───────────────────────────────────────────────────────────────────
 if long_ok
-    qty          = strategy.equity * i_risk_pct / 100.0 / stop_dist
+    qty          = entry_qty
     sl_price    := close - stop_dist
     tp_price    := close + atr * i_tp_mult
     best_price  := close
@@ -190,7 +193,7 @@ if long_ok
     alert(long_msg, alert.freq_once_per_bar_close)
 
 if short_ok
-    qty          = strategy.equity * i_risk_pct / 100.0 / stop_dist
+    qty          = entry_qty
     sl_price    := close + stop_dist
     tp_price    := close - atr * i_tp_mult
     best_price  := close

@@ -1,6 +1,6 @@
 """Faithful Python backtest of Adaptive Pullback Momentum v6.1
 Timeframe : 1D BTC-USD, period="max" (~11 years via yfinance, back to 2014)
-Commission : 0.06% per side   Risk : 1% equity / trade
+Commission : 0.06% per side   Risk : 2.5% equity / trade
 """
 
 import pandas as pd
@@ -15,7 +15,7 @@ INTERVAL   = "1d"
 PERIOD     = "max"
 INIT_CAP   = 10_000.0
 COMMISSION = 0.0006
-RISK_PCT   = 0.01
+RISK_PCT   = 0.025
 
 # ── Strategy defaults (v6.1 sweep-optimised) ────────────────────────────────
 EMA_FAST_LEN = 21

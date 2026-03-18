@@ -69,14 +69,14 @@
 //   trail (0.2×) + shorter MB window (20 bars) captures more of each run
 // ─────────────────────────────────────────────────────────────────────────────
 
-strategy("Adaptive Pullback Momentum v2.7", shorttitle="APM v2.7", overlay=true, pyramiding=0, initial_capital=10000, default_qty_type=strategy.cash, default_qty_value=10000, commission_type=strategy.commission.percent, commission_value=0.06, slippage=1)
+strategy("Adaptive Pullback Momentum v2.7", shorttitle="APM v2.7", overlay=true, pyramiding=0, initial_capital=10000, default_qty_type=strategy.cash, default_qty_value=10000, commission_type=strategy.commission.percent, commission_value=0.06, slippage=1, margin_long=20, margin_short=20)
 
 // ── Inputs ───────────────────────────────────────────────────────────────────
 var G_TREND = "Trend Filters"
 i_ema_fast   = input.int  (21,   "EMA Fast",            group=G_TREND, minval=5)
 i_ema_mid    = input.int  (50,   "EMA Mid",             group=G_TREND, minval=10)
 i_ema_slow   = input.int  (200,  "EMA Slow",            group=G_TREND, minval=50)
-i_adx_thresh = input.int  (16,   "ADX threshold",       group=G_TREND, minval=5,  maxval=60)
+i_adx_thresh = input.int  (15,   "ADX threshold",       group=G_TREND, minval=5,  maxval=60)
 i_adx_len    = input.int  (14,   "ADX / DI length",     group=G_TREND, minval=5)
 i_pb_pct     = input.float(0.30, "Pullback tolerance (%)", group=G_TREND, minval=0.05, maxval=3.0, step=0.05,
                  tooltip="How close the prev bar's low/high must come to EMA-fast to count as a pullback")
@@ -89,7 +89,7 @@ i_rsi_lo_s   = input.int  (32,   "RSI min – Short",       group=G_MOM, minval=
 i_rsi_hi_s   = input.int  (58,   "RSI max – Short",       group=G_MOM, minval=40, maxval=80)
 i_vol_len    = input.int  (20,   "Volume SMA length",     group=G_MOM, minval=5)
 i_vol_mult   = input.float(0.7,  "Volume multiplier",     group=G_MOM, minval=0.3, maxval=5.0, step=0.1)
-i_min_body   = input.float(0.20, "Min body (×ATR)",        group=G_MOM, minval=0.0, maxval=2.0, step=0.05,
+i_min_body   = input.float(0.15, "Min body (×ATR)",        group=G_MOM, minval=0.0, maxval=2.0, step=0.05,
                  tooltip="Entry bar body (|close-open|/ATR) must exceed this — filters doji / indecision candles")
 
 var G_VOL = "Volatility"
@@ -111,11 +111,11 @@ i_mom_bars      = input.int (5,    "Momentum bars", group=G_EXEC, minval=1, maxv
 var G_RISK = "Risk Management"
 i_sl_mult    = input.float(2.0,  "Stop loss ATR mult",    group=G_RISK, minval=0.3, step=0.1)
 i_tp_mult    = input.float(6.0,  "Take profit ATR mult",  group=G_RISK, minval=0.5, step=0.1)
-i_tr_act     = input.float(3.5,  "Trail activate ATR mult",group=G_RISK,minval=0.3, step=0.1,
+i_tr_act     = input.float(2.5,  "Trail activate ATR mult",group=G_RISK,minval=0.3, step=0.1,
                  tooltip="Trailing stop kicks in once price moves this many ATRs in your favour")
 i_tr_dist    = input.float(0.1,  "Trail distance ATR mult",group=G_RISK,minval=0.1, step=0.1,
                  tooltip="Once active, trail stays this many ATRs below/above the best price")
-i_risk_pct   = input.float(2.5,  "Equity risked per trade (%)",group=G_RISK,minval=0.1,maxval=20,step=0.1)
+i_risk_pct   = input.float(3.0,  "Equity risked per trade (%)",group=G_RISK,minval=0.1,maxval=20,step=0.1)
 i_max_bars   = input.int  (30,   "Max bars in trade (0=off)",  group=G_RISK, minval=0, maxval=500,
                  tooltip="Exit at bar close after this many bars. 0 = disabled. Prevents stalled trades from reversing.")
 
@@ -169,6 +169,9 @@ short_pb   = high[1] >= pb_tol_dn and close < ema_fast and close < open and body
 // ── Full entry conditions ─────────────────────────────────────────────────────
 no_pos     = strategy.position_size == 0.0
 stop_dist  = atr * i_sl_mult
+risk_qty   = stop_dist == 0.0 ? 0.0 : strategy.equity * i_risk_pct / 100.0 / stop_dist
+max_qty    = close == 0.0 ? 0.0 : strategy.equity * 5.0 / close
+entry_qty  = math.min(risk_qty, max_qty)
 
 long_ok = i_longs and no_pos and not is_panic and is_trending and session_ok and long_pb and ema_bull_full and ema_slope_up and rsi_rising and atr_floor_ok and mom_long_ok and rsi >= i_rsi_lo_l and rsi <= i_rsi_hi_l and volume >= vol_ma * i_vol_mult
 
@@ -184,7 +187,7 @@ var int   bars_in_trade = 0
 
 // ── Entries ───────────────────────────────────────────────────────────────────
 if long_ok
-    qty          = strategy.equity * i_risk_pct / 100.0 / stop_dist
+    qty          = entry_qty
     sl_price    := close - stop_dist
     tp_price    := close + atr * i_tp_mult
     best_price  := close
@@ -194,7 +197,7 @@ if long_ok
     alert(long_msg, alert.freq_once_per_bar_close)
 
 if short_ok
-    qty          = strategy.equity * i_risk_pct / 100.0 / stop_dist
+    qty          = entry_qty
     sl_price    := close + stop_dist
     tp_price    := close - atr * i_tp_mult
     best_price  := close

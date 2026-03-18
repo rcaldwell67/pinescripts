@@ -47,7 +47,7 @@
 //                  Sole improvement: TP×3.5 → +10.41% PF=2.415 WR=70% 20 trades)
 // ─────────────────────────────────────────────────────────────────────────────
 
-strategy("Adaptive Pullback Momentum v4.2", shorttitle="APM v4.2", overlay=true, pyramiding=0, initial_capital=10000, default_qty_type=strategy.cash, default_qty_value=10000, commission_type=strategy.commission.percent, commission_value=0.06, slippage=1)
+strategy("Adaptive Pullback Momentum v4.2", shorttitle="APM v4.2", overlay=true, pyramiding=0, initial_capital=10000, default_qty_type=strategy.cash, default_qty_value=10000, commission_type=strategy.commission.percent, commission_value=0.06, slippage=1, margin_long=20, margin_short=20)
 
 // ── Inputs ───────────────────────────────────────────────────────────────────
 var G_TREND = "Trend Filters"
@@ -84,7 +84,7 @@ i_tr_act     = input.float(2.5,  "Trail activate ATR mult",group=G_RISK,minval=0
                  tooltip="Trailing stop kicks in once price moves this many ATRs in your favour")
 i_tr_dist    = input.float(1.5,  "Trail distance ATR mult",group=G_RISK,minval=0.2, step=0.1,
                  tooltip="Once active, trail stays this many ATRs below/above the best price")
-i_risk_pct   = input.float(1.0,  "Equity risked per trade (%)",group=G_RISK,minval=0.1,maxval=20,step=0.1)
+i_risk_pct   = input.float(3.0,  "Equity risked per trade (%)",group=G_RISK,minval=0.1,maxval=20,step=0.1)
 
 var G_DISP = "Display"
 i_longs      = input.bool(true,  "Trade Longs",   group=G_DISP)
@@ -140,6 +140,9 @@ rsi_falling = rsi < rsi[1]
 // ── Full entry conditions ─────────────────────────────────────────────────────
 no_pos     = strategy.position_size == 0.0
 stop_dist  = atr * i_sl_mult
+risk_qty   = stop_dist == 0.0 ? 0.0 : strategy.equity * i_risk_pct / 100.0 / stop_dist
+max_qty    = close == 0.0 ? 0.0 : strategy.equity * 5.0 / close
+entry_qty  = math.min(risk_qty, max_qty)
 
 long_ok = i_longs and no_pos and not is_panic and is_trending and atr_floor_ok and long_pb and ema_bull_full and ema_slope_up and rsi_rising and rsi >= i_rsi_lo_l and rsi <= i_rsi_hi_l and volume >= vol_ma * i_vol_mult
 
@@ -154,7 +157,7 @@ var bool  trail_active = false
 
 // ── Entries ───────────────────────────────────────────────────────────────────
 if long_ok
-    qty          = strategy.equity * i_risk_pct / 100.0 / stop_dist
+    qty          = entry_qty
     sl_price    := close - stop_dist
     tp_price    := close + atr * i_tp_mult
     best_price  := close
@@ -164,7 +167,7 @@ if long_ok
     alert(long_msg, alert.freq_once_per_bar_close)
 
 if short_ok
-    qty          = strategy.equity * i_risk_pct / 100.0 / stop_dist
+    qty          = entry_qty
     sl_price    := close + stop_dist
     tp_price    := close - atr * i_tp_mult
     best_price  := close

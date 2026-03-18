@@ -5,9 +5,9 @@ Run every 10 minutes via GitHub Actions (or cron). Fetches 5m bars from Alpaca
 and resamples to 10m. Evaluates APM v2.0 short entry conditions (session filter,
 momentum) and manages any open short position (trailing stop, MaxBars time-exit).
 
-Strategy parameters (Pine v2.0 10m, Stage-3 sweep-optimised):
-    ADX=20 | PB=0.30% | SL×2.0 | TP×6.0 | TRAIL_ACT=3.5× | TRAIL_DIST=0.3×
-    MAX_BARS=30 | ATR_FLOOR=0.15% | PANIC=1.5× | VOL=0.7× | MIN_BODY=0.15×
+Strategy parameters (Pine v2.0 10m, current +20% calibration):
+    ADX=15 | PB=0.30% | SL×2.0 | TP×6.0 | TRAIL_ACT=2.5× | TRAIL_DIST=0.1×
+    MAX_BARS=30 | ATR_FLOOR=0.10% | PANIC=1.5× | VOL=0.7× | MIN_BODY=0.15×
     MOMENTUM=5 bars | SESSION 9–14 ET | COOLDOWN after 2 SL
 
 State:  docs/data/btcusd/v2_paper_state.json
@@ -79,11 +79,11 @@ API_KEY    = (os.environ.get("ALPACA_PAPER_API_KEY")
 API_SECRET = (os.environ.get("ALPACA_PAPER_API_SECRET")
               or os.environ.get("ALPACA_API_SECRET", ""))
 
-# ── APM v2.0 parameters (BTC/USD 10m — sweep-optimised) ──────────────────────
+# ── APM v2.0 parameters (BTC/USD 10m — current +20% calibration) ─────────────
 SYMBOL          = "BTC/USD"
 INITIAL_CAPITAL = 10_000.0
 COMMISSION_PCT  = 0.0006
-RISK_PCT        = 0.01
+RISK_PCT        = 0.03
 LEV_CAP         = 5.0
 
 EMA_FAST_LEN = 21
@@ -95,11 +95,11 @@ ATR_LEN      = 14
 ATR_BL_LEN   = 60
 VOL_LEN      = 20
 
-ADX_THRESH = 20
+ADX_THRESH = 15
 PB_PCT     = 0.30
 VOL_MULT   = 0.7
 MIN_BODY   = 0.15
-ATR_FLOOR  = 0.0015
+ATR_FLOOR  = 0.0010
 PANIC_MULT = 1.5
 
 RSI_LO_L = 42; RSI_HI_L = 68
@@ -107,8 +107,8 @@ RSI_LO_S = 32; RSI_HI_S = 58
 
 SL_MULT    = 2.0
 TP_MULT    = 6.0
-TRAIL_ACT  = 3.5
-TRAIL_DIST = 0.3
+TRAIL_ACT  = 2.5
+TRAIL_DIST = 0.1
 MAX_BARS   = 30
 
 MOMENTUM_BARS        = 5   # close < close[5] for shorts

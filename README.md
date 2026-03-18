@@ -2,7 +2,7 @@
 
 ## APM Dashboard (GitHub Pages)
 
-Live dashboard for the Adaptive Pullback Momentum strategy suite — equity curves, trade logs, performance metrics, and version comparisons across all four timeframes (15m, 30m, 1h, 1D).
+Live dashboard for the Adaptive Pullback Momentum strategy suite — equity curves, trade logs, performance metrics, and version comparisons across the BTC-USD and CLM strategy sets from 5m through 1D.
 
 **➜ [View Dashboard](https://rcaldwell67.github.io/pinescripts/)**
 
@@ -15,7 +15,9 @@ Live dashboard for the Adaptive Pullback Momentum strategy suite — equity curv
 
 ### Updating data
 
-When new backtests produce updated CSV files, copy them to `docs/data/`:
+The dashboard backtest feeds live in `docs/data/btcusd/` and `docs/data/clm/`.
+
+For BTC-USD, update the dashboard by running the backtest/export scripts and copying the canonical trade CSVs into `docs/data/btcusd/`:
 
 ```bash
 python3 "scripts/BTCUSD/Adaptive Pullback Momentum v1/backtest_apm_v1_5m.py"
@@ -27,5 +29,15 @@ cp "scripts/BTCUSD/Adaptive Pullback Momentum v4/apm_v4_trades_btcusd_30m.csv"  
 For BTC-USD v1 and v2, the dashboard backtesting datasets are `docs/data/btcusd/v1_trades.csv` and `docs/data/btcusd/v2_trades.csv`. Their 12-month backtests are exported separately as `docs/data/btcusd/v1_trades_12mo.csv` and `docs/data/btcusd/v2_trades_12mo.csv` and should not overwrite the dashboard files.
 
 For BTC-USD v1, use the backtest scripts to write the dashboard-format CSVs because the raw strategy CSVs use `entry`/`exit` while the dashboard expects `entry_price`/`exit_price`.
+
+For CLM, the dashboard backtest files are `docs/data/clm/v1_trades.csv` through `docs/data/clm/v6_trades.csv`.
+
+Current CLM sync behavior:
+
+- `scripts/CLM/Adaptive Pullback Momentum v4/backtest_apm_v4_30m_v46.py` rewrites `docs/data/clm/v4_trades.csv` in dashboard format automatically.
+- `scripts/CLM/Adaptive Pullback Momentum v5/backtest_apm_v5_1h.py` writes `apm_v5_trades_clm_1h.csv` and also syncs `docs/data/clm/v5_trades.csv` automatically.
+- `scripts/CLM/Adaptive Pullback Momentum v6/backtest_apm_v6_1d.py` writes `apm_v6_trades_clm_1d.csv` and also syncs `docs/data/clm/v6_trades.csv` automatically.
+
+The root-level exports are not always the dashboard source of truth. In particular, `apm_v4_trades_clm_30m.csv` is not the canonical dashboard file; the dashboard uses the remapped output written by `backtest_apm_v4_30m_v46.py` to `docs/data/clm/v4_trades.csv`.
 
 The dashboard exposes backtest-only selectors for BTC-USD v1 and v2 so you can switch between the main backtest feeds and the separate 12-month exports without affecting paper or live views.

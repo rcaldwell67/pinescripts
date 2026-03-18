@@ -2,8 +2,8 @@ APM v6.1 | SHORT ENTRY | BTC-USD [1D]
 Entry   : 342.42  |  Equity: $10000.00
 Stop    : 371.67  (+29.26 = ATR x2.0)
 Target  : 327.79  (-14.63 = ATR x1.0)
-R:R     : 1:0.50  |  Risk: $100.00 (1.0%)
-Qty     : 3.4178
+R:R     : 1:0.50  |  Risk: $250.00 (2.5%)
+Qty     : 8.5446
 ATR     : 14.63 (4.272% of price)
 RSI     : 40.02 [32.0-58.0]  |  Dir: Falling
 ADX     : 30.15  DI+: 19.55  DI-: 24.77  [min 28.0]
@@ -16,20 +16,20 @@ Time    : 2014-11-07 00:00:00
 APM v6.1 | SHORT EXIT [LOSS] | BTC-USD [1D]
 Entry   : 342.42  ->  Exit: 371.67
 Move    : -8.54%
-P&L     : -101.46 USD
-Comm    : -1.46 USD
+P&L     : -253.66 USD
+Comm    : -3.66 USD
 Max runup: 0.26
 Bars    : 3
-Equity  : $9898.54
+Equity  : $9746.34
 Trades  : 1  |  Win rate: 0.0%
 Time    : 2014-11-10 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | SHORT ENTRY | BTC-USD [1D]
-Entry   : 357.84  |  Equity: $9898.54
+Entry   : 357.84  |  Equity: $9746.34
 Stop    : 401.96  (+44.12 = ATR x2.0)
 Target  : 335.78  (-22.06 = ATR x1.0)
-R:R     : 1:0.50  |  Risk: $98.99 (1.0%)
-Qty     : 2.2437
+R:R     : 1:0.50  |  Risk: $243.66 (2.5%)
+Qty     : 5.5230
 ATR     : 22.06 (6.164% of price)
 RSI     : 44.54 [32.0-58.0]  |  Dir: Falling
 ADX     : 31.34  DI+: 29.81  DI-: 20.07  [min 28.0]
@@ -42,20 +42,20 @@ Time    : 2014-11-20 00:00:00
 APM v6.1 | SHORT EXIT [WIN] | BTC-USD [1D]
 Entry   : 357.84  ->  Exit: 335.78
 Move    : +6.16%
-P&L     : +48.56 USD
-Comm    : -0.93 USD
+P&L     : +119.53 USD
+Comm    : -2.30 USD
 Max runup: 30.78
 Bars    : 26
-Equity  : $9947.09
+Equity  : $9865.87
 Trades  : 2  |  Win rate: 50.0%
 Time    : 2014-12-16 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | SHORT ENTRY | BTC-USD [1D]
-Entry   : 233.91  |  Equity: $9947.09
+Entry   : 233.91  |  Equity: $9865.87
 Stop    : 277.71  (+43.80 = ATR x2.0)
 Target  : 212.02  (-21.90 = ATR x1.0)
-R:R     : 1:0.50  |  Risk: $99.47 (1.0%)
-Qty     : 2.2712
+R:R     : 1:0.50  |  Risk: $246.65 (2.5%)
+Qty     : 5.6316
 ATR     : 21.90 (9.362% of price)
 RSI     : 43.91 [32.0-58.0]  |  Dir: Falling
 ADX     : 36.10  DI+: 28.99  DI-: 26.86  [min 28.0]
@@ -68,11 +68,11 @@ Time    : 2015-01-28 00:00:00
 APM v6.1 | SHORT EXIT [WIN] | BTC-USD [1D]
 Entry   : 233.91  ->  Exit: 212.02
 Move    : +9.36%
-P&L     : +49.13 USD
-Comm    : -0.61 USD
+P&L     : +121.82 USD
+Comm    : -1.51 USD
 Max runup: 21.90
 Bars    : 4
-Equity  : $9996.22
+Equity  : $9987.69
 Trades  : 3  |  Win rate: 66.7%
 Time    : 2015-02-01 00:00:00
 ----------------------------------------------------------------------
@@ -113,11 +113,11 @@ Status  : New entries RESUMED
 Time    : 2015-11-19 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | BTC-USD [1D]
-Entry   : 352.68  |  Equity: $9996.22
+Entry   : 352.68  |  Equity: $9987.69
 Stop    : 315.59  (-37.09 = ATR x2.0)
 Target  : 371.23  (+18.55 = ATR x1.0)
-R:R     : 1:0.50  |  Risk: $99.96 (1.0%)
-Qty     : 2.6951
+R:R     : 1:0.50  |  Risk: $249.69 (2.5%)
+Qty     : 6.7319
 ATR     : 18.55 (5.258% of price)
 RSI     : 59.14 [42.0-72.0]  |  Dir: Rising
 ADX     : 28.14  DI+: 35.02  DI-: 19.18  [min 28.0]
@@ -130,11 +130,11 @@ Time    : 2015-11-26 00:00:00
 APM v6.1 | LONG EXIT [WIN] | BTC-USD [1D]
 Entry   : 352.68  ->  Exit: 371.23
 Move    : +5.26%
-P&L     : +48.81 USD
-Comm    : -1.17 USD
+P&L     : +121.92 USD
+Comm    : -2.92 USD
 Max runup: 19.26
 Bars    : 3
-Equity  : $10045.03
+Equity  : $10109.61
 Trades  : 4  |  Win rate: 75.0%
 Time    : 2015-11-29 00:00:00
 ----------------------------------------------------------------------
@@ -199,11 +199,11 @@ Status  : New entries RESUMED
 Time    : 2017-01-19 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | BTC-USD [1D]
-Entry   : 1188.49  |  Equity: $10045.03
+Entry   : 1188.49  |  Equity: $10109.61
 Stop    : 1106.63  (-81.86 = ATR x2.0)
 Target  : 1229.42  (+40.93 = ATR x1.0)
-R:R     : 1:0.50  |  Risk: $100.45 (1.0%)
-Qty     : 1.2271
+R:R     : 1:0.50  |  Risk: $252.74 (2.5%)
+Qty     : 3.0874
 ATR     : 40.93 (3.444% of price)
 RSI     : 56.00 [42.0-72.0]  |  Dir: Rising
 ADX     : 39.01  DI+: 26.87  DI-: 26.12  [min 28.0]
@@ -224,20 +224,20 @@ Time      : 2017-03-10 00:00:00
 APM v6.1 | LONG EXIT [LOSS] | BTC-USD [1D]
 Entry   : 1188.49  ->  Exit: 1189.36
 Move    : +0.07%
-P&L     : -0.68 USD
-Comm    : -1.75 USD
+P&L     : -1.72 USD
+Comm    : -4.40 USD
 Max runup: 81.98
 Bars    : 1
-Equity  : $10044.35
+Equity  : $10107.89
 Trades  : 5  |  Win rate: 60.0%
 Time    : 2017-03-10 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | BTC-USD [1D]
-Entry   : 1175.83  |  Equity: $10044.35
+Entry   : 1175.83  |  Equity: $10107.89
 Stop    : 1068.54  (-107.29 = ATR x2.0)
 Target  : 1229.47  (+53.64 = ATR x1.0)
-R:R     : 1:0.50  |  Risk: $100.44 (1.0%)
-Qty     : 0.9362
+R:R     : 1:0.50  |  Risk: $252.70 (2.5%)
+Qty     : 2.3553
 ATR     : 53.64 (4.562% of price)
 RSI     : 53.41 [42.0-72.0]  |  Dir: Rising
 ADX     : 36.62  DI+: 26.71  DI-: 17.18  [min 28.0]
@@ -250,11 +250,11 @@ Time    : 2017-03-11 00:00:00
 APM v6.1 | LONG EXIT [WIN] | BTC-USD [1D]
 Entry   : 1175.83  ->  Exit: 1229.47
 Move    : +4.56%
-P&L     : +48.87 USD
-Comm    : -1.35 USD
+P&L     : +122.95 USD
+Comm    : -3.40 USD
 Max runup: 61.54
 Bars    : 2
-Equity  : $10093.22
+Equity  : $10230.84
 Trades  : 6  |  Win rate: 66.7%
 Time    : 2017-03-13 00:00:00
 ----------------------------------------------------------------------
@@ -283,11 +283,11 @@ Status  : New entries RESUMED
 Time    : 2017-06-17 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | BTC-USD [1D]
-Entry   : 4376.53  |  Equity: $10093.22
+Entry   : 4376.53  |  Equity: $10230.84
 Stop    : 3832.87  (-543.66 = ATR x2.0)
 Target  : 4648.36  (+271.83 = ATR x1.0)
-R:R     : 1:0.50  |  Risk: $100.93 (1.0%)
-Qty     : 0.1857
+R:R     : 1:0.50  |  Risk: $255.77 (2.5%)
+Qty     : 0.4705
 ATR     : 271.83 (6.211% of price)
 RSI     : 55.90 [42.0-72.0]  |  Dir: Rising
 ADX     : 30.24  DI+: 21.49  DI-: 24.71  [min 28.0]
@@ -300,20 +300,20 @@ Time    : 2017-09-05 00:00:00
 APM v6.1 | LONG EXIT [WIN] | BTC-USD [1D]
 Entry   : 4376.53  ->  Exit: 4648.36
 Move    : +6.21%
-P&L     : +49.46 USD
-Comm    : -1.01 USD
+P&L     : +125.34 USD
+Comm    : -2.55 USD
 Max runup: 278.51
 Bars    : 2
-Equity  : $10142.68
+Equity  : $10356.18
 Trades  : 7  |  Win rate: 71.4%
 Time    : 2017-09-07 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | BTC-USD [1D]
-Entry   : 6559.49  |  Equity: $10142.68
+Entry   : 6559.49  |  Equity: $10356.18
 Stop    : 5553.26  (-1006.23 = ATR x2.0)
 Target  : 7062.61  (+503.12 = ATR x1.0)
-R:R     : 1:0.50  |  Risk: $101.43 (1.0%)
-Qty     : 0.1008
+R:R     : 1:0.50  |  Risk: $258.90 (2.5%)
+Qty     : 0.2573
 ATR     : 503.12 (7.670% of price)
 RSI     : 53.05 [42.0-72.0]  |  Dir: Rising
 ADX     : 31.83  DI+: 23.04  DI-: 25.88  [min 28.0]
@@ -326,20 +326,20 @@ Time    : 2017-11-13 00:00:00
 APM v6.1 | LONG EXIT [WIN] | BTC-USD [1D]
 Entry   : 6559.49  ->  Exit: 7062.61
 Move    : +7.67%
-P&L     : +49.89 USD
-Comm    : -0.82 USD
+P&L     : +127.35 USD
+Comm    : -2.10 USD
 Max runup: 782.76
 Bars    : 2
-Equity  : $10192.57
+Equity  : $10483.53
 Trades  : 8  |  Win rate: 75.0%
 Time    : 2017-11-15 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | BTC-USD [1D]
-Entry   : 7315.54  |  Equity: $10192.57
+Entry   : 7315.54  |  Equity: $10483.53
 Stop    : 6306.63  (-1008.91 = ATR x2.0)
 Target  : 7820.00  (+504.46 = ATR x1.0)
-R:R     : 1:0.50  |  Risk: $101.93 (1.0%)
-Qty     : 0.1010
+R:R     : 1:0.50  |  Risk: $262.09 (2.5%)
+Qty     : 0.2598
 ATR     : 504.46 (6.896% of price)
 RSI     : 62.01 [42.0-72.0]  |  Dir: Rising
 ADX     : 28.65  DI+: 27.99  DI-: 22.26  [min 28.0]
@@ -352,11 +352,11 @@ Time    : 2017-11-15 00:00:00
 APM v6.1 | LONG EXIT [WIN] | BTC-USD [1D]
 Entry   : 7315.54  ->  Exit: 7820.00
 Move    : +6.90%
-P&L     : +50.05 USD
-Comm    : -0.92 USD
+P&L     : +128.68 USD
+Comm    : -2.36 USD
 Max runup: 651.84
 Bars    : 1
-Equity  : $10242.62
+Equity  : $10612.21
 Trades  : 9  |  Win rate: 77.8%
 Time    : 2017-11-16 00:00:00
 ----------------------------------------------------------------------
@@ -373,11 +373,11 @@ Status  : New entries RESUMED
 Time    : 2017-12-29 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | BTC-USD [1D]
-Entry   : 14982.10  |  Equity: $10242.62
+Entry   : 14982.10  |  Equity: $10612.21
 Stop    : 11489.50  (-3492.60 = ATR x2.0)
 Target  : 16728.40  (+1746.30 = ATR x1.0)
-R:R     : 1:0.50  |  Risk: $102.43 (1.0%)
-Qty     : 0.0293
+R:R     : 1:0.50  |  Risk: $265.31 (2.5%)
+Qty     : 0.0760
 ATR     : 1746.30 (11.656% of price)
 RSI     : 51.77 [42.0-72.0]  |  Dir: Rising
 ADX     : 30.29  DI+: 21.89  DI-: 25.52  [min 28.0]
@@ -390,11 +390,11 @@ Time    : 2018-01-02 00:00:00
 APM v6.1 | LONG EXIT [WIN] | BTC-USD [1D]
 Entry   : 14982.10  ->  Exit: 16728.40
 Move    : +11.66%
-P&L     : +50.66 USD
-Comm    : -0.56 USD
+P&L     : +131.21 USD
+Comm    : -1.45 USD
 Max runup: 2723.10
 Bars    : 3
-Equity  : $10293.27
+Equity  : $10743.42
 Trades  : 10  |  Win rate: 80.0%
 Time    : 2018-01-05 00:00:00
 ----------------------------------------------------------------------
@@ -411,11 +411,11 @@ Status  : New entries RESUMED
 Time    : 2018-11-29 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | SHORT ENTRY | BTC-USD [1D]
-Entry   : 3815.49  |  Equity: $10293.27
+Entry   : 3815.49  |  Equity: $10743.42
 Stop    : 4304.50  (+489.00 = ATR x2.0)
 Target  : 3570.99  (-244.50 = ATR x1.0)
-R:R     : 1:0.50  |  Risk: $102.93 (1.0%)
-Qty     : 0.2105
+R:R     : 1:0.50  |  Risk: $268.59 (2.5%)
+Qty     : 0.5492
 ATR     : 244.50 (6.408% of price)
 RSI     : 46.99 [32.0-58.0]  |  Dir: Falling
 ADX     : 34.81  DI+: 28.08  DI-: 23.94  [min 28.0]
@@ -428,11 +428,11 @@ Time    : 2018-12-25 00:00:00
 APM v6.1 | SHORT EXIT [WIN] | BTC-USD [1D]
 Entry   : 3815.49  ->  Exit: 3570.99
 Move    : +6.41%
-P&L     : +50.53 USD
-Comm    : -0.93 USD
+P&L     : +131.86 USD
+Comm    : -2.43 USD
 Max runup: 270.56
 Bars    : 19
-Equity  : $10343.80
+Equity  : $10875.28
 Trades  : 11  |  Win rate: 81.8%
 Time    : 2019-01-13 00:00:00
 ----------------------------------------------------------------------
@@ -473,11 +473,11 @@ Status  : New entries RESUMED
 Time    : 2019-07-05 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | BTC-USD [1D]
-Entry   : 10142.00  |  Equity: $10343.80
+Entry   : 10142.00  |  Equity: $10875.28
 Stop    : 9495.62  (-646.38 = ATR x2.0)
 Target  : 10465.19  (+323.19 = ATR x1.0)
-R:R     : 1:0.50  |  Risk: $103.44 (1.0%)
-Qty     : 0.1600
+R:R     : 1:0.50  |  Risk: $271.88 (2.5%)
+Qty     : 0.4206
 ATR     : 323.19 (3.187% of price)
 RSI     : 61.30 [42.0-72.0]  |  Dir: Rising
 ADX     : 31.93  DI+: 23.43  DI-: 19.63  [min 28.0]
@@ -490,11 +490,11 @@ Time    : 2020-02-18 00:00:00
 APM v6.1 | LONG EXIT [LOSS] | BTC-USD [1D]
 Entry   : 10142.00  ->  Exit: 9495.62
 Move    : -6.37%
-P&L     : -105.32 USD
-Comm    : -1.89 USD
+P&L     : -276.84 USD
+Comm    : -4.96 USD
 Max runup: 49.68
 Bars    : 7
-Equity  : $10238.48
+Equity  : $10598.44
 Trades  : 12  |  Win rate: 75.0%
 Time    : 2020-02-25 00:00:00
 ----------------------------------------------------------------------
@@ -523,11 +523,11 @@ Status  : New entries RESUMED
 Time    : 2021-01-23 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | BTC-USD [1D]
-Entry   : 42816.50  |  Equity: $10238.48
+Entry   : 42816.50  |  Equity: $10598.44
 Stop    : 38243.15  (-4573.35 = ATR x2.0)
 Target  : 45103.18  (+2286.68 = ATR x1.0)
-R:R     : 1:0.50  |  Risk: $102.38 (1.0%)
-Qty     : 0.0224
+R:R     : 1:0.50  |  Risk: $264.96 (2.5%)
+Qty     : 0.0579
 ATR     : 2286.68 (5.341% of price)
 RSI     : 68.04 [42.0-72.0]  |  Dir: Rising
 ADX     : 30.37  DI+: 30.64  DI-: 13.77  [min 28.0]
@@ -540,20 +540,20 @@ Time    : 2021-08-06 00:00:00
 APM v6.1 | LONG EXIT [WIN] | BTC-USD [1D]
 Entry   : 42816.50  ->  Exit: 45103.18
 Move    : +5.34%
-P&L     : +50.01 USD
-Comm    : -1.18 USD
+P&L     : +129.42 USD
+Comm    : -3.06 USD
 Max runup: 2465.85
 Bars    : 2
-Equity  : $10288.49
+Equity  : $10727.86
 Trades  : 13  |  Win rate: 76.9%
 Time    : 2021-08-08 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | BTC-USD [1D]
-Entry   : 60622.14  |  Equity: $10288.49
+Entry   : 60622.14  |  Equity: $10727.86
 Stop    : 54740.56  (-5881.58 = ATR x2.0)
 Target  : 63562.92  (+2940.79 = ATR x1.0)
-R:R     : 1:0.50  |  Risk: $102.88 (1.0%)
-Qty     : 0.0175
+R:R     : 1:0.50  |  Risk: $268.20 (2.5%)
+Qty     : 0.0456
 ATR     : 2940.79 (4.851% of price)
 RSI     : 56.75 [42.0-72.0]  |  Dir: Rising
 ADX     : 39.90  DI+: 25.72  DI-: 15.51  [min 28.0]
@@ -566,20 +566,20 @@ Time    : 2021-10-28 00:00:00
 APM v6.1 | LONG EXIT [WIN] | BTC-USD [1D]
 Entry   : 60622.14  ->  Exit: 63562.92
 Move    : +4.85%
-P&L     : +50.14 USD
-Comm    : -1.30 USD
+P&L     : +130.70 USD
+Comm    : -3.40 USD
 Max runup: 3620.66
 Bars    : 5
-Equity  : $10338.63
+Equity  : $10858.56
 Trades  : 14  |  Win rate: 78.6%
 Time    : 2021-11-02 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | BTC-USD [1D]
-Entry   : 63226.40  |  Equity: $10338.63
+Entry   : 63226.40  |  Equity: $10858.56
 Stop    : 57570.10  (-5656.30 = ATR x2.0)
 Target  : 66054.55  (+2828.15 = ATR x1.0)
-R:R     : 1:0.50  |  Risk: $103.39 (1.0%)
-Qty     : 0.0183
+R:R     : 1:0.50  |  Risk: $271.46 (2.5%)
+Qty     : 0.0480
 ATR     : 2828.15 (4.473% of price)
 RSI     : 61.03 [42.0-72.0]  |  Dir: Rising
 ADX     : 35.17  DI+: 24.57  DI-: 13.86  [min 28.0]
@@ -592,20 +592,20 @@ Time    : 2021-11-02 00:00:00
 APM v6.1 | LONG EXIT [WIN] | BTC-USD [1D]
 Entry   : 63226.40  ->  Exit: 66054.55
 Move    : +4.47%
-P&L     : +50.28 USD
-Comm    : -1.42 USD
+P&L     : +132.01 USD
+Comm    : -3.72 USD
 Max runup: 4447.34
 Bars    : 6
-Equity  : $10388.91
+Equity  : $10990.57
 Trades  : 15  |  Win rate: 80.0%
 Time    : 2021-11-08 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | SHORT ENTRY | BTC-USD [1D]
-Entry   : 47588.86  |  Equity: $10388.91
+Entry   : 47588.86  |  Equity: $10990.57
 Stop    : 52309.22  (+4720.37 = ATR x2.0)
 Target  : 45228.67  (-2360.18 = ATR x1.0)
-R:R     : 1:0.50  |  Risk: $103.89 (1.0%)
-Qty     : 0.0220
+R:R     : 1:0.50  |  Risk: $274.76 (2.5%)
+Qty     : 0.0582
 ATR     : 2360.18 (4.960% of price)
 RSI     : 40.84 [32.0-58.0]  |  Dir: Falling
 ADX     : 28.56  DI+: 18.81  DI-: 31.57  [min 28.0]
@@ -626,20 +626,20 @@ Time      : 2022-01-05 00:00:00
 APM v6.1 | SHORT EXIT [WIN] | BTC-USD [1D]
 Entry   : 47588.86  ->  Exit: 45899.36
 Move    : +3.55%
-P&L     : +35.95 USD
-Comm    : -1.23 USD
+P&L     : +95.08 USD
+Comm    : -3.27 USD
 Max runup: 4790.63
 Bars    : 8
-Equity  : $10424.86
+Equity  : $11085.65
 Trades  : 16  |  Win rate: 81.2%
 Time    : 2022-01-05 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | SHORT ENTRY | BTC-USD [1D]
-Entry   : 29799.08  |  Equity: $10424.86
+Entry   : 29799.08  |  Equity: $11085.65
 Stop    : 32920.22  (+3121.14 = ATR x2.0)
 Target  : 28238.51  (-1560.57 = ATR x1.0)
-R:R     : 1:0.50  |  Risk: $104.25 (1.0%)
-Qty     : 0.0334
+R:R     : 1:0.50  |  Risk: $277.14 (2.5%)
+Qty     : 0.0888
 ATR     : 1560.57 (5.237% of price)
 RSI     : 43.55 [32.0-58.0]  |  Dir: Falling
 ADX     : 34.30  DI+: 21.27  DI-: 26.76  [min 28.0]
@@ -652,20 +652,20 @@ Time    : 2022-06-01 00:00:00
 APM v6.1 | SHORT EXIT [WIN] | BTC-USD [1D]
 Entry   : 29799.08  ->  Exit: 28238.51
 Move    : +5.24%
-P&L     : +50.96 USD
-Comm    : -1.16 USD
+P&L     : +135.48 USD
+Comm    : -3.09 USD
 Max runup: 1562.87
 Bars    : 10
-Equity  : $10475.82
+Equity  : $11221.13
 Trades  : 17  |  Win rate: 82.4%
 Time    : 2022-06-11 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | SHORT ENTRY | BTC-USD [1D]
-Entry   : 20860.45  |  Equity: $10475.82
+Entry   : 20860.45  |  Equity: $11221.13
 Stop    : 23123.72  (+2263.27 = ATR x2.0)
 Target  : 19728.81  (-1131.64 = ATR x1.0)
-R:R     : 1:0.50  |  Risk: $104.76 (1.0%)
-Qty     : 0.0463
+R:R     : 1:0.50  |  Risk: $280.53 (2.5%)
+Qty     : 0.1239
 ATR     : 1131.64 (5.425% of price)
 RSI     : 42.81 [32.0-58.0]  |  Dir: Falling
 ADX     : 31.94  DI+: 21.73  DI-: 26.01  [min 28.0]
@@ -678,20 +678,20 @@ Time    : 2022-07-10 00:00:00
 APM v6.1 | SHORT EXIT [WIN] | BTC-USD [1D]
 Entry   : 20860.45  ->  Exit: 19728.81
 Move    : +5.42%
-P&L     : +51.25 USD
-Comm    : -1.13 USD
+P&L     : +137.25 USD
+Comm    : -3.02 USD
 Max runup: 1551.92
 Bars    : 2
-Equity  : $10527.07
+Equity  : $11358.38
 Trades  : 18  |  Win rate: 83.3%
 Time    : 2022-07-12 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | BTC-USD [1D]
-Entry   : 24307.84  |  Equity: $10527.07
+Entry   : 24307.84  |  Equity: $11358.38
 Stop    : 22903.77  (-1404.07 = ATR x2.0)
 Target  : 25009.88  (+702.03 = ATR x1.0)
-R:R     : 1:0.50  |  Risk: $105.27 (1.0%)
-Qty     : 0.0750
+R:R     : 1:0.50  |  Risk: $283.96 (2.5%)
+Qty     : 0.2022
 ATR     : 702.03 (2.888% of price)
 RSI     : 67.99 [42.0-72.0]  |  Dir: Rising
 ADX     : 37.28  DI+: 41.70  DI-: 16.66  [min 28.0]
@@ -704,20 +704,20 @@ Time    : 2023-02-15 00:00:00
 APM v6.1 | LONG EXIT [WIN] | BTC-USD [1D]
 Entry   : 24307.84  ->  Exit: 25009.88
 Move    : +2.89%
-P&L     : +50.42 USD
-Comm    : -2.22 USD
+P&L     : +136.00 USD
+Comm    : -5.98 USD
 Max runup: 826.28
 Bars    : 1
-Equity  : $10577.49
+Equity  : $11494.37
 Trades  : 19  |  Win rate: 84.2%
 Time    : 2023-02-16 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | SHORT ENTRY | BTC-USD [1D]
-Entry   : 25931.47  |  Equity: $10577.49
+Entry   : 25931.47  |  Equity: $11494.37
 Stop    : 27444.24  (+1512.76 = ATR x2.0)
 Target  : 25175.09  (-756.38 = ATR x1.0)
-R:R     : 1:0.50  |  Risk: $105.77 (1.0%)
-Qty     : 0.0699
+R:R     : 1:0.50  |  Risk: $287.36 (2.5%)
+Qty     : 0.1900
 ATR     : 756.38 (2.917% of price)
 RSI     : 36.63 [32.0-58.0]  |  Dir: Falling
 ADX     : 29.94  DI+: 23.27  DI-: 31.20  [min 28.0]
@@ -730,20 +730,20 @@ Time    : 2023-08-31 00:00:00
 APM v6.1 | SHORT EXIT [WIN] | BTC-USD [1D]
 Entry   : 25931.47  ->  Exit: 25175.09
 Move    : +2.92%
-P&L     : +50.74 USD
-Comm    : -2.14 USD
+P&L     : +137.85 USD
+Comm    : -5.82 USD
 Max runup: 1001.18
 Bars    : 11
-Equity  : $10628.23
+Equity  : $11632.23
 Trades  : 20  |  Win rate: 85.0%
 Time    : 2023-09-11 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | BTC-USD [1D]
-Entry   : 37432.34  |  Equity: $10628.23
+Entry   : 37432.34  |  Equity: $11632.23
 Stop    : 34901.98  (-2530.36 = ATR x2.0)
 Target  : 38697.52  (+1265.18 = ATR x1.0)
-R:R     : 1:0.50  |  Risk: $106.28 (1.0%)
-Qty     : 0.0420
+R:R     : 1:0.50  |  Risk: $290.81 (2.5%)
+Qty     : 0.1149
 ATR     : 1265.18 (3.380% of price)
 RSI     : 60.67 [42.0-72.0]  |  Dir: Rising
 ADX     : 56.18  DI+: 23.55  DI-: 12.38  [min 28.0]
@@ -756,20 +756,20 @@ Time    : 2023-11-22 00:00:00
 APM v6.1 | LONG EXIT [WIN] | BTC-USD [1D]
 Entry   : 37432.34  ->  Exit: 38697.52
 Move    : +3.38%
-P&L     : +51.22 USD
-Comm    : -1.92 USD
+P&L     : +140.15 USD
+Comm    : -5.25 USD
 Max runup: 1521.77
 Bars    : 9
-Equity  : $10679.45
+Equity  : $11772.38
 Trades  : 21  |  Win rate: 85.7%
 Time    : 2023-12-01 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | BTC-USD [1D]
-Entry   : 42890.74  |  Equity: $10679.45
+Entry   : 42890.74  |  Equity: $11772.38
 Stop    : 39994.81  (-2895.93 = ATR x2.0)
 Target  : 44338.71  (+1447.97 = ATR x1.0)
-R:R     : 1:0.50  |  Risk: $106.79 (1.0%)
-Qty     : 0.0369
+R:R     : 1:0.50  |  Risk: $294.31 (2.5%)
+Qty     : 0.1016
 ATR     : 1447.97 (3.376% of price)
 RSI     : 63.37 [42.0-72.0]  |  Dir: Rising
 ADX     : 44.96  DI+: 31.18  DI-: 20.00  [min 28.0]
@@ -782,20 +782,20 @@ Time    : 2023-12-13 00:00:00
 APM v6.1 | LONG EXIT [WIN] | BTC-USD [1D]
 Entry   : 42890.74  ->  Exit: 44338.71
 Move    : +3.38%
-P&L     : +51.47 USD
-Comm    : -1.93 USD
+P&L     : +141.84 USD
+Comm    : -5.32 USD
 Max runup: 1477.21
 Bars    : 9
-Equity  : $10730.92
+Equity  : $11914.21
 Trades  : 22  |  Win rate: 86.4%
 Time    : 2023-12-22 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | BTC-USD [1D]
-Entry   : 67913.67  |  Equity: $10730.92
+Entry   : 67913.67  |  Equity: $11914.21
 Stop    : 59954.00  (-7959.67 = ATR x2.0)
 Target  : 71893.51  (+3979.84 = ATR x1.0)
-R:R     : 1:0.50  |  Risk: $107.31 (1.0%)
-Qty     : 0.0135
+R:R     : 1:0.50  |  Risk: $297.86 (2.5%)
+Qty     : 0.0374
 ATR     : 3979.84 (5.860% of price)
 RSI     : 56.49 [42.0-72.0]  |  Dir: Rising
 ADX     : 42.64  DI+: 15.56  DI-: 20.60  [min 28.0]
@@ -808,20 +808,20 @@ Time    : 2024-03-20 00:00:00
 APM v6.1 | LONG EXIT [WIN] | BTC-USD [1D]
 Entry   : 67913.67  ->  Exit: 71893.51
 Move    : +5.86%
-P&L     : +52.52 USD
-Comm    : -1.13 USD
+P&L     : +145.79 USD
+Comm    : -3.14 USD
 Max runup: 4801.69
 Bars    : 19
-Equity  : $10783.44
+Equity  : $12060.00
 Trades  : 23  |  Win rate: 87.0%
 Time    : 2024-04-08 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | LONG ENTRY | BTC-USD [1D]
-Entry   : 99920.71  |  Equity: $10783.44
+Entry   : 99920.71  |  Equity: $12060.00
 Stop    : 91721.65  (-8199.06 = ATR x2.0)
 Target  : 104020.24  (+4099.53 = ATR x1.0)
-R:R     : 1:0.50  |  Risk: $107.83 (1.0%)
-Qty     : 0.0132
+R:R     : 1:0.50  |  Risk: $301.50 (2.5%)
+Qty     : 0.0368
 ATR     : 4099.53 (4.103% of price)
 RSI     : 66.25 [42.0-72.0]  |  Dir: Rising
 ADX     : 45.21  DI+: 28.41  DI-: 9.58  [min 28.0]
@@ -834,20 +834,20 @@ Time    : 2024-12-06 00:00:00
 APM v6.1 | LONG EXIT [WIN] | BTC-USD [1D]
 Entry   : 99920.71  ->  Exit: 104020.24
 Move    : +4.10%
-P&L     : +52.31 USD
-Comm    : -1.61 USD
+P&L     : +146.25 USD
+Comm    : -4.50 USD
 Max runup: 5126.83
 Bars    : 9
-Equity  : $10835.75
+Equity  : $12206.25
 Trades  : 24  |  Win rate: 87.5%
 Time    : 2024-12-15 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | SHORT ENTRY | BTC-USD [1D]
-Entry   : 101663.19  |  Equity: $10835.75
+Entry   : 101663.19  |  Equity: $12206.25
 Stop    : 109446.27  (+7783.08 = ATR x2.0)
 Target  : 97771.65  (-3891.54 = ATR x1.0)
-R:R     : 1:0.50  |  Risk: $108.36 (1.0%)
-Qty     : 0.0139
+R:R     : 1:0.50  |  Risk: $305.16 (2.5%)
+Qty     : 0.0392
 ATR     : 3891.54 (3.828% of price)
 RSI     : 38.89 [32.0-58.0]  |  Dir: Falling
 ADX     : 28.99  DI+: 13.26  DI-: 29.16  [min 28.0]
@@ -860,20 +860,20 @@ Time    : 2025-11-12 00:00:00
 APM v6.1 | SHORT EXIT [WIN] | BTC-USD [1D]
 Entry   : 101663.19  ->  Exit: 97771.65
 Move    : +3.83%
-P&L     : +52.51 USD
-Comm    : -1.67 USD
+P&L     : +147.89 USD
+Comm    : -4.69 USD
 Max runup: 7662.45
 Bars    : 2
-Equity  : $10888.26
+Equity  : $12354.14
 Trades  : 25  |  Win rate: 88.0%
 Time    : 2025-11-14 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | SHORT ENTRY | BTC-USD [1D]
-Entry   : 90270.41  |  Equity: $10888.26
+Entry   : 90270.41  |  Equity: $12354.14
 Stop    : 97548.46  (+7278.04 = ATR x2.0)
 Target  : 86631.39  (-3639.02 = ATR x1.0)
-R:R     : 1:0.50  |  Risk: $108.88 (1.0%)
-Qty     : 0.0150
+R:R     : 1:0.50  |  Risk: $308.85 (2.5%)
+Qty     : 0.0424
 ATR     : 3639.02 (4.031% of price)
 RSI     : 44.66 [32.0-58.0]  |  Dir: Falling
 ADX     : 28.21  DI+: 16.84  DI-: 23.32  [min 28.0]
@@ -886,20 +886,20 @@ Time    : 2025-12-12 00:00:00
 APM v6.1 | SHORT EXIT [WIN] | BTC-USD [1D]
 Entry   : 90270.41  ->  Exit: 86631.39
 Move    : +4.03%
-P&L     : +52.85 USD
-Comm    : -1.59 USD
+P&L     : +149.92 USD
+Comm    : -4.50 USD
 Max runup: 4966.34
 Bars    : 3
-Equity  : $10941.12
+Equity  : $12504.06
 Trades  : 26  |  Win rate: 88.5%
 Time    : 2025-12-15 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | SHORT ENTRY | BTC-USD [1D]
-Entry   : 88310.91  |  Equity: $10941.12
+Entry   : 88310.91  |  Equity: $12504.06
 Stop    : 93127.88  (+4816.97 = ATR x2.0)
 Target  : 85902.42  (-2408.49 = ATR x1.0)
-R:R     : 1:0.50  |  Risk: $109.41 (1.0%)
-Qty     : 0.0227
+R:R     : 1:0.50  |  Risk: $312.60 (2.5%)
+Qty     : 0.0649
 ATR     : 2408.49 (2.727% of price)
 RSI     : 39.61 [32.0-58.0]  |  Dir: Falling
 ADX     : 31.54  DI+: 23.38  DI-: 28.51  [min 28.0]
@@ -920,20 +920,20 @@ Time      : 2026-01-29 00:00:00
 APM v6.1 | SHORT EXIT [LOSS] | BTC-USD [1D]
 Entry   : 88310.91  ->  Exit: 89169.85
 Move    : -0.97%
-P&L     : -21.93 USD
-Comm    : -2.42 USD
+P&L     : -62.65 USD
+Comm    : -6.91 USD
 Max runup: 5060.30
 Bars    : 9
-Equity  : $10919.19
+Equity  : $12441.41
 Trades  : 27  |  Win rate: 85.2%
 Time    : 2026-01-29 00:00:00
 ----------------------------------------------------------------------
 APM v6.1 | SHORT ENTRY | BTC-USD [1D]
-Entry   : 68136.49  |  Equity: $10919.19
+Entry   : 68136.49  |  Equity: $12441.41
 Stop    : 75232.25  (+7095.76 = ATR x2.0)
 Target  : 64588.61  (-3547.88 = ATR x1.0)
-R:R     : 1:0.50  |  Risk: $109.19 (1.0%)
-Qty     : 0.0154
+R:R     : 1:0.50  |  Risk: $311.04 (2.5%)
+Qty     : 0.0438
 ATR     : 3547.88 (5.207% of price)
 RSI     : 46.22 [32.0-58.0]  |  Dir: Falling
 ADX     : 38.54  DI+: 19.91  DI-: 24.34  [min 28.0]

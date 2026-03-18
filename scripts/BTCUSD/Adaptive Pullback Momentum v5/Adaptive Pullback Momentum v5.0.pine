@@ -48,7 +48,9 @@ strategy(
     default_qty_value = 10000,        // overridden by risk-based sizing below
     commission_type   = strategy.commission.percent,
     commission_value  = 0.06,
-    slippage          = 1)
+    slippage          = 1,
+    margin_long       = 20,
+    margin_short      = 20)
 
 // ── Inputs ───────────────────────────────────────────────────────────────────
 var G_TREND = "Trend Filters"
@@ -87,7 +89,7 @@ i_tr_act     = input.float(2.5,  "Trail activate ATR mult",group=G_RISK,minval=0
                  tooltip="Trailing stop kicks in once price moves this many ATRs in your favour")
 i_tr_dist    = input.float(0.5,  "Trail distance ATR mult",group=G_RISK,minval=0.2, step=0.1,
                  tooltip="Once active, trail stays this many ATRs below/above the best price")
-i_risk_pct   = input.float(1.0,  "Equity risked per trade (%)",group=G_RISK,minval=0.1,maxval=20,step=0.1)
+i_risk_pct   = input.float(4.0,  "Equity risked per trade (%)",group=G_RISK,minval=0.1,maxval=20,step=0.1)
 
 var G_DISP = "Display"
 i_longs      = input.bool(true,  "Trade Longs",   group=G_DISP)
@@ -129,6 +131,9 @@ short_pb   = high[1] >= pb_tol_dn and close < ema_fast and close < open and body
 // ── Full entry conditions ─────────────────────────────────────────────────────
 no_pos     = strategy.position_size == 0.0
 stop_dist  = atr_eff * i_sl_mult
+risk_qty   = stop_dist == 0.0 ? 0.0 : strategy.equity * i_risk_pct / 100.0 / stop_dist
+max_qty    = close == 0.0 ? 0.0 : strategy.equity * 5.0 / close
+entry_qty  = math.min(risk_qty, max_qty)
 
 long_ok  = i_longs  and no_pos and not is_panic and is_trending and
      long_pb and
@@ -155,7 +160,7 @@ var bool  trail_active = false
 
 // ── Entries ───────────────────────────────────────────────────────────────────
 if long_ok
-    qty            = strategy.equity * i_risk_pct / 100.0 / stop_dist
+    qty            = entry_qty
     sl_price      := close - stop_dist
     tp_price      := close + atr_eff * i_tp_mult
     best_price    := close
@@ -165,7 +170,7 @@ if long_ok
     _tp    = close + atr_eff * i_tp_mult
     _rr    = i_tp_mult / i_sl_mult
     _risk  = strategy.equity * i_risk_pct / 100.0
-    _qty   = strategy.equity * i_risk_pct / 100.0 / stop_dist
+    _qty   = qty
     _atrp  = atr / close * 100
     _atrfl = atr_eff >= close * i_atr_floor / 100.0 ? "OK" : "FAIL"
     _vol   = volume / vol_ma
@@ -189,7 +194,7 @@ if long_ok
         alert.freq_once_per_bar_close)
 
 if short_ok
-    qty            = strategy.equity * i_risk_pct / 100.0 / stop_dist
+    qty            = entry_qty
     sl_price      := close + stop_dist
     tp_price      := close - atr_eff * i_tp_mult
     best_price    := close
@@ -199,7 +204,7 @@ if short_ok
     _tp    = close - atr_eff * i_tp_mult
     _rr    = i_tp_mult / i_sl_mult
     _risk  = strategy.equity * i_risk_pct / 100.0
-    _qty   = strategy.equity * i_risk_pct / 100.0 / stop_dist
+    _qty   = qty
     _atrp  = atr / close * 100
     _atrfl = atr_eff >= close * i_atr_floor / 100.0 ? "OK" : "FAIL"
     _vol   = volume / vol_ma

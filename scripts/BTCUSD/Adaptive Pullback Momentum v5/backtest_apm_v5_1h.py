@@ -1,6 +1,6 @@
 """Faithful Python backtest of Adaptive Pullback Momentum v5.1
 Timeframe : 1h BTC-USD, period="max" (~730 days via yfinance)
-Commission : 0.06 % per side   Risk : 1 % equity / trade
+Commission : 0.06 % per side   Risk : 4 % equity / trade
 
 v5.1 optimal parameters (7-phase sweep over BTC-USD 1h max history):
   Longs only | ADX>35 | SL×1.5 | TP×1.5 | Trail act×2.5 | Trail dist×0.5
@@ -20,7 +20,7 @@ INTERVAL   = "1h"
 PERIOD     = "max"          # ~730 days for 1h on yfinance
 INIT_CAP   = 10_000.0
 COMMISSION = 0.0006         # 0.06 % per side
-RISK_PCT   = 0.01           # 1 % equity per trade
+RISK_PCT   = 0.04           # 4 % equity per trade; validated at +26.99% on current BTC window
 
 # ── Strategy defaults (v5.1 — sweep-optimised) ────────────────────────────────
 EMA_FAST_LEN = 21

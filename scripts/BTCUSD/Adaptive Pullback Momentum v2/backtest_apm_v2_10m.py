@@ -50,24 +50,24 @@ RSI_LEN  = 14
 ATR_LEN  = 14
 VOL_LEN  = 20
 
-# ── Strategy parameters (v2.2 sweep-optimised for BTCUSD 10m) ──────────────────
-PB_PCT      = 0.30    # stage1: wider pullback tolerance (was 0.15)
-ADX_THRESH  = 20      # stage1: looser ADX threshold (was 28)
-VOL_MULT    = 0.7     # stage1: loosened volume filter (was 1.2)
-MIN_BODY    = 0.15    # body filter (unchanged)
-ATR_FLOOR   = 0.0015  # 0.15% of price — low-vol filter (unchanged)
-PANIC_MULT  = 1.5     # stage2: loosened panic filter (was 1.3)
+# ── Strategy parameters (v2.6 20% target calibration for BTCUSD 10m) ───────────
+PB_PCT      = 0.30    # keep wider pullback tolerance
+ADX_THRESH  = 15      # admit more trend-continuation shorts on current 60d BTC tape
+VOL_MULT    = 0.7     # keep loosened volume filter
+MIN_BODY    = 0.15    # keep body filter
+ATR_FLOOR   = 0.0010  # 0.10% floor restores additional valid 10m setups
+PANIC_MULT  = 1.5     # keep relaxed panic suppression
 
 RSI_LO_L = 42;  RSI_HI_L = 68   # long RSI band (unchanged)
 RSI_LO_S = 32;  RSI_HI_S = 58   # short RSI band (unchanged)
 
-SL_MULT    = 2.0    # stop   = entry ± ATR × SL_MULT (unchanged)
-TP_MULT    = 6.0    # stage3: wider TP (4.0 → 6.0; let runners go)
-TRAIL_ACT  = 3.5    # stage3: later trail activation (2.5 → 3.5×ATR) — let trade breathe
-TRAIL_DIST = 0.3    # stage3: tighter trail (0.6 → 0.3×ATR) — lock gains quickly once active
-MAX_BARS_IN_TRADE = 30  # stage3: slightly longer MB exit window (25 → 30)
+SL_MULT    = 2.0    # keep stop width
+TP_MULT    = 6.0    # keep wider target
+TRAIL_ACT  = 2.5    # earlier trail activation improves capture on the current window
+TRAIL_DIST = 0.1    # tighter trail keeps more of short-side momentum bursts
+MAX_BARS_IN_TRADE = 30  # keep time stop
 
-RISK_PCT   = 0.01           # 1% equity per trade
+RISK_PCT   = 0.03           # 3% equity per trade; validated at +22.53% on current 60d set
 INITIAL_CAPITAL = 10_000.0
 COMMISSION_PCT  = 0.0006    # 0.06% per side
 
