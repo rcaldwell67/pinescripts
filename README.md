@@ -18,12 +18,14 @@ Live dashboard for the Adaptive Pullback Momentum strategy suite — equity curv
 When new backtests produce updated CSV files, copy them to `docs/data/`:
 
 ```bash
-cp "scripts/BTCUSD/Adaptive Pullback Momentum v1/apm_v1_ytd_trades_btcusd_5m.csv"  docs/data/btcusd/v1_trades.csv
+python3 "scripts/BTCUSD/Adaptive Pullback Momentum v1/backtest_apm_v1_5m.py"
 cp "scripts/BTCUSD/Adaptive Pullback Momentum v2/apm_v2_trades_btcusd_10m.csv"     docs/data/btcusd/v2_trades.csv
 cp "scripts/BTCUSD/Adaptive Pullback Momentum v3/apm_v3_trades_btcusd_15m.csv"     docs/data/btcusd/v3_trades.csv
 cp "scripts/BTCUSD/Adaptive Pullback Momentum v4/apm_v4_trades_btcusd_30m.csv"     docs/data/btcusd/v4_trades.csv
 ```
 
-For BTC-USD v2, the dashboard backtesting dataset is `docs/data/btcusd/v2_trades.csv`. The 12-month backtest is exported separately as `docs/data/btcusd/v2_trades_12mo.csv` and should not overwrite the dashboard file.
+For BTC-USD v1 and v2, the dashboard backtesting datasets are `docs/data/btcusd/v1_trades.csv` and `docs/data/btcusd/v2_trades.csv`. Their 12-month backtests are exported separately as `docs/data/btcusd/v1_trades_12mo.csv` and `docs/data/btcusd/v2_trades_12mo.csv` and should not overwrite the dashboard files.
 
-The dashboard exposes a backtest-only V2 dataset selector so you can switch between the main backtest feed and the separate 12-month export without affecting paper or live views.
+For BTC-USD v1, use the backtest scripts to write the dashboard-format CSVs because the raw strategy CSVs use `entry`/`exit` while the dashboard expects `entry_price`/`exit_price`.
+
+The dashboard exposes backtest-only selectors for BTC-USD v1 and v2 so you can switch between the main backtest feeds and the separate 12-month exports without affecting paper or live views.
