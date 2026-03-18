@@ -2,8 +2,6 @@
 # Timeframe: 15m  |  Ticker: BTC-USD  |  Period: max
 
 import subprocess, sys
-for pkg in ["yfinance", "pandas", "numpy"]:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", pkg, "-q"])
 
 import yfinance as yf
 import pandas as pd
@@ -38,7 +36,7 @@ SL_MULT     = 2.0
 TP_MULT     = 2.0
 TRAIL_ACT   = 1.5
 TRAIL_DIST  = 1.5
-TRADE_LONGS = False
+TRADE_LONGS = True
 
 # ── Download ──────────────────────────────────────────────────────────────────
 print(f"Downloading {TICKER} {INTERVAL} period='{PERIOD}'...")
