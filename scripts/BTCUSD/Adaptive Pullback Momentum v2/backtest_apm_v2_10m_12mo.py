@@ -367,12 +367,12 @@ tdf[["entry_time", "exit_time", "direction", "entry", "exit",
      "result", "pnl_pct", "dollar_pnl", "equity"]].to_csv(out_csv, index=False)
 print(f"\nTrade log saved → {out_csv.name}")
 
-# ─── Dashboard export ─────────────────────────────────────────────────────────
+# ─── Separate 12-mo export ───────────────────────────────────────────────────
 from pathlib import Path as _Path
-_dash_out = _Path(__file__).resolve().parent.parent.parent.parent / "docs" / "data" / "btcusd" / "v2_trades.csv"
+_twelve_month_out = _Path(__file__).resolve().parent.parent.parent.parent / "docs" / "data" / "btcusd" / "v2_trades_12mo.csv"
 tdf[["entry_time", "exit_time", "direction", "entry", "exit",
-     "result", "pnl_pct", "dollar_pnl", "equity"]].to_csv(_dash_out, index=False)
-print(f"Dashboard export  → {_dash_out}")
+    "result", "pnl_pct", "dollar_pnl", "equity"]].to_csv(_twelve_month_out, index=False)
+print(f"12-mo export      → {_twelve_month_out}")
 
 # ─── Equity curve plot ────────────────────────────────────────────────────────
 edf = pd.DataFrame(eqcurve).set_index("time")

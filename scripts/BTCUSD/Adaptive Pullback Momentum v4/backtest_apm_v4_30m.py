@@ -469,6 +469,13 @@ else:
     tdf.to_csv(out_csv, index=False)
     print(f"Trades CSV → {out_csv}")
 
+    # ── Dashboard export ─────────────────────────────────────────────────────
+    from pathlib import Path as _Path
+    _dash_out = _Path(__file__).resolve().parent.parent.parent.parent / "docs" / "data" / "btcusd" / "v4_trades.csv"
+    tdf[["entry_time", "exit_time", "direction", "entry", "exit",
+         "result", "pnl_pct", "dollar_pnl", "equity"]].to_csv(_dash_out, index=False)
+    print(f"Dashboard export  → {_dash_out}")
+
 # ─── Write alerts log ──────────────────────────────────────────────────────────────────
 SEP = "-" * 70
 alert_types = {t: 0 for t in ["ENTRY","TRAIL","EXIT","PANIC_START","PANIC_CLEAR"]}
