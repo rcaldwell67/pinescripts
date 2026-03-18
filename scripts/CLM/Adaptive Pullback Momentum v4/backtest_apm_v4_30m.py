@@ -29,7 +29,14 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import warnings
+from pathlib import Path
 warnings.filterwarnings("ignore")
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+OUTPUT_DIR = SCRIPT_DIR / "outputs"
+REPO_ROOT = SCRIPT_DIR.parent.parent.parent
+
+OUTPUT_DIR.mkdir(exist_ok=True)
 
 # ─── Configuration ─────────────────────────────────────────────────────────────
 TICKER   = "CLM"
@@ -470,20 +477,20 @@ for direction in ["long", "short"]:
     print(f"  {direction.upper():<6} trades={len(sub):>3}  WR={sub_wr:.0f}%  "
           f"PF={sub_pf:.3f}  net=${sub_pnl:+.2f}")
 
-out_csv = f"apm_v4_trades_{TICKER.lower()}_{INTERVAL}.csv"
+out_csv = OUTPUT_DIR / f"apm_v4_trades_{TICKER.lower()}_{INTERVAL}.csv"
 tdf.to_csv(out_csv, index=False)
-print(f"\nTrades CSV → {out_csv}")
+print(f"\nTrades CSV → {out_csv.relative_to(REPO_ROOT)}")
 
 # ─── Alerts log ───────────────────────────────────────────────────────────────
 SEP = "-" * 70
-alert_out = f"apm_v4_alerts_{TICKER.lower()}_{INTERVAL}.txt"
+alert_out = OUTPUT_DIR / f"apm_v4_alerts_{TICKER.lower()}_{INTERVAL}.txt"
 with open(alert_out, "w") as f:
     for ts, atype, msg in alerts:
         f.write(SEP + "\n" + msg + "\n")
     f.write(SEP + "\n")
 entry_cnt = sum(1 for _, t, _ in alerts if t == "ENTRY")
 exit_cnt  = sum(1 for _, t, _ in alerts if t == "EXIT")
-print(f"Alerts (entries={entry_cnt}  exits={exit_cnt}) → {alert_out}")
+print(f"Alerts (entries={entry_cnt}  exits={exit_cnt}) → {alert_out.relative_to(REPO_ROOT)}")
 
 print("\n── Alert preview (first 2 entries + 2 exits) ──")
 shown_e = shown_x = 0
@@ -550,6 +557,7 @@ ax3.set_ylabel("P&L ($)")
 ax3.grid(alpha=0.15)
 
 plt.tight_layout()
-out_png = f"apm_v4_equity_{TICKER.lower()}_{INTERVAL}.png"
+out_png = OUTPUT_DIR / f"apm_v4_equity_{TICKER.lower()}_{INTERVAL}.png"
 plt.savefig(out_png, dpi=150, bbox_inches="tight")
-print(f"Chart → {out_png}")
+print(f"Chart → {out_png.relative_to(REPO_ROOT)}")
+

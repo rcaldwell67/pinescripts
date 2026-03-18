@@ -14,7 +14,15 @@ import pandas as pd
 import numpy as np
 import yfinance as yf
 import warnings
+from pathlib import Path
 warnings.filterwarnings("ignore")
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+OUTPUT_DIR = SCRIPT_DIR / "outputs"
+REPO_ROOT = SCRIPT_DIR.parent.parent.parent
+DOCS_CLM_DIR = REPO_ROOT / "docs" / "data" / "clm"
+
+OUTPUT_DIR.mkdir(exist_ok=True)
 
 # ── Configuration ──────────────────────────────────────────────────────────────
 TICKER     = "CLM"
@@ -465,22 +473,21 @@ else:
     print(f"\n  Exit breakdown:")
     print(tdf["exit_reason"].value_counts().to_string())
 
-    out_csv = "apm_v5_trades_clm_1h.csv"
+    out_csv = OUTPUT_DIR / "apm_v5_trades_clm_1h.csv"
     tdf.to_csv(out_csv, index=False)
-    print(f"\n  Saved → {out_csv}")
+    print(f"\n  Saved → {out_csv.relative_to(REPO_ROOT)}")
 
     # ── Sync to dashboard ──────────────────────────────────────────────────
-    from pathlib import Path
-    docs_csv = Path(__file__).parent.parent.parent.parent / "docs" / "data" / "clm" / "v5_trades.csv"
+    docs_csv = DOCS_CLM_DIR / "v5_trades.csv"
     if docs_csv.parent.exists():
         tdf.to_csv(docs_csv, index=False)
-        print(f"  Synced  → {docs_csv.relative_to(Path(__file__).parent.parent.parent.parent)}")
+        print(f"  Synced  → {docs_csv.relative_to(REPO_ROOT)}")
 
 print(f"{'='*55}")
 
 # ── Write alert log ────────────────────────────────────────────────────────────
 SEP = "-" * 70
-alert_out   = f"apm_v5_alerts_clm_{INTERVAL}.txt"
+alert_out   = OUTPUT_DIR / f"apm_v5_alerts_clm_{INTERVAL}.txt"
 alert_types = {t: 0 for t in ["ENTRY", "TRAIL", "EXIT", "PANIC_START", "PANIC_CLEAR"]}
 with open(alert_out, "w") as f:
     for ts, atype, msg in alerts:
@@ -492,7 +499,7 @@ print(f"\nAlerts summary:")
 for k, v in alert_types.items():
     print(f"  {k:<14}: {v}")
 print(f"Total alerts: {len(alerts)}")
-print(f"Alerts log  → {alert_out}")
+print(f"Alerts log  → {alert_out.relative_to(REPO_ROOT)}")
 
 print("\n" + "=" * 55)
 print("  ALERT PREVIEW (first 3 non-panic)")

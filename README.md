@@ -34,10 +34,18 @@ For CLM, the dashboard backtest files are `docs/data/clm/v1_trades.csv` through 
 
 Current CLM sync behavior:
 
-- `scripts/CLM/Adaptive Pullback Momentum v4/backtest_apm_v4_30m_v46.py` rewrites `docs/data/clm/v4_trades.csv` in dashboard format automatically.
-- `scripts/CLM/Adaptive Pullback Momentum v5/backtest_apm_v5_1h.py` writes `apm_v5_trades_clm_1h.csv` and also syncs `docs/data/clm/v5_trades.csv` automatically.
-- `scripts/CLM/Adaptive Pullback Momentum v6/backtest_apm_v6_1d.py` writes `apm_v6_trades_clm_1d.csv` and also syncs `docs/data/clm/v6_trades.csv` automatically.
+- `scripts/CLM/Adaptive Pullback Momentum v4/backtest_apm_v4_30m_v46.py` writes its generated exports into `scripts/CLM/Adaptive Pullback Momentum v4/outputs/` and rewrites `docs/data/clm/v4_trades.csv` in dashboard format automatically.
+- `scripts/CLM/Adaptive Pullback Momentum v5/backtest_apm_v5_1h.py` writes `scripts/CLM/Adaptive Pullback Momentum v5/outputs/apm_v5_trades_clm_1h.csv`, writes its alert log into the same `outputs/` folder, and syncs `docs/data/clm/v5_trades.csv` automatically.
+- `scripts/CLM/Adaptive Pullback Momentum v6/backtest_apm_v6_1d.py` writes `scripts/CLM/Adaptive Pullback Momentum v6/outputs/apm_v6_trades_clm_1d.csv`, writes its alert log into the same `outputs/` folder, and syncs `docs/data/clm/v6_trades.csv` automatically.
 
 The root-level exports are not always the dashboard source of truth. In particular, `apm_v4_trades_clm_30m.csv` is not the canonical dashboard file; the dashboard uses the remapped output written by `backtest_apm_v4_30m_v46.py` to `docs/data/clm/v4_trades.csv`.
+
+To verify the CLM dashboard feeds against the canonical generated outputs, run:
+
+```bash
+python3 scripts/CLM/validate_dashboard_sync.py
+```
+
+Use `python3 scripts/CLM/validate_dashboard_sync.py --sync` if you want the validator to refresh `docs/data/clm/v4_trades.csv` through `v6_trades.csv` from the latest generated outputs before comparing them.
 
 The dashboard exposes backtest-only selectors for BTC-USD v1 and v2 so you can switch between the main backtest feeds and the separate 12-month exports without affecting paper or live views.

@@ -20,7 +20,15 @@ import pandas as pd
 import numpy as np
 import yfinance as yf
 import warnings
+from pathlib import Path
 warnings.filterwarnings("ignore")
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+OUTPUT_DIR = SCRIPT_DIR / "outputs"
+REPO_ROOT = SCRIPT_DIR.parent.parent.parent
+DOCS_CLM_DIR = REPO_ROOT / "docs" / "data" / "clm"
+
+OUTPUT_DIR.mkdir(exist_ok=True)
 
 # ── Configuration ──────────────────────────────────────────────────────────────
 TICKER     = "CLM"
@@ -452,15 +460,15 @@ else:
         yw = (grp["dollar_pnl"] > 0).sum(); yn = len(grp)
         print(f"    {yr}  n={yn:2d}  WR={yw/yn*100:.0f}%  Net=${grp['dollar_pnl'].sum():+.2f}")
 
-    tdf.to_csv("apm_v6_trades_clm_1d.csv", index=False)
-    print(f"\n  Saved → apm_v6_trades_clm_1d.csv")
+    out_csv = OUTPUT_DIR / "apm_v6_trades_clm_1d.csv"
+    tdf.to_csv(out_csv, index=False)
+    print(f"\n  Saved → {out_csv.relative_to(REPO_ROOT)}")
 
     # ── Sync to dashboard ──────────────────────────────────────────────────
-    from pathlib import Path
-    docs_csv = Path(__file__).parent.parent.parent.parent / "docs" / "data" / "clm" / "v6_trades.csv"
+    docs_csv = DOCS_CLM_DIR / "v6_trades.csv"
     if docs_csv.parent.exists():
         tdf.to_csv(docs_csv, index=False)
-        print(f"  Synced  → {docs_csv.relative_to(Path(__file__).parent.parent.parent.parent)}")
+        print(f"  Synced  → {docs_csv.relative_to(REPO_ROOT)}")
 
 print(f"{'='*58}")
 
@@ -471,7 +479,8 @@ for _, atype, _ in alerts:
 
 SEP = "-" * 70
 alert_log = ("\n" + SEP + "\n").join(msg for _, _, msg in alerts)
-with open("apm_v6_alerts_clm_1d.txt", "w") as f:
+alert_out = OUTPUT_DIR / "apm_v6_alerts_clm_1d.txt"
+with open(alert_out, "w") as f:
     f.write(alert_log)
 
 print(f"\nAlerts summary:")
@@ -479,7 +488,7 @@ for k in ["ENTRY", "TRAIL", "EXIT", "PANIC_START", "PANIC_CLEAR"]:
     if k in type_counts:
         print(f"  {k:<14}: {type_counts[k]}")
 print(f"Total alerts: {len(alerts)}")
-print(f"Alerts log  → apm_v6_alerts_clm_1d.txt")
+print(f"Alerts log  → {alert_out.relative_to(REPO_ROOT)}")
 
 preview = [msg for _, atype, msg in alerts if atype not in ("PANIC_START", "PANIC_CLEAR")][:3]
 if preview:

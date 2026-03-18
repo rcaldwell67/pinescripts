@@ -28,8 +28,16 @@ import numpy as np
 import pytz
 import warnings
 from datetime import datetime, timezone
+from pathlib import Path
 
 warnings.filterwarnings("ignore")
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+OUTPUT_DIR = SCRIPT_DIR / "outputs"
+REPO_ROOT = SCRIPT_DIR.parent.parent.parent
+DOCS_CLM_DIR = REPO_ROOT / "docs" / "data" / "clm"
+
+OUTPUT_DIR.mkdir(exist_ok=True)
 
 from alpaca.data.historical import StockHistoricalDataClient
 from alpaca.data.requests import StockBarsRequest
@@ -268,13 +276,12 @@ print("=" * 56)
 print()
 print(tdf.to_string(index=False))
 
-out = "apm_v4_v46_trades_clm_30m.csv"
+out = OUTPUT_DIR / "apm_v4_v46_trades_clm_30m.csv"
 tdf.to_csv(out, index=False)
-print(f"\nSaved: {out}")
+print(f"\nSaved: {out.relative_to(REPO_ROOT)}")
 
 # ── Sync to dashboard (remap to standard schema) ──────────────────────────────
-from pathlib import Path
-docs_csv = Path(__file__).parent.parent.parent.parent / "docs" / "data" / "clm" / "v4_trades.csv"
+docs_csv = DOCS_CLM_DIR / "v4_trades.csv"
 if docs_csv.parent.exists():
     doc_df = tdf.rename(columns={"ts": "exit_time", "dir": "direction",
                                   "reason": "result", "dp": "dollar_pnl"})
@@ -282,4 +289,4 @@ if docs_csv.parent.exists():
     doc_df = doc_df[["entry_time", "exit_time", "direction",
                       "entry", "exit", "result", "pnl_pct", "dollar_pnl", "equity"]]
     doc_df.to_csv(docs_csv, index=False)
-    print(f"Synced  → {docs_csv.relative_to(Path(__file__).parent.parent.parent.parent)}")
+    print(f"Synced  → {docs_csv.relative_to(REPO_ROOT)}")
