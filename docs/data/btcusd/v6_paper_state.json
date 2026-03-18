@@ -1,1 +1,5 @@
-{"position": null, "equity": 10000.0, "last_bar_ts": null}
+{
+  "position": null,
+  "equity": 10000.0,
+  "last_bar_ts": "2026-03-17 00:00:00+00:00"
+}
