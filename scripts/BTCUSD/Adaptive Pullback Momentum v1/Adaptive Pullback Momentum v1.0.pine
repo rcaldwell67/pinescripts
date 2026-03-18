@@ -42,17 +42,7 @@
 //   Key changes : ADX 18→15, PB 0.25%→0.40%, TP ×6→×8, Trail_act 2.5→3.5, Risk 1%→2%, Macro OFF
 // ─────────────────────────────────────────────────────────────────────────────
 
-strategy(
-    title             = "Adaptive Pullback Momentum v1.1 · 5m",
-    shorttitle        = "APM v1.1 5m",
-    overlay           = true,
-    pyramiding        = 0,
-    initial_capital   = 10000,
-    default_qty_type  = strategy.cash,
-    default_qty_value = 10000,        // overridden by risk-based sizing
-    commission_type   = strategy.commission.percent,
-    commission_value  = 0.06,
-    slippage          = 1)
+strategy("Adaptive Pullback Momentum v1.1 · 5m", shorttitle="APM v1.1 5m", overlay=true, pyramiding=0, initial_capital=10000, default_qty_type=strategy.cash, default_qty_value=10000, commission_type=strategy.commission.percent, commission_value=0.06, slippage=1)
 
 // ── Inputs ────────────────────────────────────────────────────────────────────
 var G_TREND = "Trend Filters"
@@ -176,17 +166,9 @@ short_pb = high[1] >= pb_tol_dn and close < ema_fast and close < open and body_s
 no_pos    = strategy.position_size == 0.0
 stop_dist = atr * i_sl_mult
 
-long_ok  = i_longs  and no_pos and not is_panic and is_trending and adx_rising and
-     atr_floor_ok and in_session and long_pb and
-     ema_bull_full and ema_slope_up and rsi_rising and di_bull_dom and mom_bull and
-     rsi >= i_rsi_lo_l and rsi <= i_rsi_hi_l and
-     volume >= vol_ma * i_vol_mult
+long_ok = i_longs and no_pos and not is_panic and is_trending and adx_rising and atr_floor_ok and in_session and long_pb and ema_bull_full and ema_slope_up and rsi_rising and di_bull_dom and mom_bull and rsi >= i_rsi_lo_l and rsi <= i_rsi_hi_l and volume >= vol_ma * i_vol_mult
 
-short_ok = i_shorts and no_pos and not is_panic and is_trending and adx_rising and
-     atr_floor_ok and in_session and short_pb and
-     ema_bear_full and ema_slope_down and rsi_falling and di_bear_dom and mom_bear and
-     rsi >= i_rsi_lo_s and rsi <= i_rsi_hi_s and
-     volume >= vol_ma * i_vol_mult and macro_bear
+short_ok = i_shorts and no_pos and not is_panic and is_trending and adx_rising and atr_floor_ok and in_session and short_pb and ema_bear_full and ema_slope_down and rsi_falling and di_bear_dom and mom_bear and rsi >= i_rsi_lo_s and rsi <= i_rsi_hi_s and volume >= vol_ma * i_vol_mult and macro_bear
 
 // ── State vars ────────────────────────────────────────────────────────────────
 var float sl_price      = na
@@ -204,34 +186,8 @@ if long_ok
     best_price  := close
     trail_active := false
     strategy.entry("Long", strategy.long, qty=qty)
-    alert(
-        "APM v1 5m | LONG ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
-        "Entry   : " + str.tostring(close, "#.####") +
-        "  |  Equity: $" + str.tostring(strategy.equity, "#.##") + "\n" +
-        "Stop    : " + str.tostring(sl_price, "#.####") +
-        "  (-" + str.tostring(stop_dist, "#.####") + " = ATR x" + str.tostring(i_sl_mult, "#.#") + ")\n" +
-        "Target  : " + str.tostring(tp_price, "#.####") +
-        "  (+" + str.tostring(atr * i_tp_mult, "#.####") + " = ATR x" + str.tostring(i_tp_mult, "#.#") + ")\n" +
-        "R:R     : 1:" + str.tostring(i_tp_mult / i_sl_mult, "#.##") +
-        "  |  Risk: $" + str.tostring(strategy.equity * i_risk_pct / 100.0, "#.##") + "\n" +
-        "ATR     : " + str.tostring(atr, "#.####") +
-        " (" + str.tostring(atr / close * 100, "#.###") + "% of price)\n" +
-        "RSI     : " + str.tostring(rsi, "#.##") +
-        " [" + str.tostring(i_rsi_lo_l) + "-" + str.tostring(i_rsi_hi_l) + "] Rising\n" +
-        "ADX     : " + str.tostring(adx, "#.##") +
-        "  DI+: " + str.tostring(di_plus, "#.##") +
-        "  DI-: " + str.tostring(di_minus, "#.##") +
-        "  [min " + str.tostring(i_adx_thresh) + "]\n" +
-        "Vol/MA  : " + str.tostring(volume / vol_ma, "#.##") + "x" +
-        "  [min " + str.tostring(i_vol_mult, "#.#") + "x]\n" +
-        "Body    : " + str.tostring(body_size, "#.###") + "x ATR" +
-        "  [min " + str.tostring(i_min_body, "#.##") + "x]\n" +
-        "EMA " + str.tostring(i_ema_fast) + "/" + str.tostring(i_ema_mid) + "/" + str.tostring(i_ema_slow) +
-        ": " + str.tostring(ema_fast, "#.####") + "/" + str.tostring(ema_mid, "#.####") + "/" + str.tostring(ema_slow, "#.####") +
-        "  Stack: BULL\n" +
-        "Session : " + str.tostring(et_hour) + ":xx ET  Trail on: +" +
-        str.tostring(atr * i_tr_act, "#.####") + " (ATR x" + str.tostring(i_tr_act, "#.#") + ")",
-        alert.freq_once_per_bar_close)
+    long_msg = "APM v1 5m | LONG ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\nEntry: " + str.tostring(close, "#.####") + " | Stop: " + str.tostring(sl_price, "#.####") + " | Target: " + str.tostring(tp_price, "#.####") + "\nQty: " + str.tostring(qty, "#.####") + " | ATR: " + str.tostring(atr, "#.####") + " | RSI: " + str.tostring(rsi, "#.##") + " | ADX: " + str.tostring(adx, "#.##")
+    alert(long_msg, alert.freq_once_per_bar_close)
 
 if short_ok
     qty          = strategy.equity * i_risk_pct / 100.0 / stop_dist
@@ -240,34 +196,8 @@ if short_ok
     best_price  := close
     trail_active := false
     strategy.entry("Short", strategy.short, qty=qty)
-    alert(
-        "APM v1 5m | SHORT ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
-        "Entry   : " + str.tostring(close, "#.####") +
-        "  |  Equity: $" + str.tostring(strategy.equity, "#.##") + "\n" +
-        "Stop    : " + str.tostring(sl_price, "#.####") +
-        "  (+" + str.tostring(stop_dist, "#.####") + " = ATR x" + str.tostring(i_sl_mult, "#.#") + ")\n" +
-        "Target  : " + str.tostring(tp_price, "#.####") +
-        "  (-" + str.tostring(atr * i_tp_mult, "#.####") + " = ATR x" + str.tostring(i_tp_mult, "#.#") + ")\n" +
-        "R:R     : 1:" + str.tostring(i_tp_mult / i_sl_mult, "#.##") +
-        "  |  Risk: $" + str.tostring(strategy.equity * i_risk_pct / 100.0, "#.##") + "\n" +
-        "ATR     : " + str.tostring(atr, "#.####") +
-        " (" + str.tostring(atr / close * 100, "#.###") + "% of price)\n" +
-        "RSI     : " + str.tostring(rsi, "#.##") +
-        " [" + str.tostring(i_rsi_lo_s) + "-" + str.tostring(i_rsi_hi_s) + "] Falling\n" +
-        "ADX     : " + str.tostring(adx, "#.##") +
-        "  DI+: " + str.tostring(di_plus, "#.##") +
-        "  DI-: " + str.tostring(di_minus, "#.##") +
-        "  [min " + str.tostring(i_adx_thresh) + "]\n" +
-        "Vol/MA  : " + str.tostring(volume / vol_ma, "#.##") + "x" +
-        "  [min " + str.tostring(i_vol_mult, "#.#") + "x]\n" +
-        "Body    : " + str.tostring(body_size, "#.###") + "x ATR" +
-        "  [min " + str.tostring(i_min_body, "#.##") + "x]\n" +
-        "EMA " + str.tostring(i_ema_fast) + "/" + str.tostring(i_ema_mid) + "/" + str.tostring(i_ema_slow) +
-        ": " + str.tostring(ema_fast, "#.####") + "/" + str.tostring(ema_mid, "#.####") + "/" + str.tostring(ema_slow, "#.####") +
-        "  Stack: BEAR\n" +
-        "Session : " + str.tostring(et_hour) + ":xx ET  Trail on: -" +
-        str.tostring(atr * i_tr_act, "#.####") + " (ATR x" + str.tostring(i_tr_act, "#.#") + ")",
-        alert.freq_once_per_bar_close)
+    short_msg = "APM v1 5m | SHORT ENTRY | " + syminfo.ticker + " [" + timeframe.period + "]\nEntry: " + str.tostring(close, "#.####") + " | Stop: " + str.tostring(sl_price, "#.####") + " | Target: " + str.tostring(tp_price, "#.####") + "\nQty: " + str.tostring(qty, "#.####") + " | ATR: " + str.tostring(atr, "#.####") + " | RSI: " + str.tostring(rsi, "#.##") + " | ADX: " + str.tostring(adx, "#.##")
+    alert(short_msg, alert.freq_once_per_bar_close)
 
 // ── Trailing stop management (every bar while in trade) ───────────────────────
 if strategy.position_size > 0.0          // long
@@ -279,18 +209,8 @@ if strategy.position_size > 0.0          // long
         new_sl   = math.max(sl_price, trail_sl)
         if not trail_active
             trail_active := true
-            alert(
-                "APM v1 5m | TRAIL ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
-                "Direction : LONG\n" +
-                "Best price: " + str.tostring(best_price, "#.####") +
-                "  |  Entry: " + str.tostring(entry_p, "#.####") + "\n" +
-                "Trail SL  : " + str.tostring(new_sl, "#.####") +
-                "  (best - ATR x" + str.tostring(i_tr_dist, "#.#") + " = -" + str.tostring(atr * i_tr_dist, "#.####") + ")\n" +
-                "Prev SL   : " + str.tostring(sl_price, "#.####") +
-                "  |  Target: " + str.tostring(tp_price, "#.####") + "\n" +
-                "Runup     : +" + str.tostring(best_price - entry_p, "#.####") +
-                " (" + str.tostring((best_price - entry_p) / entry_p * 100, "#.##") + "%)",
-                alert.freq_once_per_bar_close)
+            trail_long_msg = "APM v1 5m | TRAIL LONG | " + syminfo.ticker + " [" + timeframe.period + "]\nBest: " + str.tostring(best_price, "#.####") + " | Entry: " + str.tostring(entry_p, "#.####") + " | New SL: " + str.tostring(new_sl, "#.####")
+            alert(trail_long_msg, alert.freq_once_per_bar_close)
         sl_price := new_sl
     strategy.exit("Long Exit", "Long", stop=sl_price, limit=tp_price)
     if i_max_bars > 0 and bars_in_trade >= i_max_bars
@@ -305,18 +225,8 @@ if strategy.position_size < 0.0          // short
         new_sl   = math.min(sl_price, trail_sl)
         if not trail_active
             trail_active := true
-            alert(
-                "APM v1 5m | TRAIL ACTIVATED | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
-                "Direction : SHORT\n" +
-                "Best price: " + str.tostring(best_price, "#.####") +
-                "  |  Entry: " + str.tostring(entry_p, "#.####") + "\n" +
-                "Trail SL  : " + str.tostring(new_sl, "#.####") +
-                "  (best + ATR x" + str.tostring(i_tr_dist, "#.#") + " = +" + str.tostring(atr * i_tr_dist, "#.####") + ")\n" +
-                "Prev SL   : " + str.tostring(sl_price, "#.####") +
-                "  |  Target: " + str.tostring(tp_price, "#.####") + "\n" +
-                "Runup     : -" + str.tostring(entry_p - best_price, "#.####") +
-                " (" + str.tostring((entry_p - best_price) / entry_p * 100, "#.##") + "%)",
-                alert.freq_once_per_bar_close)
+            trail_short_msg = "APM v1 5m | TRAIL SHORT | " + syminfo.ticker + " [" + timeframe.period + "]\nBest: " + str.tostring(best_price, "#.####") + " | Entry: " + str.tostring(entry_p, "#.####") + " | New SL: " + str.tostring(new_sl, "#.####")
+            alert(trail_short_msg, alert.freq_once_per_bar_close)
         sl_price := new_sl
     strategy.exit("Short Exit", "Short", stop=sl_price, limit=tp_price)
     if i_max_bars > 0 and bars_in_trade >= i_max_bars
@@ -340,42 +250,18 @@ if strategy.closedtrades > _prev_closed
     _dir  = _sz > 0 ? "LONG" : "SHORT"
     _res  = _pnl >= 0 ? "WIN" : "LOSS"
     _mv   = _sz > 0 ? (_xp - _ep) / _ep * 100 : (_ep - _xp) / _ep * 100
-    _wr   = strategy.closedtrades > 0 ?
-            str.tostring(math.round(strategy.wintrades / strategy.closedtrades * 100, 1), "#.#") + "%" : "--"
-    alert(
-        "APM v1 5m | " + _dir + " EXIT [" + _res + "] | " + syminfo.ticker + " [" + timeframe.period + "]\n" +
-        "Entry   : " + str.tostring(_ep, "#.####") +
-        "  ->  Exit: " + str.tostring(_xp, "#.####") + "\n" +
-        "Move    : " + (_mv >= 0 ? "+" : "") + str.tostring(_mv, "#.##") + "%\n" +
-        "P&L     : " + (_pnl >= 0 ? "+" : "") + str.tostring(_pnl, "#.##") + " " + syminfo.currency + "\n" +
-        "Comm    : -" + str.tostring(_comm, "#.##") + " " + syminfo.currency + "\n" +
-        "Max runup: " + str.tostring(_ru, "#.####") + "\n" +
-        "Bars    : " + str.tostring(_bars) + "\n" +
-        "Equity  : $" + str.tostring(strategy.equity, "#.##") + "\n" +
-        "Trades  : " + str.tostring(strategy.closedtrades) +
-        "  |  Win rate: " + _wr,
-        alert.freq_once_per_bar_close)
+    _wr   = strategy.closedtrades > 0 ? str.tostring(math.round(strategy.wintrades / strategy.closedtrades * 100, 1), "#.#") + "%" : "--"
+    exit_msg = "APM v1 5m | " + _dir + " EXIT [" + _res + "] | " + syminfo.ticker + " [" + timeframe.period + "]\nEntry: " + str.tostring(_ep, "#.####") + " -> Exit: " + str.tostring(_xp, "#.####") + " | P&L: " + str.tostring(_pnl, "#.##") + " | Bars: " + str.tostring(_bars) + " | WR: " + _wr
+    alert(exit_msg, alert.freq_once_per_bar_close)
 
 // ── Panic regime alerts ───────────────────────────────────────────────────────
 if is_panic and not is_panic[1]
-    alert(
-        "APM v1 5m | PANIC REGIME STARTED | " + syminfo.ticker + "\n" +
-        "ATR     : " + str.tostring(atr, "#.####") +
-        "  |  ATR baseline: " + str.tostring(atr_bl, "#.####") + "\n" +
-        "Ratio   : " + str.tostring(atr / atr_bl, "#.##") + "x" +
-        "  [threshold: " + str.tostring(i_panic_mult, "#.#") + "x]\n" +
-        "Status  : New entries SUSPENDED",
-        alert.freq_once_per_bar_close)
+    panic_start_msg = "APM v1 5m | PANIC START | " + syminfo.ticker + "\nATR: " + str.tostring(atr, "#.####") + " | Baseline: " + str.tostring(atr_bl, "#.####") + " | Ratio: " + str.tostring(atr / atr_bl, "#.##") + "x"
+    alert(panic_start_msg, alert.freq_once_per_bar_close)
 
 if not is_panic and is_panic[1]
-    alert(
-        "APM v1 5m | PANIC REGIME CLEARED | " + syminfo.ticker + "\n" +
-        "ATR     : " + str.tostring(atr, "#.####") +
-        "  |  ATR baseline: " + str.tostring(atr_bl, "#.####") + "\n" +
-        "Ratio   : " + str.tostring(atr / atr_bl, "#.##") + "x" +
-        "  [threshold: " + str.tostring(i_panic_mult, "#.#") + "x]\n" +
-        "Status  : New entries RESUMED",
-        alert.freq_once_per_bar_close)
+    panic_clear_msg = "APM v1 5m | PANIC CLEAR | " + syminfo.ticker + "\nATR: " + str.tostring(atr, "#.####") + " | Baseline: " + str.tostring(atr_bl, "#.####") + " | Ratio: " + str.tostring(atr / atr_bl, "#.##") + "x"
+    alert(panic_clear_msg, alert.freq_once_per_bar_close)
 
 // ── Plots ─────────────────────────────────────────────────────────────────────
 plot(i_show_emas ? ema_fast : na, "EMA Fast", color=color.new(#5b9ef4, 0), linewidth=1)
@@ -410,14 +296,17 @@ _row(tbl, r, lbl, val, vc) =>
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 if i_show_dash and barstate.islast
-    tbl_pos = switch i_dash_pos
-        "Top Right"    => position.top_right
-        "Top Left"     => position.top_left
-        "Bottom Right" => position.bottom_right
-        "Bottom Left"  => position.bottom_left
-        "Middle Right" => position.middle_right
-        "Middle Left"  => position.middle_left
-        => position.top_right
+    tbl_pos = position.top_right
+    if i_dash_pos == "Top Left"
+        tbl_pos := position.top_left
+    else if i_dash_pos == "Bottom Right"
+        tbl_pos := position.bottom_right
+    else if i_dash_pos == "Bottom Left"
+        tbl_pos := position.bottom_left
+    else if i_dash_pos == "Middle Right"
+        tbl_pos := position.middle_right
+    else if i_dash_pos == "Middle Left"
+        tbl_pos := position.middle_left
 
     tbl = table.new(tbl_pos, columns=2, rows=29,
          border_width=1, border_color=color.new(color.gray, 60),
@@ -425,7 +314,7 @@ if i_show_dash and barstate.islast
 
     // header
     table.cell(tbl, 0, 0, "APM v1  5m", text_color=D_BRT, bgcolor=D_HDR, text_size=size.normal, text_halign=text.align_left)
-    table.cell(tbl, 1, 0, timeframe.period + " | " + syminfo.ticker, text_color=D_YEL, bgcolor=D_HDR, text_size=size.small, text_halign=text.align_right)
+    table.cell(tbl, 1, 0, "5m | " + syminfo.ticker, text_color=D_YEL, bgcolor=D_HDR, text_size=size.small, text_halign=text.align_right)
 
     // position
     pos_size = strategy.position_size
@@ -471,8 +360,11 @@ if i_show_dash and barstate.islast
     total_trades = strategy.wintrades + strategy.losstrades
     wr_str  = total_trades == 0 ? "--" : str.tostring(math.round(strategy.wintrades / total_trades * 100, 1)) + "%"
     pf_raw  = strategy.grossloss == 0 ? na : strategy.grossprofit / math.abs(strategy.grossloss)
+    var float _peak_equity = strategy.equity
+    _peak_equity := math.max(_peak_equity, strategy.equity)
+    drawdown_pct = _peak_equity == 0 ? 0.0 : ((_peak_equity - strategy.equity) / _peak_equity) * 100.0
 
     _row(tbl, 25, "Net P&L",      (strategy.netprofit >= 0 ? "+" : "") + str.tostring(strategy.netprofit, "#.##"), strategy.netprofit >= 0 ? D_GRN : D_RED)
     _row(tbl, 26, "Win rate",     wr_str + " (" + str.tostring(strategy.wintrades) + "/" + str.tostring(total_trades) + ")", D_BRT)
     _row(tbl, 27, "Prof. factor", na(pf_raw) ? "--" : str.tostring(pf_raw, "#.##"), na(pf_raw) ? D_DIM : pf_raw >= 1.0 ? D_GRN : D_RED)
-    _row(tbl, 28, "Max DD",       str.tostring(math.round(strategy.max_drawdown_percent, 2)) + "%", D_RED)
+    _row(tbl, 28, "Max DD",       str.tostring(math.round(drawdown_pct, 2)) + "%", D_RED)

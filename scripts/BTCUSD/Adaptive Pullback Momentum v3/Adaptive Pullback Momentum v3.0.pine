@@ -350,7 +350,7 @@ if i_show_dash and barstate.islast
 
     // header
     table.cell(tbl, 0, 0, "APM v3.4", text_color=D_BRT, bgcolor=D_HDR, text_size=size.normal, text_halign=text.align_left)
-    table.cell(tbl, 1, 0, timeframe.period + " | " + syminfo.ticker, text_color=D_YEL, bgcolor=D_HDR, text_size=size.small, text_halign=text.align_right)
+    table.cell(tbl, 1, 0, "15m | " + syminfo.ticker, text_color=D_YEL, bgcolor=D_HDR, text_size=size.small, text_halign=text.align_right)
 
     // position
     pos_size = strategy.position_size
