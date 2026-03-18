@@ -512,32 +512,38 @@ def main():
                 if new_best >= pos["trail_activate_px"]:
                     new_sl = new_best - trail_dist
                     if new_sl > pos["sl"]:
-                        log.info("Trail(L): SL %.2f → %.2f", pos["sl"], new_sl)
-                        pos["sl"] = new_sl
-                        if pos.get("sl_order_id") not in (None, "unknown"):
-                            cancel_order_safe(trading_client, pos["sl_order_id"])
-                        try:
-                            qty    = float(alpaca_pos.qty_available)
-                            new_id = submit_sl(trading_client, "long", qty, new_sl)
-                            pos["sl_order_id"] = new_id
-                        except Exception as e:
-                            log.error("SL update failed: %s", e)
+                            log.info("Trail(L): SL %.2f → %.2f", pos["sl"], new_sl)
+                            prior_sl = pos["sl"]
+                            pos["sl"] = new_sl
+                            if pos.get("sl_order_id") not in (None, "unknown"):
+                                cancel_order_safe(trading_client, pos["sl_order_id"])
+                            try:
+                                qty    = float(alpaca_pos.qty_available)
+                                new_id = submit_sl(trading_client, "long", qty, new_sl)
+                                pos["sl_order_id"] = new_id
+                            except Exception as e:
+                                pos["sl"] = prior_sl
+                                pos["sl_order_id"] = "unknown"
+                                log.error("SL update failed; stop order is now untracked: %s", e)
             else:
                 new_best = min(pos["best"], bar_low)
                 pos["best"] = new_best
                 if new_best <= pos["trail_activate_px"]:
                     new_sl = new_best + trail_dist
                     if new_sl < pos["sl"]:
-                        log.info("Trail(S): SL %.2f → %.2f", pos["sl"], new_sl)
-                        pos["sl"] = new_sl
-                        if pos.get("sl_order_id") not in (None, "unknown"):
-                            cancel_order_safe(trading_client, pos["sl_order_id"])
-                        try:
-                            qty    = float(alpaca_pos.qty_available)
-                            new_id = submit_sl(trading_client, "short", qty, new_sl)
-                            pos["sl_order_id"] = new_id
-                        except Exception as e:
-                            log.error("SL update failed: %s", e)
+                            log.info("Trail(S): SL %.2f → %.2f", pos["sl"], new_sl)
+                            prior_sl = pos["sl"]
+                            pos["sl"] = new_sl
+                            if pos.get("sl_order_id") not in (None, "unknown"):
+                                cancel_order_safe(trading_client, pos["sl_order_id"])
+                            try:
+                                qty    = float(alpaca_pos.qty_available)
+                                new_id = submit_sl(trading_client, "short", qty, new_sl)
+                                pos["sl_order_id"] = new_id
+                            except Exception as e:
+                                pos["sl"] = prior_sl
+                                pos["sl_order_id"] = "unknown"
+                                log.error("SL update failed; stop order is now untracked: %s", e)
 
         state["position"]    = pos
         state["last_bar_ts"] = last_bar_ts
