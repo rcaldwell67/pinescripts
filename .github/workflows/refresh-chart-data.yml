@@ -7,15 +7,28 @@ on:
     - cron: "*/15 * * * *"
   workflow_dispatch:
 
+concurrency:
+  group: refresh-chart-data
+  cancel-in-progress: false
+
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: write   # needed to commit & push updated JSON files
+    env:
+      ALPACA_PAPER_API_KEY: ${{ secrets.ALPACA_PAPER_API_KEY }}
+      ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -26,25 +39,21 @@ jobs:
         run: pip install --no-cache-dir alpaca-py python-dotenv pytz
 
       - name: Fetch chart data
-        env:
-          ALPACA_MODE:             ${{ vars.ALPACA_MODE || 'paper' }}
-          ALPACA_PAPER_API_KEY:    ${{ secrets.ALPACA_PAPER_API_KEY }}
-          ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
-          ALPACA_LIVE_API_KEY:     ${{ secrets.ALPACA_LIVE_API_KEY }}
-          ALPACA_LIVE_API_SECRET:  ${{ secrets.ALPACA_LIVE_API_SECRET }}
-          # Legacy fallback — kept so existing deployments keep working
-          ALPACA_API_KEY:          ${{ secrets.ALPACA_API_KEY }}
-          ALPACA_API_SECRET:       ${{ secrets.ALPACA_API_SECRET }}
         run: python docs/fetch_chart_data.py
 
       - name: Commit updated JSON (if changed)
+        shell: bash
         run: |
+          set -euo pipefail
+
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/data/chart_clm.json docs/data/chart_btcusd.json
+
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else
             git commit -m "chore: refresh chart data $(date -u +%Y-%m-%d)"
-            git push
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push origin HEAD:"${GITHUB_REF_NAME}"
           fi
