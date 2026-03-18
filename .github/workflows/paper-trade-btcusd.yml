@@ -1,0 +1,216 @@
+name: Paper Trade BTC-USD
+
+# Runs every 5 minutes, 24/7.
+# Each strategy only runs when its timeframe is due:
+# - v1: every 5 minutes
+# - v2: every 10 minutes
+# - v3: every 15 minutes
+# - v4: every 30 minutes
+# - v5: every hour on :00 UTC
+# - v6: daily at 00:05 UTC, after the daily crypto bar close
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: paper-trade-btcusd
+  cancel-in-progress: false
+
+jobs:
+  paper-trade-btcusd:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    env:
+      ALPACA_PAPER_API_KEY: ${{ secrets.ALPACA_PAPER_API_KEY }}
+      ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install --no-cache-dir alpaca-py pandas numpy python-dotenv pytz
+
+      - name: Compute due strategies
+        id: schedule
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          minute="$(date -u +%M)"
+          hour="$(date -u +%H)"
+          bucket_minute="$(( (10#$minute / 5) * 5 ))"
+
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            run_v1=true
+            run_v2=true
+            run_v3=true
+            run_v4=true
+            run_v5=true
+            run_v6=true
+          else
+            run_v1=true
+
+            if (( bucket_minute % 10 == 0 )); then
+              run_v2=true
+            else
+              run_v2=false
+            fi
+
+            if (( bucket_minute % 15 == 0 )); then
+              run_v3=true
+            else
+              run_v3=false
+            fi
+
+            if (( bucket_minute % 30 == 0 )); then
+              run_v4=true
+            else
+              run_v4=false
+            fi
+
+            if (( bucket_minute == 0 )); then
+              run_v5=true
+            else
+              run_v5=false
+            fi
+
+            if [[ "$hour" == "00" && "$bucket_minute" == "5" ]]; then
+              run_v6=true
+            else
+              run_v6=false
+            fi
+          fi
+
+          due=()
+          [[ "$run_v1" == "true" ]] && due+=("v1")
+          [[ "$run_v2" == "true" ]] && due+=("v2")
+          [[ "$run_v3" == "true" ]] && due+=("v3")
+          [[ "$run_v4" == "true" ]] && due+=("v4")
+          [[ "$run_v5" == "true" ]] && due+=("v5")
+          [[ "$run_v6" == "true" ]] && due+=("v6")
+
+          due_csv="none"
+          if (( ${#due[@]} > 0 )); then
+            due_csv="$(IFS=,; echo "${due[*]}")"
+          fi
+
+          echo "UTC hour: ${hour}"
+          echo "UTC minute: ${minute}"
+          echo "5-minute bucket: ${bucket_minute}"
+          echo "Due strategies: ${due_csv}"
+
+          {
+            echo "utc_hour=${hour}"
+            echo "utc_minute=${minute}"
+            echo "bucket_minute=${bucket_minute}"
+            echo "due=${due_csv}"
+            echo "run_v1=${run_v1}"
+            echo "run_v2=${run_v2}"
+            echo "run_v3=${run_v3}"
+            echo "run_v4=${run_v4}"
+            echo "run_v5=${run_v5}"
+            echo "run_v6=${run_v6}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Run due BTC-USD paper traders
+        id: run_traders
+        shell: bash
+        run: |
+          set -uo pipefail
+
+          failures=()
+
+          run_trader() {
+            local label="$1"
+            local path="$2"
+            local enabled="$3"
+
+            if [[ "$enabled" != "true" ]]; then
+              echo "Skipping ${label}"
+              return 0
+            fi
+
+            echo "::group::${label}"
+            if python "$path"; then
+              echo "${label} completed"
+            else
+              echo "${label} failed"
+              failures+=("${label}")
+            fi
+            echo "::endgroup::"
+          }
+
+          run_trader "APM v1 BTC/USD 5m" "scripts/BTCUSD/Adaptive Pullback Momentum v1/paper_trader_btcusd_v1.py" "${{ steps.schedule.outputs.run_v1 }}"
+          run_trader "APM v2 BTC/USD 10m" "scripts/BTCUSD/Adaptive Pullback Momentum v2/paper_trader_btcusd_v2.py" "${{ steps.schedule.outputs.run_v2 }}"
+          run_trader "APM v3 BTC/USD 15m" "scripts/BTCUSD/Adaptive Pullback Momentum v3/paper_trader_btcusd_v3.py" "${{ steps.schedule.outputs.run_v3 }}"
+          run_trader "APM v4 BTC/USD 30m" "scripts/BTCUSD/Adaptive Pullback Momentum v4/paper_trader_btcusd_v4.py" "${{ steps.schedule.outputs.run_v4 }}"
+          run_trader "APM v5 BTC/USD 1h" "scripts/BTCUSD/Adaptive Pullback Momentum v5/paper_trader_btcusd_v5.py" "${{ steps.schedule.outputs.run_v5 }}"
+          run_trader "APM v6 BTC/USD 1D" "scripts/BTCUSD/Adaptive Pullback Momentum v6/paper_trader_btcusd_v6.py" "${{ steps.schedule.outputs.run_v6 }}"
+
+          failures_csv=""
+          if (( ${#failures[@]} > 0 )); then
+            failures_csv="$(IFS=,; echo "${failures[*]}")"
+          fi
+
+          echo "Trader failures: ${failures_csv:-none}"
+
+          {
+            echo "failure_count=${#failures[@]}"
+            echo "failures=${failures_csv}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Commit BTC-USD paper trade data if changed
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add \
+            docs/data/btcusd/v1_paper_state.json \
+            docs/data/btcusd/v1_trades_paper.csv \
+            docs/data/btcusd/v2_paper_state.json \
+            docs/data/btcusd/v2_trades_paper.csv \
+            docs/data/btcusd/v3_paper_state.json \
+            docs/data/btcusd/v3_trades_paper.csv \
+            docs/data/btcusd/v4_paper_state.json \
+            docs/data/btcusd/v4_trades_paper.csv \
+            docs/data/btcusd/v5_paper_state.json \
+            docs/data/btcusd/v5_trades_paper.csv \
+            docs/data/btcusd/v6_paper_state.json \
+            docs/data/btcusd/v6_trades_paper.csv \
+            || true
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          git commit -m "chore: BTC-USD paper trade $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin HEAD:"${GITHUB_REF_NAME}"
+
+      - name: Fail if any trader failed
+        if: always()
+        shell: bash
+        run: |
+          if [[ "${{ steps.run_traders.outputs.failure_count }}" != "0" ]]; then
+            echo "One or more BTC-USD traders failed: ${{ steps.run_traders.outputs.failures }}"
+            exit 1
+          fi
