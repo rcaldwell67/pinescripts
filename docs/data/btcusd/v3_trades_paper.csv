@@ -1,4 +1,4 @@
-entry_time,exit_time,direction,entry,exit,pnl,equity,exit_reason
+entry_time,exit_time,direction,entry_price,exit_price,dollar_pnl,equity,result
 2026-01-21 08:30:00+00:00,2026-01-21 09:15:00+00:00,short,88894.26,89285.37,-127.27,9872.73,SL
 2026-01-21 11:45:00+00:00,2026-01-21 12:00:00+00:00,short,88687.13,88313.79,70.58,9943.31,TP
 2026-01-21 12:00:00+00:00,2026-01-21 12:45:00+00:00,short,88203.75,88610.97,-125.28,9818.03,SL
