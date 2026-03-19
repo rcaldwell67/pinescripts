@@ -1,8 +1,6 @@
 # Runner for APM backtest at 15m (non-notebook)
-import subprocess, sys
-# ensure deps
-for pkg in ["yfinance", "pandas", "numpy", "matplotlib"]:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", pkg, "-q"])
+import sys
+# ...existing code...
 
 import yfinance as yf
 import pandas as pd
