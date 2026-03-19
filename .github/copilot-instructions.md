@@ -1,0 +1,1 @@
+Bootstrap workspace instructions for Copilot agent, following README and project conventions.
