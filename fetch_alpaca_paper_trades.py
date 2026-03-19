@@ -2,8 +2,8 @@ import os
 import shutil
 import csv
 from datetime import datetime
-from alpaca_py import Client
-
+#from alpaca_py import Client
+from alpaca.trading.client import TradingClient
 # Load environment variables
 from dotenv import load_dotenv
 load_dotenv()
