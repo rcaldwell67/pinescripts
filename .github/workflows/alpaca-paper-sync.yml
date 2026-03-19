@@ -17,7 +17,7 @@ jobs:
           python-version: '3.10'
       - name: Install dependencies
         run: |
-          pip install alpaca-py python-dotenv
+          pip install -r requirements.txt
       - name: Run Alpaca Paper Trades Sync
         env:
           ALPACA_PAPER_API_KEY: ${{ secrets.ALPACA_PAPER_API_KEY }}
