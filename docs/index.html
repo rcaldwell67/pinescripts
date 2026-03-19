@@ -392,13 +392,15 @@ function calcMetrics(rows) {
   }
   const longs  = rows.filter(r => r.direction === 'long');
   const shorts = rows.filter(r => r.direction === 'short');
+  const finalEquity = rows[rows.length-1]?.equity ?? INITIAL_CAPITAL;
+  const netPnl = finalEquity - INITIAL_CAPITAL;
   return {
     n: rows.length,
     winRate:  wins.length / rows.length * 100,
-    netPnl:   totalPnl,
-    netPnlPct: totalPnl / INITIAL_CAPITAL * 100,
+    netPnl:   netPnl,
+    netPnlPct: netPnl / INITIAL_CAPITAL * 100,
     pf, maxDD,
-    finalEquity: rows[rows.length-1]?.equity ?? INITIAL_CAPITAL,
+    finalEquity,
     avgWin:  wins.length   ? grossWin   / wins.length   : 0,
     avgLoss: losses.length ? -grossLoss / losses.length : 0,
     tpCount:    rows.filter(r=>r.result==='TP').length,
