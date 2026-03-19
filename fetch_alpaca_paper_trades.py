@@ -29,7 +29,7 @@ def backup_csv(path):
 
 # Fetch trades from Alpaca
 def fetch_trades(symbol):
-    client = Client(ALPACA_API_KEY, ALPACA_API_SECRET, paper=ALPACA_MODE=='paper')
+    client = TradingClient(ALPACA_API_KEY, ALPACA_API_SECRET, paper=ALPACA_MODE=='paper')
     orders = client.get_orders(status='all', symbol=symbol, limit=1000)
     trades = []
     for order in orders:
