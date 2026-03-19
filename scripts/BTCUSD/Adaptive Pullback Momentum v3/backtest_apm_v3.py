@@ -420,3 +420,16 @@ if _SA_KEY.exists():
 else:
     print(f"\nSkipping Google Sheets push — service_account.json not found.")
     print(f"See push_to_sheets.py for setup instructions.")
+
+# --- Write final state for dashboard integration ---
+import json
+from pathlib import Path
+state_out = Path("/home/rcaldwell67/repo/pinescripts/docs/data/btcusd/v3_paper_state.json")
+final_state = {
+    "position": None,
+    "equity": round(equity, 2),
+    "last_bar_ts": str(df.index[-1]) if not df.empty else None
+}
+with open(state_out, "w") as f:
+    json.dump(final_state, f, indent=2)
+print(f"\nFinal state written → {state_out}")
