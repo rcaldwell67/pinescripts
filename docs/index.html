@@ -113,15 +113,28 @@
 <body>
 <header>
   <div>
-    <h1>APM Dashboard</h1>
-    <div class="subtitle">Adaptive Pullback Momentum</div>
-  </div>
-  <div class="sym-switcher">
-    <button class="sym-btn active" data-sym="btc">BTC-USD</button>
-    <button class="sym-btn" data-sym="clm">CLM</button>
-  </div>
-  <div class="mode-switcher">
-    <button class="mode-btn active" data-mode="backtest">Backtest</button>
+    <div class="panel" style="margin-bottom:16px;">
+      <h2 style="margin-bottom:0;">Trade Log</h2>
+      <div class="pg-size">
+        <label>Rows</label>
+        <select id="tradePageSizeSelect" class="tx-select" onchange="tradePageSize=parseInt(this.value);tradeTablePage=1;renderTradeTable(getActiveRows())"><option value="10">10</option><option value="25" selected>25</option><option value="50">50</option><option value="100">100</option></select>
+      </div>
+    </div>
+    <div class="table-wrap" id="tradeTableWrap"><div class="empty">Loading…</div></div>
+  
+    <div class="panel">
+      <h2>Failure Logs</h2>
+      <div class="failure-logs">
+        <div id="btcFailureLog" class="failure-log">
+          <h3>BTCUSD Failures</h3>
+          <pre id="btcFailureLogContent">Loading...</pre>
+        </div>
+        <div id="clmFailureLog" class="failure-log">
+          <h3>CLM Failures</h3>
+          <pre id="clmFailureLogContent">Loading...</pre>
+        </div>
+      </div>
+    </div>
     <button class="mode-btn" data-mode="paper">Paper</button>
     <button class="mode-btn" data-mode="live">Live</button>
   </div>
@@ -301,6 +314,22 @@ const INSTRUMENTS = {
   }
 };
 
+// Failure log loader
+function loadFailureLog(file, elementId) {
+  fetch(file)
+    .then(resp => resp.ok ? resp.text() : 'No failures logged.')
+    .then(txt => {
+      document.getElementById(elementId).textContent = txt || 'No failures logged.';
+    })
+    .catch(() => {
+      document.getElementById(elementId).textContent = 'Failed to load log.';
+    });
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  loadFailureLog('data/btcusd/failures.log', 'btcFailureLogContent');
+  loadFailureLog('data/clm/failures.log', 'clmFailureLogContent');
+});
 const INITIAL_CAPITAL = 10000;
 const _modeCache = { backtest: { btc:{}, clm:{} }, paper: { btc:{}, clm:{} }, live: { btc:{}, clm:{} } };
 let loaded = _modeCache.backtest;
