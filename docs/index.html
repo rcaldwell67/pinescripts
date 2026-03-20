@@ -111,7 +111,39 @@
   </style>
 </head>
 <body>
-<header>
+    <link rel="stylesheet" href="style.css">
+    <style>
+      body { background: #181a20; color: #e6e6e6; font-family: 'Segoe UI', Arial, sans-serif; }
+      .panel { background: #23242a; border-radius: 8px; padding: 24px; margin-bottom: 24px; box-shadow: 0 2px 8px #0002; }
+      h2, h3 { color: #58a6ff; margin-top: 0; }
+      .table-wrap { overflow-x: auto; }
+      table.cmp, .table-wrap table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+      th, td { padding: 10px 14px; text-align: left; }
+      th { background: #23242a; color: #58a6ff; font-weight: 600; border-bottom: 2px solid #333; }
+      tr { border-bottom: 1px solid #222; }
+      tr:last-child { border-bottom: none; }
+      .pg-size { margin-bottom: 12px; }
+      .tx-select { background: #23242a; color: #e6e6e6; border: 1px solid #333; border-radius: 4px; padding: 4px 8px; }
+      .failure-logs { display: flex; gap: 32px; margin-top: 16px; }
+      .failure-log { flex: 1; background: #23242a; border-radius: 8px; padding: 16px; }
+      pre { background: #1a1b20; color: #ff7b72; border-radius: 4px; padding: 12px; font-size: 14px; }
+      .empty { color: #888; padding: 16px; }
+      .cmp th, .cmp td { text-align: center; }
+      .cmp td { font-size: 15px; }
+      .cmp .result { font-weight: bold; }
+      .cmp .result[data-result="TP"] { color: #3fb950; }
+      .cmp .result[data-result="SL"] { color: #ff7b72; }
+      .cmp .result[data-result="MB"] { color: #d29922; }
+      .cmp .dir { font-weight: bold; color: #bc8cff; }
+      .cmp .dir[data-dir="short"] { color: #ff7b72; }
+      .cmp .dir[data-dir="long"] { color: #3fb950; }
+      .cmp .ver { font-weight: bold; border-radius: 4px; padding: 2px 8px; background: #23242a; color: #ffa657; }
+      @media (max-width: 900px) {
+        .panel, .failure-log { padding: 12px; }
+        th, td { padding: 6px 8px; }
+        .failure-logs { flex-direction: column; gap: 12px; }
+      }
+    </style>
   <div>
     <div class="panel" style="margin-bottom:16px;">
       <h2 style="margin-bottom:0;">Trade Log</h2>
