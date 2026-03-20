@@ -45,6 +45,26 @@ ATR_BL_LEN = 60      # ATR baseline SMA length (panic detection)
 
 INITIAL_CAPITAL = 10_000.0
 COMMISSION_PCT  = 0.0006   # 0.06% per side
+# Sweep parameter ranges
+TP_MULT_RANGE   = [4.0, 6.0, 8.0, 10.0, 12.0]
+SL_MULT_RANGE   = [1.5, 2.0]
+RISK_PCT_RANGE  = [0.03]
+VOL_MULT_RANGE  = [0.8, 1.0, 1.2]
+ADX_THRESH_RANGE= [15, 20]
+
+PB_PCT     = 0.15    # pullback tolerance %
+MIN_BODY   = 0.15    # min |close-open|/ATR (balanced)
+ATR_FLOOR  = 0.0015  # ATR must be >= 0.15% of price (balanced)
+TRAIL_ACT  = 1.5     # trail activates at ATR×TRAIL_ACT profit (balanced)
+TRAIL_DIST = 0.6     # trail stays ATR×TRAIL_DIST from best price (balanced)
+PANIC_MULT = 1.3     # ATR > ATR_BL × PANIC_MULT → no entries (unchanged)
+
+RSI_LO_L = 42;  RSI_HI_L = 68
+RSI_LO_S = 32;  RSI_HI_S = 58
+
+TRADE_LONGS  = True
+TRADE_SHORTS = True
+COMMISSION_PCT  = 0.0006   # 0.06% per side
 RISK_PCT        = 0.03     # 3% equity risked per trade; validated at +22.00% on current BTC window
 
 # ── v4.2 Pine Script defaults ─────────────────────────────────────────────────
@@ -298,112 +318,173 @@ eqcurve      = []
 win_count    = 0
 closed_count = 0
 prev_panic   = False
-bar_index    = {t: i for i, t in enumerate(df.index)}
 
-for ts, row in df.iterrows():
-    close = float(row["Close"]); high = float(row["High"])
-    low   = float(row["Low"]);   atr  = float(row["ATR"])
-    atr_bl_v = float(row["ATR_BL"])
-    cur_panic = bool(is_panic[ts])
 
-    # ── panic edge alerts
-    if cur_panic and not prev_panic:
-        alerts.append((ts, "PANIC_START", panic_alert(True,  atr, atr_bl_v, ts)))
-    elif not cur_panic and prev_panic:
-        alerts.append((ts, "PANIC_CLEAR", panic_alert(False, atr, atr_bl_v, ts)))
-    prev_panic = cur_panic
+# Thorough parameter sweep
+results = []
+for TP_MULT in TP_MULT_RANGE:
+    for SL_MULT in SL_MULT_RANGE:
+        for RISK_PCT in RISK_PCT_RANGE:
+            for VOL_MULT in VOL_MULT_RANGE:
+                for ADX_THRESH in ADX_THRESH_RANGE:
+                    equity       = INITIAL_CAPITAL
+                    pos          = None
+                    trades       = []
+                    alerts       = []
+                    eqcurve      = []
+                    win_count    = 0
+                    closed_count = 0
+                    prev_panic   = False
+                    bar_index    = {t: i for i, t in enumerate(df.index)}
+                    # Signal construction with sweep params
+                    vol_ok       = df["Volume"] >= df["VOL_MA"] * VOL_MULT
+                    is_trending  = df["ADX"] > ADX_THRESH
+                    long_signal = (
+                        TRADE_LONGS    &
+                        long_pb        &
+                        ema_bull_full  &
+                        ema_slope_up   &
+                        rsi_rising     &
+                        rsi_long_ok    &
+                        vol_ok         &
+                        atr_floor_ok   &
+                        is_trending    &
+                        ~is_panic
+                    )
+                    short_signal = (
+                        TRADE_SHORTS   &
+                        short_pb       &
+                        ema_bear_full  &
+                        ema_slope_down &
+                        rsi_falling    &
+                        rsi_short_ok   &
+                        vol_ok         &
+                        atr_floor_ok   &
+                        is_trending    &
+                        ~is_panic
+                    )
+                    for ts, row in df.iterrows():
+                        close = float(row["Close"]); high = float(row["High"])
+                        low   = float(row["Low"]);   atr  = float(row["ATR"])
+                        atr_bl_v = float(row["ATR_BL"])
+                        cur_panic = bool(is_panic[ts])
+                        if cur_panic and not prev_panic:
+                            alerts.append((ts, "PANIC_START", panic_alert(True,  atr, atr_bl_v, ts)))
+                        elif not cur_panic and prev_panic:
+                            alerts.append((ts, "PANIC_CLEAR", panic_alert(False, atr, atr_bl_v, ts)))
+                        prev_panic = cur_panic
+                        htp = hsl = False
+                        xp  = pnl = 0.0
+                        d   = None
+                        if pos is not None:
+                            d = pos["direction"]
+                            if d == "long":
+                                if high > pos["best"]:
+                                    pos["best"] = high
+                                    pos["max_runup"] = max(pos["max_runup"], high - pos["entry"])
+                                if pos["best"] >= pos["trail_activate_px"]:
+                                    new_sl = pos["best"] - pos["trail_dist_fixed"]
+                                    new_sl = max(pos["sl"], new_sl)
+                                    if not pos["trail_active"]:
+                                        pos["trail_active"] = True
+                                        alerts.append((ts, "TRAIL", trail_alert(
+                                            d, pos["best"], pos["entry"], new_sl,
+                                            pos["sl"], pos["tp"], pos["entry_atr"], ts)))
+                                    pos["sl"] = new_sl
+                                htp = high >= pos["tp"]
+                                hsl = low  <= pos["sl"]
+                            else:
+                                if low < pos["best"]:
+                                    pos["best"] = low
+                                    pos["max_runup"] = max(pos["max_runup"], pos["entry"] - low)
+                                if pos["best"] <= pos["trail_activate_px"]:
+                                    new_sl = pos["best"] + pos["trail_dist_fixed"]
+                                    new_sl = min(pos["sl"], new_sl)
+                                    if not pos["trail_active"]:
+                                        pos["trail_active"] = True
+                                        alerts.append((ts, "TRAIL", trail_alert(
+                                            d, pos["best"], pos["entry"], new_sl,
+                                            pos["sl"], pos["tp"], pos["entry_atr"], ts)))
+                                    pos["sl"] = new_sl
+                                htp = low  <= pos["tp"]
+                                hsl = high >= pos["sl"]
+                            if htp or hsl:
+                                xp  = pos["tp"] if htp else pos["sl"]
+                                pnl = ((xp - pos["entry"]) / pos["entry"] if d == "long"
+                                       else (pos["entry"] - xp) / pos["entry"])
+                        if htp or hsl:
+                            comm_dollar  = pos["notional"] * COMMISSION_PCT * 2
+                            dp           = pnl * pos["notional"] - comm_dollar
+                            equity      += dp
+                            closed_count += 1
+                            if dp > 0: win_count += 1
+                            bars_held = bar_index[ts] - bar_index[pos["entry_time"]]
+                            trades.append({
+                                "entry_time": pos["entry_time"], "exit_time": ts,
+                                "direction":  d,
+                                "entry":      pos["entry"],      "exit":   xp,
+                                "result":     "TP" if htp else "SL",
+                                "pnl_pct":    round(pnl * 100, 3),
+                                "dollar_pnl": round(dp, 2),
+                                "equity":     round(equity, 2),
+                            })
+                            alerts.append((ts, "EXIT", exit_alert(
+                                d, pos["entry"], xp, dp, comm_dollar, pos["max_runup"],
+                                bars_held, equity, closed_count, win_count, ts)))
+                            pos = None
+                        if pos is None:
+                            sig = ("long"  if bool(long_signal[ts])  else
+                                   "short" if bool(short_signal[ts]) else None)
+                            if sig:
+                                sd    = atr * SL_MULT
+                                rc    = equity * RISK_PCT
+                                qty   = rc / sd
+                                notl  = qty * close
+                                notl  = min(notl, equity * 5.0)
+                                sl    = close - sd if sig == "long" else close + sd
+                                tp    = close + atr * TP_MULT if sig == "long" else close - atr * TP_MULT
+                                tap   = (close + atr * TRAIL_ACT if sig == "long"
+                                         else close - atr * TRAIL_ACT)
+                                tdf_v = atr * TRAIL_DIST
+                                qty_v = notl / close
+                                alerts.append((ts, "ENTRY", entry_alert(
+                                    sig, ts, close, atr, atr_bl_v, sd, qty_v, equity, row)))
+                                pos = {"direction": sig, "entry": close, "entry_time": ts,
+                                       "sl": sl, "tp": tp, "best": close, "notional": notl,
+                                       "entry_atr": atr, "trail_activate_px": tap,
+                                       "trail_dist_fixed": tdf_v, "trail_active": False,
+                                       "max_runup": 0.0}
+                        eqcurve.append({"time": ts, "equity": equity})
+                    # Collect sweep results
 
-    # reset per-bar exit flags
-    htp = hsl = False
-    xp  = pnl = 0.0
-    d   = None
+                    tdf = pd.DataFrame(trades)
+                    ret   = (equity / INITIAL_CAPITAL - 1) * 100
+                    win_sum = tdf[tdf["dollar_pnl"] > 0]["dollar_pnl"].sum()
+                    loss_sum = abs(tdf[tdf["dollar_pnl"] <= 0]["dollar_pnl"].sum())
+                    pf = win_sum / loss_sum if loss_sum != 0 else float("inf")
+                    results.append({
+                        "TP_MULT": TP_MULT,
+                        "SL_MULT": SL_MULT,
+                        "RISK_PCT": RISK_PCT,
+                        "VOL_MULT": VOL_MULT,
+                        "ADX_THRESH": ADX_THRESH,
+                        "Return": ret,
+                        "ProfitFactor": pf,
+                        "Trades": len(tdf),
+                    })
 
-    # ── manage open position
-    if pos is not None:
-        d = pos["direction"]
-        if d == "long":
-            if high > pos["best"]:
-                pos["best"] = high
-                pos["max_runup"] = max(pos["max_runup"], high - pos["entry"])
-            if pos["best"] >= pos["trail_activate_px"]:
-                new_sl = pos["best"] - pos["trail_dist_fixed"]
-                new_sl = max(pos["sl"], new_sl)
-                if not pos["trail_active"]:
-                    pos["trail_active"] = True
-                    alerts.append((ts, "TRAIL", trail_alert(
-                        d, pos["best"], pos["entry"], new_sl,
-                        pos["sl"], pos["tp"], pos["entry_atr"], ts)))
-                pos["sl"] = new_sl
-            htp = high >= pos["tp"]
-            hsl = low  <= pos["sl"]
-        else:  # short
-            if low < pos["best"]:
-                pos["best"] = low
-                pos["max_runup"] = max(pos["max_runup"], pos["entry"] - low)
-            if pos["best"] <= pos["trail_activate_px"]:
-                new_sl = pos["best"] + pos["trail_dist_fixed"]
-                new_sl = min(pos["sl"], new_sl)
-                if not pos["trail_active"]:
-                    pos["trail_active"] = True
-                    alerts.append((ts, "TRAIL", trail_alert(
-                        d, pos["best"], pos["entry"], new_sl,
-                        pos["sl"], pos["tp"], pos["entry_atr"], ts)))
-                pos["sl"] = new_sl
-            htp = low  <= pos["tp"]
-            hsl = high >= pos["sl"]
+# Export sweep results to CSV
+import csv
+with open("apm_v4_sweep_results.csv", "w", newline="") as csvfile:
+    fieldnames = ["TP_MULT", "SL_MULT", "RISK_PCT", "VOL_MULT", "ADX_THRESH", "Return", "ProfitFactor", "Trades"]
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    writer.writeheader()
+    for r in results:
+        writer.writerow(r)
 
-        if htp or hsl:
-            xp  = pos["tp"] if htp else pos["sl"]
-            pnl = ((xp - pos["entry"]) / pos["entry"] if d == "long"
-                   else (pos["entry"] - xp) / pos["entry"])
-
-    if htp or hsl:
-        comm_dollar  = pos["notional"] * COMMISSION_PCT * 2
-        dp           = pnl * pos["notional"] - comm_dollar
-        equity      += dp
-        closed_count += 1
-        if dp > 0: win_count += 1
-        bars_held = bar_index[ts] - bar_index[pos["entry_time"]]
-        trades.append({
-            "entry_time": pos["entry_time"], "exit_time": ts,
-            "direction":  d,
-            "entry":      pos["entry"],      "exit":   xp,
-            "result":     "TP" if htp else "SL",
-            "pnl_pct":    round(pnl * 100, 3),
-            "dollar_pnl": round(dp, 2),
-            "equity":     round(equity, 2),
-        })
-        alerts.append((ts, "EXIT", exit_alert(
-            d, pos["entry"], xp, dp, comm_dollar, pos["max_runup"],
-            bars_held, equity, closed_count, win_count, ts)))
-        pos = None
-
-    # ── new entry
-    if pos is None:
-        sig = ("long"  if bool(long_signal[ts])  else
-               "short" if bool(short_signal[ts]) else None)
-        if sig:
-            sd    = atr * SL_MULT
-            rc    = equity * RISK_PCT
-            qty   = rc / sd
-            notl  = qty * close
-            notl  = min(notl, equity * 5.0)   # 5× leverage cap
-            sl    = close - sd if sig == "long" else close + sd
-            tp    = close + atr * TP_MULT if sig == "long" else close - atr * TP_MULT
-            # lock trail thresholds to entry-bar ATR (avoids ATR-shrink bug)
-            tap   = (close + atr * TRAIL_ACT if sig == "long"
-                     else close - atr * TRAIL_ACT)
-            tdf_v = atr * TRAIL_DIST
-            qty_v = notl / close
-            alerts.append((ts, "ENTRY", entry_alert(
-                sig, ts, close, atr, atr_bl_v, sd, qty_v, equity, row)))
-            pos = {"direction": sig, "entry": close, "entry_time": ts,
-                   "sl": sl, "tp": tp, "best": close, "notional": notl,
-                   "entry_atr": atr, "trail_activate_px": tap,
-                   "trail_dist_fixed": tdf_v, "trail_active": False,
-                   "max_runup": 0.0}
-
-    eqcurve.append({"time": ts, "equity": equity})
+print("\nSweep Results:")
+for r in results:
+    print(f"TP:{r['TP_MULT']} SL:{r['SL_MULT']} Risk:{r['RISK_PCT']} Vol:{r['VOL_MULT']} ADX:{r['ADX_THRESH']} Return:{r['Return']:.2f}% PF:{r['ProfitFactor']:.2f} Trades:{r['Trades']}")
 
 print(f"\nSimulation complete. Trades: {len(trades)}")
 
