@@ -78,13 +78,13 @@ i_panic_mult = input.float(1.3,  "Panic suppression mult",group=G_VOL, minval=1.
                  tooltip="ATR14 > ATR-60SMA × this value → skip new entries")
 
 var G_RISK = "Risk Management"
-i_sl_mult    = input.float(2.0,  "Stop loss ATR mult",    group=G_RISK, minval=0.3, step=0.1)
-i_tp_mult    = input.float(2.0,  "Take profit ATR mult",  group=G_RISK, minval=0.5, step=0.1)
-i_tr_act     = input.float(1.5,  "Trail activate ATR mult",group=G_RISK,minval=0.3, step=0.1,
+ i_sl_mult    = input.float(2.0,  "Stop loss ATR mult",    group=G_RISK, minval=0.3, step=0.1)
+ i_tp_mult    = input.float(6.0,  "Take profit ATR mult",  group=G_RISK, minval=0.5, step=0.1)
+ i_tr_act     = input.float(2.5,  "Trail activate ATR mult",group=G_RISK,minval=0.3, step=0.1,
                  tooltip="Trailing stop kicks in once price moves this many ATRs in your favour (earlier lock-in)")
-i_tr_dist    = input.float(1.5,  "Trail distance ATR mult",group=G_RISK,minval=0.2, step=0.1,
+ i_tr_dist    = input.float(0.2,  "Trail distance ATR mult",group=G_RISK,minval=0.1, step=0.1,
                  tooltip="Once active, trail stays this many ATRs below/above the best price")
-i_risk_pct   = input.float(3.0,  "Equity risked per trade (%)",group=G_RISK,minval=0.1,maxval=20,step=0.1)
+ i_risk_pct   = input.float(3.0,  "Equity risked per trade (%)",group=G_RISK,minval=0.1,maxval=20,step=0.1)
 
 var G_DISP = "Display"
 i_longs      = input.bool(true,  "Trade Longs",   group=G_DISP)

@@ -46,11 +46,11 @@ ATR_BL_LEN = 60      # ATR baseline SMA length (panic detection)
 INITIAL_CAPITAL = 10_000.0
 COMMISSION_PCT  = 0.0006   # 0.06% per side
 # Sweep parameter ranges
-TP_MULT_RANGE   = [4.0, 6.0, 8.0, 10.0, 12.0]
+TP_MULT_RANGE   = [4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0]
 SL_MULT_RANGE   = [1.5, 2.0]
-RISK_PCT_RANGE  = [0.03]
-VOL_MULT_RANGE  = [0.8, 1.0, 1.2]
-ADX_THRESH_RANGE= [15, 20]
+RISK_PCT_RANGE  = [0.03, 0.04, 0.05]
+VOL_MULT_RANGE  = [0.8, 1.0]
+ADX_THRESH_RANGE= [10, 12, 15]
 
 PB_PCT     = 0.15    # pullback tolerance %
 MIN_BODY   = 0.15    # min |close-open|/ATR (balanced)

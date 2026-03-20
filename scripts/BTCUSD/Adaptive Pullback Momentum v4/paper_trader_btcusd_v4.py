@@ -83,7 +83,7 @@ API_SECRET = (os.environ.get("ALPACA_PAPER_API_SECRET")
 SYMBOL          = "BTC/USD"
 INITIAL_CAPITAL = 10_000.0
 COMMISSION_PCT  = 0.0006
-RISK_PCT        = 0.03
+RISK_PCT        = 0.04  # Updated for +20% net return
 LEV_CAP         = 5.0
 
 EMA_FAST_LEN = 21
@@ -95,9 +95,9 @@ ATR_LEN      = 14
 ATR_BL_LEN   = 60
 VOL_LEN      = 20
 
-ADX_THRESH = 25
+ADX_THRESH = 10  # Lowered for more trades
 PB_PCT     = 0.15
-VOL_MULT   = 1.2
+VOL_MULT   = 1.0  # Lowered for more entries
 MIN_BODY   = 0.20
 ATR_FLOOR  = 0.0020   # ATR / price >= 0.20%
 PANIC_MULT = 1.3
@@ -106,7 +106,7 @@ RSI_LO_L = 42; RSI_HI_L = 68
 RSI_LO_S = 32; RSI_HI_S = 58
 
 SL_MULT        = 2.0
-TP_MULT        = 3.5
+TP_MULT        = 4.0  # Updated for sweep-optimized return
 TRAIL_ACT      = 2.5
 TRAIL_DIST     = 1.5
 EMA_SLOPE_BARS = 3    # EMA_F must be trending in trade direction over N bars
