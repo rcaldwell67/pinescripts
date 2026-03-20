@@ -49,15 +49,15 @@ RISK_PCT        = 0.03     # 3% equity risked per trade; validated at +22.00% on
 
 # ── v4.2 Pine Script defaults ─────────────────────────────────────────────────
 PB_PCT     = 0.15    # pullback tolerance %
-ADX_THRESH = 25      # ADX threshold (v4.x)
-VOL_MULT   = 1.2     # volume multiplier (v4.1+)
-MIN_BODY   = 0.20    # min |close-open|/ATR (v4.1+)
-ATR_FLOOR  = 0.0020  # ATR must be >= 0.20% of price (v4.1+)
-SL_MULT    = 2.0     # stop   = entry ± ATR×SL_MULT (v4.1+)
-TP_MULT    = 3.5     # target = entry ± ATR×TP_MULT (v4.2)
-TRAIL_ACT  = 2.5     # trail activates at ATR×TRAIL_ACT profit (v4.1+)
-TRAIL_DIST = 1.5     # trail stays ATR×TRAIL_DIST from best price (v4.1+)
-PANIC_MULT = 1.3     # ATR > ATR_BL × PANIC_MULT → no entries (v4.1+)
+ADX_THRESH = 28      # ADX threshold (v4.x, updated)
+VOL_MULT   = 1.5     # volume multiplier (updated)
+MIN_BODY   = 0.25    # min |close-open|/ATR (updated)
+ATR_FLOOR  = 0.0020  # ATR must be >= 0.20% of price (unchanged)
+SL_MULT    = 2.0     # stop   = entry ± ATR×SL_MULT (unchanged)
+TP_MULT    = 2.0     # target = entry ± ATR×TP_MULT (updated)
+TRAIL_ACT  = 1.5     # trail activates at ATR×TRAIL_ACT profit (updated)
+TRAIL_DIST = 1.5     # trail stays ATR×TRAIL_DIST from best price (unchanged)
+PANIC_MULT = 1.3     # ATR > ATR_BL × PANIC_MULT → no entries (unchanged)
 
 RSI_LO_L = 42;  RSI_HI_L = 68
 RSI_LO_S = 32;  RSI_HI_S = 58
