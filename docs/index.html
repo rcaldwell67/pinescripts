@@ -154,19 +154,6 @@
     </div>
     <div class="table-wrap" id="tradeTableWrap"><div class="empty">Loading…</div></div>
   
-    <div class="panel">
-      <h2>Failure Logs</h2>
-      <div class="failure-logs">
-        <div id="btcFailureLog" class="failure-log">
-          <h3>BTCUSD Failures</h3>
-          <pre id="btcFailureLogContent">Loading...</pre>
-        </div>
-        <div id="clmFailureLog" class="failure-log">
-          <h3>CLM Failures</h3>
-          <pre id="clmFailureLogContent">Loading...</pre>
-        </div>
-      </div>
-    </div>
     <button class="mode-btn" data-mode="paper">Paper</button>
     <button class="mode-btn" data-mode="live">Live</button>
   </div>
@@ -346,22 +333,6 @@ const INSTRUMENTS = {
   }
 };
 
-// Failure log loader
-function loadFailureLog(file, elementId) {
-  fetch(file)
-    .then(resp => resp.ok ? resp.text() : 'No failures logged.')
-    .then(txt => {
-      document.getElementById(elementId).textContent = txt || 'No failures logged.';
-    })
-    .catch(() => {
-      document.getElementById(elementId).textContent = 'Failed to load log.';
-    });
-}
-
-window.addEventListener('DOMContentLoaded', () => {
-  loadFailureLog('data/btcusd/failures.log', 'btcFailureLogContent');
-  loadFailureLog('data/clm/failures.log', 'clmFailureLogContent');
-});
 const INITIAL_CAPITAL = 10000;
 const _modeCache = { backtest: { btc:{}, clm:{} }, paper: { btc:{}, clm:{} }, live: { btc:{}, clm:{} } };
 let loaded = _modeCache.backtest;
