@@ -458,7 +458,7 @@ def main():
 
     if not API_KEY or not API_SECRET:
         log.error("Missing credentials — set ALPACA_PAPER_API_KEY / ALPACA_PAPER_API_SECRET.")
-        log_failure("Missing credentials", "API_KEY or API_SECRET not set")
+        # log_failure("Missing credentials", "API_KEY or API_SECRET not set")
         sys.exit(1)
 
     data_client    = CryptoHistoricalDataClient(API_KEY, API_SECRET)
@@ -469,17 +469,17 @@ def main():
     if df.empty or len(df) < MIN_BARS:
         msg = f"Insufficient bars ({len(df)} < {MIN_BARS}) — skipping."
         log.warning(msg)
-        log_failure(msg)
+        # log_failure(msg)
         return
 
     df = compute_indicators(df)
     if df.empty:
-        log_failure("Indicator computation failed or empty dataframe.")
+        # log_failure("Indicator computation failed or empty dataframe.")
         return
 
     df = df.iloc[:-1]
     if df.empty:
-        log_failure("No closed bars available after slicing.")
+        # log_failure("No closed bars available after slicing.")
         return
 
     last_bar_ts = str(df.index[-1])
@@ -574,7 +574,7 @@ def main():
 
     signal = check_signal(df)
     if signal is None:
-        log_failure("No signal generated.", f"Bar timestamp: {last_bar_ts}")
+        # log_failure("No signal generated.", f"Bar timestamp: {last_bar_ts}")
         state["last_bar_ts"] = last_bar_ts
         save_state(state)
         return
@@ -603,7 +603,7 @@ def main():
         log.info("Market %s submitted.", direction)
     except Exception as e:
         log.error("Entry failed: %s", e)
-        log_failure("Entry failed", str(e))
+        # log_failure("Entry failed", str(e))
         return
 
     time.sleep(2)
@@ -612,13 +612,13 @@ def main():
         sl_order_id = submit_sl(trading_client, direction, qty, signal["sl"])
     except Exception as e:
         log.error("SL failed: %s", e)
-        log_failure("SL order failed", str(e))
+        # log_failure("SL order failed", str(e))
 
     try:
         tp_order_id = submit_tp(trading_client, direction, qty, signal["tp"])
     except Exception as e:
         log.error("TP failed: %s", e)
-        log_failure("TP order failed", str(e))
+        # log_failure("TP order failed", str(e))
 
     state["position"] = {
         "entry_time":        entry_ts,
