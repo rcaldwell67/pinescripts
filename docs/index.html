@@ -195,47 +195,88 @@
   <div class="tabs" id="tabs"></div>
   <div class="cards" id="cards"></div>
   <div class="panel" style="margin-bottom:16px;">
-    <div class="tx-controls">
-      <div style="display:flex;align-items:baseline;gap:10px;">
-        <h2 style="margin-bottom:0;">All Transactions</h2>
-        <span class="tx-count" id="txCount"></span>
-      </div>
-      <div class="tx-filters">
-        <select id="txVerFilter" class="tx-select" onchange="txPage=1;renderTransactionsTable()"><option value="all">All Versions</option></select>
-        <select id="txTfFilter" class="tx-select" onchange="txPage=1;renderTransactionsTable()"><option value="all">All Timeframes</option></select>
-        <select id="txActionFilter" class="tx-select" onchange="txPage=1;renderTransactionsTable()"><option value="all">All Actions</option><option value="BUY">BUY</option><option value="SELL">SELL</option></select>
-        <select id="txDirFilter" class="tx-select" onchange="txPage=1;renderTransactionsTable()"><option value="all">All Directions</option><option value="long">Long</option><option value="short">Short</option></select>
-        <select id="txTypeFilter" class="tx-select" onchange="txPage=1;renderTransactionsTable()"><option value="all">Open &amp; Close</option><option value="Open">Open Only</option><option value="Close">Close Only</option></select>
-        <div class="pg-size"><label>Rows</label><select id="txPageSizeSelect" class="tx-select" onchange="txPageSize=parseInt(this.value);txPage=1;renderTransactionsTable()"><option value="10">10</option><option value="25" selected>25</option><option value="50">50</option><option value="100">100</option></select></div>
-      </div>
+    <h2 style="margin-bottom:0;">Symbol Selector</h2>
+    <div class="symbol-select">
+      <button class="sym-btn" data-sym="all" onclick="selectPanel('all')">All</button>
+      <button class="sym-btn" data-sym="btc" onclick="selectPanel('btc')">BTCUSD</button>
+      <button class="sym-btn" data-sym="clm" onclick="selectPanel('clm')">CLM</button>
+      <button class="sym-btn" data-sym="log" onclick="selectPanel('log')">Logging</button>
     </div>
-    <div class="table-wrap" id="txTableWrap"><div class="empty">Loading…</div></div>
   </div>
-  <div class="panel" style="margin-bottom:16px;" id="priceChartPanel">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
-      <h2 style="margin-bottom:0;">Price Chart</h2>
-      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
-        <div class="chart-range-btns" id="chartRangeBtns">
-          <button class="chart-range-btn" data-days="30">1M</button>
-          <button class="chart-range-btn" data-days="90">3M</button>
-          <button class="chart-range-btn active" data-days="180">6M</button>
-          <button class="chart-range-btn" data-days="0">All</button>
+  <div id="panel-all" class="symbol-panel" style="display:none;">
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="tx-controls">
+        <div style="display:flex;align-items:baseline;gap:10px;">
+          <h2 style="margin-bottom:0;">All Transactions</h2>
+          <span class="tx-count" id="txCount"></span>
         </div>
-        <div class="legend">
-          <div class="legend-item"><div class="dot" style="background:#58a6ff"></div>EMA 21</div>
-          <div class="legend-item"><div class="dot" style="background:#ffa657"></div>EMA 50</div>
-          <div class="legend-item"><div class="dot" style="background:#f85149"></div>EMA 200</div>
+        <div class="tx-filters">
+          <select id="txVerFilter" class="tx-select" onchange="txPage=1;renderTransactionsTable()"><option value="all">All Versions</option></select>
+          <select id="txTfFilter" class="tx-select" onchange="txPage=1;renderTransactionsTable()"><option value="all">All Timeframes</option></select>
+          <select id="txActionFilter" class="tx-select" onchange="txPage=1;renderTransactionsTable()"><option value="all">All Actions</option><option value="BUY">BUY</option><option value="SELL">SELL</option></select>
+          <select id="txDirFilter" class="tx-select" onchange="txPage=1;renderTransactionsTable()"><option value="all">All Directions</option><option value="long">Long</option><option value="short">Short</option></select>
+          <select id="txTypeFilter" class="tx-select" onchange="txPage=1;renderTransactionsTable()"><option value="all">Open &amp; Close</option><option value="Open">Open Only</option><option value="Close">Close Only</option></select>
+          <div class="pg-size"><label>Rows</label><select id="txPageSizeSelect" class="tx-select" onchange="txPageSize=parseInt(this.value);txPage=1;renderTransactionsTable()"><option value="10">10</option><option value="25" selected>25</option><option value="50">50</option><option value="100">100</option></select></div>
         </div>
       </div>
+      <div class="table-wrap" id="txTableWrap"><div class="empty">Loading…</div></div>
     </div>
-    <input type="hidden" id="chartRangeSelect" value="180">
-    <div id="lcChartContainer"></div>
-    <div class="legend" style="margin-top:10px;font-size:11px;">
-      <div class="legend-item"><span style="color:#bc8cff;font-weight:700;font-size:14px;">&#9660;</span>&nbsp;Short entry</div>
-      <div class="legend-item"><span style="color:#3fb950;font-weight:700;font-size:14px;">&#9650;</span>&nbsp;Long entry</div>
-      <div class="legend-item"><div class="dot" style="background:#3fb950"></div>TP exit</div>
-      <div class="legend-item"><div class="dot" style="background:#f85149"></div>SL exit</div>
-      <div class="legend-item"><div class="dot" style="background:#ffa657"></div>Trail exit</div>
+  </div>
+  <div id="panel-btc" class="symbol-panel" style="display:none;">
+    <div class="panel" style="margin-bottom:16px;" id="priceChartPanel">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <h2 style="margin-bottom:0;">Price Chart</h2>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+          <div class="chart-range-btns" id="chartRangeBtns">
+            <button class="chart-range-btn" data-days="30">1M</button>
+            <button class="chart-range-btn" data-days="90">3M</button>
+            <button class="chart-range-btn active" data-days="180">6M</button>
+            <button class="chart-range-btn" data-days="0">All</button>
+          </div>
+          <div class="legend">
+            <div class="legend-item"><div class="dot" style="background:#58a6ff"></div>EMA 21</div>
+            <div class="legend-item"><div class="dot" style="background:#ffa657"></div>EMA 50</div>
+            <div class="legend-item"><div class="dot" style="background:#f85149"></div>EMA 200</div>
+          </div>
+        </div>
+      </div>
+      <input type="hidden" id="chartRangeSelect" value="180">
+      <div id="lcChartContainer"></div>
+      <div class="legend" style="margin-top:10px;font-size:11px;">
+        <div class="legend-item"><span style="color:#bc8cff;font-weight:700;font-size:14px;">&#9660;</span>&nbsp;Short entry</div>
+        <div class="legend-item"><span style="color:#3fb950;font-weight:700;font-size:14px;">&#9650;</span>&nbsp;Long entry</div>
+        <div class="legend-item"><div class="dot" style="background:#3fb950"></div>TP exit</div>
+        <div class="legend-item"><div class="dot" style="background:#f85149"></div>SL exit</div>
+        <div class="legend-item"><div class="dot" style="background:#ffa657"></div>Trail exit</div>
+      </div>
+    </div>
+    <div class="panel" style="margin-bottom:16px;">
+      <h2 style="margin-bottom:0;">BTCUSD Trade Log</h2>
+      <div class="pg-size">
+        <label>Rows</label>
+        <select id="tradePageSizeSelectBTC" class="tx-select" onchange="tradePageSize=parseInt(this.value);tradeTablePage=1;renderTradeTable(getActiveRows())"><option value="10">10</option><option value="25" selected>25</option><option value="50">50</option><option value="100">100</option></select>
+      </div>
+      <div class="table-wrap" id="tradeTableWrapBTC"><div class="empty">Loading…</div></div>
+    </div>
+  </div>
+  <div id="panel-clm" class="symbol-panel" style="display:none;">
+    <div class="panel" style="margin-bottom:16px;">
+      <h2 style="margin-bottom:0;">CLM Trade Log</h2>
+      <div class="pg-size">
+        <label>Rows</label>
+        <select id="tradePageSizeSelectCLM" class="tx-select" onchange="tradePageSize=parseInt(this.value);tradeTablePage=1;renderTradeTable(getActiveRows())"><option value="10">10</option><option value="25" selected>25</option><option value="50">50</option><option value="100">100</option></select>
+      </div>
+      <div class="table-wrap" id="tradeTableWrapCLM"><div class="empty">Loading…</div></div>
+    </div>
+    <div class="panel" style="margin-bottom:16px;" id="clmChartPanel">
+      <h2 style="margin-bottom:0;">CLM Price Chart</h2>
+      <div id="clmChartContainer"></div>
+    </div>
+  </div>
+  <div id="panel-log" class="symbol-panel" style="display:none;">
+    <div class="panel" style="margin-bottom:16px;">
+      <h2 style="margin-bottom:0;">Logging</h2>
+      <div class="log-wrap" id="logPanelWrap"><div class="empty">Logging panel coming soon…</div></div>
     </div>
   </div>
   <div class="grid-3" id="topRow">
@@ -282,6 +323,15 @@
   </div>
 </main>
 <script>
+function selectPanel(sym) {
+  document.querySelectorAll('.symbol-panel').forEach(panel => panel.style.display = 'none');
+  if (sym === 'all') document.getElementById('panel-all').style.display = '';
+  if (sym === 'btc') document.getElementById('panel-btc').style.display = '';
+  if (sym === 'clm') document.getElementById('panel-clm').style.display = '';
+  if (sym === 'log') document.getElementById('panel-log').style.display = '';
+}
+// Show All panel by default
+window.addEventListener('DOMContentLoaded', () => selectPanel('all'));
 const INSTRUMENTS = {
   btc: {
     label: 'BTC-USD',
