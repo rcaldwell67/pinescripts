@@ -86,15 +86,16 @@ i_sess_end   = input.int  (14,   "Session end (ET hour)",   group=G_SESS, minval
                  tooltip="Entries blocked from this hour onward. Default 14 = 2:00 PM ET.")
 
 var G_RISK = "Risk Management"
-i_sl_mult    = input.float(4.0,  "Stop loss ATR mult",       group=G_RISK, minval=0.3, step=0.1)
+// Risk management tweaks: tighter SL, partial TP, max bars exit enabled
+i_sl_mult    = input.float(3.5,  "Stop loss ATR mult",       group=G_RISK, minval=0.3, step=0.1)
 i_tp_mult    = input.float(8.0,  "Take profit ATR mult",     group=G_RISK, minval=0.5, step=0.1)
-i_tr_act     = input.float(3.5,  "Trail activate ATR mult",  group=G_RISK, minval=0.3, step=0.1,
-                 tooltip="Trailing stop activates once price moves this many ATRs in your favour. v1.1 sweep winner: 3.5 — later activation avoids premature exit on fast moves.")
-i_tr_dist    = input.float(0.1,  "Trail distance ATR mult",  group=G_RISK, minval=0.1, step=0.1,
-                 tooltip="Once active, trail stays this many ATRs from best price. 12mo sweep winner: 0.1 — very tight; locks small gains rapidly. Most winners exit via trail.")
+i_tr_act     = input.float(3.0,  "Trail activate ATR mult",  group=G_RISK, minval=0.3, step=0.1,
+                 tooltip="Trailing stop activates once price moves this many ATRs in your favour. Earlier activation to lock gains sooner.")
+i_tr_dist    = input.float(0.15,  "Trail distance ATR mult",  group=G_RISK, minval=0.1, step=0.05,
+                 tooltip="Trail stays this many ATRs from best price. Slightly wider to avoid premature exits.")
 i_risk_pct   = input.float(2.0,  "Equity risked per trade (%)", group=G_RISK, minval=0.1, maxval=20, step=0.1)
-i_max_bars   = input.int  (0,    "Max bars in trade (0=off)",   group=G_RISK, minval=0, maxval=500,
-                 tooltip="0 = disabled (sweep winner). Removing the time-exit improved net return significantly — trail+TP handle position management. Re-enable if concerned about overnight holds.")
+i_max_bars   = input.int  (30,    "Max bars in trade (0=off)",   group=G_RISK, minval=0, maxval=500,
+                 tooltip="30 bars max per trade. Avoids holding through adverse moves.")
 
 var G_MACRO = "Macro Bias Filter"
 i_macro_ema  = input.int  (0,   "Macro EMA period (0=off)", group=G_MACRO, minval=0, maxval=5000,
@@ -223,6 +224,10 @@ if strategy.position_size < 0.0          // short
     bars_in_trade += 1
     best_price := math.min(best_price, low)
     entry_p    := strategy.position_avg_price
+    // Partial profit-taking: exit half at ATR x 4
+    partial_tp = entry_p - atr * 4.0
+    if best_price <= partial_tp and strategy.position_size < 0.0
+        strategy.exit("Short Partial TP", "Short", qty=strategy.position_size/2, limit=partial_tp)
     if best_price <= entry_p - atr * i_tr_act
         trail_sl = best_price + atr * i_tr_dist
         new_sl   = math.min(sl_price, trail_sl)
