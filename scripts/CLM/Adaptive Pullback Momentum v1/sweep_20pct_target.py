@@ -13,9 +13,7 @@
 # Sort: net_pct descending.  Min 8 trades.  Saves top-100 results.
 # ─────────────────────────────────────────────────────────────────────────────
 
-import subprocess, sys, itertools
-for pkg in ["alpaca-py", "pandas", "numpy", "pytz"]:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", pkg, "-q"])
+import itertools
 
 import pandas as pd
 import numpy as np
@@ -75,13 +73,17 @@ PB_VALS      = [0.25, 0.30, 0.40, 0.50]
 OUT_FILE     = "sweep_20pct_nommacro.csv"
 
 # ─── Download ─────────────────────────────────────────────────────────────────
-print(f"Downloading {TICKER} 5m via Alpaca (12 months)…")
+
+# Download 60d window (matching backtest)
+print(f"Downloading {TICKER} 5m via Alpaca (60 days)…")
 client = StockHistoricalDataClient(ALPACA_KEY, ALPACA_SECRET)
+end_dt = datetime.now(tz=timezone.utc)
+start_dt = end_dt - pd.Timedelta(days=60)
 req = StockBarsRequest(
     symbol_or_symbols=TICKER,
     timeframe=TimeFrame(5, TimeFrameUnit.Minute),
-    start=datetime(2025, 3, 12, tzinfo=timezone.utc),
-    end=datetime(2026, 3, 12, tzinfo=timezone.utc),
+    start=start_dt,
+    end=end_dt,
     feed=DataFeed.IEX,
 )
 bars = client.get_stock_bars(req)

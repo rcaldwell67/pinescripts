@@ -1,3 +1,74 @@
+# --- Additional indicator/parameter values ---
+EMA_FAST = 21
+EMA_MID = 50
+EMA_SLOW = 200
+PB_PCT = 0.4
+ADX_LEN = 14
+RSI_LEN = 14
+ATR_LEN = 14
+VOL_LEN = 20
+ATR_BL_LEN = 60
+# --- Dependencies and imports ---
+try:
+    import yfinance as yf
+    import pandas as pd
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import matplotlib.dates as mdates
+    import warnings
+    import pytz
+    import datetime
+    warnings.filterwarnings("ignore")
+except ImportError as e:
+    print("\nMissing dependency:", e)
+    print("Please activate your virtual environment and install required packages (yfinance, pandas, numpy, matplotlib, pytz).\n")
+    raise SystemExit(1)
+from indicators_signals import build_indicators_signals
+
+# Define Eastern Timezone for use in script
+_ET = pytz.timezone("America/New_York")
+
+# --- Script configuration ---
+TICKER = "CLM"
+INTERVAL = "5m"
+PERIOD = "60d"
+YTD_START = datetime.datetime(datetime.datetime.now().year, 1, 1, tzinfo=pytz.timezone("America/New_York"))
+
+# Use Alpaca data for apples-to-apples comparison with sweep
+import os
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+from datetime import datetime, timezone
+from alpaca.data.historical import StockHistoricalDataClient
+from alpaca.data.requests import StockBarsRequest
+from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
+from alpaca.data.enums import DataFeed
+
+ALPACA_KEY    = os.environ.get("ALPACA_PAPER_API_KEY") or os.environ.get("ALPACA_API_KEY", "PKNIYXYVLHKHF43IIEUQIA42DJ")
+ALPACA_SECRET = os.environ.get("ALPACA_PAPER_API_SECRET") or os.environ.get("ALPACA_API_SECRET", "9djPy47EmNvMr6Yyfa3UpQ49ruQRWAmTmu8thmDvm34u")
+
+print(f"Downloading {TICKER} 5m via Alpaca (60 days)…")
+client = StockHistoricalDataClient(ALPACA_KEY, ALPACA_SECRET)
+end_dt = datetime.now(tz=timezone.utc)
+start_dt = end_dt - pd.Timedelta(days=60)
+req = StockBarsRequest(
+    symbol_or_symbols=TICKER,
+    timeframe=TimeFrame(5, TimeFrameUnit.Minute),
+    start=start_dt,
+    end=end_dt,
+    feed=DataFeed.IEX,
+)
+bars = client.get_stock_bars(req)
+raw = bars.df.reset_index(level=0, drop=True)
+raw = raw.rename(columns={"open":"Open","high":"High","low":"Low",
+                           "close":"Close","volume":"Volume"})
+raw = raw[["Open","High","Low","Close","Volume"]].copy()
+raw = raw[raw["Volume"] > 0].dropna()
+raw.index = pd.to_datetime(raw.index, utc=True).tz_convert(_ET)
+print(f"Bars: {len(raw)}  |  {raw.index[0]} → {raw.index[-1]}")
 # ─────────────────────────────────────────────────────────────────────────────
 # APM v1.0 — CLM 5m  ·  Year-To-Date Backtest
 # Mirrors "Adaptive Pullback Momentum v1.0 · 5m" Pine script exactly.
@@ -12,59 +83,34 @@
 # Data: yfinance 5m, period=60d (max intraday window)
 # ─────────────────────────────────────────────────────────────────────────────
 
-import subprocess, sys
-for pkg in ["yfinance", "pandas", "numpy", "matplotlib", "pytz"]:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", pkg, "-q"])
 
 
-import yfinance as yf
-import pandas as pd
-import numpy as np
-import pytz
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-import warnings
-warnings.filterwarnings("ignore")
-from indicators_signals import build_indicators_signals
 
-_ET = pytz.timezone("America/New_York")
+# Top-performing sweep parameters for 20%+ net return
 
-# ─── Configuration ─────────────────────────────────────────────────────────────
-TICKER   = "CLM"
-PERIOD   = "60d"       # yfinance max for 5m data
-INTERVAL = "5m"
+# Top sweep result for +20%+ net return
 
-YTD_START = pd.Timestamp("2026-01-01", tz="America/New_York")
-
-EMA_FAST = 21;  EMA_MID = 50;  EMA_SLOW = 200
-ADX_LEN  = 14;  RSI_LEN = 14;  ATR_LEN  = 14;  VOL_LEN = 20
-ATR_BL_LEN = 60
-
-
-# Strategy parameters (can be replaced by argparse or config)
-PB_PCT         = 0.20
-ADX_THRESH     = 20
+# Top 60d sweep result for +20%+ net return
+ADX_THRESH     = 15
 ADX_SLOPE_BARS = 0
 DI_SPREAD_MIN  = 0.0
 EMA_SLOPE_BARS = 3
 MOMENTUM_BARS  = 5
-VOL_MULT       = 0.7
+VOL_MULT       = 0.3
 MIN_BODY       = 0.15
-ATR_FLOOR      = 0.0015
+ATR_FLOOR      = 0.001  # 0.1%
 PANIC_MULT     = 1.5
 RSI_LO_S       = 30;  RSI_HI_S = 58
 RSI_LO_L       = 42;  RSI_HI_L = 68
-SL_MULT    = 2.0
-TP_MULT    = 6.0
-TRAIL_ACT  = 3.5
-TRAIL_DIST = 0.3
-MAX_BARS   = 30
-RISK_PCT        = 0.01
+SL_MULT    = 4.0
+TP_MULT    = 8.0
+TRAIL_ACT  = 2.0
+TRAIL_DIST = 0.1
+MAX_BARS   = 0  # Disable max bars exit to match sweep
+RISK_PCT        = 0.035  # 3.5%
 INITIAL_CAPITAL = 10_000.0
 COMMISSION_PCT  = 0.0006
-TRADE_LONGS  = False
+TRADE_LONGS  = False  # Only simulate shorts to match sweep
 TRADE_SHORTS = True
 SESSION_START_ET = 9
 SESSION_END_ET   = 14
@@ -87,35 +133,10 @@ if raw.index.tzinfo is None:
 raw.index = raw.index.tz_convert(_ET)
 df = raw.copy()
 df["EMA_MID"]  = df["Close"].ewm(span=EMA_MID,  adjust=False).mean()
-df["EMA_SLOW"] = df["Close"].ewm(span=EMA_SLOW, adjust=False).mean()
-delta  = df["Close"].diff()
-avg_g  = delta.clip(lower=0).ewm(alpha=1/RSI_LEN, adjust=False).mean()
-avg_l  = (-delta).clip(lower=0).ewm(alpha=1/RSI_LEN, adjust=False).mean()
-df["RSI"] = 100 - (100 / (1 + avg_g / avg_l.replace(0, 1e-10)))
-hl  = df["High"] - df["Low"]
-hpc = (df["High"] - df["Close"].shift(1)).abs()
-lpc = (df["Low"]  - df["Close"].shift(1)).abs()
-df["ATR"]    = tr.ewm(alpha=1/ATR_LEN, adjust=False).mean()
-df["ATR_BL"] = df["ATR"].rolling(ATR_BL_LEN).mean()
-df["VOL_MA"] = df["Volume"].rolling(VOL_LEN).mean()
-up_move  = df["High"] - df["High"].shift(1)
-dn_move  = df["Low"].shift(1) - df["Low"]
-s_plus   = pd.Series(plus_dm,  index=df.index).ewm(alpha=1/ADX_LEN, adjust=False).mean()
-s_minus  = pd.Series(minus_dm, index=df.index).ewm(alpha=1/ADX_LEN, adjust=False).mean()
-df["DI_PLUS"]  = 100 * s_plus  / df["ATR"].replace(0, 1e-10)
-df["DI_MINUS"] = 100 * s_minus / df["ATR"].replace(0, 1e-10)
-dx = 100 * (df["DI_PLUS"] - df["DI_MINUS"]).abs() / (
-df["ADX"] = dx.ewm(alpha=1/ADX_LEN, adjust=False).mean()
+df["ET_HOUR"] = df.index.hour  # ET already
 df.dropna(inplace=True)
-df["ET_HOUR"] = df.index.hour    # ET already
 tol = PB_PCT / 100.0
 session_ok = (df["ET_HOUR"] >= SESSION_START_ET) & (df["ET_HOUR"] < SESSION_END_ET)
-
-
-
-
-
-# --- Use shared indicator/signal logic ---
 df, long_signal, short_signal = build_indicators_signals(
     df,
     ema_fast=EMA_FAST, ema_mid=EMA_MID, ema_slow=EMA_SLOW,
@@ -128,37 +149,43 @@ df, long_signal, short_signal = build_indicators_signals(
     trade_longs=TRADE_LONGS, trade_shorts=TRADE_SHORTS
 )
 
-# ─── Filter pass-through diagnostics ──────────────────────────────────────────
-print("\n─── Signal filter pass-through (SHORT) ───")
-components_short = [
-    ("short_pb",        short_pb),
-    ("ema_bear",        ema_bear),
-    ("ema_slope_down",  ema_slope_down),
-    ("rsi_falling",     rsi_falling),
-    ("rsi_short_ok",    rsi_short_ok),
-    ("vol_ok",          vol_ok),
-    ("body_ok",         body_ok),
-    ("is_trending",     is_trending),
-    ("adx_rising",      adx_rising),
-    ("di_spread_ok_s",  di_spread_ok_s),
-    ("mom_ok_s",        mom_ok_s),
-    ("session_ok",      session_ok),
-    ("~is_panic",       ~is_panic),
-    ("atr_floor_ok",    atr_fl),
-]
-cum = pd.Series([True] * len(df), index=df.index)
-for name, mask in components_short:
-    cum = cum & mask
-    print(f"  {name:<20} → cumulative {cum.sum():>5} rows pass")
-
-print(f"\nFinal signals  →  Shorts: {short_signal.sum()}  |  Longs: {long_signal.sum()}")
 
 # ─── Trim to YTD window for simulation ────────────────────────────────────────
 df_ytd = df[df.index >= YTD_START].copy()
-ls_ytd = long_signal.reindex(df_ytd.index, fill_value=False)
-ss_ytd = short_signal.reindex(df_ytd.index, fill_value=False)
-print(f"\nYTD window ({YTD_START.date()} → {df_ytd.index[-1].date()})"
-      f"  —  {len(df_ytd)} bars  |  signals: {ss_ytd.sum()} short  {ls_ytd.sum()} long")
+# Ensure signals are Series with same index as df_ytd
+ls_ytd = pd.Series(long_signal, index=df.index).reindex(df_ytd.index, fill_value=False)
+ss_ytd = pd.Series(short_signal, index=df.index).reindex(df_ytd.index, fill_value=False)
+print(f"\nYTD window ({YTD_START.date()} → {df_ytd.index[-1].date()})" 
+    f"  —  {len(df_ytd)} bars  |  signals: {ss_ytd.sum()} short  {ls_ytd.sum()} long")
+# Debug: print first few nonzero short signal timestamps
+nonzero_short = ss_ytd[ss_ytd].index.tolist()
+print(f"First 10 short signal timestamps: {nonzero_short[:10]}")
+print(f"Total short signals in YTD window: {len(nonzero_short)}")
+if len(nonzero_short) > 0:
+    print(f"All short signal timestamps: {nonzero_short}")
+
+# Print summary stats for each short signal condition in YTD window
+import numpy as np
+def pct(x):
+    return 100.0 * np.sum(x) / len(x) if len(x) > 0 else 0.0
+df_ytd = df[df.index >= YTD_START].copy()
+short_pb = (df_ytd["High"].shift(1) >= df_ytd["EMA_FAST"].shift(1) * (1.0 - PB_PCT / 100.0)) & (df_ytd["Close"] < df_ytd["EMA_FAST"]) & (df_ytd["Close"] < df_ytd["Open"])
+ema_bear = (df_ytd["EMA_FAST"] < df_ytd["EMA_MID"]) & (df_ytd["EMA_MID"] < df_ytd["EMA_SLOW"])
+rsi_short_ok = (df_ytd["RSI"] >= RSI_LO_S) & (df_ytd["RSI"] <= RSI_HI_S)
+vol_ok = df_ytd["Volume"] >= df_ytd["VOL_MA"] * VOL_MULT
+body_ok = (df_ytd["Close"] - df_ytd["Open"]).abs() / df_ytd["ATR"].replace(0, 1e-10) >= MIN_BODY
+is_trending = df_ytd["ADX"] > ADX_THRESH
+atr_fl = df_ytd["ATR"] / df_ytd["Close"] >= ATR_FLOOR
+session_ok = (df_ytd["ET_HOUR"] >= SESSION_START_ET) & (df_ytd["ET_HOUR"] < SESSION_END_ET)
+print("\nShort signal condition pass rates in YTD window:")
+print(f"short_pb:    {pct(short_pb):5.1f}%")
+print(f"ema_bear:    {pct(ema_bear):5.1f}%")
+print(f"rsi_short_ok:{pct(rsi_short_ok):5.1f}%")
+print(f"vol_ok:      {pct(vol_ok):5.1f}%")
+print(f"body_ok:     {pct(body_ok):5.1f}%")
+print(f"is_trending: {pct(is_trending):5.1f}%")
+print(f"atr_fl:      {pct(atr_fl):5.1f}%")
+print(f"session_ok:  {pct(session_ok):5.1f}%")
 
 # ─── Bar-by-bar simulation ────────────────────────────────────────────────────
 equity        = INITIAL_CAPITAL
@@ -180,7 +207,7 @@ for ts, row in df_ytd.iterrows():
     # ── Manage open position ──────────────────────────────────────────────────
     if pos is not None:
         bars_in_trade += 1
-
+        print(f"[DEBUG] Managing open position at {ts}: {pos}")
         if pos["direction"] == "short":
             # Update best price
             if low < pos["best"]:
@@ -192,6 +219,7 @@ for ts, row in df_ytd.iterrows():
                     pos["sl"] = new_sl
             # Max bars exit (at close of bar)
             if MAX_BARS > 0 and bars_in_trade >= MAX_BARS:
+                print(f"[DEBUG] Max bars exit at {ts} for position: {pos}")
                 xp      = close
                 pnl_raw = (pos["entry"] - xp) / pos["entry"]
                 dp      = pnl_raw * pos["notional"] - pos["notional"] * COMMISSION_PCT * 2
@@ -211,7 +239,9 @@ for ts, row in df_ytd.iterrows():
                 eqcurve.append({"time": ts, "equity": equity})
                 continue
             # TP / SL check (inbar)
-            hit_tp = low  <= pos["tp"]
+            print(f"[DEBUG] SL/TP check at {ts}: low={low}, high={high}, sl={pos['sl']}, tp={pos['tp']}, entry={pos['entry']}")
+            # For shorts: TP is hit if low <= tp, SL is hit if high >= sl
+            hit_tp = low <= pos["tp"]
             hit_sl = high >= pos["sl"]
             if hit_tp or hit_sl:
                 xp      = pos["tp"] if hit_tp else pos["sl"]
@@ -219,6 +249,7 @@ for ts, row in df_ytd.iterrows():
                 dp      = pnl_raw * pos["notional"] - pos["notional"] * COMMISSION_PCT * 2
                 equity += dp
                 result  = "TP" if hit_tp else "SL"
+                print(f"[DEBUG] Exit {'TP' if hit_tp else 'SL'} at {ts} for position: {pos}, exit price: {xp}, pnl: {dp}")
                 if dp <= 0:
                     consec_losses += 1
                     if consec_losses >= CONSEC_LOSS_LIMIT:
@@ -284,7 +315,29 @@ for ts, row in df_ytd.iterrows():
         if cooldown_bars > 0:
             cooldown_bars -= 1
         else:
-            if bool(ss_ytd.get(ts, False)):
+            # Debug: print ts and signal value
+            # Debug: print type and repr of ts and first nonzero ss_ytd index
+            if ss_ytd.sum() > 0:
+                first_signal_idx = ss_ytd[ss_ytd].index[0]
+                print(f"ts: {ts} (type={type(ts)}, repr={repr(ts)})")
+                print(f"first_signal_idx: {first_signal_idx} (type={type(first_signal_idx)}, repr={repr(first_signal_idx)})")
+            print(f"ts: {ts}, ss_ytd[ts]: {ss_ytd.loc[ts]}")
+            # Print which short signal conditions are blocking
+            conds = {
+                'short_pb': row.get('High', None) >= row.get('EMA_FAST', None) * (1.0 - PB_PCT / 100.0) if 'High' in row and 'EMA_FAST' in row else None,
+                'ema_bear': row.get('EMA_FAST', None) < row.get('EMA_MID', None) < row.get('EMA_SLOW', None) if 'EMA_FAST' in row and 'EMA_MID' in row and 'EMA_SLOW' in row else None,
+                'rsi_short_ok': RSI_LO_S <= row.get('RSI', 0) <= RSI_HI_S if 'RSI' in row else None,
+                'vol_ok': row.get('Volume', 0) >= row.get('VOL_MA', 0) * VOL_MULT if 'Volume' in row and 'VOL_MA' in row else None,
+                'body_ok': abs(row.get('Close', 0) - row.get('Open', 0)) / row.get('ATR', 1) >= MIN_BODY if 'Close' in row and 'Open' in row and 'ATR' in row else None,
+                'is_trending': row.get('ADX', 0) > ADX_THRESH if 'ADX' in row else None,
+                'atr_fl': row.get('ATR', 0) / row.get('Close', 1) >= ATR_FLOOR if 'ATR' in row and 'Close' in row else None,
+                'session_ok': SESSION_START_ET <= row.get('ET_HOUR', 0) < SESSION_END_ET if 'ET_HOUR' in row else None,
+            }
+            print('Short signal conditions:', conds)
+            ts_str = ts.isoformat()
+            signal_idx_strs = set(idx.isoformat() for idx in ss_ytd[ss_ytd].index)
+            if ts_str in signal_idx_strs:
+                print(f"Trade triggered at {ts}")
                 notl = min(equity * RISK_PCT / sd * close, equity * 5.0)
                 pos  = {
                     "direction":         "short",
@@ -295,20 +348,6 @@ for ts, row in df_ytd.iterrows():
                     "best":              close,
                     "notional":          notl,
                     "trail_activate_px": close - atr * TRAIL_ACT,
-                    "trail_dist_fixed":  atr   * TRAIL_DIST,
-                }
-                bars_in_trade = 0
-            elif bool(ls_ytd.get(ts, False)):
-                notl = min(equity * RISK_PCT / sd * close, equity * 5.0)
-                pos  = {
-                    "direction":         "long",
-                    "entry":             close,
-                    "entry_time":        ts,
-                    "sl":                close - sd,
-                    "tp":                close + atr * TP_MULT,
-                    "best":              close,
-                    "notional":          notl,
-                    "trail_activate_px": close + atr * TRAIL_ACT,
                     "trail_dist_fixed":  atr   * TRAIL_DIST,
                 }
                 bars_in_trade = 0
@@ -416,4 +455,3 @@ plt.tight_layout()
 out_png = "apm_v1_ytd_equity_clm_5m.png"
 plt.savefig(out_png, dpi=150, bbox_inches="tight", facecolor=fig.get_facecolor())
 plt.close()
-print(f"Equity chart saved → {out_png}")

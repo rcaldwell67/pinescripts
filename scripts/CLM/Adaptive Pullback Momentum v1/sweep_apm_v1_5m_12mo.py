@@ -12,9 +12,7 @@
 # Sort key: calmar (return/maxDD) to penalise deep drawdowns, min_trades=8
 # ─────────────────────────────────────────────────────────────────────────────
 
-import subprocess, sys, itertools
-for pkg in ["alpaca-py", "pandas", "numpy", "pytz"]:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", pkg, "-q"])
+import itertools
 
 import pandas as pd
 import numpy as np

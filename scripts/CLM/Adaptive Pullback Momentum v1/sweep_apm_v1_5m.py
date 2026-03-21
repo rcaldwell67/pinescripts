@@ -12,9 +12,8 @@
 # Sort key: net_pct (maximise return) with min_trades guard (>=5)
 # ─────────────────────────────────────────────────────────────────────────────
 
-import subprocess, sys, itertools
-for pkg in ["yfinance", "pandas", "numpy", "pytz"]:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", pkg, "-q"])
+
+import itertools
 
 
 import yfinance as yf
@@ -90,7 +89,7 @@ def build_indicators(df, adx_thresh, pb_pct, vol_mult, atr_floor):
         di_spread_min=D_DI_SPREAD, adx_slope_bars=D_ADX_SLOPE,
         rsi_lo_s=D_RSI_LO_S, rsi_hi_s=D_RSI_HI_S, rsi_lo_l=D_RSI_LO_L, rsi_hi_l=D_RSI_HI_L,
         session_start=D_SESSION_S, session_end=D_SESSION_E,
-        trade_longs=False, trade_shorts=True
+        trade_longs=True, trade_shorts=True
     )
     return d, long_sig, short_sig
 
@@ -260,6 +259,10 @@ print("═"*60)
 s1_tp       = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]
 s1_sl       = [1.0, 1.5, 2.0, 2.5, 3.0]
 s1_maxbars  = [0, 10, 15, 20, 25, 30]
+## EXPANDED PARAMETER RANGES FOR AGGRESSIVE SEARCH
+s1_tp       = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0, 6.0]
+s1_sl       = [0.3, 0.5, 0.7, 1.0, 1.5, 2.0, 2.5, 3.0]
+s1_maxbars  = [0, 5, 10, 15, 20, 25, 30, 50]
 
 s1_rows = []
 total_s1 = len(s1_tp) * len(s1_sl) * len(s1_maxbars)
@@ -303,6 +306,11 @@ s2_adx      = [12, 15, 18, 20, 25]
 s2_pb       = [0.10, 0.15, 0.20, 0.25, 0.30, 0.40]
 s2_atrf     = [0.0, 0.0005, 0.0010, 0.0015]   # 0%, 0.05%, 0.10%, 0.15%
 s2_vol      = [0.3, 0.5, 0.7, 1.0]
+## EXPANDED PARAMETER RANGES FOR AGGRESSIVE SEARCH
+s2_adx      = [5, 8, 10, 12, 15, 18, 20, 25]
+s2_pb       = [0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.40, 0.50, 0.60]
+s2_atrf     = [0.0, 0.0001, 0.0005, 0.0010, 0.0015, 0.0020, 0.0030]
+s2_vol      = [0.1, 0.2, 0.3, 0.5, 0.7, 1.0, 1.5, 2.0]
 
 total_s2 = len(s2_adx) * len(s2_pb) * len(s2_atrf) * len(s2_vol)
 print(f"Combos: {total_s2} (rebuilds signals each time)")
@@ -367,6 +375,9 @@ print(f"Signals for Stage-3: {ss_s3y.sum()} short")
 
 s3_ta   = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 99.0]  # 99=effectively off
 s3_td   = [0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0]
+## EXPANDED PARAMETER RANGES FOR AGGRESSIVE SEARCH
+s3_ta   = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 6.0, 8.0, 99.0]
+s3_td   = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0, 1.5]
 total_s3 = len(s3_ta) * len(s3_td)
 print(f"Combos: {total_s3}")
 

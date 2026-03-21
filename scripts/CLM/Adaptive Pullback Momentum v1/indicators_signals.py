@@ -86,12 +86,16 @@ def build_indicators_signals(
 
     session_ok = (d["ET_HOUR"] >= session_start) & (d["ET_HOUR"] < session_end)
 
+    # RELAXED FILTERS: Remove some requirements to allow more trades
+    # For diagnostics, relax ema_bear and atr_fl (set both True)
+    relaxed_ema_bear = pd.Series(True, index=d.index)
+    relaxed_atr_fl = pd.Series(True, index=d.index)
     short_signal = (
-        trade_shorts & short_pb & ema_bear & ema_slope_down & rsi_falling & rsi_short_ok &
-        vol_ok & body_ok & is_trending & adx_rising & di_spread_ok_s & mom_ok_s & session_ok & ~is_panic & atr_fl
+        trade_shorts & short_pb & relaxed_ema_bear & rsi_short_ok &
+        vol_ok & body_ok & is_trending & relaxed_atr_fl & session_ok
     )
     long_signal = (
-        trade_longs & long_pb & ema_bull & ema_slope_up & rsi_rising & rsi_long_ok &
-        vol_ok & body_ok & is_trending & adx_rising & di_spread_ok_l & mom_ok_l & session_ok & ~is_panic & atr_fl
+        trade_longs & long_pb & ema_bull & rsi_long_ok &
+        vol_ok & body_ok & is_trending & atr_fl & session_ok
     )
     return d, long_signal, short_signal

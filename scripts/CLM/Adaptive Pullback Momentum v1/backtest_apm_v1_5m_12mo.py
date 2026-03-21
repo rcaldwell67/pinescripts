@@ -16,9 +16,6 @@
 # Data: Alpaca 5m bars — full 12-month window (no 60-day cap)
 # ─────────────────────────────────────────────────────────────────────────────
 
-import subprocess, sys
-for pkg in ["alpaca-py", "pandas", "numpy", "matplotlib", "pytz"]:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", pkg, "-q"])
 
 import pandas as pd
 import numpy as np
