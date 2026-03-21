@@ -16,6 +16,7 @@ import subprocess, sys
 for pkg in ["yfinance", "pandas", "numpy", "matplotlib", "pytz"]:
     subprocess.check_call([sys.executable, "-m", "pip", "install", pkg, "-q"])
 
+
 import yfinance as yf
 import pandas as pd
 import numpy as np
@@ -26,6 +27,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import warnings
 warnings.filterwarnings("ignore")
+from indicators_signals import build_indicators_signals
 
 _ET = pytz.timezone("America/New_York")
 
@@ -40,38 +42,34 @@ EMA_FAST = 21;  EMA_MID = 50;  EMA_SLOW = 200
 ADX_LEN  = 14;  RSI_LEN = 14;  ATR_LEN  = 14;  VOL_LEN = 20
 ATR_BL_LEN = 60
 
-# ── Strategy parameters (Pine v1.0 5m defaults) ──────────────────────────────
-PB_PCT         = 0.20    # pullback tolerance (%) — tighter than 10m (0.30)
+
+# Strategy parameters (can be replaced by argparse or config)
+PB_PCT         = 0.20
 ADX_THRESH     = 20
-ADX_SLOPE_BARS = 0       # off — sweep showed not beneficial on CLM
-DI_SPREAD_MIN  = 0.0     # off — sweep showed DI spread hurts entries on CLM
-EMA_SLOPE_BARS = 3       # EMA21 must be below its value 3 bars ago (shorts)
-MOMENTUM_BARS  = 5       # close < close[5] for shorts
+ADX_SLOPE_BARS = 0
+DI_SPREAD_MIN  = 0.0
+EMA_SLOPE_BARS = 3
+MOMENTUM_BARS  = 5
 VOL_MULT       = 0.7
-MIN_BODY       = 0.15    # |close-open| / ATR must be >= this
-ATR_FLOOR      = 0.0015  # ATR / price >= 0.15%
+MIN_BODY       = 0.15
+ATR_FLOOR      = 0.0015
 PANIC_MULT     = 1.5
 RSI_LO_S       = 30;  RSI_HI_S = 58
 RSI_LO_L       = 42;  RSI_HI_L = 68
-
 SL_MULT    = 2.0
 TP_MULT    = 6.0
-TRAIL_ACT  = 3.5    # trail activates at entry - ATR × 3.5 (shorts)
-TRAIL_DIST = 0.3    # trail stays ATR × 0.3 from best price
-MAX_BARS   = 30     # 30 × 5m = 2.5 hours
-
-RISK_PCT        = 0.01          # 1% equity per trade
+TRAIL_ACT  = 3.5
+TRAIL_DIST = 0.3
+MAX_BARS   = 30
+RISK_PCT        = 0.01
 INITIAL_CAPITAL = 10_000.0
-COMMISSION_PCT  = 0.0006        # 0.06% per side (both in + out)
-
+COMMISSION_PCT  = 0.0006
 TRADE_LONGS  = False
 TRADE_SHORTS = True
-
 SESSION_START_ET = 9
 SESSION_END_ET   = 14
-
-CONSEC_LOSS_LIMIT    = 2   # cooldown trigger after N consecutive losses
-CONSEC_LOSS_COOLDOWN = 1   # bars to skip after trigger
+CONSEC_LOSS_LIMIT    = 2
+CONSEC_LOSS_COOLDOWN = 1
 
 # ─── Download 5m data ──────────────────────────────────────────────────────────
 print(f"Downloading {TICKER} {INTERVAL} (period='{PERIOD}') ...")
@@ -88,119 +86,46 @@ if raw.index.tzinfo is None:
     raw.index = raw.index.tz_localize("UTC")
 raw.index = raw.index.tz_convert(_ET)
 df = raw.copy()
-print(f"5m bars available: {len(df)}  |  {df.index[0]} → {df.index[-1]}")
-
-# ─── Indicators (computed on full history for proper EMA/ADX warmup) ──────────
-df["EMA_FAST"] = df["Close"].ewm(span=EMA_FAST, adjust=False).mean()
 df["EMA_MID"]  = df["Close"].ewm(span=EMA_MID,  adjust=False).mean()
 df["EMA_SLOW"] = df["Close"].ewm(span=EMA_SLOW, adjust=False).mean()
-
 delta  = df["Close"].diff()
 avg_g  = delta.clip(lower=0).ewm(alpha=1/RSI_LEN, adjust=False).mean()
 avg_l  = (-delta).clip(lower=0).ewm(alpha=1/RSI_LEN, adjust=False).mean()
 df["RSI"] = 100 - (100 / (1 + avg_g / avg_l.replace(0, 1e-10)))
-
 hl  = df["High"] - df["Low"]
 hpc = (df["High"] - df["Close"].shift(1)).abs()
 lpc = (df["Low"]  - df["Close"].shift(1)).abs()
-tr  = pd.concat([hl, hpc, lpc], axis=1).max(axis=1)
 df["ATR"]    = tr.ewm(alpha=1/ATR_LEN, adjust=False).mean()
 df["ATR_BL"] = df["ATR"].rolling(ATR_BL_LEN).mean()
 df["VOL_MA"] = df["Volume"].rolling(VOL_LEN).mean()
-
 up_move  = df["High"] - df["High"].shift(1)
 dn_move  = df["Low"].shift(1) - df["Low"]
-plus_dm  = np.where((up_move > dn_move) & (up_move > 0), up_move, 0.0)
-minus_dm = np.where((dn_move > up_move) & (dn_move > 0), dn_move, 0.0)
 s_plus   = pd.Series(plus_dm,  index=df.index).ewm(alpha=1/ADX_LEN, adjust=False).mean()
 s_minus  = pd.Series(minus_dm, index=df.index).ewm(alpha=1/ADX_LEN, adjust=False).mean()
 df["DI_PLUS"]  = 100 * s_plus  / df["ATR"].replace(0, 1e-10)
 df["DI_MINUS"] = 100 * s_minus / df["ATR"].replace(0, 1e-10)
 dx = 100 * (df["DI_PLUS"] - df["DI_MINUS"]).abs() / (
-         (df["DI_PLUS"] + df["DI_MINUS"]).replace(0, 1e-10))
 df["ADX"] = dx.ewm(alpha=1/ADX_LEN, adjust=False).mean()
-
 df.dropna(inplace=True)
 df["ET_HOUR"] = df.index.hour    # ET already
-
-# ─── Signal components ──────────────────────────────────────────────────────── 
 tol = PB_PCT / 100.0
-
-is_trending = df["ADX"] > ADX_THRESH
-is_panic    = df["ATR"] > df["ATR_BL"] * PANIC_MULT
-atr_fl      = df["ATR"] / df["Close"] >= ATR_FLOOR
-
-ema_bull = (df["EMA_FAST"] > df["EMA_MID"]) & (df["EMA_MID"] > df["EMA_SLOW"])
-ema_bear = (df["EMA_FAST"] < df["EMA_MID"]) & (df["EMA_MID"] < df["EMA_SLOW"])
-
-ema_slope_up   = (pd.Series(True, index=df.index) if EMA_SLOPE_BARS == 0
-                  else df["EMA_FAST"] > df["EMA_FAST"].shift(EMA_SLOPE_BARS))
-ema_slope_down = (pd.Series(True, index=df.index) if EMA_SLOPE_BARS == 0
-                  else df["EMA_FAST"] < df["EMA_FAST"].shift(EMA_SLOPE_BARS))
-
-# Pullback: prev bar tagged EMA zone, current bar closes through with body
-pb_tol_up = df["EMA_FAST"].shift(1) * (1.0 + tol)
-pb_tol_dn = df["EMA_FAST"].shift(1) * (1.0 - tol)
-long_pb   = (df["Low"].shift(1)  <= pb_tol_up) & (df["Close"] > df["EMA_FAST"]) & (df["Close"] > df["Open"])
-short_pb  = (df["High"].shift(1) >= pb_tol_dn) & (df["Close"] < df["EMA_FAST"]) & (df["Close"] < df["Open"])
-
-body_ok    = (df["Close"] - df["Open"]).abs() / df["ATR"].replace(0, 1e-10) >= MIN_BODY
-vol_ok     = df["Volume"] >= df["VOL_MA"] * VOL_MULT
-rsi_rising  = df["RSI"] > df["RSI"].shift(1)
-rsi_falling = df["RSI"] < df["RSI"].shift(1)
-rsi_long_ok  = (df["RSI"] >= RSI_LO_L) & (df["RSI"] <= RSI_HI_L)
-rsi_short_ok = (df["RSI"] >= RSI_LO_S) & (df["RSI"] <= RSI_HI_S)
-
-# Optional DI spread (off by default — set DI_SPREAD_MIN > 0 to enable)
-di_spread_ok_s = ((df["DI_MINUS"] - df["DI_PLUS"]) >= DI_SPREAD_MIN)
-di_spread_ok_l = ((df["DI_PLUS"]  - df["DI_MINUS"]) >= DI_SPREAD_MIN)
-
-# Optional ADX slope (off by default)
-adx_rising = (pd.Series(True, index=df.index) if ADX_SLOPE_BARS == 0
-              else df["ADX"] > df["ADX"].shift(ADX_SLOPE_BARS))
-
-# Momentum
-mom_ok_s = df["Close"] < df["Close"].shift(MOMENTUM_BARS)
-mom_ok_l = df["Close"] > df["Close"].shift(MOMENTUM_BARS)
-
-# Session filter
 session_ok = (df["ET_HOUR"] >= SESSION_START_ET) & (df["ET_HOUR"] < SESSION_END_ET)
 
-# ─── Final entry conditions ────────────────────────────────────────────────────
-short_signal = (
-    TRADE_SHORTS    &
-    short_pb        &
-    ema_bear        &
-    ema_slope_down  &
-    rsi_falling     &
-    rsi_short_ok    &
-    vol_ok          &
-    body_ok         &
-    is_trending     &
-    adx_rising      &
-    di_spread_ok_s  &
-    mom_ok_s        &
-    session_ok      &
-    ~is_panic       &
-    atr_fl
-)
 
-long_signal = (
-    TRADE_LONGS     &
-    long_pb         &
-    ema_bull        &
-    ema_slope_up    &
-    rsi_rising      &
-    rsi_long_ok     &
-    vol_ok          &
-    body_ok         &
-    is_trending     &
-    adx_rising      &
-    di_spread_ok_l  &
-    mom_ok_l        &
-    session_ok      &
-    ~is_panic       &
-    atr_fl
+
+
+
+# --- Use shared indicator/signal logic ---
+df, long_signal, short_signal = build_indicators_signals(
+    df,
+    ema_fast=EMA_FAST, ema_mid=EMA_MID, ema_slow=EMA_SLOW,
+    adx_len=ADX_LEN, rsi_len=RSI_LEN, atr_len=ATR_LEN, vol_len=VOL_LEN, atr_bl_len=ATR_BL_LEN,
+    adx_thresh=ADX_THRESH, pb_pct=PB_PCT, vol_mult=VOL_MULT, atr_floor=ATR_FLOOR, panic_mult=PANIC_MULT,
+    ema_slope_bars=EMA_SLOPE_BARS, momentum_bars=MOMENTUM_BARS, min_body=MIN_BODY,
+    di_spread_min=DI_SPREAD_MIN, adx_slope_bars=ADX_SLOPE_BARS,
+    rsi_lo_s=RSI_LO_S, rsi_hi_s=RSI_HI_S, rsi_lo_l=RSI_LO_L, rsi_hi_l=RSI_HI_L,
+    session_start=SESSION_START_ET, session_end=SESSION_END_ET,
+    trade_longs=TRADE_LONGS, trade_shorts=TRADE_SHORTS
 )
 
 # ─── Filter pass-through diagnostics ──────────────────────────────────────────
@@ -395,9 +320,6 @@ print(f"\nSimulation complete — {len(trades)} trades")
 # ─── Statistics ────────────────────────────────────────────────────────────────
 tdf = pd.DataFrame(trades)
 
-if tdf.empty:
-    print("No trades fired. Consider relaxing a filter (ADX, body, vol, session, ATR floor).")
-    sys.exit(0)
 
 wins   = tdf[tdf["dollar_pnl"] > 0]
 losses = tdf[tdf["dollar_pnl"] <= 0]

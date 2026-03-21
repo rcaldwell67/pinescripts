@@ -16,11 +16,13 @@ import subprocess, sys, itertools
 for pkg in ["yfinance", "pandas", "numpy", "pytz"]:
     subprocess.check_call([sys.executable, "-m", "pip", "install", pkg, "-q"])
 
+
 import yfinance as yf
 import pandas as pd
 import numpy as np
 import pytz, warnings
 warnings.filterwarnings("ignore")
+from indicators_signals import build_indicators_signals
 
 _ET = pytz.timezone("America/New_York")
 
@@ -46,6 +48,7 @@ D_MIN_BODY     = 0.15
 D_ATR_FLOOR    = 0.0015  # 0.15%
 D_PANIC        = 1.5
 D_RSI_LO_S     = 30;  D_RSI_HI_S = 58
+D_RSI_LO_L     = 42;  D_RSI_HI_L = 68
 D_SESSION_S    = 9;   D_SESSION_E = 14
 
 D_SL           = 2.0
@@ -75,62 +78,20 @@ print(f"5m bars: {len(raw)}  |  {raw.index[0]} → {raw.index[-1]}")
 
 
 # ─── Indicator factory ─────────────────────────────────────────────────────────
-def build_indicators(df, adx_thresh=D_ADX_THRESH, pb_pct=D_PB_PCT,
-                     vol_mult=D_VOL_MULT, atr_floor=D_ATR_FLOOR):
-    d = df.copy()
-    d["EF"] = d["Close"].ewm(span=D_EMA_FAST, adjust=False).mean()
-    d["EM"] = d["Close"].ewm(span=D_EMA_MID,  adjust=False).mean()
-    d["ES"] = d["Close"].ewm(span=D_EMA_SLOW, adjust=False).mean()
 
-    delta = d["Close"].diff()
-    g = delta.clip(lower=0).ewm(alpha=1/D_RSI, adjust=False).mean()
-    l = (-delta).clip(lower=0).ewm(alpha=1/D_RSI, adjust=False).mean()
-    d["RSI"] = 100 - (100 / (1 + g / l.replace(0, 1e-10)))
-
-    hl  = d["High"] - d["Low"]
-    hpc = (d["High"] - d["Close"].shift(1)).abs()
-    lpc = (d["Low"]  - d["Close"].shift(1)).abs()
-    tr  = pd.concat([hl, hpc, lpc], axis=1).max(axis=1)
-    d["ATR"]    = tr.ewm(alpha=1/D_ATR, adjust=False).mean()
-    d["ATR_BL"] = d["ATR"].rolling(D_ATR_BL).mean()
-    d["VOL_MA"] = d["Volume"].rolling(D_VOL_N).mean()
-
-    up = d["High"] - d["High"].shift(1)
-    dn = d["Low"].shift(1)  - d["Low"]
-    pdm = np.where((up > dn) & (up > 0), up, 0.0)
-    ndm = np.where((dn > up) & (dn > 0), dn, 0.0)
-    sp  = pd.Series(pdm, index=d.index).ewm(alpha=1/D_ADX, adjust=False).mean()
-    sm  = pd.Series(ndm, index=d.index).ewm(alpha=1/D_ADX, adjust=False).mean()
-    d["DI+"] = 100 * sp / d["ATR"].replace(0, 1e-10)
-    d["DI-"] = 100 * sm / d["ATR"].replace(0, 1e-10)
-    dx = 100 * (d["DI+"] - d["DI-"]).abs() / (d["DI+"] + d["DI-"]).replace(0, 1e-10)
-    d["ADX"] = dx.ewm(alpha=1/D_ADX, adjust=False).mean()
-    d.dropna(inplace=True)
-    d["ET_HOUR"] = d.index.hour
-
-    # ── Signal components ──────────────────────────────────────────────────────
-    tol      = pb_pct / 100.0
-    pb_dn    = d["EF"].shift(1) * (1.0 - tol)
-    short_pb = ((d["High"].shift(1) >= pb_dn) &
-                (d["Close"] < d["EF"]) & (d["Close"] < d["Open"]))
-    ema_bear   = (d["EF"] < d["EM"]) & (d["EM"] < d["ES"])
-    ema_sl_dn  = d["EF"] < d["EF"].shift(D_EMA_SLOPE)
-    rsi_fall   = d["RSI"] < d["RSI"].shift(1)
-    rsi_ok_s   = (d["RSI"] >= D_RSI_LO_S) & (d["RSI"] <= D_RSI_HI_S)
-    vol_ok     = d["Volume"] >= d["VOL_MA"] * vol_mult
-    body_ok    = (d["Close"] - d["Open"]).abs() / d["ATR"].replace(0, 1e-10) >= D_MIN_BODY
-    is_trend   = d["ADX"] > adx_thresh
-    not_panic  = d["ATR"] <= d["ATR_BL"] * D_PANIC
-    atr_fl_ok  = d["ATR"] / d["Close"] >= atr_floor
-    mom_ok     = d["Close"] < d["Close"].shift(D_MOMENTUM)
-    di_ok      = (d["DI-"] - d["DI+"]) >= D_DI_SPREAD   # D_DI_SPREAD=0 → always True
-    adx_up     = pd.Series(True, index=d.index)          # D_ADX_SLOPE=0 → always True
-    session    = (d["ET_HOUR"] >= D_SESSION_S) & (d["ET_HOUR"] < D_SESSION_E)
-
-    short_sig = (short_pb & ema_bear & ema_sl_dn & rsi_fall & rsi_ok_s &
-                 vol_ok & body_ok & is_trend & not_panic & atr_fl_ok &
-                 adx_up & di_ok & mom_ok & session)
-    long_sig  = pd.Series(False, index=d.index)
+# Use shared indicator/signal logic
+def build_indicators(df, adx_thresh, pb_pct, vol_mult, atr_floor):
+    d, long_sig, short_sig = build_indicators_signals(
+        df,
+        ema_fast=D_EMA_FAST, ema_mid=D_EMA_MID, ema_slow=D_EMA_SLOW,
+        adx_len=D_ADX, rsi_len=D_RSI, atr_len=D_ATR, vol_len=D_VOL_N, atr_bl_len=D_ATR_BL,
+        adx_thresh=adx_thresh, pb_pct=pb_pct, vol_mult=vol_mult, atr_floor=atr_floor, panic_mult=D_PANIC,
+        ema_slope_bars=D_EMA_SLOPE, momentum_bars=D_MOMENTUM, min_body=D_MIN_BODY,
+        di_spread_min=D_DI_SPREAD, adx_slope_bars=D_ADX_SLOPE,
+        rsi_lo_s=D_RSI_LO_S, rsi_hi_s=D_RSI_HI_S, rsi_lo_l=D_RSI_LO_L, rsi_hi_l=D_RSI_HI_L,
+        session_start=D_SESSION_S, session_end=D_SESSION_E,
+        trade_longs=False, trade_shorts=True
+    )
     return d, long_sig, short_sig
 
 
@@ -273,9 +234,16 @@ def print_table(rows, param_keys, title):
               f" {r['tp']}/{r['sl']}/{r['mb']}")
 
 
+
 # ─── Build indicators + signals once at defaults ───────────────────────────────
 print("\nBuilding indicators & signals (default params) ...")
-df_full, ls_full, ss_full = build_indicators(raw)
+df_full, ls_full, ss_full = build_indicators(
+    raw,
+    adx_thresh=D_ADX_THRESH,
+    pb_pct=D_PB_PCT,
+    vol_mult=D_VOL_MULT,
+    atr_floor=D_ATR_FLOOR
+)
 df_ytd  = df_full[df_full.index >= YTD_START].copy()
 ls_ytd  = ls_full.reindex(df_ytd.index, fill_value=False)
 ss_ytd  = ss_full.reindex(df_ytd.index, fill_value=False)
@@ -341,9 +309,13 @@ print(f"Combos: {total_s2} (rebuilds signals each time)")
 
 s2_rows = []
 for adx, pb, atrf, vol in itertools.product(s2_adx, s2_pb, s2_atrf, s2_vol):
-    df_f, ls_f, ss_f = build_indicators(raw,
-                                         adx_thresh=adx, pb_pct=pb,
-                                         vol_mult=vol, atr_floor=atrf)
+    df_f, ls_f, ss_f = build_indicators(
+        raw,
+        adx_thresh=adx,
+        pb_pct=pb,
+        vol_mult=vol,
+        atr_floor=atrf
+    )
     dy = df_f[df_f.index >= YTD_START].copy()
     if len(dy) == 0:
         continue
@@ -381,9 +353,13 @@ print(f"           Signals: ADX={BEST_ADX} PB={BEST_PB}% ATR_f={BEST_ATRF*100:.2
 print("═"*60)
 
 # Rebuild signals with Stage-2 best params
-df_s3, ls_s3, ss_s3 = build_indicators(raw,
-                                        adx_thresh=BEST_ADX, pb_pct=BEST_PB,
-                                        vol_mult=BEST_VOL, atr_floor=BEST_ATRF)
+df_s3, ls_s3, ss_s3 = build_indicators(
+    raw,
+    adx_thresh=BEST_ADX,
+    pb_pct=BEST_PB,
+    vol_mult=BEST_VOL,
+    atr_floor=BEST_ATRF
+)
 dy_s3 = df_s3[df_s3.index >= YTD_START].copy()
 ls_s3y = ls_s3.reindex(dy_s3.index, fill_value=False)
 ss_s3y = ss_s3.reindex(dy_s3.index, fill_value=False)
@@ -424,9 +400,13 @@ print("\n" + "═"*60)
 print("  FINAL VALIDATION — all best params combined")
 print("═"*60)
 
-df_fin, ls_fin, ss_fin = build_indicators(raw,
-                                           adx_thresh=BEST_ADX, pb_pct=BEST_PB,
-                                           vol_mult=BEST_VOL, atr_floor=BEST_ATRF)
+df_fin, ls_fin, ss_fin = build_indicators(
+    raw,
+    adx_thresh=BEST_ADX,
+    pb_pct=BEST_PB,
+    vol_mult=BEST_VOL,
+    atr_floor=BEST_ATRF
+)
 dy_fin = df_fin[df_fin.index >= YTD_START].copy()
 ls_fin_y = ls_fin.reindex(dy_fin.index, fill_value=False)
 ss_fin_y = ss_fin.reindex(dy_fin.index, fill_value=False)
