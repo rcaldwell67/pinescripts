@@ -292,8 +292,8 @@ for ts, row in df.iterrows():
             "entry_time":  pos["entry_time"],
             "exit_time":   ts,
             "direction":   pos["direction"],
-            "entry_price": round(pos["entry"], 2),
-            "exit_price":  round(exit_price, 2),
+            "entry":       round(pos["entry"], 2),
+            "exit":        round(exit_price, 2),
             "result":      "TP" if hit_tp else "SL",
             "pnl_pct":     round(pnl * 100, 3),
             "dollar_pnl":  round(dollar_pnl, 2),
@@ -375,6 +375,8 @@ else:
               f"PF={spf:.3f}  net=${sub['dollar_pnl'].sum():+.2f}")
 
     out = f"apm_v3_trades_{TICKER.replace('-','').lower()}_{INTERVAL}.csv"
+    # Ensure v2 schema column order
+    tdf = tdf[["entry_time", "exit_time", "direction", "entry", "exit", "result", "pnl_pct", "dollar_pnl", "equity"]]
     tdf.to_csv(out, index=False)
     print(f"\nTrades saved → {out}")
 

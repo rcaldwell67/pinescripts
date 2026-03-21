@@ -430,6 +430,7 @@ print(f"  APM v5  |  {TICKER} {INTERVAL}  |  Longs + Shorts")
 print(f"{'='*55}")
 
 if tdf.empty:
+
     print("  No trades generated.")
 else:
     wins    = tdf[tdf["pnl"] > 0]
@@ -473,6 +474,11 @@ else:
     print(f"\n  Exit breakdown:")
     print(tdf["exit_reason"].value_counts().to_string())
 
+    # --- Canonical v4 schema ---
+    tdf = tdf.rename(columns={"pnl": "dollar_pnl", "exit_reason": "result"}).copy()
+    tdf["equity_before"] = tdf["equity"] - tdf["dollar_pnl"]
+    tdf["pnl_pct"] = (tdf["dollar_pnl"] / tdf["equity_before"] * 100).round(3)
+    tdf = tdf[["entry_time", "exit_time", "direction", "entry", "exit", "result", "pnl_pct", "dollar_pnl", "equity"]]
     out_csv = OUTPUT_DIR / "apm_v5_trades_clm_1h.csv"
     tdf.to_csv(out_csv, index=False)
     print(f"\n  Saved → {out_csv.relative_to(REPO_ROOT)}")

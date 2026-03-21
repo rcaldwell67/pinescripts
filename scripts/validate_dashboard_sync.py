@@ -70,8 +70,25 @@ def compare_version(version: str, sync_first: bool) -> tuple[bool, str]:
     docs_df = pd.read_csv(docs_path)
     # Force canonicalization for BTCUSD v4 regardless of input columns
     if version == "v4" and 'BTCUSD_CONFIGS' in globals():
-        left = normalise(canonicalise_btcusd_v4_v5(source_df))
-        right = normalise(canonicalise_btcusd_v4_v5(docs_df))
+        canon_left = canonicalise_btcusd_v4_v5(source_df)
+        canon_right = canonicalise_btcusd_v4_v5(docs_df)
+        print(f"\n--- DEBUG: BTCUSD v4 canonicalized (pre-normalize) ---")
+        print("LEFT (first 3 rows):")
+        print(canon_left.head(3))
+        print("RIGHT (first 3 rows):")
+        print(canon_right.head(3))
+        left = normalise(canon_left)
+        right = normalise(canon_right)
+    elif version == "v4":
+        canon_left = config["generated_to_docs"](source_df)
+        canon_right = config["docs_to_compare"](docs_df)
+        print(f"\n--- DEBUG: CLM v4 canonicalized (pre-normalize) ---")
+        print("LEFT (first 3 rows):")
+        print(canon_left.head(3))
+        print("RIGHT (first 3 rows):")
+        print(canon_right.head(3))
+        left = normalise(canon_left)
+        right = normalise(canon_right)
     else:
         left = normalise(config["generated_to_docs"](source_df))
         right = normalise(config["docs_to_compare"](docs_df))
@@ -129,7 +146,7 @@ def parse_args() -> argparse.Namespace:
 
 
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parent.parent
 CLM_DIR = REPO_ROOT / "scripts" / "CLM"
 DOCS_CLM_DIR = REPO_ROOT / "docs" / "data" / "clm"
 
@@ -156,16 +173,21 @@ def canonicalise_v4_generated(df: pd.DataFrame) -> pd.DataFrame:
     ).copy()
     if "entry_time" not in doc_df.columns:
         doc_df.insert(0, "entry_time", doc_df["exit_time"])
-
-    return doc_df[
-        [
-            "entry_time",
-            "exit_time",
-            "direction",
-            "entry",
-            "equity",
-        ]
+    required_cols = [
+        "entry_time",
+        "exit_time",
+        "direction",
+        "entry",
+        "exit",
+        "result",
+        "pnl_pct",
+        "dollar_pnl",
+        "equity",
     ]
+    for col in required_cols:
+        if col not in doc_df.columns:
+            doc_df[col] = ""
+    return doc_df[required_cols].copy()
 
 
 def canonicalise_v4_docs(df: pd.DataFrame) -> pd.DataFrame:
@@ -487,8 +509,19 @@ def main() -> int:
             continue
         source_df = pd.read_csv(source_path)
         docs_df = pd.read_csv(docs_path)
-        left = normalise(config["generated_to_docs"](source_df))
-        right = normalise(config["docs_to_compare"](docs_df))
+        if version == "v4":
+            canon_left = config["generated_to_docs"](source_df)
+            canon_right = config["docs_to_compare"](docs_df)
+            print(f"\n--- DEBUG: BTCUSD v4 canonicalized (pre-normalize, BTCUSD loop) ---")
+            print("LEFT (first 3 rows):")
+            print(canon_left.head(3))
+            print("RIGHT (first 3 rows):")
+            print(canon_right.head(3))
+            left = normalise(canon_left)
+            right = normalise(canon_right)
+        else:
+            left = normalise(config["generated_to_docs"](source_df))
+            right = normalise(config["docs_to_compare"](docs_df))
         if left.equals(right):
             print(f"BTCUSD {version}: OK  source={source_path.relative_to(REPO_ROOT)}  dashboard={docs_path.relative_to(REPO_ROOT)}")
         else:
