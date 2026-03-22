@@ -7,8 +7,12 @@ This script automates the search for parameter sets that achieve +20% net return
 import itertools
 import pandas as pd
 import numpy as np
-import yfinance as yf
-from datetime import datetime
+
+import os
+from datetime import datetime, timezone
+from alpaca.data.historical import CryptoHistoricalDataClient
+from alpaca.data.requests import CryptoBarsRequest
+from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
 
 # --- Parameter grid ---
 RISK_PCTS   = [0.01, 0.02, 0.03, 0.04]
@@ -26,11 +30,31 @@ INITIAL_CAPITAL = 10_000.0
 COMMISSION_PCT  = 0.0006
 YTD_START = f"{datetime.now().year}-01-01"
 
-# --- Download YTD data ---
-df = yf.download(TICKER, start=YTD_START, interval=INTERVAL, auto_adjust=True, progress=False)
-df.columns = df.columns.get_level_values(0)
-df.index   = pd.to_datetime(df.index, utc=True)
-df.sort_index(inplace=True)
+
+# --- Alpaca credentials ---
+API_KEY    = os.environ.get("ALPACA_PAPER_API_KEY") or os.environ.get("ALPACA_API_KEY", "")
+API_SECRET = os.environ.get("ALPACA_PAPER_API_SECRET") or os.environ.get("ALPACA_API_SECRET", "")
+
+def fetch_alpaca_bars(symbol, start, end, interval_min=30):
+    client = CryptoHistoricalDataClient(API_KEY, API_SECRET)
+    req = CryptoBarsRequest(
+        symbol_or_symbols=[symbol],
+        timeframe=TimeFrame(interval_min, TimeFrameUnit.Minute),
+        start=start,
+        end=end,
+    )
+    bars = client.get_crypto_bars(req)
+    df = bars.df.reset_index()
+    df = df[df["symbol"] == symbol].copy()
+    df = df.sort_values("timestamp").set_index("timestamp")
+    df = df[["open", "high", "low", "close", "volume"]].rename(columns=str.title)
+    df = df[df["Volume"] > 0].dropna()
+    df.index = pd.to_datetime(df.index, utc=True)
+    return df
+
+YTD_START_DT = datetime(datetime.now().year, 1, 1, tzinfo=timezone.utc)
+YTD_END_DT = datetime.now(timezone.utc)
+df = fetch_alpaca_bars("BTC/USD", YTD_START_DT, YTD_END_DT, interval_min=30)
 
 # --- Indicator functions (copied from backtest_apm_v4_improved.py) ---
 def ema(s, n):     return s.ewm(span=n, adjust=False).mean()
