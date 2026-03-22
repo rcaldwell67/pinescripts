@@ -39,10 +39,14 @@ def get_alpaca_api():
         base_url=ALPACA_PAPER_BASE_URL
     )
 
-def run_backtest(df: pd.DataFrame) -> dict:
-    # Placeholder: simple moving average crossover strategy
-    df['sma_fast'] = df['c'].rolling(window=10).mean()
-    df['sma_slow'] = df['c'].rolling(window=30).mean()
+
+def run_backtest(df: pd.DataFrame, fast: int, slow: int) -> dict:
+    # Moving average crossover with parameterized windows
+    if fast >= slow:
+        return {"error": "fast window must be less than slow window"}
+    df = df.copy()
+    df['sma_fast'] = df['c'].rolling(window=fast).mean()
+    df['sma_slow'] = df['c'].rolling(window=slow).mean()
     df['signal'] = np.where(df['sma_fast'] > df['sma_slow'], 1, 0)
     df['position'] = df['signal'].diff().fillna(0)
     entry_price = None
@@ -59,13 +63,33 @@ def run_backtest(df: pd.DataFrame) -> dict:
         "trades": len(returns),
         "net_return": float(net_return),
         "win_rate": float(win_rate),
-        "returns": returns
+        "returns": returns,
+        "fast": fast,
+        "slow": slow
     }
+
+def optimize_strategy(df: pd.DataFrame, net_return_target=0.2):
+    best_result = None
+    best_params = None
+    for fast in range(5, 21, 2):
+        for slow in range(fast+2, 51, 2):
+            result = run_backtest(df, fast, slow)
+            if "error" in result:
+                continue
+            if best_result is None or result['net_return'] > best_result['net_return']:
+                best_result = result
+                best_params = (fast, slow)
+    if best_result and best_result['net_return'] >= net_return_target:
+        best_result['meets_target'] = True
+    elif best_result:
+        best_result['meets_target'] = False
+    return best_result if best_result else {"error": "No valid strategy found"}
 
 
 @app.post("/api/backtest")
 def backtest_symbol(req: BacktestRequest):
     return run_backtest_for_symbol(req.symbol, req.timeframes)
+
 
 def run_backtest_for_symbol(symbol, timeframes=TIMEFRAMES):
     api = get_alpaca_api()
@@ -85,7 +109,7 @@ def run_backtest_for_symbol(symbol, timeframes=TIMEFRAMES):
             if df.empty:
                 summary[tf] = {"error": "No data returned"}
                 continue
-            result = run_backtest(df)
+            result = optimize_strategy(df, net_return_target=0.2)
             # Save results
             result_path = os.path.join(RESULTS_DIR, f"{symbol}_{tf}_backtest.json")
             with open(result_path, "w") as f:
