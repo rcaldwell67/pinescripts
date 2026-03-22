@@ -1,3 +1,5 @@
+import os
+print(f"[DEBUG] Running: {os.path.abspath(__file__)}")
 
 """
 sweep_apm_v4_params.py - Parameter sweep for APM v4 BTCUSD 30m strategy
