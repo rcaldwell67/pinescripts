@@ -2,6 +2,28 @@
     "settings": {
         "files.associations": {
             "*.pine": "pine"
+        },
+        "chat.tools.terminal.autoApprove": {
+            "/^uvicorn backend\\.main:app --reload$/": {
+                "approve": true,
+                "matchCommandLine": true
+            },
+            "/^cd dashboard && npm install && npm run dev$/": {
+                "approve": true,
+                "matchCommandLine": true
+            },
+            "/^source \\.venv/bin/activate && pip install uvicorn$/": {
+                "approve": true,
+                "matchCommandLine": true
+            },
+            "/^\\.venv/bin/uvicorn backend\\.main:app --reload$/": {
+                "approve": true,
+                "matchCommandLine": true
+            },
+            "/^lsof -i :8000 \\| grep LISTEN$/": {
+                "approve": true,
+                "matchCommandLine": true
+            }
         }
     },
     "folders": [

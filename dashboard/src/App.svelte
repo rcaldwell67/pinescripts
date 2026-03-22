@@ -1,7 +1,36 @@
+
 <script>
-  // Dashboard state and logic will be added in follow-up steps
-  // TODO: Import and use Svelte components for each section as they are created
+  import { onMount } from 'svelte';
+  let symbol = '';
+  let loading = false;
+  let error = '';
+  let summary = null;
+
+  async function runBacktest() {
+    error = '';
+    summary = null;
+    if (!symbol) {
+      error = 'Please enter a symbol.';
+      return;
+    }
+    loading = true;
+    try {
+      const res = await fetch('http://localhost:8000/api/backtest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbol })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      summary = data.summary;
+    } catch (e) {
+      error = e.message;
+    } finally {
+      loading = false;
+    }
+  }
 </script>
+
 
 
 <header>
@@ -9,32 +38,44 @@
     <h1>APM Dashboard</h1>
     <div class="subtitle">Adaptive Pullback Momentum</div>
   </div>
-  <nav class="sym-switcher"><!-- SymbolSwitcher component --></nav>
-  <nav class="mode-switcher"><!-- ModeSwitcher component --></nav>
-  <section class="dataset-switcher" id="datasetSwitcher" style="display:none"><!-- DatasetSwitcher component --></section>
-  <section id="balanceBar"><!-- BalanceBar component --></section>
-  <span id="lastUpdated"><!-- LastUpdated --></span>
+  <form on:submit|preventDefault={runBacktest} style="margin: 1em 0; display: flex; gap: 1em; align-items: center;">
+    <input type="text" placeholder="Symbol (e.g. BTCUSD)" bind:value={symbol} />
+    <button type="submit" disabled={loading}>{loading ? 'Running…' : 'Run Backtest'}</button>
+  </form>
+  {#if error}
+    <div style="color: red;">{error}</div>
+  {/if}
 </header>
 
+
 <main>
-  <nav class="tabs" id="tabs"><!-- Tabs component --></nav>
-  <section class="cards" id="cards"><!-- StatCards component --></section>
-  <section class="panel" style="margin-bottom:16px;">
-    <div class="tx-controls"><!-- Transactions controls/filters --></div>
-    <div class="table-wrap" id="txTableWrap"><!-- TransactionsTable component --></div>
-  </section>
-  <section class="panel" id="priceChartPanel"><!-- PriceChart component --></section>
-  <section class="grid-3" id="topRow">
-    <div class="panel chart-wrap tall"><!-- EquityChart component --></div>
-    <div class="panel chart-wrap"><!-- OutcomeChart component --></div>
-  </section>
-  <section class="grid-2" id="midRow">
-    <div class="panel chart-wrap"><!-- DirectionChart component --></div>
-    <div class="panel chart-wrap"><!-- MonthlyChart component --></div>
-  </section>
-  <section class="panel" id="yearSection"><!-- YearChart component --></section>
-  <section class="panel"><!-- TradeLogTable component --></section>
-  <section class="panel"><!-- ComparisonTable component --></section>
+  {#if summary}
+    <section class="panel">
+      <h2>Backtest Summary</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Timeframe</th>
+            <th>Trades</th>
+            <th>Net Return</th>
+            <th>Win Rate</th>
+            <th>Error</th>
+          </tr>
+        </thead>
+        <tbody>
+          {#each Object.entries(summary) as [tf, res]}
+            <tr>
+              <td>{tf}</td>
+              <td>{res.trades ?? '-'}</td>
+              <td>{res.net_return !== undefined ? (res.net_return * 100).toFixed(2) + '%' : '-'}</td>
+              <td>{res.win_rate !== undefined ? (res.win_rate * 100).toFixed(1) + '%' : '-'}</td>
+              <td>{res.error ?? ''}</td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    </section>
+  {/if}
 </main>
 
 <main>
@@ -59,32 +100,3 @@
   </div>
   <!-- More dashboard sections will be added here in follow-up steps -->
 </main>
-        <a href="https://chat.vite.dev/" target="_blank" rel="noreferrer">
-          <svg class="button-icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#discord-icon"></use>
-          </svg>
-          Discord
-        </a>
-      </li>
-      <li>
-        <a href="https://x.com/vite_js" target="_blank" rel="noreferrer">
-          <svg class="button-icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#x-icon"></use>
-          </svg>
-          X.com
-        </a>
-      </li>
-      <li>
-        <a href="https://bsky.app/profile/vite.dev" target="_blank" rel="noreferrer">
-          <svg class="button-icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#bluesky-icon"></use>
-          </svg>
-          Bluesky
-        </a>
-      </li>
-    </ul>
-  </div>
-</section>
-
-<div class="ticks"></div>
-<section id="spacer"></section>

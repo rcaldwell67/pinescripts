@@ -1,0 +1,8 @@
+fastapi
+alpaca-trade-api
+pandas
+numpy
+matplotlib
+plotly
+ta
+python-dotenv
