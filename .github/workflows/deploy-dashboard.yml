@@ -1,0 +1,58 @@
+name: Build and Deploy Dashboard
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Python dependencies
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install -r backend/requirements.txt
+
+      - name: Run backend to generate results
+        env:
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+          ALPACA_PAPER_BASE_URL: https://paper-api.alpaca.markets
+        run: |
+          source .venv/bin/activate
+          python backend/main.py --generate-static
+
+      - name: Copy results to dashboard public/data
+        run: |
+          cp backend/results/*.json dashboard/public/data/
+
+      - name: Install dashboard dependencies
+        run: |
+          cd dashboard
+          npm install
+
+      - name: Build dashboard
+        run: |
+          cd dashboard
+          npm run build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: dashboard/dist
