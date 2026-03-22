@@ -1,3 +1,5 @@
+import sys
+
 import os
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -60,13 +62,17 @@ def run_backtest(df: pd.DataFrame) -> dict:
         "returns": returns
     }
 
+
 @app.post("/api/backtest")
 def backtest_symbol(req: BacktestRequest):
+    return run_backtest_for_symbol(req.symbol, req.timeframes)
+
+def run_backtest_for_symbol(symbol, timeframes=TIMEFRAMES):
     api = get_alpaca_api()
     summary = {}
-    for tf in req.timeframes:
+    for tf in timeframes:
         try:
-            bars = api.get_bars(req.symbol, tf, limit=500)
+            bars = api.get_bars(symbol, tf, limit=500)
             data = [{
                 't': bar.t,
                 'o': bar.o,
@@ -81,13 +87,26 @@ def backtest_symbol(req: BacktestRequest):
                 continue
             result = run_backtest(df)
             # Save results
-            result_path = os.path.join(RESULTS_DIR, f"{req.symbol}_{tf}_backtest.json")
+            result_path = os.path.join(RESULTS_DIR, f"{symbol}_{tf}_backtest.json")
             with open(result_path, "w") as f:
                 json.dump(result, f, indent=2)
             summary[tf] = result
         except Exception as e:
             summary[tf] = {"error": str(e)}
-    return {"symbol": req.symbol, "summary": summary}
+    return {"symbol": symbol, "summary": summary}
+
+
+# CLI entry point for GitHub Actions/static generation
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="Generate static backtest results for dashboard.")
+    parser.add_argument('--symbols', nargs='+', default=['BTCUSD', 'CLM'], help='Symbols to backtest')
+    parser.add_argument('--timeframes', nargs='+', default=TIMEFRAMES, help='Timeframes to backtest')
+    args = parser.parse_args()
+    for symbol in args.symbols:
+        print(f"Backtesting {symbol}...")
+        run_backtest_for_symbol(symbol, args.timeframes)
+    print("Static results generated in backend/results/")
 
 @app.get("/api/results/{symbol}")
 def get_results(symbol: str):
