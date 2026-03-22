@@ -1,8 +1,17 @@
 
-
 """
 sweep_apm_v4_params.py - Parameter sweep for APM v4 BTCUSD 30m strategy
 
+
+import os
+print("[DEBUG] __file__:", os.path.abspath(__file__))
+with open(os.path.abspath(__file__), "r") as f:
+    lines = f.readlines()
+    print("[DEBUG] First 20 lines:")
+    for i, line in enumerate(lines[:20]):
+        print(f"{i+1:02d}: {line.rstrip()}")
+
+"""
 This script automates the search for parameter sets that achieve +20% net return YTD.
 """
 
