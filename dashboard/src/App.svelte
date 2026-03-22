@@ -15,14 +15,33 @@
     }
     loading = true;
     try {
-      const res = await fetch('http://localhost:8000/api/backtest', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ symbol })
-      });
-      if (!res.ok) throw new Error(await res.text());
-      const data = await res.json();
-      summary = data.summary;
+      // If running on GitHub Pages (static), load from static files
+      if (window.location.protocol === 'file:' || window.location.hostname.endsWith('github.io')) {
+        // Try to load all timeframes from public/data
+        const timeframes = ["5m", "10m", "15m", "30m", "1h", "1d"];
+        let staticSummary = {};
+        for (const tf of timeframes) {
+          try {
+            const resp = await fetch(`data/${symbol}_${tf}_backtest.json`);
+            if (!resp.ok) throw new Error('Not found');
+            const result = await resp.json();
+            staticSummary[tf] = result;
+          } catch (e) {
+            staticSummary[tf] = { error: 'No static result' };
+          }
+        }
+        summary = staticSummary;
+      } else {
+        // Use API if running locally
+        const res = await fetch('http://localhost:8000/api/backtest', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ symbol })
+        });
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        summary = data.summary;
+      }
     } catch (e) {
       error = e.message;
     } finally {
