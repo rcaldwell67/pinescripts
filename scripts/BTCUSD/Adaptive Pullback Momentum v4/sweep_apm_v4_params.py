@@ -1,12 +1,14 @@
+
 """
-sweep_apm_v4_params.py — Parameter sweep for APM v4 BTCUSD 30m strategy
+sweep_apm_v4_params.py - Parameter sweep for APM v4 BTCUSD 30m strategy
 
 This script automates the search for parameter sets that achieve +20% net return YTD.
 """
+print("[INFO] Running sweep_apm_v4_params.py (Alpaca data, no yfinance)")
 
+import numpy as np
 import itertools
 import pandas as pd
-import numpy as np
 
 import os
 from datetime import datetime, timezone
@@ -14,6 +16,7 @@ from alpaca.data.historical import CryptoHistoricalDataClient
 from alpaca.data.requests import CryptoBarsRequest
 from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
 
+print("[INFO] Running sweep_apm_v4_params.py (Alpaca data, no yfinance)")
 # --- Parameter grid ---
 RISK_PCTS   = [0.01, 0.02, 0.03, 0.04]
 SL_MULTS    = [1.5, 2.0, 2.5]
@@ -23,7 +26,7 @@ MIN_BODIES  = [0.15, 0.20]
 ATR_FLOORS  = [0.001, 0.0015, 0.002]
 PANIC_MULTS = [1.3, 1.5]
 
-# --- Fixed config ---
+ # --- Fixed config ---
 TICKER   = "BTC-USD"
 INTERVAL = "30m"
 INITIAL_CAPITAL = 10_000.0
@@ -31,7 +34,7 @@ COMMISSION_PCT  = 0.0006
 YTD_START = f"{datetime.now().year}-01-01"
 
 
-# --- Alpaca credentials ---
+ # --- Alpaca credentials ---
 API_KEY    = os.environ.get("ALPACA_PAPER_API_KEY") or os.environ.get("ALPACA_API_KEY", "")
 API_SECRET = os.environ.get("ALPACA_PAPER_API_SECRET") or os.environ.get("ALPACA_API_SECRET", "")
 
