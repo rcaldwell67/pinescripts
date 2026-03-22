@@ -100,10 +100,12 @@ def backtest_symbol(req: BacktestRequest):
     return run_backtest_for_symbol(req.symbol, req.timeframes)
 
 
+
 def run_backtest_for_symbol(symbol, timeframes=TIMEFRAMES):
     api = get_alpaca_api()
     summary = {}
     for tf in timeframes:
+        print(f"[INFO] Processing {symbol} {tf}")
         try:
             bars = api.get_bars(symbol, tf, limit=500)
             data = [{
@@ -114,8 +116,10 @@ def run_backtest_for_symbol(symbol, timeframes=TIMEFRAMES):
                 'c': bar.c,
                 'v': bar.v
             } for bar in bars]
+            print(f"[INFO] Fetched {len(data)} bars for {symbol} {tf}")
             df = pd.DataFrame(data)
             if df.empty:
+                print(f"[WARN] No data returned for {symbol} {tf}")
                 summary[tf] = {"error": "No data returned"}
                 continue
             result = optimize_strategy(df, net_return_target=0.2)
@@ -123,8 +127,10 @@ def run_backtest_for_symbol(symbol, timeframes=TIMEFRAMES):
             result_path = os.path.join(RESULTS_DIR, f"{symbol}_{tf}_backtest.json")
             with open(result_path, "w") as f:
                 json.dump(result, f, indent=2)
+            print(f"[INFO] Saved result to {result_path}")
             summary[tf] = result
         except Exception as e:
+            print(f"[ERROR] Exception for {symbol} {tf}: {e}")
             summary[tf] = {"error": str(e)}
     return {"symbol": symbol, "summary": summary}
 
