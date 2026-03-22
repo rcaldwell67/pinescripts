@@ -18,8 +18,8 @@ load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 app = FastAPI()
 
-# Supported timeframes
-TIMEFRAMES = ["5m", "10m", "15m", "30m", "1h", "1d"]
+# Supported timeframes (valid Alpaca values)
+TIMEFRAMES = ["5Min", "15Min", "30Min", "1Hour", "1Day"]
 
 # Support both paper and live trading credentials
 ALPACA_MODE = os.getenv("ALPACA_MODE", "paper").lower()
