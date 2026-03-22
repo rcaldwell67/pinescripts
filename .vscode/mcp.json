@@ -13,6 +13,10 @@
         "command": "node",
         "args": ["./.vscode/alpaca-mcp-wrapper.mjs"],
         "envFile": "${workspaceFolder}/.env"
+      },
+      "github-mcp": {
+        "type": "http",
+        "url": "https://github-mcp.fly.dev/mcp"
       }
     }
   }
