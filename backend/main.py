@@ -12,17 +12,26 @@ import pandas as pd
 import numpy as np
 import json
 
+
 # Load environment variables
-load_dotenv()
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 app = FastAPI()
 
 # Supported timeframes
 TIMEFRAMES = ["5m", "10m", "15m", "30m", "1h", "1d"]
 
-ALPACA_API_KEY = os.getenv("ALPACA_API_KEY")
-ALPACA_SECRET_KEY = os.getenv("ALPACA_SECRET_KEY")
-ALPACA_PAPER_BASE_URL = os.getenv("ALPACA_PAPER_BASE_URL", "https://paper-api.alpaca.markets")
+# Support both paper and live trading credentials
+ALPACA_MODE = os.getenv("ALPACA_MODE", "paper").lower()
+if ALPACA_MODE == "live":
+    ALPACA_API_KEY = os.getenv("ALPACA_LIVE_API_KEY")
+    ALPACA_SECRET_KEY = os.getenv("ALPACA_LIVE_API_SECRET")
+    ALPACA_BASE_URL = os.getenv("ALPACA_LIVE_BASE_URL", "https://api.alpaca.markets")
+else:
+    ALPACA_API_KEY = os.getenv("ALPACA_PAPER_API_KEY")
+    ALPACA_SECRET_KEY = os.getenv("ALPACA_PAPER_API_SECRET")
+    ALPACA_BASE_URL = os.getenv("ALPACA_PAPER_BASE_URL", "https://paper-api.alpaca.markets")
+
 RESULTS_DIR = os.path.join(os.path.dirname(__file__), "results")
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
@@ -36,7 +45,7 @@ def get_alpaca_api():
     return tradeapi.REST(
         key_id=ALPACA_API_KEY,
         secret_key=ALPACA_SECRET_KEY,
-        base_url=ALPACA_PAPER_BASE_URL
+        base_url=ALPACA_BASE_URL
     )
 
 
