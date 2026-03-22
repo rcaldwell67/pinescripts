@@ -1,18 +1,17 @@
-import os
-print(f"[DEBUG] Running: {os.path.abspath(__file__)}")
+
 
 """
 sweep_apm_v4_params.py - Parameter sweep for APM v4 BTCUSD 30m strategy
 
 This script automates the search for parameter sets that achieve +20% net return YTD.
 """
-print("[INFO] Running sweep_apm_v4_params.py (Alpaca data, no yfinance)")
+
 
 import numpy as np
 import itertools
 import pandas as pd
 
-import os
+
 from datetime import datetime, timezone
 from alpaca.data.historical import CryptoHistoricalDataClient
 from alpaca.data.requests import CryptoBarsRequest
