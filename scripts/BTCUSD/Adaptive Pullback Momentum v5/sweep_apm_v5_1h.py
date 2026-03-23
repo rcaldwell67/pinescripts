@@ -194,60 +194,66 @@ def row(cfg, r, tag=""):
     print(f"  {tag:<30} n={r['n']:3d}  WR={r['wr']:5.1f}%  "
           f"PF={r['pf']:.3f}  {r['pct']:+.2f}%  DD={r['dd']:.1f}%")
 
-# ───────────────────────────────────────────────────────────────────────────────
-# PHASE 1 — ATR floor
-# ───────────────────────────────────────────────────────────────────────────────
-hdr("PHASE 1 — ATR floor (v1.1 baseline + floor only)")
-base_cfg = {"adx":25,"sl":1.5,"tp":2.0,"trail_act":1.5,"trail_dist":0.8,
-            "vol_mult":1.0,"min_body":0.15,"panic":1.5,"pb_pct":0.15,
-            "ema_slope":False,"rsi_dir":False,"longs":True,"shorts":True,
-            "atr_floor":0.0}
-ph1_best = None
-for fl in [0.0, 0.0010, 0.0015, 0.0020, 0.0025]:
-    cfg = {**base_cfg, "atr_floor": fl}
-    r = backtest(cfg)
-    row(cfg, r, f"ATR floor {fl*100:.2f}%")
-    if ph1_best is None or r["pct"] > ph1_best[1]["pct"]: ph1_best = (cfg, r)
-print(f"\n  ★ Best: ATR floor {ph1_best[0]['atr_floor']*100:.2f}%  → {ph1_best[1]['pct']:+.2f}%")
+def run_expanded_sweep():
+    print("\nRunning expanded parameter sweep for BTCUSD v5...")
+    TP_MULT_range = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]
+    SL_MULT_range = [1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0]
+    TRAIL_ACT_range = [1.0, 1.5, 2.0, 2.5, 3.0]
+    VOL_MULT_range = [0.7, 1.0, 1.2, 1.5, 2.0]
+    RISK_PCT_range = [0.01, 0.015, 0.02, 0.025, 0.03, 0.04]
+    SESSION_HOURS = [(0, 24), (6, 18), (9, 14)]
+    ATR_FLOOR_range = [0.0, 0.001, 0.002, 0.003, 0.004]
+    best_results = []
+    base_cfg = {"adx":25,"trail_act":1.5,"trail_dist":0.8,
+                "min_body":0.15,"panic":1.5,"pb_pct":0.10,
+                "ema_slope":True,"rsi_dir":False,"longs":True,"shorts":False}
+    for TP_MULT_ in TP_MULT_range:
+        for SL_MULT_ in SL_MULT_range:
+            for TRAIL_ACT_ in TRAIL_ACT_range:
+                for VOL_MULT_ in VOL_MULT_range:
+                    for RISK_PCT_ in RISK_PCT_range:
+                        for (SESSION_START, SESSION_END) in SESSION_HOURS:
+                            for ATR_FLOOR_ in ATR_FLOOR_range:
+                                cfg = {**base_cfg,
+                                    "tp": TP_MULT_,
+                                    "sl": SL_MULT_,
+                                    "trail_act": TRAIL_ACT_,
+                                    "vol_mult": VOL_MULT_,
+                                    "atr_floor": ATR_FLOOR_,
+                                    "rsi_lo_l": 42.0, "rsi_hi_l": 72.0,
+                                    "rsi_lo_s": 32.0, "rsi_hi_s": 58.0,
+                                    "longs": True, "shorts": False
+                                }
+                                # Session filter: only run trades in session
+                                # (simulate by masking signals outside session)
+                                d = df.copy()
+                                d["et_hour"] = d.index.tz_localize("UTC").tz_convert("America/New_York").hour
+                                in_session = (d["et_hour"] >= SESSION_START) & (d["et_hour"] < SESSION_END)
+                                # Mask signals outside session
+                                orig_longs = cfg["longs"]
+                                cfg["longs"] = orig_longs and in_session
+                                r = backtest(cfg)
+                                best_results.append({
+                                    "TP_MULT": TP_MULT_,
+                                    "SL_MULT": SL_MULT_,
+                                    "TRAIL_ACT": TRAIL_ACT_,
+                                    "VOL_MULT": VOL_MULT_,
+                                    "RISK_PCT": RISK_PCT_,
+                                    "SESSION": f"{SESSION_START}-{SESSION_END}",
+                                    "ATR_FLOOR": ATR_FLOOR_,
+                                    "trades": r["n"],
+                                    "win_rate": r["wr"],
+                                    "net_return": r["pct"],
+                                    "pf": r["pf"],
+                                    "dd": r["dd"]
+                                })
+    best_results.sort(key=lambda x: x["net_return"], reverse=True)
+    print("\nTop parameter sets by net return:")
+    for res in best_results[:15]:
+        print(f"TP={res['TP_MULT']}, SL={res['SL_MULT']}, TRAIL_ACT={res['TRAIL_ACT']}, VOL_MULT={res['VOL_MULT']}, RISK={res['RISK_PCT']*100:.1f}%, SESSION={res['SESSION']}, ATR_FLOOR={res['ATR_FLOOR']*100:.2f}% | Trades={res['trades']} | Win%={res['win_rate']:.1f} | NetRet={res['net_return']:.2f}% | PF={res['pf']:.2f} | DD={res['dd']:.2f}")
 
 # ───────────────────────────────────────────────────────────────────────────────
-# PHASE 2 — EMA slope + RSI direction filters
-# ───────────────────────────────────────────────────────────────────────────────
-hdr("PHASE 2 — EMA slope & RSI direction filters")
-p2_base = {**ph1_best[0]}
-ph2_best = None
-for slope, rdir in [(False,False),(True,False),(False,True),(True,True)]:
-    cfg = {**p2_base, "ema_slope": slope, "rsi_dir": rdir}
-    r = backtest(cfg)
-    tag = ("slope+rsi_dir" if slope and rdir else
-           "slope only"     if slope else
-           "rsi_dir only"   if rdir else "neither (baseline)")
-    row(cfg, r, tag)
-    if ph2_best is None or r["pct"] > ph2_best[1]["pct"]: ph2_best = (cfg, r)
-print(f"\n  ★ Best: ema_slope={ph2_best[0]['ema_slope']} "
-      f"rsi_dir={ph2_best[0]['rsi_dir']}  → {ph2_best[1]['pct']:+.2f}%")
-
-# ───────────────────────────────────────────────────────────────────────────────
-# PHASE 3 — TP / SL sweep
-# ───────────────────────────────────────────────────────────────────────────────
-hdr("PHASE 3 — TP × SL sweep")
-p3_base = {**ph2_best[0]}
-ph3_best = None
-for sl in [1.5, 2.0, 2.5]:
-    for tp in [1.5, 2.0, 2.5, 3.0, 3.5, 4.0]:
-        cfg = {**p3_base, "sl": sl, "tp": tp}
-        r = backtest(cfg)
-        row(cfg, r, f"SL×{sl}  TP×{tp}")
-        if ph3_best is None or r["pct"] > ph3_best[1]["pct"]: ph3_best = (cfg, r)
-print(f"\n  ★ Best: SL×{ph3_best[0]['sl']} TP×{ph3_best[0]['tp']}  → {ph3_best[1]['pct']:+.2f}%")
-
-# ───────────────────────────────────────────────────────────────────────────────
-# PHASE 4 — ADX threshold
-# ───────────────────────────────────────────────────────────────────────────────
-hdr("PHASE 4 — ADX threshold")
-p4_base = {**ph3_best[0]}
-ph4_best = None
-for adx in [20, 23, 25, 28, 30, 33]:
+    run_expanded_sweep()
     cfg = {**p4_base, "adx": adx}
     r = backtest(cfg)
     row(cfg, r, f"ADX>{adx}")

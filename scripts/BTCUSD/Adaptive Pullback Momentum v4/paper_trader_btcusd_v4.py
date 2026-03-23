@@ -365,7 +365,11 @@ def main():
         return
 
     state = {"position": None, "equity": INITIAL_CAPITAL, "last_bar_ts": None}
-    for i in range(MIN_BARS, len(df)):
+    # Limit to 500 bars for quick test
+    max_bars = min(len(df), MIN_BARS + 500)
+    for i in range(MIN_BARS, max_bars):
+        if (i - MIN_BARS) % 100 == 0:
+            log.info(f"Progress: {i - MIN_BARS} / {max_bars - MIN_BARS} bars processed...")
         subdf = df.iloc[:i+1]
         ts = subdf.index[-1]
         bar = subdf.iloc[-1]
