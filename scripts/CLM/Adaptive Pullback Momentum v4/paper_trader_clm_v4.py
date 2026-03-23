@@ -163,9 +163,9 @@ def append_trade(trade: dict) -> None:
 
 # ── Data fetching ─────────────────────────────────────────────────────────────
 def fetch_bars(data_client) -> pd.DataFrame:
-    """Fetch 45 days of CLM 5-min bars and resample to 30 min."""
+    """Fetch 60 days of CLM 5-min bars and resample to 30 min."""
     end   = datetime.now(timezone.utc)
-    start = end - timedelta(days=45)
+    start = end - timedelta(days=60)
     req   = StockBarsRequest(
         symbol_or_symbols=[SYMBOL],
         timeframe=TimeFrame(5, TimeFrameUnit.Minute),

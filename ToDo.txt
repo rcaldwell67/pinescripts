@@ -1,0 +1,7 @@
+finish paper trading for BTCUSD
+make sure backtesting and paper trading are 100%
+
+add textbox to dashboard for entering symbols
+remove symbol tabs, create ddl for symbols to update dashboard data and charts
+refactor project to automate backtesting and paper testing
+  and auto update dashboard data and charts per additional symbols
