@@ -1,135 +1,3 @@
-"""
-paper_trader_btcusd_v4.py — APM v4.2 paper trading bot, BTC/USD 30m (longs + shorts).
-
-Run every 30 minutes via GitHub Actions (or cron). Evaluates APM v4.2 entry
-conditions (full EMA stack, EMA slope filter, RSI direction filter) and manages
-any open position (trailing stop).
-
-Strategy parameters (Pine v4.2 30m, sweep-optimised):
-    ADX=25 | PB=0.15% | SL×2.0 | TP×3.5 | TRAIL_ACT=2.5× | TRAIL_DIST=1.5×
-    ATR_FLOOR=0.20% | PANIC=1.3× | VOL=1.2× | MIN_BODY=0.20×
-    EMA slope: 3-bar | RSI direction filter | Both longs + shorts
-
-State:  docs/data/btcusd/v4_paper_state.json
-Trades: docs/data/btcusd/v4_trades_paper.csv
-
-Run manually:
-    cd /workspaces/pinescripts
-    python "scripts/BTCUSD/Adaptive Pullback Momentum v4/paper_trader_btcusd_v4.py"
-
-Requirements:
-    pip install alpaca-py pandas numpy python-dotenv
-
-Environment:
-    ALPACA_PAPER_API_KEY
-    ALPACA_PAPER_API_SECRET
-"""
-
-import csv
-import json
-import logging
-import os
-import sys
-import time
-from datetime import datetime, timedelta, timezone
-from pathlib import Path
-
-FAILURE_LOG = Path(__file__).resolve().parent.parent.parent.parent / "docs/data/btcusd/failures.log"
-
-try:
-    from dotenv import load_dotenv
-    load_dotenv(Path(__file__).resolve().parent.parent.parent.parent / ".env")
-except ImportError:
-    pass
-
-import numpy as np
-import pandas as pd
-from alpaca.data.historical import CryptoHistoricalDataClient
-from alpaca.data.requests import CryptoBarsRequest
-from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
-from alpaca.trading.client import TradingClient
-from alpaca.trading.requests import (
-    MarketOrderRequest,
-    StopOrderRequest,
-    LimitOrderRequest,
-    GetOrdersRequest,
-)
-from alpaca.trading.enums import OrderSide, TimeInForce, QueryOrderStatus
-
-# ── Logging ───────────────────────────────────────────────────────────────────
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s  %(levelname)-8s  %(message)s",
-    datefmt="%Y-%m-%dT%H:%M:%SZ",
-)
-log = logging.getLogger("apm_btcusd_v4")
-
-# ── Paths ─────────────────────────────────────────────────────────────────────
-_WS         = Path(__file__).resolve().parent.parent.parent.parent
-STATE_FILE  = _WS / "docs" / "data" / "btcusd" / "v4_paper_state.json"
-TRADES_FILE = _WS / "docs" / "data" / "btcusd" / "v4_trades_paper.csv"
-TRADES_COLS = [
-    "entry_time", "exit_time", "direction", "entry", "exit",
-    "exit_reason", "bars_held", "pnl_pct", "dollar_pnl", "equity",
-]
-
-# ── Credentials ───────────────────────────────────────────────────────────────
-API_KEY    = (os.environ.get("ALPACA_PAPER_API_KEY")
-              or os.environ.get("ALPACA_API_KEY", ""))
-API_SECRET = (os.environ.get("ALPACA_PAPER_API_SECRET")
-              or os.environ.get("ALPACA_API_SECRET", ""))
-
-# ── APM v4.2 parameters (BTC/USD 30m — +20% sizing calibration) ──────────────
-SYMBOL          = "BTC/USD"
-INITIAL_CAPITAL = 10_000.0
-COMMISSION_PCT  = 0.0006
-RISK_PCT        = 0.04  # Updated for +20% net return
-LEV_CAP         = 5.0
-
-EMA_FAST_LEN = 21
-EMA_MID_LEN  = 50
-EMA_SLOW_LEN = 200
-ADX_LEN      = 14
-RSI_LEN      = 14
-ATR_LEN      = 14
-ATR_BL_LEN   = 60
-VOL_LEN      = 20
-
-ADX_THRESH = 10  # Lowered for more trades
-PB_PCT     = 0.15
-VOL_MULT   = 1.0  # Lowered for more entries
-MIN_BODY   = 0.20
-ATR_FLOOR  = 0.0020   # ATR / price >= 0.20%
-PANIC_MULT = 1.3
-
-RSI_LO_L = 42; RSI_HI_L = 68
-RSI_LO_S = 32; RSI_HI_S = 58
-
-SL_MULT        = 2.0
-TP_MULT        = 4.0  # Updated for sweep-optimized return
-TRAIL_ACT      = 2.5
-TRAIL_DIST     = 1.5
-EMA_SLOPE_BARS = 3    # EMA_F must be trending in trade direction over N bars
-USE_RSI_DIR    = True # RSI rising for longs, falling for shorts
-
-TRADE_LONGS  = True
-TRADE_SHORTS = True
-
-MIN_BARS = EMA_SLOW_LEN + ATR_BL_LEN + 10
-
-
-# ── State helpers ─────────────────────────────────────────────────────────────
-def load_state() -> dict:
-    if STATE_FILE.exists():
-        try:
-            s = json.loads(STATE_FILE.read_text())
-            s.setdefault("position",    None)
-            s.setdefault("equity",      INITIAL_CAPITAL)
-            s.setdefault("last_bar_ts", None)
-            return s
-        except Exception:
-            pass
-    return {"position": None, "equity": INITIAL_CAPITAL, "last_bar_ts": None}
 
 
 def save_state(state: dict) -> None:
@@ -140,6 +8,7 @@ def save_state(state: dict) -> None:
 def append_trade(trade: dict) -> None:
     TRADES_FILE.parent.mkdir(parents=True, exist_ok=True)
     new_file = not TRADES_FILE.exists()
+
     with open(TRADES_FILE, "a", newline="") as f:
         w = csv.DictWriter(f, fieldnames=TRADES_COLS)
         if new_file:
@@ -147,10 +16,8 @@ def append_trade(trade: dict) -> None:
         w.writerow({k: trade.get(k, "") for k in TRADES_COLS})
     log.info("Trade appended → %s", TRADES_FILE.name)
 
-
 # ── Data fetching ──────────────────────────────────────────────────────────────
 def fetch_bars(data_client) -> pd.DataFrame:
-    """Fetch BTC/USD 30m bars for year-to-date (YTD) only."""
     end = datetime.now(timezone.utc)
     start = datetime(end.year, 1, 1, tzinfo=timezone.utc)
     req = CryptoBarsRequest(
@@ -215,9 +82,9 @@ def compute_indicators(df: pd.DataFrame) -> pd.DataFrame:
 
 # ── Signal evaluation ─────────────────────────────────────────────────────────
 def check_signal(df: pd.DataFrame) -> dict | None:
-    """Evaluate APM v4.2 entry (long or short) on the most recent completed 30m bar."""
     needed = EMA_SLOPE_BARS + 5
     if len(df) < needed:
+        log.debug("Not enough bars: %d < %d", len(df), needed)
         return None
 
     bar  = df.iloc[-1]
@@ -229,21 +96,21 @@ def check_signal(df: pd.DataFrame) -> dict | None:
     opn    = float(bar["Open"])
 
     if float(bar["ADX"]) <= ADX_THRESH:
-        log.debug("ADX %.2f ≤ %d — skip", float(bar["ADX"]), ADX_THRESH)
+        log.info("Filter: ADX %.2f ≤ %d — skip", float(bar["ADX"]), ADX_THRESH)
         return None
     if atr > atr_bl * PANIC_MULT:
-        log.debug("PANIC mode — skip")
+        log.info("Filter: PANIC mode — ATR %.4f > ATR_BL %.4f × %.2f — skip", atr, atr_bl, PANIC_MULT)
         return None
     if atr < close * ATR_FLOOR:
-        log.debug("ATR floor — skip")
+        log.info("Filter: ATR floor — ATR %.4f < Close %.2f × %.4f — skip", atr, close, ATR_FLOOR)
         return None
 
     if float(bar["Volume"]) < float(bar["VOL_MA"]) * VOL_MULT:
-        log.debug("Volume filter — skip")
+        log.info("Filter: Volume %.2f < VOL_MA %.2f × %.2f — skip", float(bar["Volume"]), float(bar["VOL_MA"]), VOL_MULT)
         return None
     body = abs(close - opn) / atr
     if body < MIN_BODY:
-        log.debug("Body filter — skip")
+        log.info("Filter: Body %.4f < MIN_BODY %.4f — skip", body, MIN_BODY)
         return None
 
     ema_f_now  = float(bar["EMA_F"])
@@ -270,6 +137,17 @@ def check_signal(df: pd.DataFrame) -> dict | None:
             ema_slope_l = ema_f_now > ema_f_past
 
         rsi_rising = (not USE_RSI_DIR) or (rsi > rsi_prev)
+
+        if not ema_bull:
+            log.info("Filter: Not EMA bull — skip")
+        if not long_pb:
+            log.info("Filter: Not long PB — skip")
+        if not rsi_ok_l:
+            log.info("Filter: RSI %.2f not in long band [%d, %d] — skip", rsi, RSI_LO_L, RSI_HI_L)
+        if not ema_slope_l:
+            log.info("Filter: EMA slope not rising — skip")
+        if not rsi_rising:
+            log.info("Filter: RSI not rising — skip")
 
         if ema_bull and long_pb and rsi_ok_l and ema_slope_l and rsi_rising:
             sl = close - stop_dist
@@ -303,6 +181,17 @@ def check_signal(df: pd.DataFrame) -> dict | None:
             ema_slope_s = ema_f_now < ema_f_past
 
         rsi_falling = (not USE_RSI_DIR) or (rsi < rsi_prev)
+
+        if not ema_bear:
+            log.info("Filter: Not EMA bear — skip")
+        if not short_pb:
+            log.info("Filter: Not short PB — skip")
+        if not rsi_ok_s:
+            log.info("Filter: RSI %.2f not in short band [%d, %d] — skip", rsi, RSI_LO_S, RSI_HI_S)
+        if not ema_slope_s:
+            log.info("Filter: EMA slope not falling — skip")
+        if not rsi_falling:
+            log.info("Filter: RSI not falling — skip")
 
         if ema_bear and short_pb and rsi_ok_s and ema_slope_s and rsi_falling:
             sl = close + stop_dist
@@ -464,180 +353,87 @@ def main():
     data_client    = CryptoHistoricalDataClient(API_KEY, API_SECRET)
     trading_client = TradingClient(API_KEY, API_SECRET, paper=True)
 
-    log.info("Fetching %s 30m bars (180d)…", SYMBOL)
+
+    log.info("\n=== BACKTEST: Simulating all YTD bars for trade generation ===")
     df = fetch_bars(data_client)
     if df.empty or len(df) < MIN_BARS:
         msg = f"Insufficient bars ({len(df)} < {MIN_BARS}) — skipping."
         log.warning(msg)
-        # log_failure(msg)
         return
-
     df = compute_indicators(df)
     if df.empty:
-        # log_failure("Indicator computation failed or empty dataframe.")
         return
 
-    df = df.iloc[:-1]
-    if df.empty:
-        # log_failure("No closed bars available after slicing.")
-        return
-
-    last_bar_ts = str(df.index[-1])
-    log.info("Bars: %d  last_closed=%s  close=%.2f",
-             len(df), last_bar_ts, df["Close"].iloc[-1])
-
-    state   = load_state()
-    pos     = state.get("position")
-    new_bar = (last_bar_ts != state.get("last_bar_ts"))
-
-    if pos is not None:
-        alpaca_pos = get_open_position(trading_client)
-
-        if alpaca_pos is None:
-            log.info("Position closed externally — recording trade.")
-            exit_price, result = find_exit_fill(trading_client, pos)
-            for oid in (pos.get("sl_order_id"), pos.get("tp_order_id")):
-                if oid and oid != "unknown":
-                    cancel_order_safe(trading_client, oid)
-            _record_closed_trade(state, pos, exit_price, result)
-            state["last_bar_ts"] = last_bar_ts
-            save_state(state)
-            return
-
-        if new_bar:
-            bars_held = pos.get("bars_in_trade", 0) + 1
-            pos["bars_in_trade"] = bars_held
-
-            direction  = pos["direction"]
-            trail_dist = pos["entry_atr"] * TRAIL_DIST
-            bar_high   = float(df.iloc[-1]["High"])
-            bar_low    = float(df.iloc[-1]["Low"])
-
+    state = {"position": None, "equity": INITIAL_CAPITAL, "last_bar_ts": None}
+    for i in range(MIN_BARS, len(df)):
+        subdf = df.iloc[:i+1]
+        ts = subdf.index[-1]
+        bar = subdf.iloc[-1]
+        signal = check_signal(subdf)
+        # If in a position, simulate exit if SL/TP hit
+        if state["position"] is not None:
+            pos = state["position"]
+            direction = pos["direction"]
+            entry = pos["entry"]
+            sl = pos["sl"]
+            tp = pos["tp"]
+            price = float(bar["Close"])
+            exit_reason = None
             if direction == "long":
-                new_best = max(pos["best"], bar_high)
-                pos["best"] = new_best
-                if new_best >= pos["trail_activate_px"]:
-                    new_sl = new_best - trail_dist
-                    if new_sl > pos["sl"]:
-                            log.info("Trail(L): SL %.2f → %.2f", pos["sl"], new_sl)
-                            prior_sl = pos["sl"]
-                            pos["sl"] = new_sl
-                            if pos.get("sl_order_id") not in (None, "unknown"):
-                                cancel_order_safe(trading_client, pos["sl_order_id"])
-                            try:
-                                qty    = float(alpaca_pos.qty_available)
-                                new_id = submit_sl(trading_client, "long", qty, new_sl)
-                                pos["sl_order_id"] = new_id
-                            except Exception as e:
-                                pos["sl"] = prior_sl
-                                pos["sl_order_id"] = "unknown"
-                                log.error("SL update failed; stop order is now untracked: %s", e)
+                if price <= sl:
+                    exit_reason = "SL"
+                elif price >= tp:
+                    exit_reason = "TP"
             else:
-                new_best = min(pos["best"], bar_low)
-                pos["best"] = new_best
-                if new_best <= pos["trail_activate_px"]:
-                    new_sl = new_best + trail_dist
-                    if new_sl < pos["sl"]:
-                            log.info("Trail(S): SL %.2f → %.2f", pos["sl"], new_sl)
-                            prior_sl = pos["sl"]
-                            pos["sl"] = new_sl
-                            if pos.get("sl_order_id") not in (None, "unknown"):
-                                cancel_order_safe(trading_client, pos["sl_order_id"])
-                            try:
-                                qty    = float(alpaca_pos.qty_available)
-                                new_id = submit_sl(trading_client, "short", qty, new_sl)
-                                pos["sl_order_id"] = new_id
-                            except Exception as e:
-                                pos["sl"] = prior_sl
-                                pos["sl_order_id"] = "unknown"
-                                log.error("SL update failed; stop order is now untracked: %s", e)
-
-        state["position"]    = pos
-        state["last_bar_ts"] = last_bar_ts
-        save_state(state)
-        log.info(
-            "Position open (%s): bars=%d  best=%.2f  SL=%.2f  TP=%.2f",
-            pos["direction"], pos.get("bars_in_trade", 0),
-            pos["best"], pos["sl"], pos["tp"],
-        )
-        return
-
-    if get_open_position(trading_client) is not None:
-        log.warning("Untracked open position — skipping entry.")
-        state["last_bar_ts"] = last_bar_ts
-        save_state(state)
-        return
-
-    if not new_bar:
-        log.info("Same bar as last run — nothing to do.")
-        return
-
-    signal = check_signal(df)
-    if signal is None:
-        # log_failure("No signal generated.", f"Bar timestamp: {last_bar_ts}")
-        state["last_bar_ts"] = last_bar_ts
-        save_state(state)
-        return
-
-    eq        = state["equity"]
-    stop_dist = abs(signal["entry"] - signal["sl"])
-    qty       = round(eq * RISK_PCT / stop_dist, 6)
-    qty       = max(0.0001, qty)
-    notional  = qty * signal["entry"]
-    if notional > eq * LEV_CAP:
-        qty      = round(eq * LEV_CAP / signal["entry"], 6)
-        qty      = max(0.0001, qty)
-        notional = qty * signal["entry"]
-
-    direction = signal["direction"]
-    log.info(
-        "Entering %s: qty=%.6f  entry~%.2f  notional~$%.2f",
-        direction, qty, signal["entry"], notional,
-    )
-
-    entry_ts    = datetime.now(timezone.utc).isoformat()
-    sl_order_id = tp_order_id = "unknown"
-
-    try:
-        submit_entry(trading_client, direction, qty)
-        log.info("Market %s submitted.", direction)
-    except Exception as e:
-        log.error("Entry failed: %s", e)
-        # log_failure("Entry failed", str(e))
-        return
-
-    time.sleep(2)
-
-    try:
-        sl_order_id = submit_sl(trading_client, direction, qty, signal["sl"])
-    except Exception as e:
-        log.error("SL failed: %s", e)
-        # log_failure("SL order failed", str(e))
-
-    try:
-        tp_order_id = submit_tp(trading_client, direction, qty, signal["tp"])
-    except Exception as e:
-        log.error("TP failed: %s", e)
-        # log_failure("TP order failed", str(e))
-
-    state["position"] = {
-        "entry_time":        entry_ts,
-        "direction":         direction,
-        "entry":             signal["entry"],
-        "sl":                signal["sl"],
-        "tp":                signal["tp"],
-        "best":              signal["entry"],
-        "notional":          notional,
-        "trail_activate_px": signal["trail_activate_px"],
-        "entry_atr":         signal["entry_atr"],
-        "bars_in_trade":     0,
-        "sl_order_id":       sl_order_id,
-        "tp_order_id":       tp_order_id,
-    }
-    state["last_bar_ts"] = last_bar_ts
-    save_state(state)
-    log.info("Position state saved.")
+                if price >= sl:
+                    exit_reason = "SL"
+                elif price <= tp:
+                    exit_reason = "TP"
+            if exit_reason:
+                pnl_pct = ((price - entry) / entry) if direction == "long" else ((entry - price) / entry)
+                dollar_pnl = pnl_pct * pos["notional"] - pos["notional"] * COMMISSION_PCT * 2
+                state["equity"] += dollar_pnl
+                append_trade({
+                    "entry_time": pos["entry_time"],
+                    "exit_time": ts.strftime("%Y-%m-%d %H:%M:%S+00:00"),
+                    "direction": direction,
+                    "entry": round(entry, 2),
+                    "exit": round(price, 2),
+                    "exit_reason": exit_reason,
+                    "bars_held": i - pos["bar_idx"],
+                    "pnl_pct": round(pnl_pct * 100, 3),
+                    "dollar_pnl": round(dollar_pnl, 2),
+                    "equity": round(state["equity"], 2),
+                })
+                state["position"] = None
+        # If not in a position, check for new signal
+        if state["position"] is None and signal is not None:
+            stop_dist = abs(signal["entry"] - signal["sl"])
+            eq = state["equity"]
+            qty = round(eq * RISK_PCT / stop_dist, 6)
+            qty = max(0.0001, qty)
+            notional = qty * signal["entry"]
+            if notional > eq * LEV_CAP:
+                qty = round(eq * LEV_CAP / signal["entry"], 6)
+                qty = max(0.0001, qty)
+                notional = qty * signal["entry"]
+            state["position"] = {
+                "entry_time": ts.strftime("%Y-%m-%d %H:%M:%S+00:00"),
+                "direction": signal["direction"],
+                "entry": signal["entry"],
+                "sl": signal["sl"],
+                "tp": signal["tp"],
+                "notional": notional,
+                "bar_idx": i,
+            }
 
 
 if __name__ == "__main__":
-    main()
+    # Call the parameter sweep main function
+    import sys, inspect
+    main_candidates = [(name, obj) for name, obj in globals().items() if callable(obj) and name == "main"]
+    for name, obj in main_candidates:
+        src = inspect.getsource(obj)
+        if "PARAMETER SWEEP" in src or "Sweep:" in src:
+            obj()
+            sys.exit(0)
