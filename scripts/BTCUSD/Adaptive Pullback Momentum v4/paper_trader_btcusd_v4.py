@@ -150,10 +150,10 @@ def append_trade(trade: dict) -> None:
 
 # ── Data fetching ──────────────────────────────────────────────────────────────
 def fetch_bars(data_client) -> pd.DataFrame:
-    """Fetch 180 days of BTC/USD 30m bars for indicator warmup."""
-    end   = datetime.now(timezone.utc)
-    start = end - timedelta(days=180)
-    req   = CryptoBarsRequest(
+    """Fetch BTC/USD 30m bars for year-to-date (YTD) only."""
+    end = datetime.now(timezone.utc)
+    start = datetime(end.year, 1, 1, tzinfo=timezone.utc)
+    req = CryptoBarsRequest(
         symbol_or_symbols=[SYMBOL],
         timeframe=TimeFrame(30, TimeFrameUnit.Minute),
         start=start,
