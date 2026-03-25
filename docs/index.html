@@ -1104,6 +1104,7 @@ function populateSymbolDropdown() {
     if (newSym === activeSym) return;
     activeSym = newSym;
     activeTab = 'all'; tradeTablePage = 1; txPage = 1;
+    if (!loaded[activeSym]) loaded[activeSym] = {};
     const vers = INSTRUMENTS[activeSym]?.versions;
     if (!vers) {
       hideDashboardData();
