@@ -1086,8 +1086,25 @@ function populateSymbolDropdown() {
       select.innerHTML = '<option value="">Select...</option>';
       const symbols = results.data.flat().filter(s => s && s.trim());
       symbols.forEach((sym, i) => {
-        const key = symbolMap[sym.trim().toUpperCase()];
-        if (!key) return;
+        const upper = sym.trim().toUpperCase();
+        let key = symbolMap[upper];
+        if (!key) {
+          // Dynamically generate a key and add to symbolMap and INSTRUMENTS
+          key = upper.replace(/[^A-Z0-9]/g, '').toLowerCase();
+          symbolMap[upper] = key;
+          if (!INSTRUMENTS[key]) {
+            INSTRUMENTS[key] = {
+              label: sym,
+              versions: {
+                v1: {
+                  label: 'v1', tf: '1m', color: '#ffa657', file: '', paperFile: '', liveFile: '',
+                  pnlCol: 'dollar_pnl', equityCol: 'equity', resultCol: 'result', dirCol: 'direction',
+                  entryCol: 'entry', exitCol: 'exit', entryTimeCol: 'entry_time', exitTimeCol: 'exit_time'
+                }
+              }
+            };
+          }
+        }
         const opt = document.createElement('option');
         opt.value = key;
         opt.textContent = sym;
