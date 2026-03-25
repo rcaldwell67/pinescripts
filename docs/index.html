@@ -117,8 +117,8 @@
     <div class="subtitle">Adaptive Pullback Momentum</div>
   </div>
   <div class="sym-switcher">
-    <button class="sym-btn active" data-sym="btc">BTC-USD</button>
-    <button class="sym-btn" data-sym="clm">CLM</button>
+    <label for="symbolSelect" style="margin-right:8px;">Symbol:</label>
+    <select id="symbolSelect" class="tx-select"></select>
   </div>
   <div class="mode-switcher">
     <button class="mode-btn active" data-mode="backtest">Backtest</button>
@@ -1071,19 +1071,37 @@ function render() {
   renderPriceChart();
 }
 
-document.querySelectorAll('.sym-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    if (btn.dataset.sym===activeSym) return;
-    document.querySelectorAll('.sym-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    activeSym=btn.dataset.sym; activeTab='all'; tradeTablePage=1; txPage=1;
-    const vers=INSTRUMENTS[activeSym].versions;
-    const toLoad=Object.keys(vers).filter(v=>!loaded[activeSym][v]);
+
+// Populate symbol dropdown from CSV and handle selection
+function populateSymbolDropdown() {
+  Papa.parse('data/symbols.csv', {
+    download: true,
+    complete: function(results) {
+      const select = document.getElementById('symbolSelect');
+      select.innerHTML = '';
+      const symbols = results.data.flat().filter(s => s && s.trim());
+      symbols.forEach((sym, i) => {
+        const opt = document.createElement('option');
+        opt.value = sym.toLowerCase().replace(/[^a-z0-9]/gi, '');
+        opt.textContent = sym;
+        select.appendChild(opt);
+      });
+      // Set initial value
+      select.value = activeSym;
+    }
+  });
+  document.getElementById('symbolSelect').addEventListener('change', function() {
+    const newSym = this.value;
+    if (newSym === activeSym) return;
+    activeSym = newSym;
+    activeTab = 'all'; tradeTablePage = 1; txPage = 1;
+    const vers = INSTRUMENTS[activeSym].versions;
+    const toLoad = Object.keys(vers).filter(v => !loaded[activeSym][v]);
     if (toLoad.length) {
-      Promise.all(toLoad.map(v=>loadCSV(activeSym,v).then(r=>{ loaded[activeSym][v]=r; }))).then(()=>{ buildTabs(); render(); updateLastUpdated(); });
+      Promise.all(toLoad.map(v => loadCSV(activeSym, v).then(r => { loaded[activeSym][v] = r; }))).then(() => { buildTabs(); render(); updateLastUpdated(); });
     } else { buildTabs(); render(); updateLastUpdated(); }
   });
-});
+}
 
 document.querySelectorAll('.mode-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -1129,6 +1147,7 @@ document.getElementById('v2DatasetSelect')?.addEventListener('change', event => 
     ...Object.keys(INSTRUMENTS.btc.versions).map(v=>loadCSV('btc',v).then(r=>{ loaded.btc[v]=r; })),
     ...Object.keys(INSTRUMENTS.clm.versions).map(v=>loadCSV('clm',v).then(r=>{ loaded.clm[v]=r; })),
   ]);
+  populateSymbolDropdown();
   buildTabs(); render(); updateLastUpdated();
 })();
 </script>
