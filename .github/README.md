@@ -28,3 +28,10 @@ This folder contains all backend automation scripts for:
 ---
 
 See each script for usage details and arguments.
+
+# Development Work To Complete
+- create a template for each pinescript strategy version
+- ability to add symbols in the dashboard and have backtesting, paper and live trading configured automatically via Github Actions and Workflows
+- ability to add values to parameters via the dashboard for items such as Win Rate, Net Return, Max Drawdown; this will allow for fine tuning Pine Script versions from the frontend
+
+# Completed Development Work
