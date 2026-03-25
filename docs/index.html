@@ -1221,6 +1221,22 @@ document.getElementById('v2DatasetSelect')?.addEventListener('change', event => 
     addInput.value = '';
     // Select the new symbol
     handleSymbolSelect(key);
+
+    // Show 'Request Symbol Addition' button
+    let reqBtn = document.getElementById('requestSymbolBtn');
+    if (!reqBtn) {
+      reqBtn = document.createElement('button');
+      reqBtn.id = 'requestSymbolBtn';
+      reqBtn.textContent = 'Request Symbol Addition';
+      reqBtn.style = 'margin-left:10px;padding:4px 12px;border-radius:6px;border:1px solid var(--border);background:var(--green);color:#fff;font-size:12px;cursor:pointer;';
+      addBtn.parentNode.appendChild(reqBtn);
+    }
+    reqBtn.onclick = function() {
+      const issueTitle = encodeURIComponent('Symbol Addition Request: ' + val.toUpperCase());
+      const issueBody = encodeURIComponent('Please add the following symbol to symbols.csv for dashboard use.\n\nSymbol: ' + val.toUpperCase() + '\n\n_This request was generated from the dashboard UI._');
+      const url = `https://github.com/rcaldwell67/pinescripts/issues/new?title=${issueTitle}&body=${issueBody}`;
+      window.open(url, '_blank');
+    };
   });
   addInput.addEventListener('keydown', e => {
     if (e.key === 'Enter') addBtn.click();

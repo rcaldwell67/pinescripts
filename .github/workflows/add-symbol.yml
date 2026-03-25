@@ -1,0 +1,58 @@
+name: Add Symbol to CSV
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  add-symbol:
+    if: |
+      github.event.issue.title startsWith 'Symbol Addition Request:'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Extract symbol from issue
+        id: extract
+        run: |
+          echo "ISSUE_BODY<<EOF" >> $GITHUB_ENV
+          echo "${{ github.event.issue.body }}" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          SYMBOL=$(echo "${{ github.event.issue.title }}" | sed 's/Symbol Addition Request: //')
+          echo "symbol=$SYMBOL" >> $GITHUB_OUTPUT
+
+      - name: Validate symbol with Alpaca
+        id: validate
+        env:
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
+        run: |
+          SYMBOL="${{ steps.extract.outputs.symbol }}"
+          if [[ -z "$ALPACA_API_KEY" || -z "$ALPACA_API_SECRET" ]]; then
+            echo "Alpaca API keys not set. Skipping validation."
+            exit 1
+          fi
+          # Validate symbol exists on Alpaca
+          curl -s -H "APCA-API-KEY-ID: $ALPACA_API_KEY" -H "APCA-API-SECRET-KEY: $ALPACA_API_SECRET" \
+            "https://paper-api.alpaca.markets/v2/assets/$SYMBOL" | grep 'symbol' || exit 1
+
+      - name: Add symbol to CSV if not present
+        run: |
+          SYMBOL="${{ steps.extract.outputs.symbol }}"
+          CSV="docs/data/symbols.csv"
+          if grep -i -q "^$SYMBOL$" "$CSV"; then
+            echo "$SYMBOL already present in $CSV"
+            exit 0
+          fi
+          echo "$SYMBOL" >> "$CSV"
+          echo "Added $SYMBOL to $CSV"
+
+      - name: Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Add symbol ${{ steps.extract.outputs.symbol }} to symbols.csv via issue request"
+          file_pattern: "docs/data/symbols.csv"
+          branch: main
