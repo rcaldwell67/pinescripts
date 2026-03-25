@@ -35,3 +35,8 @@ See each script for usage details and arguments.
 - ability to add values to parameters via the dashboard for items such as Win Rate, Net Return, Max Drawdown; this will allow for fine tuning Pine Script versions from the frontend
 
 # Completed Development Work
+
+# Strategy Guidelines
+- Win Rate = 70% or greater
+- Net Return = 20% or greater
+- Max Drawdown = -4.50 % or less
