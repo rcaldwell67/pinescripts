@@ -1,0 +1,6 @@
+backtrader
+alpaca-trade-api
+requests
+ability to add symbols and have backtesting, paper and live trading
+configured automatically
+ability to add values to parameters for items such as Win Rate, Net Return, Max Drawdown
