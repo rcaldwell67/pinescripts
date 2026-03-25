@@ -1110,7 +1110,9 @@ function populateSymbolDropdown() {
       hideDashboardData();
       return;
     }
-    const toLoad = Object.keys(vers).filter(v => !loaded[activeSym][v]);
+    // Always reload if no data or all arrays are empty
+    const needsLoad = !Object.keys(loaded[activeSym]).length || Object.values(loaded[activeSym]).every(arr => !arr || !arr.length);
+    const toLoad = needsLoad ? Object.keys(vers) : Object.keys(vers).filter(v => !loaded[activeSym][v]);
     if (toLoad.length) {
       Promise.all(toLoad.map(v => loadCSV(activeSym, v).then(r => { loaded[activeSym][v] = r; }))).then(() => { showDashboardData(); buildTabs(); render(); updateLastUpdated(); });
     } else { showDashboardData(); buildTabs(); render(); updateLastUpdated(); }
