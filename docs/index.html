@@ -118,7 +118,9 @@
   </div>
   <div class="sym-switcher">
     <label for="symbolSelect" style="margin-right:8px;">Symbol:</label>
-    <select id="symbolSelect" class="tx-select"></select>
+    <select id="symbolSelect" class="tx-select">
+      <option value="">Select...</option>
+    </select>
   </div>
   <div class="mode-switcher">
     <button class="mode-btn active" data-mode="backtest">Backtest</button>
@@ -1078,7 +1080,7 @@ function populateSymbolDropdown() {
     download: true,
     complete: function(results) {
       const select = document.getElementById('symbolSelect');
-      select.innerHTML = '';
+      select.innerHTML = '<option value="">Select...</option>';
       const symbols = results.data.flat().filter(s => s && s.trim());
       symbols.forEach((sym, i) => {
         const opt = document.createElement('option');
@@ -1086,21 +1088,41 @@ function populateSymbolDropdown() {
         opt.textContent = sym;
         select.appendChild(opt);
       });
-      // Set initial value
-      select.value = activeSym;
+      select.value = '';
     }
   });
   document.getElementById('symbolSelect').addEventListener('change', function() {
     const newSym = this.value;
+    if (!newSym) {
+      hideDashboardData();
+      return;
+    }
     if (newSym === activeSym) return;
     activeSym = newSym;
     activeTab = 'all'; tradeTablePage = 1; txPage = 1;
     const vers = INSTRUMENTS[activeSym].versions;
     const toLoad = Object.keys(vers).filter(v => !loaded[activeSym][v]);
     if (toLoad.length) {
-      Promise.all(toLoad.map(v => loadCSV(activeSym, v).then(r => { loaded[activeSym][v] = r; }))).then(() => { buildTabs(); render(); updateLastUpdated(); });
-    } else { buildTabs(); render(); updateLastUpdated(); }
+      Promise.all(toLoad.map(v => loadCSV(activeSym, v).then(r => { loaded[activeSym][v] = r; }))).then(() => { showDashboardData(); buildTabs(); render(); updateLastUpdated(); });
+    } else { showDashboardData(); buildTabs(); render(); updateLastUpdated(); }
   });
+}
+
+function hideDashboardData() {
+  document.getElementById('balanceBar').style.display = 'none';
+  document.getElementById('lastUpdated').style.display = 'none';
+  document.getElementById('tabs').style.display = 'none';
+  document.getElementById('cards').style.display = 'none';
+  const panels = document.querySelectorAll('.panel');
+  panels.forEach(p => p.style.display = 'none');
+}
+function showDashboardData() {
+  document.getElementById('balanceBar').style.display = '';
+  document.getElementById('lastUpdated').style.display = '';
+  document.getElementById('tabs').style.display = '';
+  document.getElementById('cards').style.display = '';
+  const panels = document.querySelectorAll('.panel');
+  panels.forEach(p => p.style.display = '');
 }
 
 document.querySelectorAll('.mode-btn').forEach(btn => {
@@ -1143,12 +1165,8 @@ document.getElementById('v2DatasetSelect')?.addEventListener('change', event => 
 });
 
 (async () => {
-  await Promise.all([
-    ...Object.keys(INSTRUMENTS.btc.versions).map(v=>loadCSV('btc',v).then(r=>{ loaded.btc[v]=r; })),
-    ...Object.keys(INSTRUMENTS.clm.versions).map(v=>loadCSV('clm',v).then(r=>{ loaded.clm[v]=r; })),
-  ]);
+  hideDashboardData();
   populateSymbolDropdown();
-  buildTabs(); render(); updateLastUpdated();
 })();
 </script>
 </body>
