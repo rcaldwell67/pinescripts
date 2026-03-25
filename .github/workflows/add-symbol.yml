@@ -18,9 +18,6 @@ jobs:
       - name: Extract symbol from issue
         id: extract
         run: |
-          echo "ISSUE_BODY<<EOF" >> $GITHUB_ENV
-          echo "${{ github.event.issue.body }}" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
           SYMBOL=$(echo "${{ github.event.issue.title }}" | sed 's/Symbol Addition Request: //')
           echo "symbol=$SYMBOL" >> $GITHUB_OUTPUT
 
@@ -31,7 +28,7 @@ jobs:
           ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
         run: |
           SYMBOL="${{ steps.extract.outputs.symbol }}"
-          if [[ -z "$ALPACA_API_KEY" || -z "$ALPACA_API_SECRET" ]]; then
+          if [ -z "$ALPACA_API_KEY" ] || [ -z "$ALPACA_API_SECRET" ]; then
             echo "Alpaca API keys not set. Skipping validation."
             exit 1
           fi
