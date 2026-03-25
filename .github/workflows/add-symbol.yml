@@ -6,8 +6,7 @@ on:
 
 jobs:
   add-symbol:
-    if: |
-      github.event.issue.title startsWith 'Symbol Addition Request:'
+    if: ${{ startsWith(github.event.issue.title, 'Symbol Addition Request:') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
