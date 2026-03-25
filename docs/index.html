@@ -307,7 +307,7 @@ const INITIAL_CAPITAL = 10000;
 const _modeCache = { backtest: { btc:{}, clm:{} }, paper: { btc:{}, clm:{} }, live: { btc:{}, clm:{} } };
 let loaded = _modeCache.backtest;
 let activeMode = 'backtest';
-let activeSym = 'btc';
+let activeSym = '';
 let activeTab = 'all';
 let charts = {};
 let tradeTablePage = 1;
@@ -1177,6 +1177,7 @@ document.getElementById('v2DatasetSelect')?.addEventListener('change', event => 
 
 (async () => {
   hideDashboardData();
+  activeSym = '';
   populateSymbolDropdown();
 })();
 </script>
