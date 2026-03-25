@@ -121,6 +121,8 @@
     <select id="symbolSelect" class="tx-select">
       <option value="">Select...</option>
     </select>
+    <input id="addSymbolInput" type="text" placeholder="Add Symbol..." style="margin-left:10px; padding:4px 10px; border-radius:6px; border:1px solid var(--border); background:var(--surface); color:var(--text); font-size:12px; width:120px;" />
+    <button id="addSymbolBtn" style="margin-left:4px; padding:4px 12px; border-radius:6px; border:1px solid var(--border); background:var(--accent); color:#fff; font-size:12px; cursor:pointer;">Add</button>
   </div>
   <div class="mode-switcher">
     <button class="mode-btn active" data-mode="backtest">Backtest</button>
@@ -1075,9 +1077,8 @@ function render() {
 
 
 // Populate symbol dropdown from CSV and handle selection
+let symbolMap = { 'BTC-USD': 'btc', 'CLM': 'clm' };
 function populateSymbolDropdown() {
-  // Map display names to INSTRUMENTS keys
-  const symbolMap = { 'BTC-USD': 'btc', 'CLM': 'clm' };
   Papa.parse('data/symbols.csv', {
     download: true,
     complete: function(results) {
@@ -1096,27 +1097,30 @@ function populateSymbolDropdown() {
     }
   });
   document.getElementById('symbolSelect').addEventListener('change', function() {
-    const newSym = this.value;
-    if (!newSym) {
-      hideDashboardData();
-      return;
-    }
-    if (newSym === activeSym) return;
-    activeSym = newSym;
-    activeTab = 'all'; tradeTablePage = 1; txPage = 1;
-    if (!loaded[activeSym]) loaded[activeSym] = {};
-    const vers = INSTRUMENTS[activeSym]?.versions;
-    if (!vers) {
-      hideDashboardData();
-      return;
-    }
-    // Always reload if no data or all arrays are empty
-    const needsLoad = !Object.keys(loaded[activeSym]).length || Object.values(loaded[activeSym]).every(arr => !arr || !arr.length);
-    const toLoad = needsLoad ? Object.keys(vers) : Object.keys(vers).filter(v => !loaded[activeSym][v]);
-    if (toLoad.length) {
-      Promise.all(toLoad.map(v => loadCSV(activeSym, v).then(r => { loaded[activeSym][v] = r; }))).then(() => { showDashboardData(); buildTabs(); render(); updateLastUpdated(); });
-    } else { showDashboardData(); buildTabs(); render(); updateLastUpdated(); }
+    handleSymbolSelect(this.value);
   });
+}
+
+function handleSymbolSelect(newSym) {
+  if (!newSym) {
+    hideDashboardData();
+    return;
+  }
+  if (newSym === activeSym) return;
+  activeSym = newSym;
+  activeTab = 'all'; tradeTablePage = 1; txPage = 1;
+  if (!loaded[activeSym]) loaded[activeSym] = {};
+  const vers = INSTRUMENTS[activeSym]?.versions;
+  if (!vers) {
+    hideDashboardData();
+    return;
+  }
+  // Always reload if no data or all arrays are empty
+  const needsLoad = !Object.keys(loaded[activeSym]).length || Object.values(loaded[activeSym]).every(arr => !arr || !arr.length);
+  const toLoad = needsLoad ? Object.keys(vers) : Object.keys(vers).filter(v => !loaded[activeSym][v]);
+  if (toLoad.length) {
+    Promise.all(toLoad.map(v => loadCSV(activeSym, v).then(r => { loaded[activeSym][v] = r; }))).then(() => { showDashboardData(); buildTabs(); render(); updateLastUpdated(); });
+  } else { showDashboardData(); buildTabs(); render(); updateLastUpdated(); }
 }
 
 function hideDashboardData() {
@@ -1179,6 +1183,48 @@ document.getElementById('v2DatasetSelect')?.addEventListener('change', event => 
   hideDashboardData();
   activeSym = '';
   populateSymbolDropdown();
+  // Add Symbol input logic (fully functional UI)
+  const addInput = document.getElementById('addSymbolInput');
+  const addBtn = document.getElementById('addSymbolBtn');
+  addBtn.addEventListener('click', () => {
+    const val = addInput.value.trim();
+    if (!val) return;
+    const upper = val.toUpperCase();
+    // Generate a unique key for INSTRUMENTS (e.g., "sym1", "sym2", ...)
+    let key = upper.replace(/[^A-Z0-9]/g, '').toLowerCase();
+    if (!key) key = 'sym' + Math.floor(Math.random()*10000);
+    // Prevent duplicates
+    if (Object.values(symbolMap).includes(key) || INSTRUMENTS[key]) {
+      alert('Symbol already exists.');
+      addInput.value = '';
+      return;
+    }
+    // Add to symbolMap and INSTRUMENTS (placeholder config)
+    symbolMap[upper] = key;
+    INSTRUMENTS[key] = {
+      label: val,
+      versions: {
+        v1: {
+          label: 'v1', tf: '1m', color: '#ffa657', file: '', paperFile: '', liveFile: '',
+          pnlCol: 'dollar_pnl', equityCol: 'equity', resultCol: 'result', dirCol: 'direction',
+          entryCol: 'entry', exitCol: 'exit', entryTimeCol: 'entry_time', exitTimeCol: 'exit_time'
+        }
+      }
+    };
+    // Add to dropdown
+    const select = document.getElementById('symbolSelect');
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = val;
+    select.appendChild(opt);
+    select.value = key;
+    addInput.value = '';
+    // Select the new symbol
+    handleSymbolSelect(key);
+  });
+  addInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') addBtn.click();
+  });
 })();
 </script>
 </body>
