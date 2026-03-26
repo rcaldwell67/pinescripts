@@ -173,38 +173,84 @@ def fetch_alpaca_bars(symbol="BTCUSD", days=365):
     return bars
 
 if __name__ == "__main__":
-    df = fetch_alpaca_bars()
-    data = bt.feeds.PandasData(dataname=df)
-    cerebro = bt.Cerebro()
-    cerebro.addstrategy(AdaptivePullbackMomentumV4)
-    cerebro.adddata(data)
-    cerebro.broker.setcash(10000.0)
-    print('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())
-    strategies = cerebro.run()
-    strat = strategies[0]
-    print('Final Portfolio Value: %.2f' % cerebro.broker.getvalue())
-    # --- Metrics ---
-    print(f"Strategy instance type: {type(strat)}")
-    trades = getattr(strat, 'trades', [])
-    equity_curve = getattr(strat, 'equity_curve', [])
-    total_trades = len(trades)
-    wins = sum(1 for t in trades if t['won'])
-    losses = total_trades - wins
-    win_rate = (wins / total_trades * 100) if total_trades else 0
-    start_val = equity_curve[0] if equity_curve else 10000.0
-    end_val = equity_curve[-1] if equity_curve else cerebro.broker.getvalue()
-    net_return = ((end_val - start_val) / start_val * 100) if start_val else 0
-    # Max drawdown
-    peak = equity_curve[0] if equity_curve else start_val
-    max_dd = 0
-    for v in equity_curve:
-        if v > peak:
-            peak = v
-        dd = (peak - v) / peak if peak else 0
-        if dd > max_dd:
-            max_dd = dd
-    print(f'Trades: {total_trades} | Wins: {wins} | Losses: {losses}')
-    print(f'Win rate: {win_rate:.2f}%')
-    print(f'Net return: {net_return:.2f}%')
-    print(f'Max drawdown: {max_dd*100:.2f}%')
-    print('Final Portfolio Value: %.2f' % cerebro.broker.getvalue())
+    import sys
+    import argparse
+    parser = argparse.ArgumentParser(description="Backtest Adaptive Pullback Momentum v4 for a given symbol.")
+    parser.add_argument('--symbol', type=str, default='BTCUSD', help='Symbol to backtest (e.g. BTCUSD, CLM, etc)')
+    args = parser.parse_args()
+    symbol = args.symbol
+
+    max_attempts = 100
+    attempt = 0
+    while True:
+        attempt += 1
+        print(f"\n--- Backtest Attempt {attempt} for {symbol} ---\n")
+        df = fetch_alpaca_bars(symbol=symbol)
+        data = bt.feeds.PandasData(dataname=df)
+        cerebro = bt.Cerebro()
+        cerebro.addstrategy(AdaptivePullbackMomentumV4)
+        cerebro.adddata(data)
+        cerebro.broker.setcash(10000.0)
+        print('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())
+        strategies = cerebro.run()
+        strat = strategies[0]
+        print('Final Portfolio Value: %.2f' % cerebro.broker.getvalue())
+        # --- Metrics ---
+        print(f"Strategy instance type: {type(strat)}")
+        trades = getattr(strat, 'trades', [])
+        equity_curve = getattr(strat, 'equity_curve', [])
+        total_trades = len(trades)
+        wins = sum(1 for t in trades if t.get('won'))
+        losses = total_trades - wins
+        win_rate = (wins / total_trades * 100) if total_trades else 0
+        start_val = equity_curve[0] if equity_curve else 10000.0
+        end_val = equity_curve[-1] if equity_curve else cerebro.broker.getvalue()
+        net_return = ((end_val - start_val) / start_val * 100) if start_val else 0
+        # Max drawdown
+        peak = equity_curve[0] if equity_curve else start_val
+        max_dd = 0
+        for v in equity_curve:
+            if v > peak:
+                peak = v
+            dd = (peak - v) / peak if peak else 0
+            if dd > max_dd:
+                max_dd = dd
+        print(f'Trades: {total_trades} | Wins: {wins} | Losses: {losses}')
+        print(f'Win rate: {win_rate:.2f}%')
+        print(f'Net return: {net_return:.2f}%')
+        print(f'Max drawdown: {max_dd*100:.2f}%')
+        print('Final Portfolio Value: %.2f' % cerebro.broker.getvalue())
+
+        # --- Strategy Guidelines ---
+        print("\n--- Strategy Guidelines ---")
+        guidelines = [
+            (win_rate >= 70, f"Win Rate: {win_rate:.2f}% (>= 70%)"),
+            (net_return >= 20, f"Net Return: {net_return:.2f}% (>= 20%)"),
+            (max_dd*100 <= -4.5, f"Max Drawdown: {max_dd*100:.2f}% (<= -4.50%)")
+        ]
+        for passed, msg in guidelines:
+            status = "PASS" if passed else "FAIL"
+            print(f"[{status}] {msg}")
+        if all(g[0] for g in guidelines):
+            print("\nStrategy meets ALL guidelines!\n")
+            break
+        elif attempt >= max_attempts:
+            print("\nMaximum attempts reached. Strategy did NOT meet all guidelines.\n")
+            # Error logging
+            log_path = os.path.join(os.path.dirname(__file__), 'backtest_error.log')
+            with open(log_path, 'a') as logf:
+                logf.write(f"Backtest failed to meet guidelines after {max_attempts} attempts for {symbol}.\n")
+                logf.write(f"Last attempt metrics:\n")
+                logf.write(f"Trades: {total_trades} | Wins: {wins} | Losses: {losses}\n")
+                logf.write(f"Win rate: {win_rate:.2f}%\n")
+                logf.write(f"Net return: {net_return:.2f}%\n")
+                logf.write(f"Max drawdown: {max_dd*100:.2f}%\n")
+                logf.write(f"Final Portfolio Value: {cerebro.broker.getvalue():.2f}\n")
+                logf.write(f"Guidelines:\n")
+                for passed, msg in guidelines:
+                    status = "PASS" if passed else "FAIL"
+                    logf.write(f"[{status}] {msg}\n")
+                logf.write("\n")
+            break
+        else:
+            print("\nStrategy does NOT meet all guidelines. Retrying...\n")
