@@ -385,10 +385,19 @@ print(f"  Avg win         :  ${wins['dollar_pnl'].mean():>+9.2f}")
 print(f"  Avg loss        :  ${loss['dollar_pnl'].mean():>+9.2f}" if not loss.empty else "  Avg loss        :       n/a")
 print("="*60)
 
+
 # Save CSV
 out_csv = f"apm_v3_trades_{TICKER.replace('-','').lower()}_{INTERVAL}.csv"
 t_final.to_csv(out_csv, index=False)
 print(f"\nTrades CSV -> {out_csv}")
+
+# ─── Dashboard export ──────────────────────────────────────────────────────────
+from pathlib import Path as _Path
+from scripts.dashboard_csv_utils import standardize_dashboard_csv
+_dash_out = _Path(__file__).resolve().parent.parent.parent.parent / "docs" / "data" / "btcusd" / "v3_trades.csv"
+std_tdf = standardize_dashboard_csv(t_final)
+std_tdf.to_csv(_dash_out, index=False)
+print(f"Dashboard export  → {_dash_out}")
 
 # Equity chart
 eq_df = pd.DataFrame(eqc_final).set_index("time")

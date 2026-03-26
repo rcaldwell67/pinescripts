@@ -409,8 +409,10 @@ for i, t in tdf.iterrows():
           f"{t['result']:>6}  {t['pnl_pct']:>+7.3f}%  {t['dollar_pnl']:>+8.2f}  {t['equity']:>9.2f}")
 
 # ─── Save trade log CSV ────────────────────────────────────────────────────────
+from scripts.dashboard_csv_utils import standardize_dashboard_csv
 out_csv = "apm_v1_ytd_trades_clm_5m.csv"
-tdf.to_csv(out_csv, index=False)
+std_tdf = standardize_dashboard_csv(tdf)
+std_tdf.to_csv(out_csv, index=False)
 print(f"\nTrade log saved → {out_csv}")
 
 # ─── Equity curve chart ────────────────────────────────────────────────────────

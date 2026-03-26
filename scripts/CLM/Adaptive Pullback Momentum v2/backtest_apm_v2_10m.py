@@ -476,8 +476,11 @@ for direction in ["long", "short"]:
     print(f"  {direction.upper():<6} trades={len(sub):>3}  WR={sub_wr:.0f}%  "
           f"PF={sub_pf:.3f}  net=${sub_pnl:+.2f}")
 
+
+from scripts.dashboard_csv_utils import standardize_dashboard_csv
 out_csv = f"apm_v2_trades_{TICKER.lower()}_{INTERVAL}.csv"
-tdf.to_csv(out_csv, index=False)
+std_tdf = standardize_dashboard_csv(tdf)
+std_tdf.to_csv(out_csv, index=False)
 print(f"\nTrades CSV → {out_csv}")
 
 # ─── Alert log ────────────────────────────────────────────────────────────────

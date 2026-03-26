@@ -480,11 +480,13 @@ out_csv = f"apm_v2_trades_{TICKER.lower()}_{INTERVAL}.csv"
 tdf.to_csv(out_csv, index=False)
 print(f"\nTrades CSV → {out_csv}")
 
+
 # ─── Dashboard export ──────────────────────────────────────────────────────────
 from pathlib import Path as _Path
+from scripts.dashboard_csv_utils import standardize_dashboard_csv
 _dash_out = _Path(__file__).resolve().parent.parent.parent.parent / "docs" / "data" / "btcusd" / "v2_trades.csv"
-tdf[["entry_time", "exit_time", "direction", "entry", "exit",
-     "result", "pnl_pct", "dollar_pnl", "equity"]].to_csv(_dash_out, index=False)
+std_tdf = standardize_dashboard_csv(tdf)
+std_tdf.to_csv(_dash_out, index=False)
 print(f"Dashboard export  → {_dash_out}")
 
 # ─── Alert log ────────────────────────────────────────────────────────────────

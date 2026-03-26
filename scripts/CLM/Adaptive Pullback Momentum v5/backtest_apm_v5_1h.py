@@ -475,18 +475,20 @@ else:
     print(tdf["exit_reason"].value_counts().to_string())
 
     # --- Canonical v4 schema ---
+
+    from scripts.dashboard_csv_utils import standardize_dashboard_csv
     tdf = tdf.rename(columns={"pnl": "dollar_pnl", "exit_reason": "result"}).copy()
     tdf["equity_before"] = tdf["equity"] - tdf["dollar_pnl"]
     tdf["pnl_pct"] = (tdf["dollar_pnl"] / tdf["equity_before"] * 100).round(3)
-    tdf = tdf[["entry_time", "exit_time", "direction", "entry", "exit", "result", "pnl_pct", "dollar_pnl", "equity"]]
+    std_tdf = standardize_dashboard_csv(tdf)
     out_csv = OUTPUT_DIR / "apm_v5_trades_clm_1h.csv"
-    tdf.to_csv(out_csv, index=False)
+    std_tdf.to_csv(out_csv, index=False)
     print(f"\n  Saved → {out_csv.relative_to(REPO_ROOT)}")
 
     # ── Sync to dashboard ──────────────────────────────────────────────────
     docs_csv = DOCS_CLM_DIR / "v5_trades.csv"
     if docs_csv.parent.exists():
-        tdf.to_csv(docs_csv, index=False)
+        std_tdf.to_csv(docs_csv, index=False)
         print(f"  Synced  → {docs_csv.relative_to(REPO_ROOT)}")
 
 print(f"{'='*55}")

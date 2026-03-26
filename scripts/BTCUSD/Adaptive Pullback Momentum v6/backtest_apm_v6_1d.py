@@ -407,12 +407,13 @@ else:
     tdf.to_csv("apm_v6_trades_btcusd_1d.csv", index=False)
     print(f"\n  Saved → apm_v6_trades_btcusd_1d.csv")
 
+
     # ── Dashboard export ──────────────────────────────────────────────────────
     from pathlib import Path as _Path
+    from scripts.dashboard_csv_utils import standardize_dashboard_csv
     _dash_out = _Path(__file__).resolve().parent.parent.parent.parent / "docs" / "data" / "btcusd" / "v6_trades.csv"
-    dash = tdf.rename(columns={"result": "exit_reason"}).copy()
-    dash = dash[["entry_time","exit_time","direction","entry","exit","exit_reason","pnl_pct","dollar_pnl","equity","year"]]
-    dash.to_csv(_dash_out, index=False)
+    std_tdf = standardize_dashboard_csv(tdf)
+    std_tdf.to_csv(_dash_out, index=False)
     print(f"  Saved → {_dash_out.relative_to(_Path(__file__).resolve().parent.parent.parent.parent)}")
 
 print(f"{'='*58}")

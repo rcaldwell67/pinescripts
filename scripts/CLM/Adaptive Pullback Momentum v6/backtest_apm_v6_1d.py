@@ -16,12 +16,14 @@ v6.3 Stage-4 sweep (sweep_stage4.py, 720 combos — best by Calmar=7.308):
   Result (28 trades): PF=3.076 | net=+26.35% | WR=64.3% | MaxDD=-3.60% | Calmar=7.308
 """
 
+
 import pandas as pd
 import numpy as np
 import yfinance as yf
 import warnings
 from pathlib import Path
 warnings.filterwarnings("ignore")
+from scripts.dashboard_csv_utils import standardize_dashboard_csv
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 OUTPUT_DIR = SCRIPT_DIR / "outputs"
@@ -460,14 +462,16 @@ else:
         yw = (grp["dollar_pnl"] > 0).sum(); yn = len(grp)
         print(f"    {yr}  n={yn:2d}  WR={yw/yn*100:.0f}%  Net=${grp['dollar_pnl'].sum():+.2f}")
 
+
     out_csv = OUTPUT_DIR / "apm_v6_trades_clm_1d.csv"
-    tdf.to_csv(out_csv, index=False)
+    std_tdf = standardize_dashboard_csv(tdf)
+    std_tdf.to_csv(out_csv, index=False)
     print(f"\n  Saved → {out_csv.relative_to(REPO_ROOT)}")
 
     # ── Sync to dashboard ──────────────────────────────────────────────────
     docs_csv = DOCS_CLM_DIR / "v6_trades.csv"
     if docs_csv.parent.exists():
-        tdf.to_csv(docs_csv, index=False)
+        std_tdf.to_csv(docs_csv, index=False)
         print(f"  Synced  → {docs_csv.relative_to(REPO_ROOT)}")
 
 print(f"{'='*58}")
