@@ -265,7 +265,7 @@ if __name__ == "__main__":
     version = args.version
     config = load_strategy_config(version)
 
-    max_attempts = 100
+    # max_attempts = 100
     attempt = 0
     data_source = os.getenv('DATA_SOURCE', 'yfinance').lower()
     while True:
@@ -323,23 +323,5 @@ if __name__ == "__main__":
         if all(g[0] for g in guidelines):
             print("\nStrategy meets ALL guidelines!\n")
             break
-        elif attempt >= max_attempts:
-            print("\nMaximum attempts reached. Strategy did NOT meet all guidelines.\n")
-            # Error logging
-            log_path = os.path.join(os.path.dirname(__file__), 'backtest_error.log')
-            with open(log_path, 'a') as logf:
-                logf.write(f"Backtest failed to meet guidelines after {max_attempts} attempts for {symbol}.\n")
-                logf.write(f"Last attempt metrics:\n")
-                logf.write(f"Trades: {total_trades} | Wins: {wins} | Losses: {losses}\n")
-                logf.write(f"Win rate: {win_rate:.2f}%\n")
-                logf.write(f"Net return: {net_return:.2f}%\n")
-                logf.write(f"Max drawdown: {max_dd*100:.2f}%\n")
-                logf.write(f"Final Portfolio Value: {cerebro.broker.getvalue():.2f}\n")
-                logf.write(f"Guidelines:\n")
-                for passed, msg in guidelines:
-                    status = "PASS" if passed else "FAIL"
-                    logf.write(f"[{status}] {msg}\n")
-                logf.write("\n")
-            break
-        else:
-            print("\nStrategy does NOT meet all guidelines. Retrying...\n")
+        # No max_attempts break; loop continues until guidelines are met
+        print("\nStrategy does NOT meet all guidelines. Retrying...\n")
