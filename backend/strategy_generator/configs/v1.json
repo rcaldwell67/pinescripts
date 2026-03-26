@@ -1,0 +1,42 @@
+{
+  "i_di_spread": {
+    "type": "float",
+    "default": "0.0",
+    "label": "DI spread (DI\u2212\u2212DI+)"
+  },
+  "i_pb_pct": {
+    "type": "float",
+    "default": "0.40",
+    "label": "Pullback tolerance (%)"
+  },
+  "i_vol_mult": {
+    "type": "float",
+    "default": "0.3",
+    "label": "Volume multiplier"
+  },
+  "i_min_body": {
+    "type": "float",
+    "default": "0.15",
+    "label": "Min body (x ATR)"
+  },
+  "i_atr_floor": {
+    "type": "float",
+    "default": "0.1",
+    "label": "ATR floor (% of price)"
+  },
+  "i_panic_mult": {
+    "type": "float",
+    "default": "1.5",
+    "label": "Panic suppression mult"
+  },
+  "i_sl_mult": {
+    "type": "float",
+    "default": "4.0",
+    "label": "Stop loss ATR mult"
+  },
+  "i_tp_mult": {
+    "type": "float",
+    "default": "8.0",
+    "label": "Take profit ATR mult"
+  }
+}

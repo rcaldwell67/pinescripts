@@ -76,5 +76,39 @@ strategy(
 	slippage          = 1)
 
 // ─── Inputs ────────────────────────────────────────────────────────────────
+// ─── Inputs ────────────────────────────────────────────────────────────────
 var G_TREND = "Trend Filters"
 i_ema_fast   = input.int  (21,   "EMA Fast",            group=G_TREND, minval=5)
+i_ema_mid    = input.int  (34,   "EMA Mid",             group=G_TREND, minval=10)
+i_ema_slow   = input.int  (200,  "EMA Slow",            group=G_TREND, minval=50)
+i_adx_thresh = input.int  (28,   "ADX threshold",       group=G_TREND, minval=5, maxval=60)
+i_adx_len    = input.int  (14,   "ADX / DI length",     group=G_TREND, minval=5)
+i_pb_pct     = input.float(0.10, "Pullback tolerance (%)", group=G_TREND, minval=0.05, maxval=3.0, step=0.05, tooltip="How close the prev bar's low/high must come to EMA-fast to count as a pullback")
+
+var G_MOM = "Momentum & Volume"
+i_rsi_len    = input.int  (14,   "RSI length",          group=G_MOM, minval=3)
+i_rsi_lo_l   = input.int  (42,   "RSI min – Long",      group=G_MOM, minval=10, maxval=70)
+i_rsi_hi_l   = input.int  (70,   "RSI max – Long",      group=G_MOM, minval=50, maxval=90)
+i_rsi_lo_s   = input.int  (30,   "RSI min – Short",     group=G_MOM, minval=10, maxval=50)
+i_rsi_hi_s   = input.int  (60,   "RSI max – Short",     group=G_MOM, minval=40, maxval=80)
+i_vol_len    = input.int  (20,   "Volume SMA length",   group=G_MOM, minval=5)
+i_vol_mult   = input.float(1.0,  "Volume multiplier",   group=G_MOM, minval=0.1, maxval=5.0, step=0.1)
+i_min_body   = input.float(0.30, "Min body (x ATR)",    group=G_MOM, minval=0.0, maxval=2.0, step=0.05, tooltip="Entry bar |close-open|/ATR must exceed this. Filters doji candles.")
+
+var G_VOL = "Volatility"
+i_atr_len    = input.int  (14,   "ATR length",          group=G_VOL, minval=3)
+i_atr_bl_len = input.int  (60,   "ATR baseline length", group=G_VOL, minval=10)
+i_atr_floor  = input.float(0.00, "ATR floor (% of price)", group=G_VOL, minval=0.0, maxval=2.0, step=0.01, tooltip="ATR/price must exceed this %. Removes near-zero ATR bars where commission drag dominates.")
+i_panic_mult = input.float(2.0,  "Panic suppression mult", group=G_VOL, minval=1.0, step=0.1, tooltip="ATR > ATR_baseline x this value => skip new entries.")
+
+var G_SESS = "Session"
+i_sess_on    = input.bool (true,  "Enable session filter",   group=G_SESS)
+i_sess_start = input.int  (9,    "Session start (ET hour)", group=G_SESS, minval=0, maxval=23)
+i_sess_end   = input.int  (14,   "Session end (ET hour)",   group=G_SESS, minval=0, maxval=23, tooltip="Entries blocked from this hour onward. Default 14 = 2:00 PM ET.")
+
+var G_RISK = "Risk Management"
+i_sl_mult    = input.float(2.0,  "Stop loss ATR mult",   group=G_RISK, minval=0.3, step=0.1)
+i_tp_mult    = input.float(1.0,  "Take profit ATR mult", group=G_RISK, minval=0.5, step=0.1)
+i_trail_act  = input.float(2.0,  "Trail activate (ATR)", group=G_RISK, minval=0.5, step=0.1, tooltip="Trail activates after price moves this many ATR in favor.")
+i_trail_dist = input.float(0.4,  "Trail distance (ATR)", group=G_RISK, minval=0.01, step=0.01, tooltip="Distance from best price for trailing stop.")
+i_risk_pct   = input.float(1.0,  "Risk per trade (%)",   group=G_RISK, minval=0.1, maxval=10.0, step=0.1, tooltip="% of equity risked per trade.")

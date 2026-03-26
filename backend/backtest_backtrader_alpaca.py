@@ -2,10 +2,25 @@
 # Load only the project root .env before any other imports
 import os
 from dotenv import load_dotenv
-root_env_path = os.path.join(os.path.dirname(__file__), '..', '..', '.env')
+
+root_env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.env'))
 print(f"Explicitly loading: {root_env_path}")
 loaded = load_dotenv(root_env_path, override=True)
 print(f"load_dotenv returned: {loaded}")
+# Always set env vars from .env if not already set
+try:
+    with open(root_env_path, 'r') as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith('#') or '=' not in line:
+                continue
+            key, value = line.split('=', 1)
+            key = key.strip()
+            value = value.strip()
+            if key and value and key not in os.environ:
+                os.environ[key] = value
+except Exception as e:
+    print(f"Warning: Could not parse .env for fallback env var setting: {e}")
 print("Environment after loading .env:")
 for k in sorted(os.environ):
     if k.startswith('APCA') or k.startswith('ALPACA'):
@@ -15,42 +30,76 @@ for k in sorted(os.environ):
 """
 Backtest Adaptive Pullback Momentum v4 (BTCUSD) using Backtrader and Alpaca historical data.
 """
+
+
 import backtrader as bt
 import pandas as pd
-from alpaca_trade_api.rest import REST
+import json
 from datetime import datetime, timedelta
 
+# Optional: yfinance import (install if missing)
+try:
+    import yfinance as yf
+except ImportError:
+    import subprocess, sys
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "yfinance"])
+    import yfinance as yf
+
+# Alpaca import (only if needed)
+def get_alpaca_rest():
+    from alpaca_trade_api.rest import REST
+    return REST
+
+def load_strategy_config(version):
+    config_path = os.path.join(os.path.dirname(__file__), 'strategy_generator', 'configs', f'{version}.json')
+    if not os.path.exists(config_path):
+        raise FileNotFoundError(f"Config file not found: {config_path}")
+    with open(config_path, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
 # --- Strategy definition (placeholder, to be filled with v4 logic) ---
-class AdaptivePullbackMomentumV4(bt.Strategy):
+class AdaptivePullbackMomentumConfigurable(bt.Strategy):
+    params = (('config', None),)
     def __init__(self):
-        # Indicator parameters
-        self.ema_fast = bt.ind.EMA(self.datas[0].close, period=21)
-        self.ema_mid = bt.ind.EMA(self.datas[0].close, period=50)
-        self.ema_slow = bt.ind.EMA(self.datas[0].close, period=200)
-        self.rsi = bt.ind.RSI(self.datas[0].close, period=14)
-        self.atr = bt.ind.ATR(self.datas[0], period=14)
-        self.atr_bl = bt.ind.SMA(self.atr, period=60)
-        self.vol_ma = bt.indicators.SimpleMovingAverage(self.datas[0].volume, period=20)
-        self.adx = bt.ind.ADX(self.datas[0], period=14)
-        # DI+ and DI- are available as adx.plusDI, adx.minusDI
-        # Add more as needed for v4 logic
+        cfg = self.p.config
+        # Use config for indicator periods and logic
+        self.ema_fast = bt.ind.EMA(self.datas[0].close, period=cfg.get('i_ema_fast', {}).get('default', 21))
+        self.ema_mid = bt.ind.EMA(self.datas[0].close, period=cfg.get('i_ema_mid', {}).get('default', 50))
+        self.ema_slow = bt.ind.EMA(self.datas[0].close, period=cfg.get('i_ema_slow', {}).get('default', 200))
+        self.rsi = bt.ind.RSI(self.datas[0].close, period=cfg.get('i_rsi_len', {}).get('default', 14))
+        self.atr = bt.ind.ATR(self.datas[0], period=cfg.get('i_atr_len', {}).get('default', 14))
+        self.atr_bl = bt.ind.SMA(self.atr, period=cfg.get('i_atr_bl_len', {}).get('default', 60))
+        self.vol_ma = bt.indicators.SimpleMovingAverage(self.datas[0].volume, period=cfg.get('i_vol_len', {}).get('default', 20))
+        self.adx = bt.ind.ADX(self.datas[0], period=cfg.get('i_adx_len', {}).get('default', 14))
+        # Store config values for use in next()
+        self.cfg = cfg
+
     def next(self):
-        # Default v4 parameters
-        # v4.2 Pine Script/legacy backtest defaults
-        ADX_THRESH = 28
-        PANIC_MULT = 1.3
-        ATR_FLOOR = 0.0020
-        PB_TOL = 0.0015  # 0.15% (legacy PB_PCT = 0.15)
-        VOL_MULT = 1.5
-        MIN_BODY = 0.25
-        SLOPE_MIN_BARS = 3
-        RSI_LO_L = 42; RSI_HI_L = 68
-        RSI_LO_S = 32; RSI_HI_S = 58
-        SL_MULT = 2.0
-        TP_MULT = 3.5
-        TRAIL_ACT = 2.5
-        TRAIL_DIST = 1.5
-        RISK_PCT = 0.03
+        cfg = self.cfg
+        # Helper to get float param
+        def getf(key, fallback):
+            try:
+                return float(cfg.get(key, {}).get('default', fallback))
+            except Exception:
+                return fallback
+        # Get all needed params
+        # Relaxed thresholds for troubleshooting
+        ADX_THRESH = 20  # was getf('i_adx_thresh', 28)
+        PANIC_MULT = getf('i_panic_mult', 1.3)
+        ATR_FLOOR = 0.002  # was getf('i_atr_floor', 0.1)
+        PB_TOL = getf('i_pb_pct', 0.0015)
+        VOL_MULT = getf('i_vol_mult', 1.5)
+        MIN_BODY = getf('i_min_body', 0.25)
+        SLOPE_MIN_BARS = int(getf('i_ema_slope_bars', 3))
+        RSI_LO_L = getf('i_rsi_lo_l', 42)
+        RSI_HI_L = getf('i_rsi_hi_l', 68)
+        RSI_LO_S = getf('i_rsi_lo_s', 32)
+        RSI_HI_S = getf('i_rsi_hi_s', 58)
+        SL_MULT = getf('i_sl_mult', 2.0)
+        TP_MULT = getf('i_tp_mult', 3.5)
+        TRAIL_ACT = getf('i_trail_act', 2.5)
+        TRAIL_DIST = getf('i_trail_dist', 1.5)
+        RISK_PCT = getf('i_risk_pct', 0.03)
         LEV_CAP = 5.0
         COMMISSION_PCT = 0.0006
         # Only trade if enough bars for indicators
@@ -93,9 +142,32 @@ class AdaptivePullbackMomentumV4(bt.Strategy):
         rsi_falling = rsi < prev_rsi
         vol_ok = volume >= vol_ma * VOL_MULT
         # Match legacy: add in_session filter (NY 9-12)
+        import pytz
         dt = self.datas[0].datetime.datetime(0)
-        et_hour = dt.astimezone().hour - (dt.astimezone().utcoffset().total_seconds() // 3600 - 5)  # crude NY offset
-        in_session = 9 <= et_hour < 12
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=pytz.UTC)
+        ny_dt = dt.astimezone(pytz.timezone('America/New_York'))
+        et_hour = ny_dt.hour
+        # For crypto, allow all hours (no session filter)
+        in_session = True
+        # Debug print for all entry conditions
+        if not pos:
+            print(f"Bar {len(self)} | close={close:.2f} open={open_:.2f} high={high:.2f} low={low:.2f} vol={volume:.2f}")
+            print(f"  is_trending={is_trending} (adx={adx:.2f} > {ADX_THRESH})")
+            print(f"  is_panic={is_panic} (atr={atr:.4f} > atr_bl*PANIC_MULT={atr_bl*PANIC_MULT:.4f})")
+            print(f"  atr_floor_ok={atr_floor_ok} (atr/close={atr/close:.4f} >= {ATR_FLOOR})")
+            print(f"  in_session={in_session} (et_hour={et_hour})")
+            print(f"  long_pb={long_pb} (prev_low={prev_low:.2f} <= pb_tol_up={pb_tol_up:.2f} and close={close:.2f} > ema_fast={ema_fast:.2f} and close={close:.2f} > open_={open_:.2f} and body_size={body_size:.2f} >= {MIN_BODY})")
+            print(f"  short_pb={short_pb} (prev_high={prev_high:.2f} >= pb_tol_dn={pb_tol_dn:.2f} and close={close:.2f} < ema_fast={ema_fast:.2f} and close={close:.2f} < open_={open_:.2f} and body_size={body_size:.2f} >= {MIN_BODY})")
+            print(f"  ema_bull_full={ema_bull_full} (ema_fast={ema_fast:.2f} > ema_mid={ema_mid:.2f} > ema_slow={ema_slow:.2f})")
+            print(f"  ema_bear_full={ema_bear_full} (ema_fast={ema_fast:.2f} < ema_mid={ema_mid:.2f} < ema_slow={ema_slow:.2f})")
+            print(f"  ema_slope_up={ema_slope_up} (ema_fast={ema_fast:.2f} > ema_fast[-{SLOPE_MIN_BARS}]={self.ema_fast[-SLOPE_MIN_BARS]:.2f})")
+            print(f"  ema_slope_down={ema_slope_down} (ema_fast={ema_fast:.2f} < ema_fast[-{SLOPE_MIN_BARS}]={self.ema_fast[-SLOPE_MIN_BARS]:.2f})")
+            print(f"  rsi_rising={rsi_rising} (rsi={rsi:.2f} > prev_rsi={prev_rsi:.2f})")
+            print(f"  rsi_falling={rsi_falling} (rsi={rsi:.2f} < prev_rsi={prev_rsi:.2f})")
+            print(f"  vol_ok={vol_ok} (volume={volume:.2f} >= vol_ma*VOL_MULT={vol_ma*VOL_MULT:.2f})")
+            print(f"  RSI_LO_L <= rsi <= RSI_HI_L: {RSI_LO_L} <= {rsi:.2f} <= {RSI_HI_L}")
+            print(f"  RSI_LO_S <= rsi <= RSI_HI_S: {RSI_LO_S} <= {rsi:.2f} <= {RSI_HI_S}")
         long_ok = (not pos and not is_panic and is_trending and atr_floor_ok and in_session and long_pb and ema_bull_full and ema_slope_up and rsi_rising and RSI_LO_L <= rsi <= RSI_HI_L and vol_ok)
         short_ok = (not pos and not is_panic and is_trending and atr_floor_ok and in_session and short_pb and ema_bear_full and ema_slope_down and rsi_falling and RSI_LO_S <= rsi <= RSI_HI_S and vol_ok)
         # Position sizing
@@ -144,15 +216,24 @@ class AdaptivePullbackMomentumV4(bt.Strategy):
                     self.close()
 
 # --- Fetch historical data from Alpaca ---
+
+# --- Fetch historical data from yfinance ---
+def fetch_yfinance_bars(symbol="BTCUSD", interval="30m", period="60d"):
+    yf_symbol = symbol.replace("USD", "-USD") if symbol.endswith("USD") else symbol
+    print(f"Fetching {yf_symbol} {interval} {period} from yfinance…")
+    raw = yf.download(yf_symbol, period=period, interval=interval, auto_adjust=True, progress=False)
+    if raw.empty:
+        raise RuntimeError(f"No data returned for {yf_symbol} {interval} {period}.")
+    # Flatten MultiIndex columns if present
+    raw.columns = [c[0] if isinstance(c, tuple) else c for c in raw.columns]
+    df = raw[["Open", "High", "Low", "Close", "Volume"]].copy().dropna()
+    df.index = pd.to_datetime(df.index)
+    print(f"  Rows: {len(df)}  |  {df.index[0].date()} → {df.index[-1].date()}")
+    return df
+
+# --- Fetch historical data from Alpaca ---
 def fetch_alpaca_bars(symbol="BTCUSD", days=365):
-    # Load .env from project root and .venv
-    dotenv_paths = [
-        os.path.join(os.path.dirname(__file__), '..', '..', '.env'),
-        os.path.join(os.path.dirname(__file__), '..', '..', '.venv', '.env'),
-    ]
-    for path in dotenv_paths:
-        if os.path.exists(path):
-            load_dotenv(path, override=True)
+    REST = get_alpaca_rest()
     api_key = os.getenv('APCA_API_KEY_ID') or os.getenv('ALPACA_API_KEY')
     api_secret = os.getenv('APCA_API_SECRET_KEY') or os.getenv('ALPACA_API_SECRET')
     base_url = os.getenv('APCA_API_BASE_URL') or os.getenv('ALPACA_BASE_URL', 'https://paper-api.alpaca.markets')
@@ -175,20 +256,28 @@ def fetch_alpaca_bars(symbol="BTCUSD", days=365):
 if __name__ == "__main__":
     import sys
     import argparse
-    parser = argparse.ArgumentParser(description="Backtest Adaptive Pullback Momentum v4 for a given symbol.")
+
+    parser = argparse.ArgumentParser(description="Backtest Adaptive Pullback Momentum for a given symbol and version.")
     parser.add_argument('--symbol', type=str, default='BTCUSD', help='Symbol to backtest (e.g. BTCUSD, CLM, etc)')
+    parser.add_argument('--version', type=str, default='v4', help='Strategy version (v1, v2, v3, v4, v5, v6)')
     args = parser.parse_args()
     symbol = args.symbol
+    version = args.version
+    config = load_strategy_config(version)
 
     max_attempts = 100
     attempt = 0
+    data_source = os.getenv('DATA_SOURCE', 'yfinance').lower()
     while True:
         attempt += 1
         print(f"\n--- Backtest Attempt {attempt} for {symbol} ---\n")
-        df = fetch_alpaca_bars(symbol=symbol)
+        if data_source == 'yfinance':
+            df = fetch_yfinance_bars(symbol=symbol, interval="30m", period="60d")
+        else:
+            df = fetch_alpaca_bars(symbol=symbol)
         data = bt.feeds.PandasData(dataname=df)
         cerebro = bt.Cerebro()
-        cerebro.addstrategy(AdaptivePullbackMomentumV4)
+        cerebro.addstrategy(AdaptivePullbackMomentumConfigurable, config=config)
         cerebro.adddata(data)
         cerebro.broker.setcash(10000.0)
         print('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())

@@ -1,0 +1,52 @@
+{
+  "i_pb_pct": {
+    "type": "float",
+    "default": "0.30",
+    "label": "Pullback tolerance (%)"
+  },
+  "i_vol_mult": {
+    "type": "float",
+    "default": "1.2",
+    "label": "Volume multiplier"
+  },
+  "i_min_body": {
+    "type": "float",
+    "default": "0.20",
+    "label": "Min body (x ATR)"
+  },
+  "i_atr_floor": {
+    "type": "float",
+    "default": "0.15",
+    "label": "ATR floor (% of price)"
+  },
+  "i_panic_mult": {
+    "type": "float",
+    "default": "1.3",
+    "label": "Panic suppression mult"
+  },
+  "i_sl_mult": {
+    "type": "float",
+    "default": "2.0",
+    "label": "Stop loss ATR mult"
+  },
+  "i_tp_mult": {
+    "type": "float",
+    "default": "3.5",
+    "label": "Take profit ATR mult"
+  },
+  "i_trail_act": {
+    "type": "float",
+    "default": "2.5",
+    "label": "Trail activate (ATR)"
+  },
+  "i_trail_dist": {
+    "type": "float",
+    "default": "1.5",
+    "label": "Trail distance (ATR)"
+  },
+  "i_risk_pct": {
+    "type": "float",
+    "default": "1.0",
+    "label": "Risk per trade (%)"
+  }
+}
