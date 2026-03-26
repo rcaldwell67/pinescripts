@@ -587,7 +587,7 @@ function renderDirectionChart(rows) {
       ]},
       options:{ animation:false, responsive:true, scales:{
         wr: {type:'linear',position:'left', grid:{color:'#21262d'},ticks:{color:'#8b949e',callback:v=>v.toFixed(0)+'%'}},
-        pnl:{type:'linear',position:'right',grid:{drawOnChartArea:false},ticks:{color:'#8b949e',callback:v=>'$'+v.toFixed(0)}},
+        pnl:{type:'linear',position:'right',grid:{drawOnChartArea:false},ticks:{color:'#8b949e',callback:v=>v.toFixed(1)+'%'}},
         x:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}}
       }, plugins:{legend:{labels:{color:'#8b949e',font:{size:11}}}} }
     });
@@ -793,7 +793,7 @@ function renderTransactionsTable() {
   </div>` : '';
   const fmtEq = e => e==null||isNaN(e) ? '—' : '$'+e.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   wrap.innerHTML = `<table><thead><tr>
-    <th>Date / Time</th><th>Version</th><th>Action</th><th>Type</th><th>Direction</th><th>Price</th><th>P&amp;L</th><th>Beg. Bal</th><th>End Bal</th><th>Result</th>
+    <th>Date / Time</th><th>Version</th><th>Action</th><th>Type</th><th>Direction</th><th>Price</th><th>P&L</th><th>Beg. Bal</th><th>End Bal</th><th>Result</th>
   </tr></thead><tbody>${paged.map(t => {
     const fmtP = p => isNaN(p)?'—' : p<100?'$'+p.toFixed(4):'$'+p.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
     const actionTag = t.action==='BUY'
