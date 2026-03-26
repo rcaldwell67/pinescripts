@@ -125,9 +125,27 @@
     <button id="addSymbolBtn" style="margin-left:4px; padding:4px 12px; border-radius:6px; border:1px solid var(--border); background:var(--accent); color:#fff; font-size:12px; cursor:pointer;">Add</button>
   </div>
   <div class="mode-switcher">
-    <button class="mode-btn active" data-mode="backtest">Backtest</button>
-    <button class="mode-btn" data-mode="paper">Paper</button>
-    <button class="mode-btn" data-mode="live">Live</button>
+    <button class="mode-btn active" data-mode="backtest" id="backtestBtn">Backtest</button>
+    <button class="mode-btn" data-mode="paper" id="paperBtn">Paper</button>
+    <button class="mode-btn" data-mode="live" id="liveBtn">Live</button>
+  // Disable/enable mode buttons based on whether data is loaded for the selected symbol and mode
+  function updateModeButtonStates() {
+    const backtestBtn = document.getElementById('backtestBtn');
+    const paperBtn = document.getElementById('paperBtn');
+    const liveBtn = document.getElementById('liveBtn');
+    let hasBacktest = false, hasPaper = false, hasLive = false;
+    if (activeSym && loaded[activeSym]) {
+      hasBacktest = Object.values(loaded[activeSym]).some(arr => Array.isArray(arr) && arr.length > 0);
+      hasPaper = _modeCache.paper[activeSym] && Object.values(_modeCache.paper[activeSym]).some(arr => Array.isArray(arr) && arr.length > 0);
+      hasLive = _modeCache.live[activeSym] && Object.values(_modeCache.live[activeSym]).some(arr => Array.isArray(arr) && arr.length > 0);
+    }
+    backtestBtn.disabled = !hasBacktest;
+    paperBtn.disabled = !hasPaper;
+    liveBtn.disabled = !hasLive;
+    backtestBtn.classList.toggle('disabled', !hasBacktest);
+    paperBtn.classList.toggle('disabled', !hasPaper);
+    liveBtn.classList.toggle('disabled', !hasLive);
+  }
   </div>
   <div class="dataset-switcher" id="datasetSwitcher">
     <div class="dataset-switcher-group">
@@ -1121,6 +1139,7 @@ function populateSymbolDropdown() {
 function handleSymbolSelect(newSym) {
   if (!newSym) {
     hideDashboardData();
+    updateModeButtonStates();
     return;
   }
   if (newSym === activeSym) return;
@@ -1130,14 +1149,15 @@ function handleSymbolSelect(newSym) {
   const vers = INSTRUMENTS[activeSym]?.versions;
   if (!vers) {
     hideDashboardData();
+    updateModeButtonStates();
     return;
   }
   // Always reload if no data or all arrays are empty
   const needsLoad = !Object.keys(loaded[activeSym]).length || Object.values(loaded[activeSym]).every(arr => !arr || !arr.length);
   const toLoad = needsLoad ? Object.keys(vers) : Object.keys(vers).filter(v => !loaded[activeSym][v]);
   if (toLoad.length) {
-    Promise.all(toLoad.map(v => loadCSV(activeSym, v).then(r => { loaded[activeSym][v] = r; }))).then(() => { showDashboardData(); buildTabs(); render(); updateLastUpdated(); });
-  } else { showDashboardData(); buildTabs(); render(); updateLastUpdated(); }
+    Promise.all(toLoad.map(v => loadCSV(activeSym, v).then(r => { loaded[activeSym][v] = r; }))).then(() => { showDashboardData(); buildTabs(); render(); updateLastUpdated(); updateModeButtonStates(); });
+  } else { showDashboardData(); buildTabs(); render(); updateLastUpdated(); updateModeButtonStates(); }
 }
 
 function hideDashboardData() {
@@ -1172,8 +1192,8 @@ document.querySelectorAll('.mode-btn').forEach(btn => {
     const toLoad = allVers.filter(({sym, v}) => !loaded[sym][v]);
     if (toLoad.length) {
       Promise.all(toLoad.map(({sym, v}) => loadCSV(sym, v).then(r => { loaded[sym][v] = r; })))
-        .then(() => { buildTabs(); render(); updateLastUpdated(); });
-    } else { buildTabs(); render(); updateLastUpdated(); }
+        .then(() => { buildTabs(); render(); updateLastUpdated(); updateModeButtonStates(); });
+    } else { buildTabs(); render(); updateLastUpdated(); updateModeButtonStates(); }
   });
 });
 
