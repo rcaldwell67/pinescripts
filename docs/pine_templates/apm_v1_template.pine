@@ -1,5 +1,100 @@
-// TEMPLATE: Adaptive Pullback Momentum v1.x
-// Symbol: {{SYMBOL}}
-// Replace {{SYMBOL}} with your instrument symbol
+// This source code is subject to the terms of the Mozilla Public License 2.0
+// © APM Strategy
 
-// ...existing code...
+//@version=6
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Adaptive Pullback Momentum v1.1 — 5m
+// Timeframe : 5-minute  ·  Instrument : CLM (Cornerstone Strategic Investment Fund, Inc.)
+// Exchange   : NYSE  ·  Type: Closed-End Fund (CEF)
+//
+// THESIS
+//   Enter short during brief intraday pullbacks to EMA21 while the macro trend
+//   is confirmed by a full bearish EMA stack (21 < 50 < 200), capturing
+//   momentum resumption after the pullback with tight, ATR-scaled risk.
+//   v1.1 relaxes the ADX threshold and widens the pullback tolerance to
+//   increase signal count, with a wider TP and later trail activation.
+//
+// ENTRY LOGIC  (SHORTS ONLY by default — sub-15m longs historically low WR)
+//   Short : Full bearish stack  EMA21 < EMA50 < EMA200
+//            EMA21 falling over 3 bars (slope filter)
+//            ADX > 15  (trend strength — relaxed from 18; captures more CLM setups)
+//            RSI falling on entry bar  +  RSI in [30–58]
+//            Close < close[5] (5-bar momentum confirms direction)
+//            Prev bar high tagged EMA21 zone (±0.40%); current bar closes below with body
+//            Volume ≥ 0.3× VolSMA  |  Body ≥ 0.15×ATR  |  ATR floor ≥ 0.1%
+//            Session 09:00–14:00 ET  (NYSE open through midday)
+//            No panic: ATR ≤ ATR-60SMA × 1.5
+//            Macro filter: OFF (sweep v1.1 — removed; didn't improve 12mo net)
+//   Optional: ADX slope (0=off), DI spread (0=off) — sweep: not beneficial on CLM
+//
+// EXIT LOGIC  (v1.1 sweep-optimised on CLM 5m 12-month window via Alpaca)
+//   → Hard SL    : entry + ATR × 4.0  (wider; low ATR on CLM means SL hits cleanly)
+//   → Hard TP    : entry − ATR × 8.0  (raised from 6.0; gives trail more room)
+//   → Trail      : activates at ATR × 3.5 runup (later lock-in to avoid early exit),
+//                  trails ATR × 0.1 from best price (very tight — captures trail gains quickly)
+//   → Max bars   : disabled (0)
+//   → Sizing     : 2% of equity risked per trade (raised from 1%)
+//
+// SWEEP RESULTS v1.1 (12-month 2025-03-13→2026-03-11, 9,018 5m bars via Alpaca Delayed):
+//   v1.0 params : 81T  WR=76.5%  PF=1.498  net=+11.62%  MaxDD=-2.32%  Calmar=5.005
+//   v1.1 params : 29T  WR=79.3%  PF=2.802  net=+27.73%  MaxDD=-5.46%  Calmar=5.081
+//   Key changes : ADX 18→15, PB 0.25%→0.40%, TP ×6→×8, Trail_act 2.5→3.5, Risk 1%→2%, Macro OFF
+// ─────────────────────────────────────────────────────────────────────────────
+
+strategy(
+	title             = "Adaptive Pullback Momentum v1.1 · 5m",
+	shorttitle        = "APM v1.1 5m",
+	overlay           = true,
+	pyramiding        = 0,
+	initial_capital   = 10000,
+	default_qty_type  = strategy.cash,
+	default_qty_value = 10000,        // overridden by risk-based sizing
+	commission_type   = strategy.commission.percent,
+	commission_value  = 0.06,
+	slippage          = 1)
+
+// ─── Inputs ────────────────────────────────────────────────────────────────
+var G_TREND = "Trend Filters"
+i_ema_fast   = input.int  (21,   "EMA Fast",               group=G_TREND, minval=5)
+i_ema_mid    = input.int  (50,   "EMA Mid",                group=G_TREND, minval=10)
+i_ema_slow   = input.int  (200,  "EMA Slow",               group=G_TREND, minval=50)
+i_adx_thresh = input.int  (15,   "ADX threshold",          group=G_TREND, minval=5, maxval=60)
+i_adx_len    = input.int  (14,   "ADX / DI length",        group=G_TREND, minval=5)
+i_adx_slope  = input.int  (0,    "ADX slope bars (0=off)", group=G_TREND, minval=0, maxval=20,
+				 tooltip="ADX must be higher than N bars ago. 0 = disabled. Stage-1 sweep showed this filter is not beneficial on CLM.")
+i_di_spread  = input.float(0.0,  "DI spread (DI−−DI+)",   group=G_TREND, minval=0.0, step=0.5,
+				 tooltip="For shorts: DI- must exceed DI+ by this many points. 0 = disabled. Stage-1 sweep showed DI spread hurts entries on CLM — keep at 0 unless re-optimised.")
+i_pb_pct     = input.float(0.40, "Pullback tolerance (%)", group=G_TREND, minval=0.05, maxval=3.0, step=0.05,
+				 tooltip="How close prev bar high must come to EMA21 to qualify as a pullback.")
+i_mom_bars   = input.int  (5,    "Momentum bars (0=off)",  group=G_TREND, minval=0, maxval=20,
+				 tooltip="Close must be below close[N] for shorts (confirms directional pressure).")
+
+var G_MOM = "Momentum & Volume"
+i_rsi_len    = input.int  (14,   "RSI length",             group=G_MOM, minval=3)
+i_rsi_lo_l   = input.int  (42,   "RSI min – Long",         group=G_MOM, minval=10, maxval=70)
+i_rsi_hi_l   = input.int  (68,   "RSI max – Long",         group=G_MOM, minval=50, maxval=90)
+i_rsi_lo_s   = input.int  (30,   "RSI min – Short",        group=G_MOM, minval=10, maxval=50)
+i_rsi_hi_s   = input.int  (58,   "RSI max – Short",        group=G_MOM, minval=40, maxval=80)
+i_vol_len    = input.int  (20,   "Volume SMA length",      group=G_MOM, minval=5)
+i_vol_mult   = input.float(0.3,  "Volume multiplier",      group=G_MOM, minval=0.1, maxval=5.0, step=0.1)
+i_min_body   = input.float(0.15, "Min body (x ATR)",       group=G_MOM, minval=0.0, maxval=2.0, step=0.05,
+				 tooltip="Entry bar |close-open|/ATR must exceed this. Filters doji candles.")
+
+var G_VOL = "Volatility"
+i_atr_len    = input.int  (14,   "ATR length",              group=G_VOL, minval=3)
+i_atr_bl_len = input.int  (60,   "ATR baseline length",     group=G_VOL, minval=10)
+i_atr_floor  = input.float(0.1,  "ATR floor (% of price)",  group=G_VOL, minval=0.0, maxval=2.0, step=0.01,
+				 tooltip="ATR/price must exceed this %. Stage-2 (12mo sweep) winner: 0.1% — removes near-zero ATR bars where commission drag dominates.")
+i_panic_mult = input.float(1.5,  "Panic suppression mult",  group=G_VOL, minval=1.0, step=0.1,
+				 tooltip="ATR > ATR_baseline x this value => skip new entries.")
+
+var G_SESS = "Session"
+i_sess_on    = input.bool (true,  "Enable session filter",   group=G_SESS)
+i_sess_start = input.int  (9,    "Session start (ET hour)", group=G_SESS, minval=0, maxval=23)
+i_sess_end   = input.int  (14,   "Session end (ET hour)",   group=G_SESS, minval=0, maxval=23,
+				 tooltip="Entries blocked from this hour onward. Default 14 = 2:00 PM ET.")
+
+var G_RISK = "Risk Management"
+i_sl_mult    = input.float(4.0,  "Stop loss ATR mult",       group=G_RISK, minval=0.3, step=0.1)
+i_tp_mult    = input.float(8.0,  "Take profit ATR mult",     group=G_RISK, minval=0.5, step=0.1)
