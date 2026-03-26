@@ -80,18 +80,18 @@ class AdaptivePullbackMomentumConfigurable(bt.Strategy):
             except Exception:
                 return fallback
         # Get all needed params
-        # Relaxed thresholds for troubleshooting
-        ADX_THRESH = 20  # was getf('i_adx_thresh', 28)
+        # Relaxed thresholds for troubleshooting (further relaxed)
+        ADX_THRESH = 15  # Lowered from 20
         PANIC_MULT = getf('i_panic_mult', 1.3)
-        ATR_FLOOR = 0.002  # was getf('i_atr_floor', 0.1)
+        ATR_FLOOR = 0.001  # Lowered from 0.002
         PB_TOL = getf('i_pb_pct', 0.0015)
-        VOL_MULT = getf('i_vol_mult', 1.5)
-        MIN_BODY = getf('i_min_body', 0.25)
+        VOL_MULT = 1.0  # Lowered from 1.5
+        MIN_BODY = 0.1  # Lowered from 0.25
         SLOPE_MIN_BARS = int(getf('i_ema_slope_bars', 3))
-        RSI_LO_L = getf('i_rsi_lo_l', 42)
-        RSI_HI_L = getf('i_rsi_hi_l', 68)
-        RSI_LO_S = getf('i_rsi_lo_s', 32)
-        RSI_HI_S = getf('i_rsi_hi_s', 58)
+        RSI_LO_L = 35  # Widened from 42
+        RSI_HI_L = 75  # Widened from 68
+        RSI_LO_S = 25  # Widened from 32
+        RSI_HI_S = 65  # Widened from 58
         SL_MULT = getf('i_sl_mult', 2.0)
         TP_MULT = getf('i_tp_mult', 3.5)
         TRAIL_ACT = getf('i_trail_act', 2.5)
@@ -99,8 +99,8 @@ class AdaptivePullbackMomentumConfigurable(bt.Strategy):
         RISK_PCT = getf('i_risk_pct', 0.03)
         LEV_CAP = 5.0
         COMMISSION_PCT = 0.0006
-        # Only trade if enough bars for indicators
-        if len(self) < 200 + 60:
+        # Only trade if enough bars for indicators (reduced lookback)
+        if len(self) < 100:
             return
         pos = self.position
         close = self.datas[0].close[0]
