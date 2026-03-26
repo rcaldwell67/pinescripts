@@ -45,10 +45,7 @@ except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "yfinance"])
     import yfinance as yf
 
-# Alpaca import (only if needed)
-def get_alpaca_rest():
-    from alpaca_trade_api.rest import REST
-    return REST
+
 
 def load_strategy_config(version):
     config_path = os.path.join(os.path.dirname(__file__), 'strategy_generator', 'configs', f'{version}.json')
@@ -215,7 +212,7 @@ class AdaptivePullbackMomentumConfigurable(bt.Strategy):
                 elif low <= self.tp:
                     self.close()
 
-# --- Fetch historical data from Alpaca ---
+
 
 # --- Fetch historical data from yfinance ---
 def fetch_yfinance_bars(symbol="BTCUSD", interval="30m", period="60d"):
@@ -232,26 +229,7 @@ def fetch_yfinance_bars(symbol="BTCUSD", interval="30m", period="60d"):
     return df
 
 # --- Fetch historical data from Alpaca ---
-def fetch_alpaca_bars(symbol="BTCUSD", days=365):
-    REST = get_alpaca_rest()
-    api_key = os.getenv('APCA_API_KEY_ID') or os.getenv('ALPACA_API_KEY')
-    api_secret = os.getenv('APCA_API_SECRET_KEY') or os.getenv('ALPACA_API_SECRET')
-    base_url = os.getenv('APCA_API_BASE_URL') or os.getenv('ALPACA_BASE_URL', 'https://paper-api.alpaca.markets')
-    print(f"APCA_API_KEY_ID: {api_key}")
-    print(f"APCA_API_SECRET_KEY: {api_secret}")
-    print(f"APCA_API_BASE_URL: {base_url}")
-    api = REST(api_key, api_secret, base_url)
-    end = datetime.utcnow().replace(microsecond=0)
-    start = end - timedelta(days=days)
-    # Format as RFC3339 (YYYY-MM-DDTHH:MM:SSZ)
-    start_str = start.strftime('%Y-%m-%dT%H:%M:%SZ')
-    end_str = end.strftime('%Y-%m-%dT%H:%M:%SZ')
-    bars = api.get_crypto_bars("BTC/USD", '30Min', start=start_str, end=end_str).df
-    # Only filter by exchange if the column exists
-    if 'exchange' in bars.columns:
-        bars = bars[bars['exchange'] == 'CBSE']  # Use Coinbase for BTCUSD
-    bars.index = pd.to_datetime(bars.index)
-    return bars
+
 
 if __name__ == "__main__":
     import sys
@@ -267,14 +245,10 @@ if __name__ == "__main__":
 
     # max_attempts = 100
     attempt = 0
-    data_source = os.getenv('DATA_SOURCE', 'yfinance').lower()
     while True:
         attempt += 1
         print(f"\n--- Backtest Attempt {attempt} for {symbol} ---\n")
-        if data_source == 'yfinance':
-            df = fetch_yfinance_bars(symbol=symbol, interval="30m", period="60d")
-        else:
-            df = fetch_alpaca_bars(symbol=symbol)
+        df = fetch_yfinance_bars(symbol=symbol, interval="30m", period="60d")
         data = bt.feeds.PandasData(dataname=df)
         cerebro = bt.Cerebro()
         cerebro.addstrategy(AdaptivePullbackMomentumConfigurable, config=config)
