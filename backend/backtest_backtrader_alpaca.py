@@ -165,8 +165,13 @@ class AdaptivePullbackMomentumConfigurable(bt.Strategy):
             print(f"  vol_ok={vol_ok} (volume={volume:.2f} >= vol_ma*VOL_MULT={vol_ma*VOL_MULT:.2f})")
             print(f"  RSI_LO_L <= rsi <= RSI_HI_L: {RSI_LO_L} <= {rsi:.2f} <= {RSI_HI_L}")
             print(f"  RSI_LO_S <= rsi <= RSI_HI_S: {RSI_LO_S} <= {rsi:.2f} <= {RSI_HI_S}")
-        long_ok = (not pos and not is_panic and is_trending and atr_floor_ok and in_session and long_pb and ema_bull_full and ema_slope_up and rsi_rising and RSI_LO_L <= rsi <= RSI_HI_L and vol_ok)
-        short_ok = (not pos and not is_panic and is_trending and atr_floor_ok and in_session and short_pb and ema_bear_full and ema_slope_down and rsi_falling and RSI_LO_S <= rsi <= RSI_HI_S and vol_ok)
+        # Maximal permissiveness: only require not in position, not panic, in session, and basic pullback pattern
+        long_ok = (
+            not pos and not is_panic and in_session and long_pb
+        )
+        short_ok = (
+            not pos and not is_panic and in_session and short_pb
+        )
         # Position sizing
         stop_dist = atr * SL_MULT
         equity = self.broker.getvalue()
