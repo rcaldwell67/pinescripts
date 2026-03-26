@@ -473,6 +473,33 @@ function buildTabs() {
   };
   addBtn('all','All Versions',null);
   for (const [vk, cfg] of Object.entries(vers)) addBtn(vk, getVersionLabel(activeSym, vk), cfg.color);
+
+  // Add Rerun Backtest button if a specific version is selected (not 'all') and mode is backtest
+  const rerunBtnId = 'rerunBacktestBtn';
+  let rerunBtn = document.getElementById(rerunBtnId);
+  if (activeTab !== 'all' && activeMode === 'backtest') {
+    if (!rerunBtn) {
+      rerunBtn = document.createElement('button');
+      rerunBtn.id = rerunBtnId;
+      rerunBtn.textContent = 'Rerun Backtest';
+      rerunBtn.style = 'margin-left:16px;padding:6px 18px;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;';
+      rerunBtn.onclick = function() {
+        rerunBacktest(activeSym, activeTab);
+      };
+      tabEl.appendChild(rerunBtn);
+    } else {
+      tabEl.appendChild(rerunBtn);
+      rerunBtn.style.display = '';
+    }
+  } else if (rerunBtn) {
+    rerunBtn.style.display = 'none';
+  }
+// Stub for rerun backtest logic
+function rerunBacktest(symbol, version) {
+  // TODO: Connect this to backend or workflow trigger for rerunning backtest
+  alert(`Rerun backtest requested for ${symbol.toUpperCase()} version ${version.toUpperCase()}`);
+  // Example: call API, trigger workflow, or show loading indicator
+}
 }
 
 function renderCards(rows) {
