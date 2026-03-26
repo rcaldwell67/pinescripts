@@ -47,15 +47,4 @@ jobs:
           name: backtest_error_log
           path: backend/backtest_error.log
 
-      - name: Send error log to Gmail if exists and non-empty
-        if: always()
-        run: |
-          if [ -s backend/backtest_error.log ]; then \
-            echo "Backtest error log attached." | mail -s "Backtest Error Log - $GITHUB_WORKFLOW" -A backend/backtest_error.log "$GMAIL_TO"; \
-          else \
-            echo "No error log to send."; \
-          fi
-        env:
-          GMAIL_TO: ${{ secrets.GMAIL_TO }}
-          GMAIL_USER: ${{ secrets.GMAIL_USER }}
-          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+      # Emailing step removed for simplicity and security
