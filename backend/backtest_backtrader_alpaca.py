@@ -253,7 +253,9 @@ if __name__ == "__main__":
     while True:
         attempt += 1
         print(f"\n--- Backtest Attempt {attempt} for {symbol} ---\n")
-        df = fetch_yfinance_bars(symbol=symbol, interval="30m", period="60d")
+        # Use 5m interval for CLM v1, else default to 30m
+        interval = "5m" if symbol.upper() == "CLM" and version.lower() == "v1" else "30m"
+        df = fetch_yfinance_bars(symbol=symbol, interval=interval, period="60d")
         data = bt.feeds.PandasData(dataname=df)
         cerebro = bt.Cerebro()
         cerebro.addstrategy(AdaptivePullbackMomentumConfigurable, config=config)
