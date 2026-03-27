@@ -20,26 +20,28 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Parse backtest parameters from issue
-        id: parse-params
+      - name: Extract symbol and version from issue title
+        id: extract
         run: |
-          echo "ISSUE_BODY<<EOF" >> $GITHUB_ENV
-          echo "${{ github.event.issue.body }}" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          # Title format: Rerun Backtest: SYMBOL VERSION
+          TITLE="${{ github.event.issue.title }}"
+          PARTS=($TITLE)
+          SYMBOL=${PARTS[2]}
+          VERSION=${PARTS[3]}
+          echo "symbol=$SYMBOL" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Run backtest (customize as needed)
+      - name: Run backtest for symbol and version
         run: |
-          echo "Running backtest with parameters from issue..."
-          # Example: parse params and run your backtest script
-          # python backend/backtest_backtrader_alpaca.py --params "$ISSUE_BODY"
-          # Add your actual backtest command here
+          echo "Running backtest for symbol ${{ steps.extract.outputs.symbol }} version ${{ steps.extract.outputs.version }}..."
+          python backend/backtest_backtrader_alpaca.py --symbol "${{ steps.extract.outputs.symbol }}" --version "${{ steps.extract.outputs.version }}"
 
       - name: Comment with result
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.issue.number }}
           body: |
-            ✅ Backtest rerun workflow completed.
+            ✅ Backtest rerun workflow completed for ${{ steps.extract.outputs.symbol }} ${{ steps.extract.outputs.version }}.
             (Customize this message with actual results.)
 
       - name: Close issue
