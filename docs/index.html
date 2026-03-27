@@ -129,6 +129,23 @@
     <button class="mode-btn" data-mode="paper" id="paperBtn">Paper</button>
     <button class="mode-btn" data-mode="live" id="liveBtn">Live</button>
   </div>
+  <!-- Dataset Switcher UI (hidden by default, shown for BTC backtest) -->
+  <div id="datasetSwitcher" class="dataset-switcher" style="display:none;">
+    <div class="dataset-switcher-group">
+      <label for="v1DatasetSelect">BTC v1 Dataset:</label>
+      <select id="v1DatasetSelect" class="tx-select">
+        <option value="main">Main</option>
+        <option value="12mo">12mo</option>
+      </select>
+    </div>
+    <div class="dataset-switcher-group">
+      <label for="v2DatasetSelect">BTC v2 Dataset:</label>
+      <select id="v2DatasetSelect" class="tx-select">
+        <option value="main">Main</option>
+        <option value="12mo">12mo</option>
+      </select>
+    </div>
+  </div>
   <div id="balanceBar">
     <div class="bal-item">
       <span class="bal-label">Beginning Balance</span>
