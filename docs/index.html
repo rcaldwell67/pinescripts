@@ -163,6 +163,7 @@
     </div>
   </div>
   <span id="lastUpdated"></span>
+  <span id="workflowStatus" style="margin-left:24px;color:#58a6ff;font-size:13px;font-weight:600;"></span>
   <!-- Add a notice element to the header for no data -->
   <div id="noDataNotice" style="display:none;margin-left:24px;color:#ffa657;font-size:13px;font-weight:600;">
     No Data Is Available For That Selection
@@ -492,6 +493,69 @@ function rerunBacktest(symbol, version) {
   );
   const url = `https://github.com/rcaldwell67/pinescripts/issues/new?title=${issueTitle}&body=${issueBody}`;
   window.open(url, '_blank');
+  // Prompt user for issue URL
+  setTimeout(() => {
+    const issueUrl = prompt('Paste the URL of the created GitHub Issue to track workflow status:');
+    if (issueUrl) {
+      const match = issueUrl.match(/\/issues\/(\d+)/);
+      if (match) {
+        const issueNumber = match[1];
+        pollWorkflowStatus(issueNumber, sym, ver);
+      } else {
+        updateWorkflowStatus('Invalid issue URL.');
+      }
+    }
+  }, 500);
+}
+
+function updateWorkflowStatus(msg, color) {
+  const el = document.getElementById('workflowStatus');
+  el.textContent = msg;
+  if (color) el.style.color = color;
+}
+
+async function pollWorkflowStatus(issueNumber, sym, ver) {
+  updateWorkflowStatus('Backtest workflow: polling status...', '#58a6ff');
+  const owner = 'rcaldwell67';
+  const repo = 'pinescripts';
+  let pollCount = 0;
+  const maxPolls = 30; // ~5 min
+  const pollInterval = 10000; // 10s
+  async function check() {
+    pollCount++;
+    // Fetch workflow runs for this issue
+    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/actions/runs?event=issues`;
+    try {
+      const resp = await fetch(apiUrl);
+      const data = await resp.json();
+      // Find the latest rerun-backtest run for this issue
+      const runs = (data.workflow_runs || []).filter(run =>
+        run.name && run.name.includes('Rerun Backtest') &&
+        run.head_commit && run.head_commit.message &&
+        run.head_commit.message.includes(`#${issueNumber}`)
+      );
+      const latest = runs[0];
+      if (latest) {
+        if (latest.status === 'completed') {
+          if (latest.conclusion === 'success') {
+            updateWorkflowStatus('Backtest workflow: Success!', '#2ea043');
+          } else {
+            updateWorkflowStatus('Backtest workflow: Failed.', '#ff4d4f');
+          }
+          return;
+        } else {
+          updateWorkflowStatus('Backtest workflow: Running...', '#58a6ff');
+        }
+      } else {
+        updateWorkflowStatus('Backtest workflow: Pending...', '#ffa657');
+      }
+    } catch (e) {
+      updateWorkflowStatus('Workflow status error.', '#ff4d4f');
+    }
+    if (pollCount < maxPolls) setTimeout(check, pollInterval);
+    else updateWorkflowStatus('Workflow status: Timed out.', '#ffa657');
+  }
+  check();
 }
 }
 
