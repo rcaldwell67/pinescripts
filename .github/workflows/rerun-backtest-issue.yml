@@ -20,6 +20,9 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
       - name: Extract symbol and version from issue title
         id: extract
         run: |
