@@ -291,6 +291,23 @@ if __name__ == "__main__":
         print(f'Max drawdown: {max_dd*100:.2f}%')
         print('Final Portfolio Value: %.2f' % cerebro.broker.getvalue())
 
+        # --- Save summary metrics to CSV ---
+        import csv
+        from datetime import datetime
+        csv_path = os.path.join(os.path.dirname(__file__), 'summary_metrics.csv')
+        file_exists = os.path.isfile(csv_path)
+        with open(csv_path, 'a', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            if not file_exists:
+                writer.writerow([
+                    'timestamp', 'symbol', 'version', 'total_trades', 'wins', 'losses',
+                    'win_rate', 'net_return', 'max_drawdown', 'final_portfolio_value'
+                ])
+            writer.writerow([
+                datetime.now().isoformat(), symbol, version, total_trades, wins, losses,
+                f"{win_rate:.2f}", f"{net_return:.2f}", f"{max_dd*100:.2f}", f"{cerebro.broker.getvalue():.2f}"
+            ])
+
         # --- Strategy Guidelines ---
         print("\n--- Strategy Guidelines ---")
         guidelines = [
