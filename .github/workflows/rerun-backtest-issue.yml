@@ -1,0 +1,48 @@
+# Workflow to rerun backtests via GitHub Issue trigger
+# Mirrors the add-symbol.yml pattern for secure, auditable automation
+name: Rerun Backtest (via Issue)
+on:
+  issues:
+    types: [opened]
+    # Only run if the issue title starts with 'Rerun Backtest:'
+    # This is enforced in the workflow jobs below
+
+jobs:
+  rerun-backtest:
+    if: startsWith(github.event.issue.title, 'Rerun Backtest:')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Parse backtest parameters from issue
+        id: parse-params
+        run: |
+          echo "ISSUE_BODY<<EOF" >> $GITHUB_ENV
+          echo "${{ github.event.issue.body }}" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Run backtest (customize as needed)
+        run: |
+          echo "Running backtest with parameters from issue..."
+          # Example: parse params and run your backtest script
+          # python backend/backtest_backtrader_alpaca.py --params "$ISSUE_BODY"
+          # Add your actual backtest command here
+
+      - name: Comment with result
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            ✅ Backtest rerun workflow completed.
+            (Customize this message with actual results.)
+
+      - name: Close issue
+        uses: peter-evans/close-issue@v3
+        with:
+          issue-number: ${{ github.event.issue.number }}

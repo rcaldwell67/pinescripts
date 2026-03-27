@@ -483,9 +483,15 @@ function buildTabs() {
   }
 // Stub for rerun backtest logic
 function rerunBacktest(symbol, version) {
-  // TODO: Connect this to backend or workflow trigger for rerunning backtest
-  alert(`Rerun backtest requested for ${symbol.toUpperCase()} version ${version.toUpperCase()}`);
-  // Example: call API, trigger workflow, or show loading indicator
+  // Open a pre-filled GitHub Issue for rerun-backtest, matching add-symbol pattern
+  const sym = symbol.toUpperCase();
+  const ver = version.toUpperCase();
+  const issueTitle = encodeURIComponent(`Rerun Backtest: ${sym} ${ver}`);
+  const issueBody = encodeURIComponent(
+    `Please rerun the backtest for ${sym} version ${ver}.\n\n_This request was generated from the dashboard UI._`
+  );
+  const url = `https://github.com/rcaldwell67/pinescripts/issues/new?title=${issueTitle}&body=${issueBody}`;
+  window.open(url, '_blank');
 }
 }
 
