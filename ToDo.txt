@@ -1,12 +1,17 @@
 ---EACH TODO IS TO BE WORKED IN NUMERICAL ORDER
 ---AFTER A TODO IS COMPLETED, ADD TO CHANGELOG.MD AND REMOVE FROM TODO.TXT
 
-1. Create and Validate that rerun backtest is working from the dashboard
+1. Create SQLite database file
+  a. Table for Backtest Results per Symbol
+  b. Table for Paper Trading Results per Symbol
+  c. Table for Live Trading Results per Symbol
 
-2. Create paper trading for BTCUSD
+2. Create and Validate that rerun backtest is working from the dashboard
 
-3. Create and Validate that rerun paper trading from dashboard
+3. Create paper trading for BTCUSD
 
-4. Make sure backtesting and paper trading are 100% for v1-v6
+4. Create and Validate that rerun paper trading from dashboard
 
-5. Housekeeping, remove all files/folders that are not in use by the project
+5. Make sure backtesting and paper trading are 100% for v1-v6
+
+6. Housekeeping, remove all files/folders that are not in use by the project
