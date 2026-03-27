@@ -1,3 +1,6 @@
+---EACH TODO IS TO BE WORKED IN NUMERICAL ORDER
+---AFTER A TODO IS COMPLETED, ADD TO CHANGELOG.MD AND REMOVE FROM TODO.TXT
+
 1. Validate that rerun backtest is working from the dashboard
 
 2 Create paper trading for BTCUSD
