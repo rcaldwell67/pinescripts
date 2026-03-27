@@ -344,10 +344,10 @@ function updateDatasetSwitcher() {
   const v1Select = document.getElementById('v1DatasetSelect');
   const v2Select = document.getElementById('v2DatasetSelect');
   const show = activeMode === 'backtest' && activeSym === 'btc';
-  wrap.style.display = show ? 'flex' : 'none';
+  if (wrap) wrap.style.display = show ? 'flex' : 'none';
   if (show) {
-    v1Select.value = getSelectedBacktestVariant('btc', 'v1');
-    v2Select.value = getSelectedBacktestVariant('btc', 'v2');
+    if (v1Select) v1Select.value = getSelectedBacktestVariant('btc', 'v1');
+    if (v2Select) v2Select.value = getSelectedBacktestVariant('btc', 'v2');
   }
 }
 
