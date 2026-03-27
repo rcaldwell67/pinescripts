@@ -30,7 +30,7 @@ jobs:
           TITLE="${{ github.event.issue.title }}"
           PARTS=($TITLE)
           SYMBOL=${PARTS[2]}
-          VERSION=${PARTS[3]}
+          VERSION=$(echo "${PARTS[3]}" | tr '[:upper:]' '[:lower:]')
           echo "symbol=$SYMBOL" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
