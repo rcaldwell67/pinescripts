@@ -1,3 +1,0 @@
-entry_time,exit_time,direction,entry,exit,result,pnl_pct,dollar_pnl,equity
-2024-01-01 00:00:00,2024-01-01 01:00:00,LONG,42000,42500,TP,1.19,500,42500
-2024-01-01 02:00:00,2024-01-01 03:00:00,SHORT,42500,42000,SL,-1.18,-500,42000

@@ -1,8 +1,0 @@
-{
-  "position": null,
-  "equity": 10000.0,
-  "cb_hwm": 10000.0,
-  "cb_halted": false,
-  "cooldown_remaining": 0,
-  "last_bar_ts": "2026-03-23 15:30:00+00:00"
-}
