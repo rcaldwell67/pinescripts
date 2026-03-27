@@ -4,6 +4,122 @@
 //@version=6
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Adaptive Pullback Momentum v1.0
+// 5min Look Back
+// THESIS
+//   Most breakout strategies enter *after* the move is mature.  This strategy
+//   enters during brief pullbacks to a key moving average while the broader
+//   trend is intact, giving tighter natural stops and a higher-quality R:R.
+//
+// ENTRY LOGIC (SHORTS ONLY by default — longs lose money at 15m)
+//   Short : EMA21 < EMA50 < EMA200 (full bearish stack)
+//            EMA21 falling over 3 bars (slope filter)
+//            RSI falling on entry bar (momentum confirmation)
+//            prev-bar high tagged EMA21 zone, current bar breaks below EMA21
+//            + RSI 32–58  |  Volume ≥ 1.2× VolSMA  |  ADX > 28  |  no panic
+//            + body ≥ 0.20×ATR  |  ATR ≥ 0.15% of price
+//   Long  : available via input toggle but disabled by default (WR=23% at 15m)
+//
+// EXIT LOGIC
+//   → Hard stop  : entry ± ATR × 2.0
+//   → Hard TP    : entry ± ATR × 2.5  (1.25:1 R:R — 15m sweep-optimised)
+//   → Trail      : activates once price moves ATR×2.5 in favour,
+//                  then trails ATR×0.6 from best price (tight lock-in at 15m)
+//   → Sizing     : 1 % of equity risked per trade
+//
+// v2.1 CHANGES vs v2.0  (CLM 15m sweep)
+//   PB tolerance : 0.30% → 0.15%  (tighter pullback = fewer, higher-quality entries)
+//   TP multiplier: 2.5×  → 2.0×   (sweep peak)
+//   ADX threshold: 20    → 25     (filters choppy regimes)
+//   Trail activate: 1.0× → 1.5×  (lets winners breathe before trailing)
+//   Body filter  : none  → 0.15×ATR (rejects doji / indecision candles)
+//
+// v2.2 CHANGES vs v2.1  (ported from APM v2.2 — CLM 30m sweep: +10.41% PF=2.415)
+//   EMA condition : loose (close>EMA200 & EMA21>EMA50) → full stack EMA21>EMA50>EMA200
+//   EMA slope     : ADDED — EMA21 must trend in trade direction over 3 bars
+//   RSI direction : ADDED — RSI must be rising (long) / falling (short) on entry
+//   Volume mult   : 1.0× → 1.2×   (higher conviction threshold)
+//   Body filter   : 0.15× → 0.20×ATR (stricter doji rejection)
+//   ATR floor     : ADDED — ATR ≥ 0.20% of price (kills high-commission low-vol)
+//   SL multiplier : 1.5× → 2.0×   (wider stop → smaller qty → less commission)
+//   TP multiplier : 2.0× → 3.5×   (1.75:1 R:R, sweep-optimised)
+//   Trail activate: 1.5× → 2.5×   (let price run before trailing kicks in)
+//   Trail distance: 0.8× → 1.5×   (wider trail stops micro-spike exits)
+//   Panic mult    : 1.5× → 1.3×   (exit volatile regimes more aggressively)
+//
+// v2.1 Stage-1 sweep (7416 combos — best by PF@≥8 trades):
+//   ADX=20 | vol=0.7 | session_end=14 | adx_slope=off | di_spread=off | pb=0.30
+//   tp=3.0 | sl=2.0
+//   Result (10 trades): PF=7.785 | net=+9.01% | WR=90.0% | MaxDD=-1.31% | Calmar=6.865
+//
+// v2.2 Stage-2 sweep (768 combos — best by Calmar):
+//   panic=1.5 | tp=4.0 | sl=2.0 | max_bars=25 (NEW)
+//   Result (11 trades): PF=63.604 | net=+9.75% | WR=90.9% | MaxDD=-0.15% | Calmar=63.653
+//   Key insight: max_bars=25 cuts stalled trades → near-zero drawdown
+//
+// v2.3 Stage-3 sweep (625 combos — best by net%):
+//   trail_act=3.5 | trail_dist=0.3 | tp=6.0 | max_bars=30
+//   Result (11 trades): PF=59.634 | net=+18.67% | WR=90.9% | MaxDD=-0.31% | Calmar=59.706
+//   Key insight: late trail (3.5×ATR) + tight dist (0.3×ATR) + wider TP (6.0) → 2× return
+//
+// v2.5 Stage-5 sweep (12,150 combos — intermediate signal + exit grid, 1-yr Alpaca):
+//   adx=17 | pb=0.30 | vol=0.7 | tp=9.0 | trail_dist=0.2 | max_bars=20 | risk=2.5%
+//   Result (12 trades): net=+22.15% | WR=75% | MaxDD=-3.62% | Calmar=6.11
+//   Key insight: slightly looser ADX (20→17) gives 2 extra trades; wider TP (9×) + tighter
+//   trail (0.2×) + shorter MB window (20 bars) captures more of each run
+// ─────────────────────────────────────────────────────────────────────────────
+
+strategy(
+	title             = "Adaptive Pullback Momentum v2.5",
+	shorttitle        = "APM v2.5",
+	overlay           = true,
+	pyramiding        = 0,
+	initial_capital   = 10000,
+	default_qty_type  = strategy.cash,
+	default_qty_value = 10000,        // overridden by risk-based sizing below
+	commission_type   = strategy.commission.percent,
+	commission_value  = 0.06,
+	slippage          = 1)
+
+// ─── Inputs ────────────────────────────────────────────────────────────────
+// ─── Inputs ────────────────────────────────────────────────────────────────
+var G_TREND = "Trend Filters"
+i_ema_fast   = input.int  (21,   "EMA Fast",            group=G_TREND, minval=5)
+i_ema_mid    = input.int  (50,   "EMA Mid",             group=G_TREND, minval=10)
+i_ema_slow   = input.int  (200,  "EMA Slow",            group=G_TREND, minval=50)
+i_adx_thresh = input.int  (17,   "ADX threshold",       group=G_TREND, minval=5, maxval=60)
+i_adx_len    = input.int  (14,   "ADX / DI length",     group=G_TREND, minval=5)
+i_pb_pct     = input.float(0.30, "Pullback tolerance (%)", group=G_TREND, minval=0.05, maxval=3.0, step=0.05, tooltip="How close the prev bar's low/high must come to EMA-fast to count as a pullback")
+
+var G_MOM = "Momentum & Volume"
+i_rsi_len    = input.int  (14,   "RSI length",          group=G_MOM, minval=3)
+i_rsi_lo_l   = input.int  (42,   "RSI min – Long",      group=G_MOM, minval=10, maxval=70)
+i_rsi_hi_l   = input.int  (68,   "RSI max – Long",      group=G_MOM, minval=50, maxval=90)
+i_rsi_lo_s   = input.int  (32,   "RSI min – Short",     group=G_MOM, minval=10, maxval=50)
+i_rsi_hi_s   = input.int  (58,   "RSI max – Short",     group=G_MOM, minval=40, maxval=80)
+i_vol_len    = input.int  (20,   "Volume SMA length",   group=G_MOM, minval=5)
+i_vol_mult   = input.float(1.2,  "Volume multiplier",   group=G_MOM, minval=0.1, maxval=5.0, step=0.1)
+i_min_body   = input.float(0.20, "Min body (x ATR)",    group=G_MOM, minval=0.0, maxval=2.0, step=0.05, tooltip="Entry bar |close-open|/ATR must exceed this. Filters doji candles.")
+
+var G_VOL = "Volatility"
+i_atr_len    = input.int  (14,   "ATR length",          group=G_VOL, minval=3)
+i_atr_bl_len = input.int  (60,   "ATR baseline length", group=G_VOL, minval=10)
+i_atr_floor  = input.float(0.15, "ATR floor (% of price)", group=G_VOL, minval=0.0, maxval=2.0, step=0.01, tooltip="ATR/price must exceed this %. Removes near-zero ATR bars where commission drag dominates.")
+i_panic_mult = input.float(1.3,  "Panic suppression mult", group=G_VOL, minval=1.0, step=0.1, tooltip="ATR > ATR_baseline x this value => skip new entries.")
+
+var G_SESS = "Session"
+i_sess_on    = input.bool (true,  "Enable session filter",   group=G_SESS)
+i_sess_start = input.int  (9,    "Session start (ET hour)", group=G_SESS, minval=0, maxval=23)
+i_sess_end   = input.int  (14,   "Session end (ET hour)",   group=G_SESS, minval=0, maxval=23, tooltip="Entries blocked from this hour onward. Default 14 = 2:00 PM ET.")
+
+var G_RISK = "Risk Management"
+i_sl_mult    = input.float(2.0,  "Stop loss ATR mult",   group=G_RISK, minval=0.3, step=0.1)
+i_tp_mult    = input.float(3.5,  "Take profit ATR mult", group=G_RISK, minval=0.5, step=0.1)
+i_trail_act  = input.float(2.5,  "Trail activate (ATR)", group=G_RISK, minval=0.5, step=0.1, tooltip="Trail activates after price moves this many ATR in favor.")
+i_trail_dist = input.float(1.5,  "Trail distance (ATR)", group=G_RISK, minval=0.01, step=0.01, tooltip="Distance from best price for trailing stop.")
+i_risk_pct   = input.float(1.0,  "Risk per trade (%)",   group=G_RISK, minval=0.1, maxval=10.0, step=0.1, tooltip="% of equity risked per trade.")
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Adaptive Pullback Momentum v1.1 — 5m
 // Timeframe : 5-minute  ·  Instrument : CLM (Cornerstone Strategic Investment Fund, Inc.)
 // Exchange   : NYSE  ·  Type: Closed-End Fund (CEF)

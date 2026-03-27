@@ -36,6 +36,14 @@ def create_database(db_path):
             notes TEXT
         )
     ''')
+    # Symbols Table
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS symbols (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            symbol TEXT NOT NULL UNIQUE,
+            description TEXT
+        )
+    ''')
     conn.commit()
     conn.close()
 

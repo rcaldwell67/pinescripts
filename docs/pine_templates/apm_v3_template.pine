@@ -3,78 +3,12 @@
 
 //@version=6
 
+//@version=6
 // ─────────────────────────────────────────────────────────────────────────────
 // Adaptive Pullback Momentum v3.0
-// 15min Look Back
-// THESIS
-//   Most breakout strategies enter *after* the move is mature.  This strategy
-//   enters during brief pullbacks to a key moving average while the broader
-//   trend is intact, giving tighter natural stops and a higher-quality R:R.
-//
-// ENTRY LOGIC (SHORTS ONLY by default — longs lose money at 15m)
-//   Short : EMA21 < EMA50 < EMA200 (full bearish stack)
-//            EMA21 falling over 3 bars (slope filter)
-//            RSI falling on entry bar (momentum confirmation)
-//            prev-bar high tagged EMA21 zone, current bar breaks below EMA21
-//            + RSI 32–58  |  Volume ≥ 1.2× VolSMA  |  ADX > 28  |  no panic
-//            + body ≥ 0.20×ATR  |  ATR ≥ 0.15% of price
-//   Long  : available via input toggle but disabled by default (WR=23% at 15m)
-//
-// EXIT LOGIC
-//   → Hard stop  : entry ± ATR × 2.0
-//   → Hard TP    : entry ± ATR × 2.5  (1.25:1 R:R — 15m sweep-optimised)
-//   → Trail      : activates once price moves ATR×2.5 in favour,
-//                  then trails ATR×0.6 from best price (tight lock-in at 15m)
-//   → Sizing     : 1 % of equity risked per trade
-//
-// v3.1 CHANGES vs v3.0  (CLM 15m sweep)
-//   PB tolerance : 0.30% → 0.15%  (tighter pullback = fewer, higher-quality entries)
-//   TP multiplier: 2.5×  → 2.0×   (sweep peak)
-//   ADX threshold: 20    → 25     (filters choppy regimes)
-//   Trail activate: 1.0× → 1.5×  (lets winners breathe before trailing)
-//   Body filter  : none  → 0.15×ATR (rejects doji / indecision candles)
-//
-// v3.2 CHANGES vs v3.1  (ported from APM v2.2 — CLM 30m sweep: +10.41% PF=2.415)
-//   EMA condition : loose (close>EMA200 & EMA21>EMA50) → full stack EMA21>EMA50>EMA200
-//   EMA slope     : ADDED — EMA21 must trend in trade direction over 3 bars
-//   RSI direction : ADDED — RSI must be rising (long) / falling (short) on entry
-//   Volume mult   : 1.0× → 1.2×   (higher conviction threshold)
-//   Body filter   : 0.15× → 0.20×ATR (stricter doji rejection)
-//   ATR floor     : ADDED — ATR ≥ 0.20% of price (kills high-commission low-vol)
-//   SL multiplier : 1.5× → 2.0×   (wider stop → smaller qty → less commission)
-//   TP multiplier : 2.0× → 3.5×   (1.75:1 R:R, sweep-optimised)
-//   Trail activate: 1.5× → 2.5×   (let price run before trailing kicks in)
-//   Trail distance: 0.8× → 1.5×   (wider trail stops micro-spike exits)
-//   Panic mult    : 1.5× → 1.3×   (exit volatile regimes more aggressively)
-//
-// v3.3 CHANGES vs v3.2  (CLM 15m direction+param sweep: +6.95% PF=1.908 vs -5.14%)
-//   Longs OFF     : default disabled — longs at 15m: WR=23% PF=0.189 (noise too high)
-//   ADX threshold : 25 → 28     (higher trend quality; WR 60%→70%)
-//   ATR floor     : 0.20% → 0.15% (15m bars smaller; 0.20% over-filtered short setups)
-//   TP multiplier : 3.5× → 2.5×  (15m moves don't reach TP×3.5; only 5/30 hit at v3.2)
-//   Trail distance: 1.5× → 0.6×  (tighter trail locks in gains faster on 15m)
-// v3.4 CHANGES vs v3.3  (CLM 15m Wilder-smoothed ADX mini-sweep: +31.30% PF=3.995 WR=67% 12 trades)
-//   ADX threshold : 28 → 18  (CLM Wilder EWM ADX is lower than BTC; keeps 28-30 signals)
-//   PB tolerance  : 0.15% → 0.40%  (wider pullback zone — crude oil tick noise is higher)
-//   Min body      : 0.20× → 0.15×ATR  (slight relaxation allows more quality CLM entries)
-//   Panic mult    : 1.3× → 1.5×  (crude oil regime spikes are more significant)
-//   SL multiplier : 2.0× → 1.5×  (tighter stop → larger qty → more compounding on wins)
-//   TP multiplier : 2.5× → 6.0×  (crude oil 15m big moves run 6×ATR; captures full trends)
-//   Trail distance: 0.6× → 0.4×  (tighter trail locks in more of the big winners)
-//   Risk per trade: 1.0% → 2.0%  (CLM mini-sweep optimum; doubles equity compounding)
-// ─────────────────────────────────────────────────────────────────────────────
+// ...existing code...
 
-strategy(
-	title             = "Adaptive Pullback Momentum v3.4",
-	shorttitle        = "APM v3.4",
-	overlay           = true,
-	pyramiding        = 0,
-	initial_capital   = 10000,
-	default_qty_type  = strategy.cash,
-	default_qty_value = 10000,        // overridden by risk-based sizing below
-	commission_type   = strategy.commission.percent,
-	commission_value  = 0.06,
-	slippage          = 1)
+strategy("Adaptive Pullback Momentum v3.4", shorttitle="APM v3.4", overlay=true, pyramiding=0, initial_capital=10000, default_qty_type=strategy.cash, default_qty_value=10000, commission_type=strategy.commission.percent, commission_value=0.06, slippage=1)
 
 // ─── Inputs ────────────────────────────────────────────────────────────────
 // ─── Inputs ────────────────────────────────────────────────────────────────
