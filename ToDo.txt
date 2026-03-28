@@ -1,7 +1,7 @@
 ---EACH TODO IS TO BE WORKED IN NUMERICAL ORDER
 ---AFTER A TODO IS COMPLETED, ADD TO CHANGELOG.MD AND REMOVE FROM TODO.TXT
 
-2. Create backtesting
+2. Create backtests based on APM Templates v1-v6 using Backtrader and Alpaca
   a. Create rerun backtesting from the dashboard
   
 3. Validate that rerun backtest is working from the dashboard is working for any Symbol
