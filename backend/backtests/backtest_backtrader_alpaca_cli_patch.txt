@@ -1,0 +1,50 @@
+# PATCH: Add CLI and output reporting for APMv1Strategy
+# This patch adds a minimal CLI to run APMv1Strategy and print summary metrics after the backtest.
+
+import argparse
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Backtest strategies")
+    parser.add_argument("--symbol", type=str, default="BTCUSD", help="Symbol")
+    parser.add_argument("--strategy", type=str, default="apm", choices=["apm"], help="Strategy")
+    parser.add_argument("--cash", type=float, default=10000, help="Starting cash")
+    args = parser.parse_args()
+
+    # Fetch data (replace with your data loader)
+    import yfinance as yf
+    df = yf.download(args.symbol, interval="5m", period="ytd")
+    df.dropna(inplace=True)
+
+    data = bt.feeds.PandasData(dataname=df)
+    cerebro = bt.Cerebro()
+    cerebro.addstrategy(APMv1Strategy)
+    cerebro.adddata(data)
+    cerebro.broker.setcash(args.cash)
+    results = cerebro.run()
+    strat = results[0]
+
+    trades = getattr(strat, 'trades', [])
+    equity_curve = getattr(strat, 'equity_curve', [])
+    total_trades = len(trades)
+    wins = sum(1 for t in trades if t.get('won'))
+    losses = total_trades - wins
+    win_rate = (wins / total_trades * 100) if total_trades else 0
+    start_val = equity_curve[0] if equity_curve else args.cash
+    end_val = equity_curve[-1] if equity_curve else cerebro.broker.getvalue()
+    net_return = ((end_val - start_val) / start_val * 100) if start_val else 0
+    peak = equity_curve[0] if equity_curve else start_val
+    max_dd = 0
+    for v in equity_curve:
+        if v > peak:
+            peak = v
+        dd = (peak - v) / peak if peak else 0
+        if dd > max_dd:
+            max_dd = dd
+    max_dd_pct = max_dd * 100
+
+    print(f"\n--- Backtest Results for {args.symbol} (APMv1Strategy) ---")
+    print(f"Trades: {total_trades} | Wins: {wins} | Losses: {losses}")
+    print(f"Win rate: {win_rate:.2f}%")
+    print(f"Net return: {net_return:.2f}%")
+    print(f"Max drawdown: {max_dd_pct:.2f}%")
+    print(f"Final Portfolio Value: {end_val:.2f}")
