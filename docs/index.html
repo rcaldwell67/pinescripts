@@ -377,11 +377,14 @@ let txPage = 1;
           select.appendChild(opt);
         });
         select.value = '';
-        select.addEventListener('change', function() {
-          handleSymbolSelect(this.value);
-        });
-          // Dynamically build symbol switcher buttons (if used)
-          buildSymbolSwitcher(symbols);
+        // Only add event listener after loaded is initialized
+        setTimeout(() => {
+          select.addEventListener('change', function() {
+            handleSymbolSelect(this.value);
+          });
+        }, 0);
+        // Dynamically build symbol switcher buttons (if used)
+        buildSymbolSwitcher(symbols);
       });
   }
 
@@ -1237,9 +1240,8 @@ function populateSymbolDropdown() {
 function handleSymbolSelect(newSym) {
   if (typeof loaded === 'undefined' || !loaded) {
     // Prevent ReferenceError if loaded is not initialized
+    alert('Dashboard is still loading. Please wait a moment and try again.');
     console.warn('handleSymbolSelect called before loaded is initialized.');
-    // Optionally, show a user-facing warning or retry after a short delay
-    // setTimeout(() => handleSymbolSelect(newSym), 50);
     return;
   }
   if (!newSym) {
