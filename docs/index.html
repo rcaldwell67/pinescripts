@@ -282,9 +282,9 @@ function buildInstruments(symbols) {
     { key: 'v6', label: 'v6 · 1D Both', tf: '1D', color: '#ff7b72' }
   ];
   symbols.forEach(sym => {
-    // Normalize symbol for file paths (e.g., BTC_USD -> btcusd)
+    // Normalize symbol for file paths
     const fileSym = sym.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-    // Label: BTC_USD -> BTC-USD
+    // Label: SYMBOL_KEY -> SYMBOL-LABEL
     const label = sym.replace(/_/g, '-');
     const versions = {};
     versionTemplates.forEach(vt => {
@@ -958,7 +958,7 @@ let lcChartInst = null;
 async function loadChartData(sym) {
   if (chartDataCache[sym]) return chartDataCache[sym];
   // Dynamically build the chart file path based on the symbol
-  // Example: BTC_USD -> chart_btcusd.json, ETH_USD -> chart_ethusd.json
+  // Example: SYMBOL_KEY -> chart_symbol.json
   const fileSym = sym.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
   const file = `data/chart_${fileSym}.json`;
   const resp = await fetch(file + '?v=' + Date.now(), { cache: 'no-store' });
@@ -1052,7 +1052,7 @@ function getPriceChartMarkers(sym, tab) {
 
 // Aggregate 5-min bars into coarser buckets (for 3M/6M/All views).
 // Lightweight Charts has a hard minimum of 0.5px/bar, so a 1200px chart
-// can only display ~2400 bars. 6M of 5-min CLM data = ~4700 bars → clamps.
+// can only display ~2400 bars. Large datasets may require resampling.
 // Solution: resample to ~30-min buckets for views with >1500 bars.
 function resampleBars(bars, targetMaxBars) {
   if (bars.length <= targetMaxBars) return bars;
