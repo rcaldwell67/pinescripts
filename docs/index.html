@@ -345,13 +345,15 @@ function buildInstruments(symbols) {
     });
   }
 
-  let activeMode = 'backtest';
-  let activeSym = '';
-  let activeTab = 'all';
-  let charts = {};
-  let tradeTablePage = 1;
-  let tradePageSize = 25;
-  let txPage = 1;
+
+let loaded; // Global reference to the currently loaded data for the active mode
+let activeMode = 'backtest';
+let activeSym = '';
+let activeTab = 'all';
+let charts = {};
+let tradeTablePage = 1;
+let tradePageSize = 25;
+let txPage = 1;
 
   function loadSymbolsAndInit() {
     fetch('data/symbols.csv')
