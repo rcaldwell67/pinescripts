@@ -124,23 +124,7 @@
     <input id="addSymbolInput" type="text" placeholder="Add Symbol..." style="margin-left:10px; padding:4px 10px; border-radius:6px; border:1px solid var(--border); background:var(--surface); color:var(--text); font-size:12px; width:120px;" />
     <button id="addSymbolBtn" style="margin-left:4px; padding:4px 12px; border-radius:6px; border:1px solid var(--border); background:var(--accent); color:#fff; font-size:12px; cursor:pointer;">Add</button>
   </div>
-  <div class="mode-switcher">
-    <button class="mode-btn active" data-mode="backtest" id="backtestBtn">Backtest</button>
-    <button class="mode-btn" data-mode="paper" id="paperBtn">Paper</button>
-    <button class="mode-btn" data-mode="live" id="liveBtn">Live</button>
-  </div>
-  <!-- Dataset Switcher UI (hidden by default, shown for BTC backtest) -->
-  <div id="datasetSwitcher" class="dataset-switcher" style="display:none;">
-    <div class="dataset-switcher-group">
-      <label for="v1DatasetSelect">BTC v1 Dataset:</label>
-      <select id="v1DatasetSelect" class="tx-select">
-        <option value="main">Main</option>
-        <option value="12mo">12mo</option>
-      </select>
-    </div>
-    <div class="dataset-switcher-group">
-      <label for="v2DatasetSelect">BTC v2 Dataset:</label>
-      <select id="v2DatasetSelect" class="tx-select">
+
         <option value="main">Main</option>
         <option value="12mo">12mo</option>
       </select>
