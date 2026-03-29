@@ -370,6 +370,7 @@ let txPage = 1;
         // Populate symbol selector
         const select = document.getElementById('symbolSelect');
         select.innerHTML = '';
+        select.disabled = true; // Disable dropdown during loading
         symbols.forEach(sym => {
           const opt = document.createElement('option');
           opt.value = sym;
@@ -377,8 +378,9 @@ let txPage = 1;
           select.appendChild(opt);
         });
         select.value = '';
-        // Only add event listener after loaded is initialized
+        // Wait for loaded to be initialized, then enable and attach event
         setTimeout(() => {
+          select.disabled = false;
           select.addEventListener('change', function() {
             handleSymbolSelect(this.value);
           });
