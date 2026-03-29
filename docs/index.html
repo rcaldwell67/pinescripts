@@ -1241,6 +1241,7 @@ function populateSymbolDropdown() {
   fetch('data/symbols.json?v=' + Date.now(), { cache: 'no-store' })
     .then(resp => resp.json())
     .then(symbolsArr => {
+      console.log('[DEBUG] Loaded symbols from symbols.json:', symbolsArr);
       const select = document.getElementById('symbolSelect');
       select.innerHTML = '<option value="">Select...</option>';
       symbolsArr.forEach(obj => {
@@ -1259,7 +1260,7 @@ function populateSymbolDropdown() {
       }, 0);
     })
     .catch(err => {
-      console.error('Failed to load symbols.json:', err);
+      console.error('[DEBUG] Failed to load symbols.json:', err);
     });
 }
 
