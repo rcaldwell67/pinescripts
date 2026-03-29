@@ -46,6 +46,15 @@ jobs:
           echo "$SYMBOL" >> "$CSV"
           echo "Added $SYMBOL to $CSV"
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Add symbol to database
+        run: |
+          python3 backend/data/add_symbol_to_db.py "${{ steps.extract.outputs.symbol }}"
+
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
