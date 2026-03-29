@@ -385,23 +385,22 @@ let txPage = 1;
         select.value = '';
         // Wait for loaded to be initialized, then enable and attach event
         // Only enable and attach event after loaded is initialized
-        if (typeof loaded !== 'undefined' && loaded) {
-          select.disabled = false;
-          select.addEventListener('change', function() {
-            handleSymbolSelect(this.value);
-          });
-        } else {
-          // Wait for loaded to be initialized before enabling
-          const waitForLoaded = setInterval(() => {
-            if (typeof loaded !== 'undefined' && loaded) {
-              select.disabled = false;
-              select.addEventListener('change', function() {
-                handleSymbolSelect(this.value);
-              });
-              clearInterval(waitForLoaded);
-            }
-          }, 50);
+        function enableDropdownWhenReady() {
+          if (typeof loaded !== 'undefined' && loaded) {
+            // Remove all previous event listeners by replacing the element
+            const oldSelect = select;
+            const newSelect = oldSelect.cloneNode(true);
+            oldSelect.parentNode.replaceChild(newSelect, oldSelect);
+            newSelect.disabled = false;
+            newSelect.addEventListener('change', function() {
+              handleSymbolSelect(this.value);
+            });
+            console.log('[Dropdown] Dropdown enabled and event attached. Ready for user interaction.');
+          } else {
+            setTimeout(enableDropdownWhenReady, 50);
+          }
         }
+        enableDropdownWhenReady();
         // Dynamically build symbol switcher buttons (if used)
         buildSymbolSwitcher(symbols);
       })
