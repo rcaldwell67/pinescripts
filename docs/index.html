@@ -360,10 +360,10 @@ let tradePageSize = 25;
 let txPage = 1;
 
   function loadSymbolsAndInit() {
-    fetch('data/symbols.csv')
-      .then(r => r.text())
-      .then(text => {
-        const symbols = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+    fetch('data/symbols.json')
+      .then(r => r.json())
+      .then(data => {
+        const symbols = data.map(obj => obj.symbol);
         SYMBOLS = symbols;
         INSTRUMENTS = buildInstruments(symbols);
         initStateObjects(symbols);
@@ -371,10 +371,10 @@ let txPage = 1;
         const select = document.getElementById('symbolSelect');
         select.innerHTML = '';
         select.disabled = true; // Disable dropdown during loading
-        symbols.forEach(sym => {
+        data.forEach(obj => {
           const opt = document.createElement('option');
-          opt.value = sym;
-          opt.textContent = INSTRUMENTS[sym]?.label || sym;
+          opt.value = obj.symbol;
+          opt.textContent = obj.description ? `${obj.symbol} — ${obj.description}` : obj.symbol;
           select.appendChild(opt);
         });
         select.value = '';
@@ -1331,59 +1331,20 @@ document.getElementById('v2DatasetSelect')?.addEventListener('change', event => 
   hideDashboardData();
   activeSym = '';
   populateSymbolDropdown();
-  // Add Symbol input logic (fully functional UI)
+  // Add Symbol input logic (GitHub Issue automation)
   const addInput = document.getElementById('addSymbolInput');
   const addBtn = document.getElementById('addSymbolBtn');
   addBtn.addEventListener('click', () => {
     const val = addInput.value.trim();
     if (!val) return;
-    const upper = val.toUpperCase();
-    // Generate a unique key for INSTRUMENTS (e.g., "sym1", "sym2", ...)
-    let key = upper.replace(/[^A-Z0-9]/g, '').toLowerCase();
-    if (!key) key = 'sym' + Math.floor(Math.random()*10000);
-    // Prevent duplicates
-    if (INSTRUMENTS[key]) {
-      alert('Symbol already exists.');
-      addInput.value = '';
-      return;
-    }
-    // Add to INSTRUMENTS (placeholder config)
-    INSTRUMENTS[key] = {
-      label: val,
-      versions: {
-        v1: {
-          label: 'v1', tf: '1m', color: '#ffa657', file: '', paperFile: '', liveFile: '',
-          pnlCol: 'dollar_pnl', equityCol: 'equity', resultCol: 'result', dirCol: 'direction',
-          entryCol: 'entry', exitCol: 'exit', entryTimeCol: 'entry_time', exitTimeCol: 'exit_time'
-        }
-      }
-    };
-    // Add to dropdown
-    const select = document.getElementById('symbolSelect');
-    const opt = document.createElement('option');
-    opt.value = key;
-    opt.textContent = val;
-    select.appendChild(opt);
-    select.value = key;
-    addInput.value = '';
-    // Select the new symbol
-    handleSymbolSelect(key);
-
-    // Show 'Request Symbol Addition' button
-    let reqBtn = document.getElementById('requestSymbolBtn');
-    if (!reqBtn) {
-      reqBtn = document.createElement('button');
-      reqBtn.id = 'requestSymbolBtn';
-      reqBtn.textContent = 'Request Symbol Addition';
-      reqBtn.style = 'margin-left:10px;padding:4px 12px;border-radius:6px;border:1px solid var(--border);background:var(--green);color:#fff;font-size:12px;cursor:pointer;';
-      addBtn.parentNode.appendChild(reqBtn);
-    }
-    reqBtn.onclick = function() {
-      const issueTitle = encodeURIComponent('Symbol Addition Request: ' + val.toUpperCase());
-      const issueBody = encodeURIComponent('Please add the following symbol to symbols.csv for dashboard use.\n\nSymbol: ' + val.toUpperCase() + '\n\n_This request was generated from the dashboard UI._');
-      const url = `https://github.com/rcaldwell67/pinescripts/issues/new?title=${issueTitle}&body=${issueBody}`;
-      window.open(url, '_blank');
-    };
+    const desc = prompt('Enter a description for this symbol (optional):', '');
+    // Open a pre-filled GitHub Issue for symbol addition with add-symbol label
+    const title = encodeURIComponent('Add symbol: ' + val.toUpperCase());
+    const body = encodeURIComponent(
+      `Symbol: ${val.toUpperCase()}\nDescription: ${desc || ''}\n\n_Label this issue with add-symbol to trigger automation._`
+    );
+    const url = `https://github.com/rcaldwell67/pinescripts/issues/new?title=${title}&body=${body}&labels=add-symbol`;
+    window.open(url, '_blank');
   });
   addInput.addEventListener('keydown', e => {
     if (e.key === 'Enter') addBtn.click();

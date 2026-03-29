@@ -1,0 +1,32 @@
+name: Export Symbols to JSON
+
+on:
+  push:
+    paths:
+      - 'backend/data/create_tradingcopilot_db.py'
+      - 'backend/data/add_symbol_to_db.py'
+      - 'docs/data/tradingcopilot.db'
+  schedule:
+    - cron: '0 * * * *' # every hour
+
+jobs:
+  export-symbols:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install SQLite3
+        run: sudo apt-get install -y sqlite3
+      - name: Export symbols from DB to JSON
+        run: |
+          python3 -c "import sqlite3, json; conn = sqlite3.connect('docs/data/tradingcopilot.db'); c = conn.cursor(); c.execute('SELECT symbol, description FROM symbols'); rows = c.fetchall(); json.dump([{'symbol': r[0], 'description': r[1]} for r in rows], open('docs/data/symbols.json', 'w'), indent=2); conn.close()"
+      - name: Commit and push symbols.json
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+          git add docs/data/symbols.json
+          git commit -m 'Update symbols.json from tradingcopilot.db' || echo 'No changes to commit'
+          git push

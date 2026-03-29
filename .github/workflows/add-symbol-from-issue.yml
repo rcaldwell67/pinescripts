@@ -1,0 +1,44 @@
+name: Add Symbol from Issue
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  add-symbol:
+    if: contains(github.event.issue.labels.*.name, 'add-symbol')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Parse symbol from issue
+        id: parse
+        run: |
+          import re, os
+          body = os.environ['ISSUE_BODY']
+          m = re.search(r'Symbol:\s*([A-Za-z0-9_\-]+)', body)
+          symbol = m.group(1) if m else ''
+          desc = ''
+          m2 = re.search(r'Description:\s*(.*)', body)
+          if m2: desc = m2.group(1)
+          print(f"::set-output name=symbol::{symbol}")
+          print(f"::set-output name=desc::{desc}")
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+      - name: Add symbol to DB
+        run: |
+          python backend/data/add_symbol_to_db.py "${{ steps.parse.outputs.symbol }}" "${{ steps.parse.outputs.desc }}"
+      - name: Commit DB changes
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+          git add docs/data/tradingcopilot.db
+          git commit -m "Add symbol ${{ steps.parse.outputs.symbol }} via issue #${{ github.event.issue.number }}" || echo 'No changes'
+          git push
+      - name: Comment and close issue
+        uses: peter-evans/close-issue@v3
+        with:
+          comment: "Symbol ${{ steps.parse.outputs.symbol }} added to database and will appear in the dashboard soon."
