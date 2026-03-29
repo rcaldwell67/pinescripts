@@ -1,6 +1,9 @@
 ---EACH TODO IS TO BE WORKED IN NUMERICAL ORDER
 ---AFTER A TODO IS COMPLETED, ADD TO CHANGELOG.MD AND REMOVE FROM TODO.TXT
 
+1. Convert APM ./backend/pine_templates/APM v1.0-5m.pine into a Python script
+    place file in ./backend/backtests folder
+    
 2. Create backtests based on APM Templates v1-v6 using Backtrader and Alpaca
   a. Create rerun backtesting from the dashboard
   
