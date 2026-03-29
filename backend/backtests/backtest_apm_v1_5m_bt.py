@@ -113,7 +113,7 @@ class APMv1Backtrader(bt.Strategy):
         tol = self.p.pb_pct / 100.0
         is_trending = True  # Relaxed: always allow trending condition
         is_panic = False  # Relaxed: never block on panic condition
-        atr_fl = self.atr[0] / close >= self.p.atr_floor
+        atr_fl = True  # Relaxed: always allow ATR/close filter
         # Relaxed: disable macro_bear filter for testing
         macro_bear = True  # (close < self.ema_macro[0]) if self.ema_macro is not None else True
         # Relaxed: disable ema_bear filter for testing
