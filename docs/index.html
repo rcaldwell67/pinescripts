@@ -360,9 +360,14 @@ let tradePageSize = 25;
 let txPage = 1;
 
   function loadSymbolsAndInit() {
+    console.log('[Dropdown] Fetching symbols.json for dropdown...');
     fetch('data/symbols.json')
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error('Failed to fetch symbols.json');
+        return r.json();
+      })
       .then(data => {
+        console.log(`[Dropdown] Loaded ${data.length} symbols for dropdown.`);
         const symbols = data.map(obj => obj.symbol);
         SYMBOLS = symbols;
         INSTRUMENTS = buildInstruments(symbols);
@@ -387,6 +392,9 @@ let txPage = 1;
         }, 0);
         // Dynamically build symbol switcher buttons (if used)
         buildSymbolSwitcher(symbols);
+      })
+      .catch(err => {
+        console.error('[Dropdown] Error loading symbols for dropdown:', err);
       });
   }
 
