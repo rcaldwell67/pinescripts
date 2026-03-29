@@ -349,6 +349,9 @@ function initStateObjects(symbols) {
 
 
 let loaded; // Global reference to the currently loaded data for the active mode
+// Ensure loaded is always initialized to avoid ReferenceError
+let _modeCache = { backtest: {}, paper: {}, live: {} };
+loaded = _modeCache['backtest'];
 let activeMode = 'backtest';
 let activeSym = '';
 let activeTab = 'all';
