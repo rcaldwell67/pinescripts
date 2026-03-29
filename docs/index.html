@@ -321,29 +321,33 @@ function buildInstruments(symbols) {
   });
   return instruments;
 
-  function initStateObjects(symbols) {
-    // For each mode, create an object with all symbols as keys
-    const modes = ['backtest', 'paper', 'live'];
-    _modeCache = {};
-    modes.forEach(mode => {
-      _modeCache[mode] = {};
-      symbols.forEach(sym => {
-        _modeCache[mode][sym] = {};
-      });
-    });
-    loaded = _modeCache['backtest'];
-    // For backtestSelections, initialize for all symbols
-    backtestSelections = {};
+
+// Global reference to the currently loaded data for the active mode
+let loaded;
+
+function initStateObjects(symbols) {
+  // For each mode, create an object with all symbols as keys
+  const modes = ['backtest', 'paper', 'live'];
+  _modeCache = {};
+  modes.forEach(mode => {
+    _modeCache[mode] = {};
     symbols.forEach(sym => {
-      backtestSelections[sym] = {};
-      // Optionally, set defaults for known versions
-      if (INSTRUMENTS[sym] && INSTRUMENTS[sym].versions) {
-        Object.keys(INSTRUMENTS[sym].versions).forEach(ver => {
-          backtestSelections[sym][ver] = 'main';
-        });
-      }
+      _modeCache[mode][sym] = {};
     });
-  }
+  });
+  loaded = _modeCache['backtest'];
+  // For backtestSelections, initialize for all symbols
+  backtestSelections = {};
+  symbols.forEach(sym => {
+    backtestSelections[sym] = {};
+    // Optionally, set defaults for known versions
+    if (INSTRUMENTS[sym] && INSTRUMENTS[sym].versions) {
+      Object.keys(INSTRUMENTS[sym].versions).forEach(ver => {
+        backtestSelections[sym][ver] = 'main';
+      });
+    }
+  });
+}
 
 
 let loaded; // Global reference to the currently loaded data for the active mode
