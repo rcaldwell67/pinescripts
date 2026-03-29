@@ -1229,6 +1229,11 @@ function populateSymbolDropdown() {
 }
 
 function handleSymbolSelect(newSym) {
+  if (typeof loaded === 'undefined') {
+    // Prevent ReferenceError if loaded is not initialized
+    console.warn('handleSymbolSelect called before loaded is initialized.');
+    return;
+  }
   if (!newSym) {
     hideDashboardData();
     updateModeButtonStates();
