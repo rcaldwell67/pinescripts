@@ -320,121 +320,153 @@ function buildInstruments(symbols) {
     if (template[sym]) instruments[sym] = template[sym];
     // else: could add logic for new symbols
   });
-  return instruments;
-}
 
-function loadSymbolsAndInit() {
-  fetch('data/symbols.csv')
-    .then(r => r.text())
-    .then(text => {
-      const symbols = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-      INSTRUMENTS = buildInstruments(symbols);
-      // Populate symbol selector
-      const select = document.getElementById('symbolSelect');
-      select.innerHTML = '';
-      symbols.forEach(sym => {
-        const opt = document.createElement('option');
-        opt.value = sym;
-        opt.textContent = INSTRUMENTS[sym]?.label || sym;
-        select.appendChild(opt);
-      });
-      select.value = '';
-      select.addEventListener('change', function() {
-        handleSymbolSelect(this.value);
-      });
+  let INSTRUMENTS = {};
+  let SYMBOLS = [];
+
+  function buildInstruments(symbols) {
+    // For each symbol, build a default INSTRUMENTS entry. You can extend this logic for more symbols/types.
+    const template = {
+      BTC_USD: {
+        label: 'BTC-USD',
+        versions: {
+          /* ...existing code... */
+          v4: { label:'v4 · 30m Both',   tf:'30m', color:'#bc8cff', file:'data/btcusd/v4_trades.csv', paperFile:'data/btcusd/v4_trades_paper.csv', liveFile:'data/btcusd/v4_trades_live.csv',
+            /* ...existing code... */
+            entryCol:'entry', exitCol:'exit', entryTimeCol:'entry_time', exitTimeCol:'exit_time' },
+          v5: { label:'v5 · 1h Longs',   tf:'1h',  color:'#d29922', file:'data/btcusd/v5_trades.csv', paperFile:'data/btcusd/v5_trades_paper.csv', liveFile:'data/btcusd/v5_trades_live.csv',
+            /* ...existing code... */
+            entryCol:'entry', exitCol:'exit', entryTimeCol:'entry_time', exitTimeCol:'exit_time' },
+          v6: { label:'v6 · 1D Both',    tf:'1D',  color:'#ff7b72', file:'data/btcusd/v6_trades.csv', paperFile:'data/btcusd/v6_trades_paper.csv', liveFile:'data/btcusd/v6_trades_live.csv',
+                /* ...existing code... */
+        }
+      },
+      CLM: {
+        label: 'CLM',
+        versions: {
+          v1: { label:'v1 · 5m Shorts', tf:'5m', color:'#ff7b72', file:'data/clm/v1_trades.csv', paperFile:'data/clm/v1_trades_paper.csv', liveFile:'data/clm/v1_trades_live.csv',
+                /* ...existing code... */
+                entryCol:'entry', exitCol:'exit', entryTimeCol:'entry_time', exitTimeCol:'exit_time' },
+          v2: { label:'v2 · 10m', tf:'10m', color:'#58a6ff', file:'data/clm/v2_trades.csv', paperFile:'data/clm/v2_trades_paper.csv', liveFile:'data/clm/v2_trades_live.csv',
+                /* ...existing code... */
+                entryCol:'entry', exitCol:'exit', entryTimeCol:'entry_time', exitTimeCol:'exit_time' },
+          v3: { label:'v3 · 15m', tf:'15m', color:'#3fb950', file:'data/clm/v3_trades.csv', paperFile:'data/clm/v3_trades_paper.csv', liveFile:'data/clm/v3_trades_live.csv',
+                /* ...existing code... */
+                entryCol:'entry', exitCol:'exit', entryTimeCol:'entry_time', exitTimeCol:'exit_time' },
+          v4: { label:'v4 · 30m', tf:'30m', color:'#ffa657', file:'data/clm/v4_trades.csv', paperFile:'data/clm/v4_trades_paper.csv', liveFile:'data/clm/v4_trades_live.csv',
+                /* ...existing code... */
+                entryCol:'entry', exitCol:'exit', entryTimeCol:'entry_time', exitTimeCol:'exit_time' },
+          v5: { label:'v5 · 1h',  tf:'1h',  color:'#d29922', file:'data/clm/v5_trades.csv', paperFile:'data/clm/v5_trades_paper.csv', liveFile:'data/clm/v5_trades_live.csv',
+                /* ...existing code... */
+                entryCol:'entry', exitCol:'exit', entryTimeCol:'entry_time', exitTimeCol:'exit_time' },
+          v6: { label:'v6 · 1D',  tf:'1D',  color:'#bc8cff', file:'data/clm/v6_trades.csv', paperFile:'data/clm/v6_trades_paper.csv', liveFile:'data/clm/v6_trades_live.csv',
+                /* ...existing code... */
+        }
+      }
+    };
+    let instruments = {};
+    symbols.forEach(sym => {
+      if (template[sym]) instruments[sym] = template[sym];
+      // else: could add logic for new symbols
     });
-}
-
-window.addEventListener('DOMContentLoaded', loadSymbolsAndInit);
-
-const INITIAL_CAPITAL = 10000;
-const _modeCache = { backtest: { btc:{}, clm:{} }, paper: { btc:{}, clm:{} }, live: { btc:{}, clm:{} } };
-let loaded = _modeCache.backtest;
-let activeMode = 'backtest';
-let activeSym = '';
-let activeTab = 'all';
-let charts = {};
-let tradeTablePage = 1;
-let tradePageSize = 25;
-let txPage = 1;
-let txPageSize = 25;
-const backtestSelections = { btc: { v1: 'main', v2: 'main' }, clm: {} };
-function getActiveRows() {
-  return activeTab === 'all'
-    ? Object.values(loaded[activeSym]).flat()
-    : (loaded[activeSym][activeTab] || []);
-}
-
-function getSelectedBacktestVariant(sym, ver) {
-  return backtestSelections[sym]?.[ver] || 'main';
-}
-
-function getVersionLabel(sym, ver) {
-  const cfg = INSTRUMENTS[sym].versions[ver];
-  if (activeMode !== 'backtest' || !cfg.backtestVariants) return cfg.label;
-  const variant = cfg.backtestVariants[getSelectedBacktestVariant(sym, ver)];
-  return variant && variant.label !== 'Main' ? `${cfg.label} · ${variant.label}` : cfg.label;
-}
-
-function updateDatasetSwitcher() {
-  const wrap = document.getElementById('datasetSwitcher');
-  const v1Select = document.getElementById('v1DatasetSelect');
-  const v2Select = document.getElementById('v2DatasetSelect');
-  const show = activeMode === 'backtest' && activeSym === 'btc';
-  if (wrap) wrap.style.display = show ? 'flex' : 'none';
-  if (show) {
-    if (v1Select) v1Select.value = getSelectedBacktestVariant('btc', 'v1');
-    if (v2Select) v2Select.value = getSelectedBacktestVariant('btc', 'v2');
+    return instruments;
   }
-}
 
-function normalise(rows, sym, ver) {
-  const cfg = INSTRUMENTS[sym].versions[ver];
-  return rows.map(r => ({
-    entry_time:  r[cfg.entryTimeCol]?.trim(),
-    exit_time:   r[cfg.exitTimeCol]?.trim(),
-    direction:   r[cfg.dirCol]?.trim().toLowerCase(),
-    entry_price: parseFloat(r[cfg.entryCol]),
-    exit_price:  parseFloat(r[cfg.exitCol]),
-    dollar_pnl:  parseFloat(r[cfg.pnlCol]),
-    equity:      parseFloat(r[cfg.equityCol]),
-    result:      r[cfg.resultCol]?.trim().toUpperCase(),
-    pnl_pct:     r.pnl_pct   ? parseFloat(r.pnl_pct)  : undefined,
-    max_runup:   r.max_runup ? parseFloat(r.max_runup) : undefined,
-    bars:        r.bars      ? parseInt(r.bars)        : undefined,
-    year:        r.year      ? parseInt(r.year)        : undefined,
-    version: ver, sym,
-  })).filter(r => !isNaN(r.equity));
-}
+  // Dynamically create state objects for all loaded symbols
+  let _modeCache = {};
+  let loaded = {};
+  let backtestSelections = {};
 
-function loadCSV(sym, ver) {
-  const cfg = INSTRUMENTS[sym].versions[ver];
-  const backtestVariant = activeMode === 'backtest' ? cfg.backtestVariants?.[getSelectedBacktestVariant(sym, ver)] : null;
-  const file = activeMode === 'live'  && cfg.liveFile  ? cfg.liveFile
-             : activeMode === 'paper' && cfg.paperFile ? cfg.paperFile
-             : backtestVariant?.file || cfg.file;
-  return new Promise(resolve => {
-    Papa.parse(file, {
-      download:true, header:true, skipEmptyLines:true,
-      complete: r => resolve(normalise(r.data, sym, ver)),
-      error: () => resolve([])
+  function initStateObjects(symbols) {
+    // For each mode, create an object with all symbols as keys
+    const modes = ['backtest', 'paper', 'live'];
+    _modeCache = {};
+    modes.forEach(mode => {
+      _modeCache[mode] = {};
+      symbols.forEach(sym => {
+        _modeCache[mode][sym] = {};
+      });
     });
-  });
-}
+    loaded = _modeCache['backtest'];
+    // For backtestSelections, initialize for all symbols
+    backtestSelections = {};
+    symbols.forEach(sym => {
+      backtestSelections[sym] = {};
+      // Optionally, set defaults for known versions
+      if (INSTRUMENTS[sym] && INSTRUMENTS[sym].versions) {
+        Object.keys(INSTRUMENTS[sym].versions).forEach(ver => {
+          backtestSelections[sym][ver] = 'main';
+        });
+      }
+    });
+  }
 
-function calcMetrics(rows) {
-  if (!rows.length) return null;
-  const wins   = rows.filter(r => r.dollar_pnl > 0);
-  const losses = rows.filter(r => r.dollar_pnl <= 0);
-  const totalPnl  = rows.reduce((s,r) => s+r.dollar_pnl, 0);
-  const grossWin  = wins.reduce((s,r) => s+r.dollar_pnl, 0);
-  const grossLoss = Math.abs(losses.reduce((s,r) => s+r.dollar_pnl, 0));
-  const pf = grossLoss > 0 ? grossWin/grossLoss : grossWin > 0 ? Infinity : 0;
-  let peak = INITIAL_CAPITAL, maxDD = 0;
-  for (const r of rows) {
-    if (r.equity > peak) peak = r.equity;
-    const dd = (peak - r.equity) / peak * 100;
-    if (dd > maxDD) maxDD = dd;
+  let activeMode = 'backtest';
+  let activeSym = '';
+  let activeTab = 'all';
+  let charts = {};
+  let tradeTablePage = 1;
+  let tradePageSize = 25;
+  let txPage = 1;
+  let txPageSize = 25;
+
+  function loadSymbolsAndInit() {
+    fetch('data/symbols.csv')
+      .then(r => r.text())
+      .then(text => {
+        const symbols = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+        SYMBOLS = symbols;
+        INSTRUMENTS = buildInstruments(symbols);
+        initStateObjects(symbols);
+        // Populate symbol selector
+        const select = document.getElementById('symbolSelect');
+        select.innerHTML = '';
+        symbols.forEach(sym => {
+          const opt = document.createElement('option');
+          opt.value = sym;
+          opt.textContent = INSTRUMENTS[sym]?.label || sym;
+          select.appendChild(opt);
+        });
+        select.value = '';
+        select.addEventListener('change', function() {
+          handleSymbolSelect(this.value);
+        });
+      });
+  }
+
+  window.addEventListener('DOMContentLoaded', loadSymbolsAndInit);
+
+  const INITIAL_CAPITAL = 10000;
+
+  function getActiveRows() {
+    return activeTab === 'all'
+      ? Object.values(loaded[activeSym] || {}).flat()
+      : (loaded[activeSym]?.[activeTab] || []);
+  }
+
+  function getSelectedBacktestVariant(sym, ver) {
+    return backtestSelections[sym]?.[ver] || 'main';
+  }
+
+  function getVersionLabel(sym, ver) {
+    const cfg = INSTRUMENTS[sym].versions[ver];
+    if (activeMode !== 'backtest' || !cfg.backtestVariants) return cfg.label;
+    const variant = cfg.backtestVariants[getSelectedBacktestVariant(sym, ver)];
+    return variant && variant.label !== 'Main' ? `${cfg.label} · ${variant.label}` : cfg.label;
+  }
+
+  function updateDatasetSwitcher() {
+    const wrap = document.getElementById('datasetSwitcher');
+    const v1Select = document.getElementById('v1DatasetSelect');
+    const v2Select = document.getElementById('v2DatasetSelect');
+    // Only show for BTC_USD if present and selected
+    const show = activeMode === 'backtest' && activeSym === 'BTC_USD';
+    if (wrap) wrap.style.display = show ? 'flex' : 'none';
+    if (show) {
+      if (v1Select) v1Select.value = getSelectedBacktestVariant('BTC_USD', 'v1');
+      if (v2Select) v2Select.value = getSelectedBacktestVariant('BTC_USD', 'v2');
+    }
+  }
   }
   const longs  = rows.filter(r => r.direction === 'long');
   const shorts = rows.filter(r => r.direction === 'short');
