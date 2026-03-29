@@ -1224,14 +1224,22 @@ function populateSymbolDropdown() {
         select.appendChild(opt);
       });
       select.value = '';
+      // Only add event listener after loaded is initialized
+      setTimeout(() => {
+        select.addEventListener('change', function() {
+          handleSymbolSelect(this.value);
+        });
+      }, 0);
     }
   });
 }
 
 function handleSymbolSelect(newSym) {
-  if (typeof loaded === 'undefined') {
+  if (typeof loaded === 'undefined' || !loaded) {
     // Prevent ReferenceError if loaded is not initialized
     console.warn('handleSymbolSelect called before loaded is initialized.');
+    // Optionally, show a user-facing warning or retry after a short delay
+    // setTimeout(() => handleSymbolSelect(newSym), 50);
     return;
   }
   if (!newSym) {
