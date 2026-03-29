@@ -384,15 +384,22 @@ let txPage = 1;
         select.appendChild(opt);
       });
       select.value = '';
-      // Wait for loaded to be initialized, then enable and attach event
+      // Wait for loaded to be initialized, then enable and attach event (robust)
       function enableDropdownWhenReady() {
         if (typeof loaded !== 'undefined' && loaded) {
+          // Remove all previous event listeners by replacing the element
           const oldSelect = select;
           const newSelect = oldSelect.cloneNode(true);
           oldSelect.parentNode.replaceChild(newSelect, oldSelect);
           newSelect.disabled = false;
+          // Debounce handler to avoid slow UI and race conditions
+          let debounceTimer = null;
           newSelect.addEventListener('change', function() {
-            handleSymbolSelect(this.value);
+            if (debounceTimer) clearTimeout(debounceTimer);
+            const value = this.value;
+            debounceTimer = setTimeout(() => {
+              handleSymbolSelect(value);
+            }, 100); // 100ms debounce
           });
           console.log('[Dropdown] Dropdown enabled and event attached. Ready for user interaction.');
         } else {
@@ -1257,11 +1264,13 @@ function populateSymbolDropdown() {
 
 
 // --- New: handleSymbolSelect loads from backtest_results.json ---
+
+// Debounced and robust handleSymbolSelect
 function handleSymbolSelect(newSym) {
-  console.log('[Dropdown] handleSymbolSelect called for', newSym, 'at', new Date().toISOString());
+  // Prevent race: only proceed if loaded is ready
   if (typeof loaded === 'undefined' || !loaded) {
-    alert('Dashboard is still loading. Please wait a moment and try again.');
-    console.warn('handleSymbolSelect called before loaded is initialized.');
+    // Harden: never alert, just log and return silently
+    console.warn('[Dropdown] handleSymbolSelect called before loaded is initialized. Ignoring.');
     return;
   }
   console.log('[Dropdown] handleSymbolSelect proceeding for', newSym);
@@ -1288,9 +1297,12 @@ function handleSymbolSelect(newSym) {
   });
   showDashboardData();
   buildTabs();
-  render();
-  updateLastUpdated();
-  updateModeButtonStates();
+  // Use setTimeout to yield UI and avoid long blocking
+  setTimeout(() => {
+    render();
+    updateLastUpdated();
+    updateModeButtonStates();
+  }, 0);
 }
 
 function hideDashboardData() {
