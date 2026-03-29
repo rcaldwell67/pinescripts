@@ -384,12 +384,24 @@ let txPage = 1;
         });
         select.value = '';
         // Wait for loaded to be initialized, then enable and attach event
-        setTimeout(() => {
+        // Only enable and attach event after loaded is initialized
+        if (typeof loaded !== 'undefined' && loaded) {
           select.disabled = false;
           select.addEventListener('change', function() {
             handleSymbolSelect(this.value);
           });
-        }, 0);
+        } else {
+          // Wait for loaded to be initialized before enabling
+          const waitForLoaded = setInterval(() => {
+            if (typeof loaded !== 'undefined' && loaded) {
+              select.disabled = false;
+              select.addEventListener('change', function() {
+                handleSymbolSelect(this.value);
+              });
+              clearInterval(waitForLoaded);
+            }
+          }, 50);
+        }
         // Dynamically build symbol switcher buttons (if used)
         buildSymbolSwitcher(symbols);
       })
@@ -1248,12 +1260,14 @@ function populateSymbolDropdown() {
 }
 
 function handleSymbolSelect(newSym) {
+  console.log('[Dropdown] handleSymbolSelect called for', newSym, 'at', new Date().toISOString());
   if (typeof loaded === 'undefined' || !loaded) {
     // Prevent ReferenceError if loaded is not initialized
     alert('Dashboard is still loading. Please wait a moment and try again.');
     console.warn('handleSymbolSelect called before loaded is initialized.');
     return;
   }
+  console.log('[Dropdown] handleSymbolSelect proceeding for', newSym);
   if (!newSym) {
     hideDashboardData();
     updateModeButtonStates();
