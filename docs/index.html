@@ -125,20 +125,8 @@
       <option value="">Select...</option>
       <!-- Dropdown is disabled by default; enabled after initialization -->
     </select>
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        var select = document.getElementById('symbolSelect');
-        if (select) select.disabled = true;
-      });
-    </select>
     <input id="addSymbolInput" type="text" placeholder="Add Symbol..." style="margin-left:10px; padding:4px 10px; border-radius:6px; border:1px solid var(--border); background:var(--surface); color:var(--text); font-size:12px; width:120px;" />
     <button id="addSymbolBtn" style="margin-left:4px; padding:4px 12px; border-radius:6px; border:1px solid var(--border); background:var(--accent); color:#fff; font-size:12px; cursor:pointer;">Add</button>
-  </div>
-
-        <option value="main">Main</option>
-        <option value="12mo">12mo</option>
-      </select>
-    </div>
   </div>
   <div id="balanceBar">
     <div class="bal-item">
@@ -366,54 +354,56 @@ let tradeTablePage = 1;
 let tradePageSize = 25;
 let txPage = 1;
 
-  function loadSymbolsAndInit() {
-    console.log('[Dropdown] Fetching symbols.json for dropdown...');
-    fetch('data/symbols.json')
-      .then(r => {
-        if (!r.ok) throw new Error('Failed to fetch symbols.json');
-        return r.json();
-      })
-      .then(data => {
-        console.log(`[Dropdown] Loaded ${data.length} symbols for dropdown.`);
-        const symbols = data.map(obj => obj.symbol);
-        SYMBOLS = symbols;
-        INSTRUMENTS = buildInstruments(symbols);
-        initStateObjects(symbols);
-        // Populate symbol selector
-        const select = document.getElementById('symbolSelect');
-        select.innerHTML = '';
-        select.disabled = true; // Disable dropdown during loading
-        data.forEach(obj => {
-          const opt = document.createElement('option');
-          opt.value = obj.symbol;
-          opt.textContent = obj.description ? `${obj.symbol} — ${obj.description}` : obj.symbol;
-          select.appendChild(opt);
-        });
-        select.value = '';
-        // Wait for loaded to be initialized, then enable and attach event
-        // Only enable and attach event after loaded is initialized
-        function enableDropdownWhenReady() {
-          if (typeof loaded !== 'undefined' && loaded) {
-            // Remove all previous event listeners by replacing the element
-            const oldSelect = select;
-            const newSelect = oldSelect.cloneNode(true);
-            oldSelect.parentNode.replaceChild(newSelect, oldSelect);
-            newSelect.disabled = false;
-            newSelect.addEventListener('change', function() {
-              handleSymbolSelect(this.value);
-            });
-            console.log('[Dropdown] Dropdown enabled and event attached. Ready for user interaction.');
-          } else {
-            setTimeout(enableDropdownWhenReady, 50);
-          }
-        }
-        enableDropdownWhenReady();
-        // Dynamically build symbol switcher buttons (if used)
-        buildSymbolSwitcher(symbols);
-      })
-      .catch(err => {
-        console.error('[Dropdown] Error loading symbols for dropdown:', err);
+
+  // --- New: Load symbols and backtest results from JSON ---
+  async function loadSymbolsAndInit() {
+    console.log('[Dropdown] Fetching symbols.json and backtest_results.json...');
+    try {
+      const [symbolsResp, backtestResp] = await Promise.all([
+        fetch('data/symbols.json'),
+        fetch('data/backtest_results.json')
+      ]);
+      if (!symbolsResp.ok) throw new Error('Failed to fetch symbols.json');
+      if (!backtestResp.ok) throw new Error('Failed to fetch backtest_results.json');
+      const symbolsData = await symbolsResp.json();
+      const backtestData = await backtestResp.json();
+      window.BACKTEST_RESULTS = backtestData; // Expose for debugging
+      console.log(`[Dropdown] Loaded ${symbolsData.length} symbols and backtest_results.json`);
+      const symbols = symbolsData.map(obj => obj.symbol);
+      SYMBOLS = symbols;
+      INSTRUMENTS = buildInstruments(symbols);
+      initStateObjects(symbols);
+      // Populate symbol selector
+      const select = document.getElementById('symbolSelect');
+      select.innerHTML = '';
+      select.disabled = true;
+      symbolsData.forEach(obj => {
+        const opt = document.createElement('option');
+        opt.value = obj.symbol;
+        opt.textContent = obj.description ? `${obj.symbol} — ${obj.description}` : obj.symbol;
+        select.appendChild(opt);
       });
+      select.value = '';
+      // Wait for loaded to be initialized, then enable and attach event
+      function enableDropdownWhenReady() {
+        if (typeof loaded !== 'undefined' && loaded) {
+          const oldSelect = select;
+          const newSelect = oldSelect.cloneNode(true);
+          oldSelect.parentNode.replaceChild(newSelect, oldSelect);
+          newSelect.disabled = false;
+          newSelect.addEventListener('change', function() {
+            handleSymbolSelect(this.value);
+          });
+          console.log('[Dropdown] Dropdown enabled and event attached. Ready for user interaction.');
+        } else {
+          setTimeout(enableDropdownWhenReady, 50);
+        }
+      }
+      enableDropdownWhenReady();
+      buildSymbolSwitcher(symbols);
+    } catch (err) {
+      console.error('[Dropdown] Error loading symbols or backtest_results:', err);
+    }
   }
 
   window.addEventListener('DOMContentLoaded', loadSymbolsAndInit);
@@ -1265,10 +1255,11 @@ function populateSymbolDropdown() {
   });
 }
 
+
+// --- New: handleSymbolSelect loads from backtest_results.json ---
 function handleSymbolSelect(newSym) {
   console.log('[Dropdown] handleSymbolSelect called for', newSym, 'at', new Date().toISOString());
   if (typeof loaded === 'undefined' || !loaded) {
-    // Prevent ReferenceError if loaded is not initialized
     alert('Dashboard is still loading. Please wait a moment and try again.');
     console.warn('handleSymbolSelect called before loaded is initialized.');
     return;
@@ -1289,12 +1280,17 @@ function handleSymbolSelect(newSym) {
     updateModeButtonStates();
     return;
   }
-  // Always reload if no data or all arrays are empty
-  const needsLoad = !Object.keys(loaded[activeSym]).length || Object.values(loaded[activeSym]).every(arr => !arr || !arr.length);
-  const toLoad = needsLoad ? Object.keys(vers) : Object.keys(vers).filter(v => !loaded[activeSym][v]);
-  if (toLoad.length) {
-    Promise.all(toLoad.map(v => loadCSV(activeSym, v).then(r => { loaded[activeSym][v] = r; }))).then(() => { showDashboardData(); buildTabs(); render(); updateLastUpdated(); updateModeButtonStates(); });
-  } else { showDashboardData(); buildTabs(); render(); updateLastUpdated(); updateModeButtonStates(); }
+  // Load all version data for this symbol from BACKTEST_RESULTS
+  const backtestData = window.BACKTEST_RESULTS || {};
+  const symData = backtestData[activeSym] || {};
+  Object.keys(vers).forEach(v => {
+    loaded[activeSym][v] = symData[v] ? symData[v] : [];
+  });
+  showDashboardData();
+  buildTabs();
+  render();
+  updateLastUpdated();
+  updateModeButtonStates();
 }
 
 function hideDashboardData() {
