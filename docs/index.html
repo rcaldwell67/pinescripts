@@ -368,7 +368,7 @@ let txPage = 1;
       sel = document.createElement('select');
       sel.id = 'datasetSelector';
       sel.className = 'tx-select';
-      sel.style.marginRight = '12px';
+      sel.style.marginTop = '8px';
       sel.innerHTML = `
         <option value="backtest">Backtest Results</option>
         <option value="paper">Paper Trading Results</option>
@@ -378,10 +378,14 @@ let txPage = 1;
         activeDataset = sel.value;
         loadSymbolsAndInit();
       });
-      // Insert before symbol dropdown
+      // Insert below symbol dropdown
       const symSel = document.getElementById('symbolSelect');
       if (symSel && !document.getElementById('datasetSelector')) {
-        symSel.parentNode.insertBefore(sel, symSel);
+        if (symSel.nextSibling) {
+          symSel.parentNode.insertBefore(sel, symSel.nextSibling);
+        } else {
+          symSel.parentNode.appendChild(sel);
+        }
       }
     } else {
       sel.value = activeDataset;
