@@ -123,6 +123,13 @@
     <label for="symbolSelect" style="margin-right:8px;">Symbol:</label>
     <select id="symbolSelect" class="tx-select">
       <option value="">Select...</option>
+      <!-- Dropdown is disabled by default; enabled after initialization -->
+    </select>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        var select = document.getElementById('symbolSelect');
+        if (select) select.disabled = true;
+      });
     </select>
     <input id="addSymbolInput" type="text" placeholder="Add Symbol..." style="margin-left:10px; padding:4px 10px; border-radius:6px; border:1px solid var(--border); background:var(--surface); color:var(--text); font-size:12px; width:120px;" />
     <button id="addSymbolBtn" style="margin-left:4px; padding:4px 12px; border-radius:6px; border:1px solid var(--border); background:var(--accent); color:#fff; font-size:12px; cursor:pointer;">Add</button>
