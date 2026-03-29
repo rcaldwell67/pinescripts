@@ -355,20 +355,54 @@ let tradePageSize = 25;
 let txPage = 1;
 
 
-  // --- New: Load symbols and backtest results from JSON ---
+
+  // --- Dataset selector logic ---
+  let activeDataset = 'backtest'; // 'backtest' or 'paper'
+  function getResultsJsonFile() {
+    return activeDataset === 'backtest' ? 'data/backtest_results.json' : 'data/paper_trading_results.json';
+  }
+
+  function addDatasetSelector() {
+    let sel = document.getElementById('datasetSelector');
+    if (!sel) {
+      sel = document.createElement('select');
+      sel.id = 'datasetSelector';
+      sel.className = 'tx-select';
+      sel.style.marginRight = '12px';
+      sel.innerHTML = `
+        <option value="backtest">Backtest Results</option>
+        <option value="paper">Paper Trading Results</option>
+      `;
+      sel.value = activeDataset;
+      sel.addEventListener('change', e => {
+        activeDataset = sel.value;
+        loadSymbolsAndInit();
+      });
+      // Insert before symbol dropdown
+      const symSel = document.getElementById('symbolSelect');
+      if (symSel && !document.getElementById('datasetSelector')) {
+        symSel.parentNode.insertBefore(sel, symSel);
+      }
+    } else {
+      sel.value = activeDataset;
+    }
+  }
+
+  // --- New: Load symbols and results from selected dataset JSON ---
   async function loadSymbolsAndInit() {
-    console.log('[Dropdown] Fetching symbols.json and backtest_results.json...');
+    addDatasetSelector();
+    console.log(`[Dropdown] Fetching symbols.json and ${getResultsJsonFile()}...`);
     try {
-      const [symbolsResp, backtestResp] = await Promise.all([
+      const [symbolsResp, resultsResp] = await Promise.all([
         fetch('data/symbols.json'),
-        fetch('data/backtest_results.json')
+        fetch(getResultsJsonFile())
       ]);
       if (!symbolsResp.ok) throw new Error('Failed to fetch symbols.json');
-      if (!backtestResp.ok) throw new Error('Failed to fetch backtest_results.json');
+      if (!resultsResp.ok) throw new Error('Failed to fetch results JSON');
       const symbolsData = await symbolsResp.json();
-      const backtestData = await backtestResp.json();
-      window.BACKTEST_RESULTS = backtestData; // Expose for debugging
-      console.log(`[Dropdown] Loaded ${symbolsData.length} symbols and backtest_results.json`);
+      const resultsData = await resultsResp.json();
+      window.BACKTEST_RESULTS = resultsData; // Expose for debugging (name kept for compatibility)
+      console.log(`[Dropdown] Loaded ${symbolsData.length} symbols and ${getResultsJsonFile()}`);
       const symbols = symbolsData.map(obj => obj.symbol);
       SYMBOLS = symbols;
       INSTRUMENTS = buildInstruments(symbols);
@@ -409,7 +443,7 @@ let txPage = 1;
       enableDropdownWhenReady();
       buildSymbolSwitcher(symbols);
     } catch (err) {
-      console.error('[Dropdown] Error loading symbols or backtest_results:', err);
+      console.error('[Dropdown] Error loading symbols or results:', err);
     }
   }
 
@@ -1265,9 +1299,7 @@ function populateSymbolDropdown() {
 }
 
 
-// --- New: handleSymbolSelect loads from backtest_results.json ---
-
-// Debounced and robust handleSymbolSelect
+// --- New: handleSymbolSelect loads from selected dataset JSON ---
 function handleSymbolSelect(newSym) {
   // Prevent race: only proceed if loaded is ready
   if (typeof loaded === 'undefined' || !loaded) {
@@ -1275,7 +1307,7 @@ function handleSymbolSelect(newSym) {
     console.warn('[Dropdown] handleSymbolSelect called before loaded is initialized. Ignoring.');
     return;
   }
-  console.log('[Dropdown] handleSymbolSelect proceeding for', newSym);
+  console.log('[Dropdown] handleSymbolSelect proceeding for', newSym, 'dataset:', activeDataset);
   if (!newSym) {
     hideDashboardData();
     updateModeButtonStates();
@@ -1291,9 +1323,9 @@ function handleSymbolSelect(newSym) {
     updateModeButtonStates();
     return;
   }
-  // Load all version data for this symbol from BACKTEST_RESULTS
-  const backtestData = window.BACKTEST_RESULTS || {};
-  const symData = backtestData[activeSym] || {};
+  // Load all version data for this symbol from BACKTEST_RESULTS (now can be paper or backtest)
+  const resultsData = window.BACKTEST_RESULTS || {};
+  const symData = resultsData[activeSym] || {};
   Object.keys(vers).forEach(v => {
     loaded[activeSym][v] = symData[v] ? symData[v] : [];
   });
