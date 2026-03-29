@@ -1238,17 +1238,16 @@ function render() {
 
 // Populate symbol dropdown from CSV and handle selection (fully dynamic, no static symbolMap)
 function populateSymbolDropdown() {
-  Papa.parse('data/symbols.csv', {
-    download: true,
-    complete: function(results) {
+  fetch('data/symbols.json?v=' + Date.now(), { cache: 'no-store' })
+    .then(resp => resp.json())
+    .then(symbolsArr => {
       const select = document.getElementById('symbolSelect');
       select.innerHTML = '<option value="">Select...</option>';
-      const symbols = results.data.flat().filter(s => s && s.trim());
-      symbols.forEach((sym, i) => {
-        const key = sym.trim();
+      symbolsArr.forEach(obj => {
+        // obj: { symbol: 'BTC_USD', description: 'Bitcoin/US Dollar' }
         const opt = document.createElement('option');
-        opt.value = key;
-        opt.textContent = sym.trim();
+        opt.value = obj.symbol;
+        opt.textContent = obj.symbol + (obj.description ? ' — ' + obj.description : '');
         select.appendChild(opt);
       });
       select.value = '';
@@ -1258,8 +1257,10 @@ function populateSymbolDropdown() {
           handleSymbolSelect(this.value);
         });
       }, 0);
-    }
-  });
+    })
+    .catch(err => {
+      console.error('Failed to load symbols.json:', err);
+    });
 }
 
 
