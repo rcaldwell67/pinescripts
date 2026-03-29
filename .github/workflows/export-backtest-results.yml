@@ -21,9 +21,27 @@ jobs:
           python-version: '3.11'
       - name: Install SQLite3
         run: sudo apt-get install -y sqlite3
-      - name: Export backtest_results from DB to JSON
+        - name: Export backtest_results from DB to JSON (grouped by symbol and version)
         run: |
-          python3 -c "import sqlite3, json; conn = sqlite3.connect('docs/data/tradingcopilot.db'); c = conn.cursor(); c.execute('SELECT id, symbol, timestamp, metrics, notes FROM backtest_results'); rows = c.fetchall(); json.dump([{'id': r[0], 'symbol': r[1], 'timestamp': r[2], 'metrics': r[3], 'notes': r[4]} for r in rows], open('docs/data/backtest_results.json', 'w'), indent=2); conn.close()"
+          python3 <<EOF
+          import sqlite3, json
+          from collections import defaultdict
+          conn = sqlite3.connect('docs/data/tradingcopilot.db')
+          c = conn.cursor()
+          c.execute('SELECT symbol, metrics FROM backtest_results')
+          rows = c.fetchall()
+          result = defaultdict(lambda: defaultdict(list))
+          for symbol, metrics in rows:
+            try:
+              m = json.loads(metrics)
+            except Exception:
+              continue
+            version = m.get('version', 'v1')  # Default to v1 if not present
+            result[symbol][version].append(m)
+          with open('docs/data/backtest_results.json', 'w') as f:
+            json.dump(result, f, indent=2)
+          conn.close()
+          EOF
       - name: Commit and push backtest_results.json
         run: |
           git config --global user.name 'github-actions'
