@@ -2,11 +2,11 @@ name: Add Symbol to Database
 
 on:
   issues:
-    types: [opened, edited]
+    types: [opened, edited, labeled, reopened]
 
 jobs:
   add-symbol:
-    if: ${{ startsWith(github.event.issue.title, 'Symbol Addition Request:') }}
+    if: ${{ startsWith(github.event.issue.title, 'Symbol Addition Request:') || startsWith(github.event.issue.title, 'Add symbol:') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -17,7 +17,13 @@ jobs:
       - name: Extract symbol from issue
         id: extract
         run: |
-          SYMBOL=$(echo "${{ github.event.issue.title }}" | sed 's/Symbol Addition Request: //')
+          TITLE="${{ github.event.issue.title }}"
+          SYMBOL=$(echo "$TITLE" | sed -E 's/^Symbol Addition Request:[[:space:]]*//; s/^Add symbol:[[:space:]]*//')
+          SYMBOL=$(echo "$SYMBOL" | tr '[:lower:]' '[:upper:]' | xargs)
+          if [ -z "$SYMBOL" ]; then
+            echo "Failed to extract symbol from issue title: $TITLE"
+            exit 1
+          fi
           echo "symbol=$SYMBOL" >> $GITHUB_OUTPUT
 
       - name: Validate symbol with Alpaca
