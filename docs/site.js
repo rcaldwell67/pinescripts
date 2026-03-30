@@ -15,6 +15,7 @@ function buildSymbolSwitcher(symbols) {
   });
   // Optionally, add symbol buttons dynamically (if you want buttons in addition to the select)
   // (Commented out for now)
+}
 
 function buildInstruments(symbols) {
 
@@ -87,6 +88,7 @@ function initStateObjects(symbols) {
       });
     }
   });
+}
 
 let loaded; // Global reference to the currently loaded data for the active mode
 let _modeCache;
@@ -287,8 +289,6 @@ let txPage = 1;
       }
     }
   }
-}
-
 const fmt$   = n => (n>=0?'+$':'-$') + Math.abs(n).toFixed(2);
 const fmtPct = n => (n>=0?'+':'') + n.toFixed(2) + '%';
 const clsVal = n => n>0 ? 'positive' : n<0 ? 'negative' : 'neutral';
@@ -421,8 +421,6 @@ async function pollWorkflowStatus(issueNumber, sym, ver) {
   }
   check();
 }
-}
-
 function renderCards(rows) {
   const cardEl = document.getElementById('cards');
   const vers = INSTRUMENTS[activeSym].versions;
