@@ -6,5 +6,13 @@
   {
     "symbol": "CLM",
     "description": "Cornerstone Strategic Investment Fund, Inc."
+  },
+  {
+    "symbol": "BTC/USD",
+    "description": "Bitcoin / US Dollar"
+  },
+  {
+    "symbol": "ETH/USD",
+    "description": "Ethereum / US Dollar"
   }
 ]
