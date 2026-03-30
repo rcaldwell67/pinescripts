@@ -7,7 +7,7 @@ function buildSymbolSwitcher(symbols) {
   const switcher = document.querySelector('.sym-switcher');
   if (!switcher) return;
   // Remove all children except the label, select, input, and add button
-  const keepIds = ['symbolSelect', 'addSymbolInput', 'addSymbolBtn', 'removeSymbolBtn'];
+  const keepIds = ['symbolSelect', 'alpacaSymbolSelect', 'loadAlpacaSymbolsBtn', 'addSymbolBtn', 'removeSymbolBtn'];
 
   Array.from(switcher.children).forEach(child => {
     if (child.tagName === 'LABEL' || keepIds.includes(child.id)) return;
@@ -1176,23 +1176,75 @@ document.getElementById('v2DatasetSelect')?.addEventListener('change', event => 
 (async () => {
   hideDashboardData();
   activeSym = '';
-  // Add Symbol input logic (GitHub Issue automation)
-  const addInput = document.getElementById('addSymbolInput');
+  
+  // Fetch symbols from Alpaca Paper Trading API
+  async function loadAlpacaSymbols() {
+    const select = document.getElementById('alpacaSymbolSelect');
+    const loadBtn = document.getElementById('loadAlpacaSymbolsBtn');
+    
+    loadBtn.disabled = true;
+    loadBtn.textContent = 'Loading...';
+    select.innerHTML = '<option value="">Loading...</option>';
+    
+    try {
+      const response = await fetch('https://paper-api.alpaca.markets/v2/assets?status=active&asset_class=us_equity', {
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: Unable to fetch symbols. Please try again.`);
+      }
+      
+      const assets = await response.json();
+      const symbols = assets
+        .map(a => a.symbol)
+        .sort()
+        .slice(0, 500); // Limit to first 500 for performance
+      
+      select.innerHTML = '<option value="">Select a symbol...</option>';
+      symbols.forEach(sym => {
+        const opt = document.createElement('option');
+        opt.value = sym;
+        opt.textContent = sym;
+        select.appendChild(opt);
+      });
+      
+      select.disabled = false;
+      loadBtn.disabled = false;
+      loadBtn.textContent = 'Load';
+    } catch (err) {
+      console.error('Error loading Alpaca symbols:', err);
+      select.innerHTML = '<option value="">Error loading symbols (check browser console)</option>';
+      select.disabled = true;
+      loadBtn.disabled = false;
+      loadBtn.textContent = 'Load';
+      alert('Failed to load symbols from Alpaca: ' + err.message);
+    }
+  }
+  
+  // Load Alpaca button
+  const loadBtn = document.getElementById('loadAlpacaSymbolsBtn');
+  loadBtn.addEventListener('click', loadAlpacaSymbols);
+  
+  // Add Symbol button logic (GitHub Issue automation)
+  const select = document.getElementById('alpacaSymbolSelect');
   const addBtn = document.getElementById('addSymbolBtn');
   addBtn.addEventListener('click', () => {
-    const val = addInput.value.trim();
-    if (!val) return;
+    const symbol = select.value.trim();
+    if (!symbol) {
+      alert('Please select a symbol from the dropdown first.');
+      return;
+    }
     const desc = prompt('Enter a description for this symbol (optional):', '');
     // Open a pre-filled GitHub Issue for symbol addition with add-symbol label
-    const title = encodeURIComponent('Add symbol: ' + val.toUpperCase());
+    const title = encodeURIComponent('Add symbol: ' + symbol);
     const body = encodeURIComponent(
-      `Symbol: ${val.toUpperCase()}\nDescription: ${desc || ''}\n\n_Label this issue with add-symbol to trigger automation._`
+      `Symbol: ${symbol}\nDescription: ${desc || ''}\n\n_Selected from Alpaca Paper Trading assets via dashboard._`
     );
     const url = `https://github.com/rcaldwell67/pinescripts/issues/new?title=${title}&body=${body}&labels=add-symbol`;
     window.open(url, '_blank');
-  });
-  addInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter') addBtn.click();
   });
 
   // Remove Symbol button logic (GitHub Issue automation)
