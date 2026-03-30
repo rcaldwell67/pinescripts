@@ -244,6 +244,7 @@
   </div>
 </main>
 <script>
+console.log('[DEBUG] Script loaded: top of <script> tag');
 let INSTRUMENTS = {};
 // Utility to build symbol switcher buttons dynamically (if used)
 function buildSymbolSwitcher(symbols) {
@@ -477,7 +478,11 @@ let txPage = 1;
 
   window.addEventListener('DOMContentLoaded', function() {
     console.log('[DEBUG] DOMContentLoaded event fired');
-    loadSymbolsAndInit();
+    try {
+      loadSymbolsAndInit();
+    } catch (e) {
+      console.error('[DEBUG] Error in loadSymbolsAndInit:', e);
+    }
   });
 
   const INITIAL_CAPITAL = 10000;
