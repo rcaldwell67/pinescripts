@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>APM Dashboard G�� Adaptive Pullback Momentum</title>
+  <title>APM Dashboard - Adaptive Pullback Momentum</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js" defer></script>
@@ -14,6 +14,7 @@
   <!-- sql.js for browser-based SQLite access -->
   <script src="https://cdn.jsdelivr.net/npm/sql.js@1.8.0/dist/sql-wasm.js" defer></script>
   <link rel="stylesheet" href="site.css">
+  <link rel="icon" href="data:,">
 </head>
 <body>
 <header>
@@ -38,12 +39,12 @@
     <div class="bal-divider"></div>
     <div class="bal-item">
       <span class="bal-label">Ending Balance</span>
-      <span class="bal-value" id="endingBalanceVal">G��</span>
+      <span class="bal-value" id="endingBalanceVal">-</span>
     </div>
     <div class="bal-divider"></div>
     <div class="bal-item">
       <span class="bal-label">Total Equity</span>
-      <span class="bal-value" id="totalEquityVal">G��</span>
+      <span class="bal-value" id="totalEquityVal">-</span>
     </div>
   </div>
   <span id="lastUpdated"></span>
@@ -71,7 +72,7 @@
         <div class="pg-size"><label>Rows</label><select id="txPageSizeSelect" class="tx-select"><option value="10">10</option><option value="25" selected>25</option><option value="50">50</option><option value="100">100</option></select></div>
       </div>
     </div>
-    <div class="table-wrap" id="txTableWrap"><div class="empty">LoadingGǪ</div></div>
+    <div class="table-wrap" id="txTableWrap"><div class="empty">Loading...</div></div>
   </div>
   <div class="panel" style="margin-bottom:16px;" id="priceChartPanel">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
@@ -136,7 +137,7 @@
         <select id="tradePageSizeSelect" class="tx-select"><option value="10">10</option><option value="25" selected>25</option><option value="50">50</option><option value="100">100</option></select>
       </div>
     </div>
-    <div class="table-wrap" id="tradeTableWrap"><div class="empty">LoadingGǪ</div></div>
+    <div class="table-wrap" id="tradeTableWrap"><div class="empty">Loading...</div></div>
   </div>
   <div class="panel">
     <h2>Version Comparison</h2>
@@ -146,4 +147,6 @@
 <script src='site.js' defer></script>
 </body>
 </html>
+
+
 

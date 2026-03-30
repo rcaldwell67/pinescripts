@@ -22,12 +22,12 @@ function buildInstruments(symbols) {
   // Build the instruments object dynamically using naming conventions
   const instruments = {};
   const versionTemplates = [
-    { key: 'v1', label: 'v1 -+ 5m Shorts', tf: '5m', color: '#58a6ff' },
-    { key: 'v2', label: 'v2 -+ 10m Both', tf: '10m', color: '#3fb950' },
-    { key: 'v3', label: 'v3 -+ 15m Shorts', tf: '15m', color: '#ffa657' },
-    { key: 'v4', label: 'v4 -+ 30m Both', tf: '30m', color: '#bc8cff' },
-    { key: 'v5', label: 'v5 -+ 1h Longs', tf: '1h', color: '#d29922' },
-    { key: 'v6', label: 'v6 -+ 1D Both', tf: '1D', color: '#ff7b72' }
+    { key: 'v1', label: 'v1 - 5m Shorts', tf: '5m', color: '#58a6ff' },
+    { key: 'v2', label: 'v2 - 10m Both', tf: '10m', color: '#3fb950' },
+    { key: 'v3', label: 'v3 - 15m Shorts', tf: '15m', color: '#ffa657' },
+    { key: 'v4', label: 'v4 - 30m Both', tf: '30m', color: '#bc8cff' },
+    { key: 'v5', label: 'v5 - 1h Longs', tf: '1h', color: '#d29922' },
+    { key: 'v6', label: 'v6 - 1D Both', tf: '1D', color: '#ff7b72' }
   ];
   symbols.forEach(sym => {
     // Normalize symbol for file paths
@@ -212,7 +212,7 @@ let txPage = 1;
     symbolsData.forEach(obj => {
       const opt = document.createElement('option');
       opt.value = obj.symbol;
-      opt.textContent = obj.description ? `${obj.symbol} G�� ${obj.description}` : obj.symbol;
+      opt.textContent = obj.description ? `${obj.symbol} - ${obj.description}` : obj.symbol;
       select.appendChild(opt);
     });
     console.log('[DEBUG] symbolSelect options populated:', select.innerHTML);
@@ -266,7 +266,7 @@ let txPage = 1;
     const cfg = INSTRUMENTS[sym].versions[ver];
     if (activeMode !== 'backtest' || !cfg.backtestVariants) return cfg.label;
     const variant = cfg.backtestVariants[getSelectedBacktestVariant(sym, ver)];
-    return variant && variant.label !== 'Main' ? `${cfg.label} -+ ${variant.label}` : cfg.label;
+    return variant && variant.label !== 'Main' ? `${cfg.label} - ${variant.label}` : cfg.label;
   }
 
   function updateDatasetSwitcher() {
@@ -293,12 +293,12 @@ const fmt$   = n => (n>=0?'+$':'-$') + Math.abs(n).toFixed(2);
 const fmtPct = n => (n>=0?'+':'') + n.toFixed(2) + '%';
 const clsVal = n => n>0 ? 'positive' : n<0 ? 'negative' : 'neutral';
 function fmtDate(s) {
-  if (!s) return 'G��';
+  if (!s) return '-';
   const d = new Date(s.replace(' ','T'));
   return isNaN(d) ? s : d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'});
 }
 function resultTag(r) {
-  if (!r) return '<span class="tag tag-other">G��</span>';
+  if (!r) return '<span class="tag tag-other">-</span>';
   const u = r.toUpperCase();
   if (u==='TP') return '<span class="tag tag-tp">TP</span>';
   if (u==='SL') return '<span class="tag tag-sl">SL</span>';
@@ -429,14 +429,14 @@ function renderCards(rows) {
       const r = loaded[activeSym][v];
       if (!r?.length) return `<div class="card" style="border-top:2px solid ${cfg.color};opacity:0.5">
         <div class="label">${getVersionLabel(activeSym, v)}</div>
-        <div class="value neutral">G��</div>
+        <div class="value neutral">-</div>
         <div class="sub">No data yet</div>
       </div>`;
       const m = calcMetrics(r);
       return `<div class="card" style="border-top:2px solid ${cfg.color}">
         <div class="label">${getVersionLabel(activeSym, v)}</div>
         <div class="value ${clsVal(m.netPnl)}">${fmtPct(m.netPnlPct)}</div>
-        <div class="sub">WR ${m.winRate.toFixed(1)}% -+ PF ${m.pf===Infinity?'G�P':m.pf.toFixed(2)} -+ ${m.n} trades</div>
+        <div class="sub">WR ${m.winRate.toFixed(1)}% - PF ${m.pf===Infinity?'Inf':m.pf.toFixed(2)} - ${m.n} trades</div>
       </div>`;
     }).join('');
     return;
@@ -445,9 +445,9 @@ function renderCards(rows) {
   if (!m) { cardEl.innerHTML=''; return; }
   cardEl.innerHTML = `
     <div class="card"><div class="label">Total Trades</div><div class="value neutral">${m.n}</div><div class="sub">${m.longs}L / ${m.shorts}S</div></div>
-    <div class="card"><div class="label">Win Rate</div><div class="value ${m.winRate>=60?'positive':m.winRate>=50?'neutral':'negative'}">${m.winRate.toFixed(1)}%</div><div class="sub">${m.tpCount} TP -+ ${m.slCount} SL -+ ${m.trailCount} Trail${m.mbCount?' -+ '+m.mbCount+' MB':''}</div></div>
+    <div class="card"><div class="label">Win Rate</div><div class="value ${m.winRate>=60?'positive':m.winRate>=50?'neutral':'negative'}">${m.winRate.toFixed(1)}%</div><div class="sub">${m.tpCount} TP - ${m.slCount} SL - ${m.trailCount} Trail${m.mbCount?' - '+m.mbCount+' MB':''}</div></div>
     <div class="card"><div class="label">Net P&L</div><div class="value ${clsVal(m.netPnl)}">${fmt$(m.netPnl)}</div><div class="sub">${fmtPct(m.netPnlPct)} on $${INITIAL_CAPITAL.toLocaleString()}</div></div>
-    <div class="card"><div class="label">Profit Factor</div><div class="value ${m.pf>=2?'positive':m.pf>=1?'neutral':'negative'}">${m.pf===Infinity?'G�P':m.pf.toFixed(3)}</div><div class="sub">Gross Win / Gross Loss</div></div>
+    <div class="card"><div class="label">Profit Factor</div><div class="value ${m.pf>=2?'positive':m.pf>=1?'neutral':'negative'}">${m.pf===Infinity?'Inf':m.pf.toFixed(3)}</div><div class="sub">Gross Win / Gross Loss</div></div>
     <div class="card"><div class="label">Max Drawdown</div><div class="value ${m.maxDD<5?'positive':m.maxDD<15?'neutral':'negative'}">-${m.maxDD.toFixed(2)}%</div><div class="sub">Peak-to-trough</div></div>
     <div class="card"><div class="label">Final Equity</div><div class="value ${clsVal(m.finalEquity-INITIAL_CAPITAL)}">$${m.finalEquity.toFixed(2)}</div><div class="sub">Started $${INITIAL_CAPITAL.toLocaleString()}</div></div>`;
 }
@@ -577,7 +577,7 @@ function renderYearChart() {
     :Object.keys(vers).find(v=>vers[v].hasYear&&loaded[activeSym][v]?.length);
   if (!verKey) return;
   const rows=loaded[activeSym][verKey], cfg=vers[verKey];
-  document.getElementById('yearChartTitle').textContent=`Year-by-Year -+ ${getVersionLabel(activeSym, verKey)}`;
+  document.getElementById('yearChartTitle').textContent=`Year-by-Year - ${getVersionLabel(activeSym, verKey)}`;
   const years={};
   for (const r of rows) {
     const y=r.year||new Date(r.entry_time.replace(' ','T')).getFullYear();
@@ -617,13 +617,13 @@ function renderTradeTable(rows) {
   const paged = sorted.slice(start, start + tradePageSize);
   const end = start + paged.length;
   const pagCtrl = total > tradePageSize ? `<div class="pagination">
-    <span class="pg-info">${start+1}G��${end} of ${total} trades</span>
+    <span class="pg-info">${start+1}-${end} of ${total} trades</span>
     <div class="pg-btns">
-      <button class="pg-btn" ${tradeTablePage<=1?'disabled':''} onclick="tradeTablePage=1;renderTradeTable(getActiveRows())">-�</button>
-      <button class="pg-btn" ${tradeTablePage<=1?'disabled':''} onclick="tradeTablePage--;renderTradeTable(getActiveRows())">GǦ</button>
+      <button class="pg-btn" ${tradeTablePage<=1?'disabled':''} onclick="tradeTablePage=1;renderTradeTable(getActiveRows())"><<</button>
+      <button class="pg-btn" ${tradeTablePage<=1?'disabled':''} onclick="tradeTablePage--;renderTradeTable(getActiveRows())"><</button>
       <span class="pg-info" style="padding:0 8px">Page ${tradeTablePage} / ${totalPages}</span>
-      <button class="pg-btn" ${tradeTablePage>=totalPages?'disabled':''} onclick="tradeTablePage++;renderTradeTable(getActiveRows())">GǦ</button>
-      <button class="pg-btn" ${tradeTablePage>=totalPages?'disabled':''} onclick="tradeTablePage=${totalPages};renderTradeTable(getActiveRows())">-+</button>
+      <button class="pg-btn" ${tradeTablePage>=totalPages?'disabled':''} onclick="tradeTablePage++;renderTradeTable(getActiveRows())">></button>
+      <button class="pg-btn" ${tradeTablePage>=totalPages?'disabled':''} onclick="tradeTablePage=${totalPages};renderTradeTable(getActiveRows())">>></button>
     </div>
   </div>` : '';
   wrap.innerHTML = `<table><thead><tr>
@@ -637,7 +637,7 @@ function renderTradeTable(rows) {
     return `<tr>
       ${showVer ? `<td><span class="pill" style="background:${cfg.color}22;color:${cfg.color};border-color:${cfg.color}">${cfg.tf}</span></td>` : ''}
       <td>${fmtDate(r.entry_time)}</td><td>${fmtDate(r.exit_time)}</td>
-      <td><span class="tag ${dirTag}">${r.direction || 'G��'}</span></td>
+      <td><span class="tag ${dirTag}">${r.direction || '-'}</span></td>
       <td>${ep}</td><td>${xp}</td>
       <td class="${clsVal(r.dollar_pnl)}">${fmt$(r.dollar_pnl)}</td>
       <td>${resultTag(r.result)}</td>
@@ -682,7 +682,7 @@ function updateVerFilter() {
   }
   if ([...vsel.options].some(o=>o.value===vcur)) vsel.value = vcur;
 
-  // Timeframe filter G�� unique tf values in insertion order
+  // Timeframe filter: unique tf values in insertion order
   const tfsel = document.getElementById('txTfFilter');
   const tfcur = tfsel.value;
   const tfs = [...new Set(Object.values(vers).map(c => c.tf))];
@@ -719,44 +719,44 @@ function renderTransactionsTable() {
   const paged = txns.slice(start, start + txPageSize);
   const end = start + paged.length;
   const pagCtrl = total > txPageSize ? `<div class="pagination">
-    <span class="pg-info">${start+1}G��${end} of ${total} transactions</span>
+    <span class="pg-info">${start+1}-${end} of ${total} transactions</span>
     <div class="pg-btns">
-      <button class="pg-btn" ${txPage<=1?'disabled':''} onclick="txPage=1;renderTransactionsTable()">-�</button>
-      <button class="pg-btn" ${txPage<=1?'disabled':''} onclick="txPage--;renderTransactionsTable()">GǦ</button>
+      <button class="pg-btn" ${txPage<=1?'disabled':''} onclick="txPage=1;renderTransactionsTable()"><<</button>
+      <button class="pg-btn" ${txPage<=1?'disabled':''} onclick="txPage--;renderTransactionsTable()"><</button>
       <span class="pg-info" style="padding:0 8px">Page ${txPage} / ${totalPages}</span>
-      <button class="pg-btn" ${txPage>=totalPages?'disabled':''} onclick="txPage++;renderTransactionsTable()">GǦ</button>
-      <button class="pg-btn" ${txPage>=totalPages?'disabled':''} onclick="txPage=${totalPages};renderTransactionsTable()">-+</button>
+      <button class="pg-btn" ${txPage>=totalPages?'disabled':''} onclick="txPage++;renderTransactionsTable()">></button>
+      <button class="pg-btn" ${txPage>=totalPages?'disabled':''} onclick="txPage=${totalPages};renderTransactionsTable()">>></button>
     </div>
   </div>` : '';
-  const fmtEq = e => e==null||isNaN(e) ? 'G��' : '$'+e.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const fmtEq = e => e==null||isNaN(e) ? '-' : '$'+e.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   wrap.innerHTML = `<table><thead><tr>
     <th scope="col">Date / Time</th><th scope="col">Version</th><th scope="col">Action</th><th scope="col">Type</th><th scope="col">Direction</th><th scope="col">Price</th><th scope="col">P&L</th><th scope="col">Beg. Bal</th><th scope="col">End Bal</th><th scope="col">Result</th>
   </tr></thead><tbody>${paged.map(t => {
-    const fmtP = p => isNaN(p)?'G��' : p<100?'$'+p.toFixed(4):'$'+p.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    const fmtP = p => isNaN(p)?'-' : p<100?'$'+p.toFixed(4):'$'+p.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
     const actionTag = t.action==='BUY'
-      ? `<span class="tag tag-buy">G�� BUY</span>`
-      : `<span class="tag tag-sell">G�+ SELL</span>`;
+      ? `<span class="tag tag-buy">BUY</span>`
+      : `<span class="tag tag-sell">SELL</span>`;
     const typeTag = t.type==='Open'
       ? `<span class="tag tag-open">Open</span>`
       : `<span class="tag tag-close">Close</span>`;
     const dirTag = t.direction==='long'
       ? `<span class="tag tag-long">long</span>`
       : `<span class="tag tag-short">short</span>`;
-    const pnlCell = t.pnl!=null ? `<span class="${clsVal(t.pnl)}">${fmt$(t.pnl)}</span>` : '<span style="color:var(--border)">G��</span>';
+    const pnlCell = t.pnl!=null ? `<span class="${clsVal(t.pnl)}">${fmt$(t.pnl)}</span>` : '<span style="color:var(--border)">-</span>';
     const begCell = `<span style="color:var(--muted)">${fmtEq(t.begEquity)}</span>`;
     const endCell = t.endEquity!=null
       ? `<span class="${clsVal(t.endEquity - t.begEquity)}">${fmtEq(t.endEquity)}</span>`
-      : '<span style="color:var(--border)">G��</span>';
+      : '<span style="color:var(--border)">-</span>';
     return `<tr>
-      <td>${t.time||'G��'}</td>
+      <td>${t.time||'-'}</td>
       <td><span class="pill" style="background:${t.cfg.color}22;color:${t.cfg.color};border-color:${t.cfg.color}">${t.cfg.tf}</span></td>
       <td>${actionTag}</td><td>${typeTag}</td><td>${dirTag}</td>
-      <td>${fmtP(t.price)}</td><td>${pnlCell}</td><td>${begCell}</td><td>${endCell}</td><td>${t.result?resultTag(t.result):'<span style="color:var(--border)">G��</span>'}</td>
+      <td>${fmtP(t.price)}</td><td>${pnlCell}</td><td>${begCell}</td><td>${endCell}</td><td>${t.result?resultTag(t.result):'<span style="color:var(--border)">-</span>'}</td>
     </tr>`;
   }).join('')}</tbody></table>${pagCtrl}`;
 }
 
-// G��G�� Price Chart (Lightweight Charts) G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��
+// Price Chart (Lightweight Charts)
 const chartDataCache = {};
 let lcChartInst = null;
 
@@ -802,7 +802,7 @@ function computeEMA(bars, period) {
 }
 
 // Snap each marker's time to the nearest bar in barTimes (sorted ascending).
-// Required because IEX data is sparse G�� trade entry/exit times often fall on
+// Required because IEX data is sparse; trade entry/exit times often fall on
 // 5-min boundaries that have no bar (no trades occurred on that candle).
 function snapMarkersToBars(markers, barTimes) {
   if (!barTimes.length) return [];
@@ -942,7 +942,7 @@ async function renderPriceChart() {
     }
 
     // fitContent() fits exactly the loaded data with no empty space on the right.
-    // Do NOT use scrollToRealTime() G�� that scrolls to wall-clock time, leaving
+    // Do NOT use scrollToRealTime(); that scrolls to wall-clock time, leaving
     // empty space after the last bar and pushing data off-screen to the left.
     lcChartInst.timeScale().fitContent();
 
@@ -974,14 +974,14 @@ function renderComparisonTable() {
   const vers=INSTRUMENTS[activeSym].versions;
   const vkeys=Object.keys(vers);
   const items=vkeys.map(v=>({ v, m: loaded[activeSym][v]?.length ? calcMetrics(loaded[activeSym][v]) : null, cfg:vers[v] }));
-  const nd = 'G��';
+  const nd = '-';
   const rows=[
     ['Timeframe',       i=>i.cfg.tf],
     ['Trades',          i=>i.m ? i.m.n : nd],
     ['Win Rate',        i=>i.m ? i.m.winRate.toFixed(1)+'%' : nd],
     ['Net P&L',         i=>i.m ? fmt$(i.m.netPnl) : nd],
     ['Net Return',      i=>i.m ? fmtPct(i.m.netPnlPct) : nd],
-    ['Profit Factor',   i=>i.m ? (i.m.pf===Infinity?'G�P':i.m.pf.toFixed(3)) : nd],
+    ['Profit Factor',   i=>i.m ? (i.m.pf===Infinity?'INF':i.m.pf.toFixed(3)) : nd],
     ['Max Drawdown',    i=>i.m ? '-'+i.m.maxDD.toFixed(2)+'%' : nd],
     ['Avg Win',         i=>i.m ? fmt$(i.m.avgWin) : nd],
     ['Avg Loss',        i=>i.m ? fmt$(i.m.avgLoss) : nd],
@@ -1001,20 +1001,20 @@ function updateBalanceBar(rows) {
     el.className = 'bal-value ' + (n > INITIAL_CAPITAL ? 'positive' : n < INITIAL_CAPITAL ? 'negative' : 'neutral');
   };
 
-  // Ending Balance G�� only meaningful when a single version is selected
+  // Ending balance: only meaningful when a single version is selected
   if (!rows || !rows.length) {
-    endEl.textContent = 'G��'; endEl.className = 'bal-value neutral';
+    endEl.textContent = '-'; endEl.className = 'bal-value neutral';
   } else {
     const eq = rows[rows.length - 1].equity;
-    isNaN(eq) ? (endEl.textContent = 'G��', endEl.className = 'bal-value neutral') : fmtBal(eq, endEl);
+    isNaN(eq) ? (endEl.textContent = '-', endEl.className = 'bal-value neutral') : fmtBal(eq, endEl);
   }
 
-  // Total Equity G�� sum net profits from every loaded version + one INITIAL_CAPITAL base
+  // Total equity: sum net profits from every loaded version + one INITIAL_CAPITAL base
   const totalNetProfit = Object.values(loaded[activeSym])
     .filter(v => v && v.length)
     .reduce((sum, v) => sum + (v[v.length - 1].equity - INITIAL_CAPITAL), 0);
   if (totalNetProfit === 0 && Object.values(loaded[activeSym]).every(v => !v?.length)) {
-    totalEl.textContent = 'G��'; totalEl.className = 'bal-value neutral';
+    totalEl.textContent = '-'; totalEl.className = 'bal-value neutral';
   } else {
     fmtBal(INITIAL_CAPITAL + totalNetProfit, totalEl);
   }
@@ -1207,4 +1207,5 @@ function bindStaticControlHandlers() {
 }
 
 bindStaticControlHandlers();
+
 
