@@ -84,7 +84,7 @@ def _metrics_for_trades(symbol: str, version: str, trades, df) -> dict[str, obje
     }
 
 
-def save_paper_to_db(symbol: str, version: str, trades, df) -> None:
+def save_paper_to_db(symbol: str, version: str, trades, df, *, force_reset: bool = False) -> None:
     conn = sqlite3.connect(str(DB_PATH), timeout=30)
     conn.execute("PRAGMA journal_mode=DELETE")
     try:
@@ -93,56 +93,78 @@ def save_paper_to_db(symbol: str, version: str, trades, df) -> None:
         pass
 
     notes = f"{VERSION_MAP.get(version, version)} paper trading summary"
-    conn.execute(
-        "DELETE FROM trades WHERE symbol = ? AND version = ? AND mode = 'paper'",
-        (symbol, version),
-    )
+
+    if force_reset:
+        conn.execute(
+            "DELETE FROM trades WHERE symbol = ? AND version = ? AND mode = 'paper'",
+            (symbol, version),
+        )
+        last_exit_time = None
+    else:
+        row = conn.execute(
+            "SELECT MAX(exit_time) FROM trades WHERE symbol = ? AND version = ? AND mode = 'paper'",
+            (symbol, version),
+        ).fetchone()
+        last_exit_time = row[0] if row else None
+
+    # Build new trade rows, skipping any already stored
+    new_rows: list[tuple] = []
+    skipped = 0
+
+    if not trades.empty:
+        for _, trade in trades.iterrows():
+            entry_time = _timestamp_at(df, trade.get("entry_idx"))
+            exit_time = _timestamp_at(df, trade.get("exit_idx"))
+
+            if last_exit_time and entry_time and entry_time <= last_exit_time:
+                skipped += 1
+                continue
+
+            dollar_pnl = float(trade.get("pnl", trade.get("dollar_pnl", 0.0)) or 0.0)
+            equity = float(trade.get("equity", 0.0) or 0.0)
+            beginning_equity = equity - dollar_pnl
+            pnl_pct = (dollar_pnl / beginning_equity * 100.0) if beginning_equity else None
+            new_rows.append((
+                symbol,
+                version,
+                entry_time,
+                exit_time,
+                "long",
+                float(trade.get("entry", 0.0) or 0.0),
+                float(trade.get("exit", 0.0) or 0.0),
+                _result_label(trade.get("exit_type")),
+                pnl_pct,
+                dollar_pnl,
+                equity,
+            ))
+
+    if new_rows:
+        conn.executemany(
+            """
+            INSERT INTO trades (
+                symbol, version, mode, entry_time, exit_time, direction,
+                entry_price, exit_price, result, pnl_pct, dollar_pnl, equity
+            ) VALUES (?, ?, 'paper', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            new_rows,
+        )
+
+    # Always refresh the summary metrics from the full simulation run
+    metrics = _metrics_for_trades(symbol, version, trades, df)
     conn.execute(
         "DELETE FROM paper_trading_results WHERE symbol = ? AND notes LIKE ?",
         (symbol, f"%{VERSION_MAP.get(version, version)}%"),
     )
-
-    metrics = _metrics_for_trades(symbol, version, trades, df)
     conn.execute(
         "INSERT INTO paper_trading_results (symbol, metrics, notes) VALUES (?, ?, ?)",
         (symbol, json.dumps(metrics), notes),
     )
 
-    if not trades.empty:
-        for _, row in trades.iterrows():
-            entry_time = _timestamp_at(df, row.get("entry_idx"))
-            exit_time = _timestamp_at(df, row.get("exit_idx"))
-            dollar_pnl = float(row.get("pnl", row.get("dollar_pnl", 0.0)) or 0.0)
-            equity = float(row.get("equity", 0.0) or 0.0)
-            beginning_equity = equity - dollar_pnl
-            pnl_pct = (dollar_pnl / beginning_equity * 100.0) if beginning_equity else None
-            conn.execute(
-                """
-                INSERT INTO trades (
-                    symbol, version, mode, entry_time, exit_time, direction,
-                    entry_price, exit_price, result, pnl_pct, dollar_pnl, equity
-                ) VALUES (?, ?, 'paper', ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    symbol,
-                    version,
-                    entry_time,
-                    exit_time,
-                    "short",
-                    float(row.get("entry", 0.0) or 0.0),
-                    float(row.get("exit", 0.0) or 0.0),
-                    _result_label(row.get("exit_type")),
-                    pnl_pct,
-                    dollar_pnl,
-                    equity,
-                ),
-            )
-
     conn.commit()
     conn.close()
     print(
-        f"Paper results saved to DB: {symbol} {version} "
-        f"trades={metrics['total_trades']} net={metrics['net_return_pct']:.1f}%"
+        f"Paper results saved: {symbol} {version} "
+        f"new={len(new_rows)} skipped={skipped} net={metrics['net_return_pct']:.1f}%"
     )
 
 
@@ -153,7 +175,7 @@ def load_symbols_from_db() -> list[str]:
     return [row[0] for row in rows]
 
 
-def run_one(symbol: str, version: str) -> None:
+def run_one(symbol: str, version: str, *, force_reset: bool = False) -> None:
     print(f"Fetching YTD OHLCV for {symbol}...")
     df = fetch_ohlcv(symbol)
     print(f"  {len(df):,} bars fetched ({df['timestamp'].iloc[0]} -> {df['timestamp'].iloc[-1]})")
@@ -161,7 +183,7 @@ def run_one(symbol: str, version: str) -> None:
     print(f"Running paper-trading simulation {version} for {symbol}...")
     trades = run_backtest(df, version)
     print(f"  {len(trades)} trades generated")
-    save_paper_to_db(symbol, version, trades, df)
+    save_paper_to_db(symbol, version, trades, df, force_reset=force_reset)
 
 
 def main() -> int:
@@ -170,6 +192,11 @@ def main() -> int:
     scope.add_argument("--symbol", help="Trading symbol, e.g. BTC/USD")
     scope.add_argument("--all-symbols", action="store_true", help="Run for every symbol in the DB")
     parser.add_argument("--version", required=True, help="Strategy version, e.g. v1")
+    parser.add_argument(
+        "--force-reset",
+        action="store_true",
+        help="Delete and regenerate all paper trades instead of appending new ones",
+    )
     args = parser.parse_args()
 
     version = args.version.strip().lower()
@@ -185,7 +212,7 @@ def main() -> int:
     failures: list[str] = []
     for symbol in symbols:
         try:
-            run_one(symbol, version)
+            run_one(symbol, version, force_reset=args.force_reset)
         except Exception as exc:
             print(f"ERROR: Paper trading failed for {symbol} {version}: {exc}", file=sys.stderr)
             failures.append(symbol)
