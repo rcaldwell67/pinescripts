@@ -34,8 +34,10 @@ jobs:
 
       - name: Run Backtrader Backtests
         run: |
-          # Example: run all backtest scripts in backend/ and scripts/ recursively
-          find backend/ scripts/ -type f -name 'backtest_*.py' -exec python {} \;
+          # Run all backtest scripts in backend/ and (optionally) scripts/ recursively
+          DIRS="backend/"
+          if [ -d "scripts" ]; then DIRS="$DIRS scripts/"; fi
+          find $DIRS -type f -name 'backtest_*.py' -exec python {} \;
         env:
           ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
           ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
