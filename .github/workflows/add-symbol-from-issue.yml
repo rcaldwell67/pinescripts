@@ -17,20 +17,72 @@ jobs:
       - name: Parse symbol from issue
         id: parse
         run: |
-          import re, os
-          body = os.environ['ISSUE_BODY']
+          python - <<'PY'
+          import os, re
+          body = os.environ.get('ISSUE_BODY', '')
           m = re.search(r'Symbol:\s*([A-Za-z0-9_\-]+)', body)
-          symbol = m.group(1) if m else ''
+          symbol = (m.group(1) if m else '').upper().strip()
           desc = ''
           m2 = re.search(r'Description:\s*(.*)', body)
-          if m2: desc = m2.group(1)
-          print(f"::set-output name=symbol::{symbol}")
-          print(f"::set-output name=desc::{desc}")
+          if m2:
+            desc = m2.group(1).strip()
+          if not symbol:
+            raise SystemExit('Could not parse Symbol: from issue body')
+          out = os.environ['GITHUB_OUTPUT']
+          with open(out, 'a', encoding='utf-8') as f:
+            f.write(f'symbol={symbol}\\n')
+            f.write(f'desc={desc}\\n')
+          PY
         env:
           ISSUE_BODY: ${{ github.event.issue.body }}
       - name: Add symbol to DB
+        env:
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
         run: |
+          SYMBOL="${{ steps.parse.outputs.symbol }}"
+          if [ -z "$ALPACA_API_KEY" ] || [ -z "$ALPACA_API_SECRET" ]; then
+            echo "Alpaca API keys not set. Validation is required."
+            exit 1
+          fi
+          RESP=$(curl -s -H "APCA-API-KEY-ID: $ALPACA_API_KEY" -H "APCA-API-SECRET-KEY: $ALPACA_API_SECRET" \
+            "https://paper-api.alpaca.markets/v2/assets/$SYMBOL")
+          if echo "$RESP" | grep -q '"symbol"'; then
+            echo "Alpaca validation passed for $SYMBOL"
+          else
+            echo "Alpaca validation failed for $SYMBOL"
+            echo "$RESP"
+            exit 1
+          fi
           python backend/data/add_symbol_to_db.py "${{ steps.parse.outputs.symbol }}" "${{ steps.parse.outputs.desc }}"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run backtest scripts
+        run: |
+          set -e
+          echo "Running baseline backtest runner"
+          python backend/strategy_generator/run_apm_v1_backtest.py
+
+          EXTRA_FILES=""
+          if [ -d "scripts" ]; then
+            EXTRA_FILES=$(find scripts -type f -name 'backtest_*.py' 2>/dev/null || true)
+          fi
+          EXTRA_FILES=$(echo "$EXTRA_FILES" | sed '/^$/d')
+          if [ -n "$EXTRA_FILES" ]; then
+            echo "$EXTRA_FILES" | while IFS= read -r f; do
+              echo "Running $f"
+              python "$f"
+            done
+          else
+            echo "No additional scripts/backtest_*.py files found."
+          fi
+        env:
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
       - name: Commit DB changes
         run: |
           git config --global user.name 'github-actions'
@@ -41,4 +93,4 @@ jobs:
       - name: Comment and close issue
         uses: peter-evans/close-issue@v3
         with:
-          comment: "Symbol ${{ steps.parse.outputs.symbol }} added to database and will appear in the dashboard soon."
+          comment: "Symbol ${{ steps.parse.outputs.symbol }} passed Alpaca Paper validation, was added to docs/data/tradingcopilot.db, and backtests completed successfully."

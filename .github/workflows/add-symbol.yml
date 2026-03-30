@@ -6,7 +6,7 @@ on:
 
 jobs:
   add-symbol:
-    if: ${{ startsWith(github.event.issue.title, 'Symbol Addition Request:') || startsWith(github.event.issue.title, 'Add symbol:') }}
+    if: ${{ (startsWith(github.event.issue.title, 'Symbol Addition Request:') || startsWith(github.event.issue.title, 'Add symbol:')) && !contains(github.event.issue.labels.*.name, 'add-symbol') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -34,12 +34,19 @@ jobs:
         run: |
           SYMBOL="${{ steps.extract.outputs.symbol }}"
           if [ -z "$ALPACA_API_KEY" ] || [ -z "$ALPACA_API_SECRET" ]; then
-            echo "Alpaca API keys not set. Skipping validation."
+            echo "Alpaca API keys not set. Validation is required."
             exit 1
           fi
-          # Validate symbol exists on Alpaca
-          curl -s -H "APCA-API-KEY-ID: $ALPACA_API_KEY" -H "APCA-API-SECRET-KEY: $ALPACA_API_SECRET" \
-            "https://paper-api.alpaca.markets/v2/assets/$SYMBOL" | grep 'symbol' || exit 1
+          # Validate symbol exists on Alpaca Paper Trading assets.
+          RESP=$(curl -s -H "APCA-API-KEY-ID: $ALPACA_API_KEY" -H "APCA-API-SECRET-KEY: $ALPACA_API_SECRET" \
+            "https://paper-api.alpaca.markets/v2/assets/$SYMBOL")
+          if echo "$RESP" | grep -q '"symbol"'; then
+            echo "Alpaca validation passed for $SYMBOL"
+          else
+            echo "Alpaca validation failed for $SYMBOL"
+            echo "$RESP"
+            exit 1
+          fi
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -49,6 +56,34 @@ jobs:
       - name: Add symbol to database
         run: |
           python3 backend/data/add_symbol_to_db.py "${{ steps.extract.outputs.symbol }}"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run backtest scripts
+        run: |
+          set -e
+          echo "Running baseline backtest runner"
+          python backend/strategy_generator/run_apm_v1_backtest.py
+
+          EXTRA_FILES=""
+          if [ -d "scripts" ]; then
+            EXTRA_FILES=$(find scripts -type f -name 'backtest_*.py' 2>/dev/null || true)
+          fi
+          EXTRA_FILES=$(echo "$EXTRA_FILES" | sed '/^$/d')
+          if [ -n "$EXTRA_FILES" ]; then
+            echo "$EXTRA_FILES" | while IFS= read -r f; do
+              echo "Running $f"
+              python "$f"
+            done
+          else
+            echo "No additional scripts/backtest_*.py files found."
+          fi
+        env:
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
 
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
