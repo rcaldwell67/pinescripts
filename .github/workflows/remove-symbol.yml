@@ -2,7 +2,7 @@ name: Remove Symbol from Database
 
 on:
   issues:
-    types: [opened, labeled]
+    types: [opened, edited, labeled, reopened]
 
 jobs:
   remove-symbol:
