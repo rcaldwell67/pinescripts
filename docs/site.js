@@ -366,19 +366,7 @@ function rerunBacktest(symbol, version) {
   );
   const url = `https://github.com/rcaldwell67/pinescripts/issues/new?title=${issueTitle}&body=${issueBody}`;
   window.open(url, '_blank');
-  // Prompt user for issue URL
-  setTimeout(() => {
-    const issueUrl = prompt('Paste the URL of the created GitHub Issue to track workflow status:');
-    if (issueUrl) {
-      const match = issueUrl.match(/\/issues\/(\d+)/);
-      if (match) {
-        const issueNumber = match[1];
-        pollWorkflowStatus(issueNumber, sym, ver);
-      } else {
-        updateWorkflowStatus('Invalid issue URL.');
-      }
-    }
-  }, 500);
+  updateWorkflowStatus('Opened GitHub issue form in a new tab. Submit it to start the rerun workflow.', '#58a6ff');
 }
 
 function updateWorkflowStatus(msg, color) {
