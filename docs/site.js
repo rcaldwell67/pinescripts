@@ -100,6 +100,7 @@ let tradeTablePage = 1;
 let tradePageSize = 25;
 let txPage = 1;
 const PAPER_TRADING_SUPPORTED_VERSIONS = new Set(['v1']);
+let pendingDatasetSymbol = '';
 
 
 
@@ -120,6 +121,8 @@ const PAPER_TRADING_SUPPORTED_VERSIONS = new Set(['v1']);
       btn.addEventListener('click', () => {
         const nextDataset = btn.dataset.mode;
         if (!nextDataset || nextDataset === activeDataset) return;
+        const currentSelect = document.getElementById('symbolSelect');
+        pendingDatasetSymbol = (currentSelect && currentSelect.value) || activeSym || '';
         activeDataset = nextDataset;
         activeMode = activeDataset;
         addDatasetSelector();
@@ -201,6 +204,8 @@ const PAPER_TRADING_SUPPORTED_VERSIONS = new Set(['v1']);
     INSTRUMENTS = buildInstruments(symbols);
     console.log('[DEBUG] INSTRUMENTS object:', INSTRUMENTS);
     initStateObjects(symbols);
+    const restoreSymbol = symbols.includes(pendingDatasetSymbol) ? pendingDatasetSymbol : '';
+
     // Populate symbol selector
     const select = document.getElementById('symbolSelect');
     select.innerHTML = '';
@@ -218,7 +223,7 @@ const PAPER_TRADING_SUPPORTED_VERSIONS = new Set(['v1']);
       select.appendChild(opt);
     });
     console.log('[DEBUG] symbolSelect options populated:', select.innerHTML);
-    select.value = '';
+    select.value = restoreSymbol;
     // Wait for loaded to be initialized, then enable and attach event (robust)
     function enableDropdownWhenReady() {
       if (typeof loaded !== 'undefined' && loaded) {
@@ -236,6 +241,10 @@ const PAPER_TRADING_SUPPORTED_VERSIONS = new Set(['v1']);
             handleSymbolSelect(value, db);
           }, 100); // 100ms debounce
         });
+        if (restoreSymbol) {
+          newSelect.value = restoreSymbol;
+          setTimeout(() => handleSymbolSelect(restoreSymbol, db), 0);
+        }
         console.log('[Dropdown] Dropdown enabled and event attached. Ready for user interaction.');
       } else {
         setTimeout(enableDropdownWhenReady, 50);
@@ -248,6 +257,7 @@ const PAPER_TRADING_SUPPORTED_VERSIONS = new Set(['v1']);
     // Reset active selection so re-selecting the same symbol after a dataset
     // switch doesn't hit the early-exit guard in handleSymbolSelect.
     activeSym = '';
+    pendingDatasetSymbol = '';
     console.log('[DEBUG] loadSymbolsAndInit complete');
   }
 
@@ -353,29 +363,26 @@ function buildTabs() {
     rerunBtn.style.display = 'none';
   }
 }
-function rerunBacktest(symbol, version) {
-  // Open a pre-filled GitHub Issue for rerun-backtest, matching add-symbol pattern
+function openWorkflowIssue(workflowType, symbol, version) {
   const sym = symbol.toUpperCase();
   const ver = version.toUpperCase();
-  const issueTitle = encodeURIComponent(`Rerun Backtest: ${sym} ${ver}`);
+  const isPaper = workflowType === 'paper';
+  const workflowLabel = isPaper ? 'Paper Trading' : 'Backtest';
+  const issueTitle = encodeURIComponent(`Rerun ${workflowLabel}: ${sym} ${ver}`);
   const issueBody = encodeURIComponent(
-    `Please rerun the backtest for ${sym} version ${ver}.\n\n_This request was generated from the dashboard UI._`
+    `Please rerun ${isPaper ? 'paper trading' : 'the backtest'} for ${sym} version ${ver}.\n\n_This request was generated from the dashboard UI._`
   );
   const url = `https://github.com/rcaldwell67/pinescripts/issues/new?title=${issueTitle}&body=${issueBody}`;
   window.open(url, '_blank');
-  updateWorkflowStatus('Opened GitHub issue form in a new tab. Submit it to start the rerun workflow.', '#58a6ff');
+  updateWorkflowStatus(`${workflowLabel} rerun requested for ${sym} ${ver}. Submit the opened GitHub issue form to start the workflow.`, '#58a6ff');
+}
+
+function rerunBacktest(symbol, version) {
+  openWorkflowIssue('backtest', symbol, version);
 }
 
 function rerunPaperTrading(symbol, version) {
-  const sym = symbol.toUpperCase();
-  const ver = version.toUpperCase();
-  const issueTitle = encodeURIComponent(`Rerun Paper Trading: ${sym} ${ver}`);
-  const issueBody = encodeURIComponent(
-    `Please rerun paper trading for ${sym} version ${ver}.\n\n_This request was generated from the dashboard UI._`
-  );
-  const url = `https://github.com/rcaldwell67/pinescripts/issues/new?title=${issueTitle}&body=${issueBody}`;
-  window.open(url, '_blank');
-  updateWorkflowStatus('Opened GitHub issue form in a new tab. Submit it to start the paper-trading rerun workflow.', '#58a6ff');
+  openWorkflowIssue('paper', symbol, version);
 }
 
 function updateWorkflowStatus(msg, color) {
@@ -384,8 +391,8 @@ function updateWorkflowStatus(msg, color) {
   if (color) el.style.color = color;
 }
 
-async function pollWorkflowStatus(issueNumber, sym, ver) {
-  updateWorkflowStatus('Backtest workflow: polling status...', '#58a6ff');
+async function pollWorkflowStatus(issueNumber, sym, ver, workflowName = 'Rerun Backtest', workflowLabel = 'Backtest') {
+  updateWorkflowStatus(`${workflowLabel} workflow: polling status...`, '#58a6ff');
   const owner = 'rcaldwell67';
   const repo = 'pinescripts';
   let pollCount = 0;
@@ -398,9 +405,9 @@ async function pollWorkflowStatus(issueNumber, sym, ver) {
     try {
       const resp = await fetch(apiUrl);
       const data = await resp.json();
-      // Find the latest rerun-backtest run for this issue
+      // Find the latest workflow run for this issue
       const runs = (data.workflow_runs || []).filter(run =>
-        run.name && run.name.includes('Rerun Backtest') &&
+        run.name && run.name.includes(workflowName) &&
         run.head_commit && run.head_commit.message &&
         run.head_commit.message.includes(`#${issueNumber}`)
       );
@@ -408,22 +415,22 @@ async function pollWorkflowStatus(issueNumber, sym, ver) {
       if (latest) {
         if (latest.status === 'completed') {
           if (latest.conclusion === 'success') {
-            updateWorkflowStatus('Backtest workflow: Success!', '#2ea043');
+            updateWorkflowStatus(`${workflowLabel} workflow: Success!`, '#2ea043');
           } else {
-            updateWorkflowStatus('Backtest workflow: Failed.', '#ff4d4f');
+            updateWorkflowStatus(`${workflowLabel} workflow: Failed.`, '#ff4d4f');
           }
           return;
         } else {
-          updateWorkflowStatus('Backtest workflow: Running...', '#58a6ff');
+          updateWorkflowStatus(`${workflowLabel} workflow: Running...`, '#58a6ff');
         }
       } else {
-        updateWorkflowStatus('Backtest workflow: Pending...', '#ffa657');
+        updateWorkflowStatus(`${workflowLabel} workflow: Pending...`, '#ffa657');
       }
     } catch (e) {
-      updateWorkflowStatus('Workflow status error.', '#ff4d4f');
+      updateWorkflowStatus(`${workflowLabel} workflow status error.`, '#ff4d4f');
     }
     if (pollCount < maxPolls) setTimeout(check, pollInterval);
-    else updateWorkflowStatus('Workflow status: Timed out.', '#ffa657');
+    else updateWorkflowStatus(`${workflowLabel} workflow: Timed out.`, '#ffa657');
   }
   check();
 }
