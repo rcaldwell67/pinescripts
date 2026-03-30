@@ -21,11 +21,11 @@ jobs:
           import os, re
           title = os.environ.get('ISSUE_TITLE', '')
           body = os.environ.get('ISSUE_BODY', '')
-          # Try title first: "Remove symbol: BTC_USD"
-          m = re.search(r'Remove symbol:\s*([A-Za-z0-9_\-]+)', title, re.IGNORECASE)
+          # Try title first: "Remove symbol: BTC/USD" or "Remove symbol: BTC_USD"
+          m = re.search(r'Remove symbol:\s*([A-Za-z0-9_\-/\.]+)', title, re.IGNORECASE)
           if not m:
-              # Fall back to body: "Symbol: BTC_USD"
-              m = re.search(r'Symbol:\s*([A-Za-z0-9_\-]+)', body)
+            # Fall back to body: "Symbol: BTC/USD" or "Symbol: BTC_USD"
+            m = re.search(r'Symbol:\s*([A-Za-z0-9_\-/\.]+)', body, re.IGNORECASE)
           symbol = (m.group(1) if m else '').upper().strip()
           if not symbol:
               raise SystemExit('Could not parse symbol from issue title or body')
