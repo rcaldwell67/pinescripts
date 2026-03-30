@@ -203,29 +203,29 @@
   <div class="grid-3" id="topRow">
     <div class="panel chart-wrap tall" style="grid-column: span 2;">
       <h2>Equity Curve</h2>
-      <canvas id="equityChart">Equity curve chart. Shows account equity over time for selected strategy/version.</canvas>
+      <canvas id="equityChart" aria-label="Equity curve chart" role="img">Equity curve chart. Shows account equity over time for selected strategy/version.</canvas>
       <div class="legend" id="equityLegend"></div>
     </div>
     <div class="panel chart-wrap">
       <h2>Trade Outcomes</h2>
-      <canvas id="outcomeChart">Trade outcomes chart. Shows distribution of trade results (TP, SL, Trail, MB, Other).</canvas>
+      <canvas id="outcomeChart" aria-label="Trade outcomes chart" role="img">Trade outcomes chart. Shows distribution of trade results (TP, SL, Trail, MB, Other).</canvas>
       <div id="outcomeLegend" style="margin-top:12px;font-size:12px;"></div>
     </div>
   </div>
   <div class="grid-2" id="midRow">
     <div class="panel chart-wrap">
       <h2 id="dirChartTitle">P&amp;L by Direction</h2>
-      <canvas id="directionChart">P&amp;L by direction chart. Shows profit and loss by trade direction (long/short).</canvas>
+      <canvas id="directionChart" aria-label="P&L by direction chart" role="img">P&amp;L by direction chart. Shows profit and loss by trade direction (long/short).</canvas>
     </div>
     <div class="panel chart-wrap">
       <h2>Monthly P&amp;L</h2>
-      <canvas id="monthlyChart">Monthly P&amp;L chart. Shows profit and loss by month.</canvas>
+      <canvas id="monthlyChart" aria-label="Monthly P&L chart" role="img">Monthly P&amp;L chart. Shows profit and loss by month.</canvas>
     </div>
   </div>
   <div id="yearSection" style="display:none; margin-bottom:16px;">
     <div class="panel chart-wrap tall">
       <h2 id="yearChartTitle">Year-by-Year Breakdown</h2>
-      <canvas id="yearChart">Year-by-year breakdown chart. Shows annual performance for selected strategy/version.</canvas>
+      <canvas id="yearChart" aria-label="Year-by-year breakdown chart" role="img">Year-by-year breakdown chart. Shows annual performance for selected strategy/version.</canvas>
     </div>
   </div>
   <div class="panel" style="margin-bottom:16px;">
@@ -259,7 +259,7 @@ function buildSymbolSwitcher(symbols) {
   });
   // Optionally, add symbol buttons dynamically (if you want buttons in addition to the select)
   // (Commented out for now)
-}
+
 
 
 function buildInstruments(symbols) {
@@ -864,8 +864,8 @@ function renderTradeTable(rows) {
     </div>
   </div>` : '';
   wrap.innerHTML = `<table><thead><tr>
-    ${showVer ? '<th>Ver</th>' : ''}
-    <th>Entry</th><th>Exit</th><th>Dir</th><th>Entry $</th><th>Exit $</th><th>P&L</th><th>Result</th><th>Equity</th>
+    ${showVer ? '<th scope="col">Ver</th>' : ''}
+    <th scope="col">Entry</th><th scope="col">Exit</th><th scope="col">Dir</th><th scope="col">Entry $</th><th scope="col">Exit $</th><th scope="col">P&L</th><th scope="col">Result</th><th scope="col">Equity</th>
   </tr></thead><tbody>${paged.map(r => {
     const dirTag = r.direction === 'long' ? 'tag-long' : 'tag-short';
     const cfg = vers[r.version];
@@ -967,7 +967,7 @@ function renderTransactionsTable() {
   </div>` : '';
   const fmtEq = e => e==null||isNaN(e) ? '—' : '$'+e.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   wrap.innerHTML = `<table><thead><tr>
-    <th>Date / Time</th><th>Version</th><th>Action</th><th>Type</th><th>Direction</th><th>Price</th><th>P&L</th><th>Beg. Bal</th><th>End Bal</th><th>Result</th>
+    <th scope="col">Date / Time</th><th scope="col">Version</th><th scope="col">Action</th><th scope="col">Type</th><th scope="col">Direction</th><th scope="col">Price</th><th scope="col">P&L</th><th scope="col">Beg. Bal</th><th scope="col">End Bal</th><th scope="col">Result</th>
   </tr></thead><tbody>${paged.map(t => {
     const fmtP = p => isNaN(p)?'—' : p<100?'$'+p.toFixed(4):'$'+p.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
     const actionTag = t.action==='BUY'
@@ -1225,7 +1225,7 @@ function renderComparisonTable() {
     ['Longs / Shorts',  i=>i.m ? `${i.m.longs} / ${i.m.shorts}` : nd],
     ['TP / SL / Trail', i=>i.m ? `${i.m.tpCount} / ${i.m.slCount} / ${i.m.trailCount}` : nd],
   ];
-  el.innerHTML=`<thead><tr><th>Metric</th>${items.map(i=>`<th><span class="pill" style="background:${i.cfg.color}22;color:${i.cfg.color};border-color:${i.cfg.color}">${getVersionLabel(activeSym, i.v)}</span></th>`).join('')}</tr></thead>
+  el.innerHTML=`<thead><tr><th scope="col">Metric</th>${items.map(i=>`<th scope="col"><span class="pill" style="background:${i.cfg.color}22;color:${i.cfg.color};border-color:${i.cfg.color}">${getVersionLabel(activeSym, i.v)}</span></th>`).join('')}</tr></thead>
   <tbody>${rows.map(([label,fn])=>`<tr><td>${label}</td>${items.map(i=>`<td style="${!i.m&&label!=='Timeframe'?'opacity:0.4':''}">` + fn(i) + `</td>`).join('')}</tr>`).join('')}</tbody>`;
 }
 
@@ -1300,28 +1300,6 @@ function showDashboardData() {
   panels.forEach(p => p.style.display = '');
 }
 
-// --- New: handleSymbolSelect loads from SQLite for backtest/paper ---
-
-// Add debug logs to loadSymbolsAndInit
-async function loadSymbolsAndInit() {
-  console.log('[DEBUG] loadSymbolsAndInit: called');
-  try {
-    const dbUrl = 'data/tradingcopilot.db';
-    console.log('[DEBUG] Attempting to fetch DB from:', dbUrl);
-    const response = await fetch(dbUrl);
-    if (!response.ok) {
-      console.error('[DEBUG] Fetch failed:', response.status, response.statusText);
-      return;
-    }
-    const buf = await response.arrayBuffer();
-    console.log('[DEBUG] DB file fetched, size:', buf.byteLength);
-    // ...existing code to initialize sql.js and continue...
-    // (If you have a window._SQL_DB or similar, add a debug log after that too)
-  } catch (e) {
-    console.error('[DEBUG] Error in loadSymbolsAndInit:', e);
-  }
-  console.log('[DEBUG] loadSymbolsAndInit: completed');
-}
 let _pendingSymbolSelect = null;
 async function handleSymbolSelect(newSym, dbInstance) {
   // If loaded is not ready, queue the request and retry soon
@@ -1392,6 +1370,7 @@ async function handleSymbolSelect(newSym, dbInstance) {
   Object.keys(vers).forEach(v => {
     loaded[activeSym][v] = byVersion[v] ? byVersion[v] : [];
   });
+}
 </script>
 <script>
 // --- Ensure loadSymbolsAndInit is called at script end ---
@@ -1403,24 +1382,6 @@ if (typeof loadSymbolsAndInit === 'function') {
 } else {
   console.error('[DEBUG] loadSymbolsAndInit is not defined');
 }
-console.log('[DEBUG] End of <script> block reached');
-    activeMode = btn.dataset.mode;
-    loaded = _modeCache[activeMode];
-    activeTab = 'all'; tradeTablePage = 1; txPage = 1;
-    // Dynamically load all versions for all symbols in INSTRUMENTS
-    const allVers = [];
-    Object.keys(INSTRUMENTS).forEach(sym => {
-      Object.keys(INSTRUMENTS[sym].versions).forEach(v => {
-        allVers.push({ sym, v });
-      });
-    });
-    const toLoad = allVers.filter(({sym, v}) => !loaded[sym][v]);
-    if (toLoad.length) {
-      Promise.all(toLoad.map(({sym, v}) => loadCSV(sym, v).then(r => { loaded[sym][v] = r; })))
-        .then(() => { buildTabs(); render(); updateLastUpdated(); updateModeButtonStates(); });
-    } else { buildTabs(); render(); updateLastUpdated(); updateModeButtonStates(); }
-  });
-});
 
 async function handleBacktestVariantChange(ver, value) {
   if (!activeSym) return;
