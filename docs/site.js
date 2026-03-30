@@ -852,17 +852,36 @@ function renderTransactionsTable() {
 const chartDataCache = {};
 let lcChartInst = null;
 
-// Single source of truth for chart JSON. Returns { bars, generated_at }.
-// Caches by sym to avoid duplicate fetches; caller may bust cache by deleting chartDataCache[sym].
+// Single source of truth for chart data. Returns { bars, generated_at }.
+// Queries the already-loaded sql.js DB instance (window._SQL_DB) — no extra
+// HTTP request. Caches by sym; caller may bust cache by deleting chartDataCache[sym].
 async function loadChartData(sym) {
   if (chartDataCache[sym]) return chartDataCache[sym];
-  // Dynamically build the chart file path based on the symbol
-  // Example: SYMBOL_KEY -> chart_symbol.json
-  const fileSym = sym.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-  const file = `data/chart_${fileSym}.json`;
-  const resp = await fetch(file + '?v=' + Date.now(), { cache: 'no-store' });
-  const json = await resp.json();
-  chartDataCache[sym] = { bars: json.bars || [], generated_at: json.generated_at || null };
+  const db = window._SQL_DB;
+  if (!db) throw new Error('DB not loaded');
+
+  // Read generated_at from chart_meta
+  let generated_at = null;
+  try {
+    const stmt = db.prepare('SELECT generated_at FROM chart_meta WHERE symbol = ?');
+    stmt.bind([sym]);
+    if (stmt.step()) generated_at = stmt.getAsObject().generated_at;
+    stmt.free();
+  } catch (e) { /* chart_meta may not exist in older DB snapshots */ }
+
+  // Read bars from chart_data ordered by time
+  const bars = [];
+  try {
+    const stmt = db.prepare('SELECT t, o, h, l, c, v FROM chart_data WHERE symbol = ? ORDER BY t ASC');
+    stmt.bind([sym]);
+    while (stmt.step()) {
+      const r = stmt.getAsObject();
+      bars.push({ t: r.t, o: r.o, h: r.h, l: r.l, c: r.c, v: r.v });
+    }
+    stmt.free();
+  } catch (e) { /* chart_data may not exist in older DB snapshots */ }
+
+  chartDataCache[sym] = { bars, generated_at };
   return chartDataCache[sym];
 }
 

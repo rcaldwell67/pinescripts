@@ -45,25 +45,45 @@ def create_database(db_path):
         )
     ''')
     conn.commit()
-        # Individual Trades Table (backtest, paper, live)
-        c.execute('''
-            CREATE TABLE IF NOT EXISTS trades (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                symbol TEXT NOT NULL,
-                version TEXT NOT NULL DEFAULT 'v1',
-                mode TEXT NOT NULL DEFAULT 'backtest',
-                entry_time DATETIME,
-                exit_time DATETIME,
-                direction TEXT,
-                entry_price REAL,
-                exit_price REAL,
-                result TEXT,
-                pnl_pct REAL,
-                dollar_pnl REAL,
-                equity REAL
-            )
-        ''')
-        conn.commit()
+    # Individual Trades Table (backtest, paper, live)
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS trades (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            symbol TEXT NOT NULL,
+            version TEXT NOT NULL DEFAULT 'v1',
+            mode TEXT NOT NULL DEFAULT 'backtest',
+            entry_time DATETIME,
+            exit_time DATETIME,
+            direction TEXT,
+            entry_price REAL,
+            exit_price REAL,
+            result TEXT,
+            pnl_pct REAL,
+            dollar_pnl REAL,
+            equity REAL
+        )
+    ''')
+    # Chart OHLCV bars — one row per (symbol, unix-second timestamp)
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS chart_data (
+            symbol TEXT    NOT NULL,
+            t      INTEGER NOT NULL,
+            o      REAL    NOT NULL,
+            h      REAL    NOT NULL,
+            l      REAL    NOT NULL,
+            c      REAL    NOT NULL,
+            v      REAL    NOT NULL,
+            PRIMARY KEY (symbol, t)
+        )
+    ''')
+    # One metadata row per symbol — tracks when bars were last fetched
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS chart_meta (
+            symbol       TEXT PRIMARY KEY,
+            generated_at TEXT NOT NULL
+        )
+    ''')
+    conn.commit()
     conn.close()
 
 if __name__ == "__main__":
