@@ -1,4 +1,4 @@
-name: Add Symbol to CSV
+name: Add Symbol to Database
 
 on:
   issues:
@@ -35,17 +35,6 @@ jobs:
           curl -s -H "APCA-API-KEY-ID: $ALPACA_API_KEY" -H "APCA-API-SECRET-KEY: $ALPACA_API_SECRET" \
             "https://paper-api.alpaca.markets/v2/assets/$SYMBOL" | grep 'symbol' || exit 1
 
-      - name: Add symbol to CSV if not present
-        run: |
-          SYMBOL="${{ steps.extract.outputs.symbol }}"
-          CSV="docs/data/symbols.csv"
-          if grep -i -q "^$SYMBOL$" "$CSV"; then
-            echo "$SYMBOL already present in $CSV"
-            exit 0
-          fi
-          echo "$SYMBOL" >> "$CSV"
-          echo "Added $SYMBOL to $CSV"
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -58,6 +47,6 @@ jobs:
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Add symbol ${{ steps.extract.outputs.symbol }} to symbols.csv via issue request"
-          file_pattern: "docs/data/symbols.csv"
+          commit_message: "Add symbol ${{ steps.extract.outputs.symbol }} to tradingcopilot.db via issue request"
+          file_pattern: "docs/data/tradingcopilot.db"
           branch: main

@@ -7,7 +7,7 @@ on:
       - 'scripts/**'
       - 'requirements.txt'
       - '.github/workflows/backtrader-backtest.yml'
-      - 'docs/data/symbols.csv'
+      - 'docs/data/tradingcopilot.db'
   pull_request:
     paths:
       - 'backend/**'
