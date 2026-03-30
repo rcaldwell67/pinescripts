@@ -419,6 +419,7 @@ let txPage = 1;
     try {
       const res = db.exec('SELECT symbol, description FROM symbols');
       if (res.length > 0) {
+        console.log('[DEBUG] Symbols query result:', res);
         const cols = res[0].columns;
         const values = res[0].values;
         symbolsData = values.map(row => {
