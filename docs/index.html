@@ -403,8 +403,8 @@ let txPage = 1;
       throw new Error('sql.js not loaded');
     }
     // Fetch the SQLite database file
-    console.log('[DEBUG] Attempting to fetch /pinescripts/docs/data/tradingcopilot.db ...');
-    const dbReq = await fetch('/pinescripts/docs/data/tradingcopilot.db');
+    console.log('[DEBUG] Attempting to fetch data/tradingcopilot.db ...');
+    const dbReq = await fetch('data/tradingcopilot.db');
     console.log('[DEBUG] Fetch response for tradingcopilot.db:', dbReq);
     if (!dbReq.ok) {
       console.error('[ERROR] Failed to fetch tradingcopilot.db. Status:', dbReq.status, dbReq.statusText);
