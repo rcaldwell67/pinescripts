@@ -11,6 +11,8 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+  <!-- sql.js for browser-based SQLite access -->
+  <script src="https://cdn.jsdelivr.net/npm/sql.js@1.8.0/dist/sql-wasm.js"></script>
   <style>
     :root {
       --bg:      #0d1117;
@@ -372,6 +374,7 @@ let txPage = 1;
       sel.innerHTML = `
         <option value="backtest">Backtest Results</option>
         <option value="paper">Paper Trading Results</option>
+        <option value="live">Live Trading Results</option>
       `;
       sel.value = activeDataset;
       sel.addEventListener('change', e => {
@@ -396,16 +399,34 @@ let txPage = 1;
   async function loadSymbolsAndInit() {
     addDatasetSelector();
     console.log('[DEBUG] loadSymbolsAndInit called');
-    const [symbolsResp, resultsResp] = await Promise.all([
-      fetch('data/symbols.json'),
-      fetch(getResultsJsonFile())
-    ]);
-    if (!symbolsResp.ok) throw new Error('Failed to fetch symbols.json');
-    if (!resultsResp.ok) throw new Error('Failed to fetch results JSON');
-    const symbolsData = await symbolsResp.json();
-    const resultsData = await resultsResp.json();
-    window.BACKTEST_RESULTS = resultsData; // Expose for debugging (name kept for compatibility)
-    console.log(`[Dropdown] Loaded ${symbolsData.length} symbols and ${getResultsJsonFile()}`);
+    if (typeof window.initSqlJs === 'undefined') {
+      throw new Error('sql.js not loaded');
+    }
+    // Fetch the SQLite database file
+    const dbReq = await fetch('data/tradingcopilot.db');
+    if (!dbReq.ok) throw new Error('Failed to fetch tradingcopilot.db');
+    const dbBuffer = await dbReq.arrayBuffer();
+    // Initialize sql.js
+    const SQL = await window.initSqlJs({ locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.8.0/dist/${file}` });
+    const db = new SQL.Database(new Uint8Array(dbBuffer));
+    // Query the symbols table
+    let symbolsData = [];
+    try {
+      const res = db.exec('SELECT symbol, description FROM symbols');
+      if (res.length > 0) {
+        const cols = res[0].columns;
+        const values = res[0].values;
+        symbolsData = values.map(row => {
+          const obj = {};
+          cols.forEach((col, i) => { obj[col] = row[i]; });
+          return obj;
+        });
+      }
+    } catch (e) {
+      console.error('Error querying symbols table:', e);
+      throw new Error('Failed to query symbols table');
+    }
+    // Prepare symbol list and UI
     const symbols = symbolsData.map(obj => obj.symbol);
     SYMBOLS = symbols;
     INSTRUMENTS = buildInstruments(symbols);
@@ -435,7 +456,7 @@ let txPage = 1;
           if (debounceTimer) clearTimeout(debounceTimer);
           const value = this.value;
           debounceTimer = setTimeout(() => {
-            handleSymbolSelect(value);
+            handleSymbolSelect(value, db);
           }, 100); // 100ms debounce
         });
         console.log('[Dropdown] Dropdown enabled and event attached. Ready for user interaction.');
@@ -445,6 +466,8 @@ let txPage = 1;
     }
     enableDropdownWhenReady();
     buildSymbolSwitcher(symbols);
+    // Save db instance for later use
+    window._SQL_DB = db;
   }
 
   window.addEventListener('DOMContentLoaded', function() {
@@ -1302,11 +1325,9 @@ function populateSymbolDropdown() {
 }
 
 
-// --- New: handleSymbolSelect loads from selected dataset JSON ---
-function handleSymbolSelect(newSym) {
-  // Prevent race: only proceed if loaded is ready
+// --- New: handleSymbolSelect loads from SQLite for backtest/paper ---
+async function handleSymbolSelect(newSym, dbInstance) {
   if (typeof loaded === 'undefined' || !loaded) {
-    // Harden: never alert, just log and return silently
     console.warn('[Dropdown] handleSymbolSelect called before loaded is initialized. Ignoring.');
     return;
   }
@@ -1326,15 +1347,44 @@ function handleSymbolSelect(newSym) {
     updateModeButtonStates();
     return;
   }
-  // Load all version data for this symbol from BACKTEST_RESULTS (now can be paper or backtest)
-  const resultsData = window.BACKTEST_RESULTS || {};
-  const symData = resultsData[activeSym] || {};
+  // Use dbInstance if provided, else window._SQL_DB
+  const db = dbInstance || window._SQL_DB;
+  if (!db) {
+    console.error('No SQL DB instance available');
+    return;
+  }
+  // Determine table name based on dataset
+  let table = 'backtest_results';
+  if (activeDataset === 'paper') table = 'paper_trading_results';
+  else if (activeDataset === 'live') table = 'live_trading_results';
+  // Query all rows for this symbol, grouped by version
+  let rows = [];
+  try {
+    const res = db.exec(`SELECT * FROM ${table} WHERE symbol = ?`, [activeSym]);
+    if (res.length > 0) {
+      const cols = res[0].columns;
+      const values = res[0].values;
+      rows = values.map(row => {
+        const obj = {};
+        cols.forEach((col, i) => { obj[col] = row[i]; });
+        return obj;
+      });
+    }
+  } catch (e) {
+    console.error('Error querying results table:', e);
+    rows = [];
+  }
+  // Group by version
+  const byVersion = {};
+  rows.forEach(r => {
+    if (!byVersion[r.version]) byVersion[r.version] = [];
+    byVersion[r.version].push(r);
+  });
   Object.keys(vers).forEach(v => {
-    loaded[activeSym][v] = symData[v] ? symData[v] : [];
+    loaded[activeSym][v] = byVersion[v] ? byVersion[v] : [];
   });
   showDashboardData();
   buildTabs();
-  // Use setTimeout to yield UI and avoid long blocking
   setTimeout(() => {
     render();
     updateLastUpdated();
