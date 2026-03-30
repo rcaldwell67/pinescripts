@@ -1,5 +1,6 @@
 alpaca-py
 python-dotenv
+requests
 pandas
 numpy
 backtrader

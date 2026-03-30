@@ -14,6 +14,11 @@ on:
         required: false
         default: "v1"
         type: string
+      execution_mode:
+        description: "realtime (Alpaca orders) or simulation (backtest-style)"
+        required: false
+        default: "realtime"
+        type: string
       force_reset:
         description: "Delete and regenerate all paper trades (instead of appending new)"
         required: false
@@ -52,23 +57,30 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run paper-trading simulation
+      - name: Run paper-trading
         shell: bash
         run: |
           set -euo pipefail
           VERSION="${{ github.event.inputs.version || 'v1' }}"
           SYMBOL="${{ github.event.inputs.symbol || '' }}"
+          EXECUTION_MODE="${{ github.event.inputs.execution_mode || 'realtime' }}"
           FORCE_RESET_FLAG=""
           if [[ "${{ github.event.inputs.force_reset || 'false' }}" == "true" ]]; then
             FORCE_RESET_FLAG="--force-reset"
           fi
 
           if [[ -n "$SYMBOL" ]]; then
-            echo "Running paper trading for $SYMBOL $VERSION"
-            python backend/paper_trading/paper_trade_backtrader_alpaca.py --symbol "$SYMBOL" --version "$VERSION" $FORCE_RESET_FLAG
+            TARGET_FLAG="--symbol $SYMBOL"
           else
-            echo "Running paper trading for all symbols, version $VERSION"
-            python backend/paper_trading/paper_trade_backtrader_alpaca.py --all-symbols --version "$VERSION" $FORCE_RESET_FLAG
+            TARGET_FLAG="--all-symbols"
+          fi
+
+          if [[ "$EXECUTION_MODE" == "simulation" ]]; then
+            echo "Running simulation paper trading ($TARGET_FLAG) for version $VERSION"
+            python backend/paper_trading/paper_trade_backtrader_alpaca.py $TARGET_FLAG --version "$VERSION" $FORCE_RESET_FLAG
+          else
+            echo "Running realtime Alpaca paper trading ($TARGET_FLAG) for version $VERSION"
+            python backend/paper_trading/realtime_alpaca_paper_trader.py $TARGET_FLAG --version "$VERSION"
           fi
 
       - name: Commit updated DB

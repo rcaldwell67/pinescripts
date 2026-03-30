@@ -1,27 +1,67 @@
-name: Alpaca Paper Trades Sync
+name: Alpaca Paper Trading (Manual)
 
 on:
-  schedule:
-    - cron: '*/1 * * * *'
   workflow_dispatch:
+    inputs:
+      symbol:
+        description: "Optional symbol, e.g. CLM"
+        required: false
+        type: string
+      version:
+        description: "Strategy version (v1 supports realtime)"
+        required: false
+        default: "v1"
+        type: string
 
 jobs:
-  sync-paper-trades:
+  alpaca-paper-trading:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/checkout@v4
         with:
-          python-version: '3.10'
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
       - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
-      - name: Run Alpaca Paper Trades Sync
+
+      - name: Run Alpaca realtime paper trading
+        shell: bash
         env:
           ALPACA_PAPER_API_KEY: ${{ secrets.ALPACA_PAPER_API_KEY }}
           ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
-          ALPACA_MODE: paper
         run: |
-          python fetch_alpaca_paper_trades.py
+          set -euo pipefail
+          VERSION="${{ github.event.inputs.version || 'v1' }}"
+          SYMBOL="${{ github.event.inputs.symbol || '' }}"
+
+          if [[ -n "$SYMBOL" ]]; then
+            python backend/paper_trading/realtime_alpaca_paper_trader.py --symbol "$SYMBOL" --version "$VERSION"
+          else
+            python backend/paper_trading/realtime_alpaca_paper_trader.py --all-symbols --version "$VERSION"
+          fi
+
+      - name: Commit updated DB
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/data/tradingcopilot.db
+          if git diff --cached --quiet; then
+            echo "No DB changes to commit."
+            exit 0
+          fi
+          git commit -m "chore: manual alpaca paper trading $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git pull --rebase origin main
+          git push origin HEAD:main

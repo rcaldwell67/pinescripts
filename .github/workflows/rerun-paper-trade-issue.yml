@@ -54,7 +54,11 @@ jobs:
       - name: Run paper trading for symbol and version
         run: |
           echo "Running paper trading for symbol ${{ steps.extract.outputs.symbol }} version ${{ steps.extract.outputs.version }}..."
-          python backend/paper_trading/paper_trade_backtrader_alpaca.py --symbol "${{ steps.extract.outputs.symbol }}" --version "${{ steps.extract.outputs.version }}"
+          if [[ "${{ steps.extract.outputs.version }}" == "v1" ]]; then
+            python backend/paper_trading/realtime_alpaca_paper_trader.py --symbol "${{ steps.extract.outputs.symbol }}" --version "${{ steps.extract.outputs.version }}"
+          else
+            python backend/paper_trading/paper_trade_backtrader_alpaca.py --symbol "${{ steps.extract.outputs.symbol }}" --version "${{ steps.extract.outputs.version }}"
+          fi
 
       - name: Commit updated DB
         shell: bash
