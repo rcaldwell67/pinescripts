@@ -8,6 +8,9 @@ jobs:
   add-symbol:
     if: contains(github.event.issue.labels.*.name, 'add-symbol')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -20,7 +23,7 @@ jobs:
           python - <<'PY'
           import os, re
           body = os.environ.get('ISSUE_BODY', '')
-          m = re.search(r'Symbol:\s*([A-Za-z0-9_\-]+)', body)
+          m = re.search(r'Symbol:\s*([A-Za-z0-9_\-/\.]+)', body, re.IGNORECASE)
           symbol = (m.group(1) if m else '').upper().strip()
           desc = ''
           m2 = re.search(r'Description:\s*(.*)', body)
@@ -98,6 +101,17 @@ jobs:
           SYMBOL="${{ steps.parse.outputs.symbol }}"
           echo "Running backtest for symbol: $SYMBOL (version: v1)"
           python backend/backtest_backtrader_alpaca.py --symbol "$SYMBOL" --version "v1"
+
+      - name: Run paper trading for new symbol
+        env:
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
+          ALPACA_PAPER_API_KEY: ${{ secrets.ALPACA_PAPER_API_KEY }}
+          ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
+        run: |
+          SYMBOL="${{ steps.parse.outputs.symbol }}"
+          echo "Running paper trading for symbol: $SYMBOL (version: v1)"
+          python backend/paper_trading/paper_trade_backtrader_alpaca.py --symbol "$SYMBOL" --version "v1"
       - name: Commit DB changes
         run: |
           git config --global user.name 'github-actions'
@@ -108,4 +122,4 @@ jobs:
       - name: Comment and close issue
         uses: peter-evans/close-issue@v3
         with:
-          comment: "Symbol ${{ steps.parse.outputs.symbol }} passed Alpaca Paper validation, was added to docs/data/tradingcopilot.db, and backtests completed successfully."
+          comment: "Symbol ${{ steps.parse.outputs.symbol }} passed Alpaca Paper validation, was added to docs/data/tradingcopilot.db, and both backtest and paper-trading runs completed successfully."

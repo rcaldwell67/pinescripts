@@ -1,0 +1,84 @@
+name: Rerun Paper Trading (via Issue)
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  rerun-paper-trade:
+    if: startsWith(github.event.issue.title, 'Rerun Paper Trading:')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+    env:
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
+      ALPACA_PAPER_API_KEY: ${{ secrets.ALPACA_PAPER_API_KEY }}
+      ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Extract symbol and version from issue title
+        id: extract
+        run: |
+          python - <<'PY'
+          import os
+          import re
+
+          title = os.environ.get('ISSUE_TITLE', '')
+          match = re.match(r'^Rerun Paper Trading:\s+(.+?)\s+(v\d+)\s*$', title, re.IGNORECASE)
+          if not match:
+              raise SystemExit(f'Could not parse symbol/version from issue title: {title!r}')
+
+          symbol = match.group(1).strip().upper()
+          version = match.group(2).strip().lower()
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as f:
+              f.write(f'symbol={symbol}\n')
+              f.write(f'version={version}\n')
+          PY
+        env:
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+
+      - name: Run paper trading for symbol and version
+        run: |
+          echo "Running paper trading for symbol ${{ steps.extract.outputs.symbol }} version ${{ steps.extract.outputs.version }}..."
+          python backend/paper_trading/paper_trade_backtrader_alpaca.py --symbol "${{ steps.extract.outputs.symbol }}" --version "${{ steps.extract.outputs.version }}"
+
+      - name: Commit updated DB
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/data/tradingcopilot.db
+          if git diff --cached --quiet; then
+            echo "No DB changes to commit."
+          else
+            git commit -m "chore: rerun paper trading ${{ steps.extract.outputs.symbol }} ${{ steps.extract.outputs.version }}"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+
+      - name: Comment with result
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            ✅ Paper-trading rerun workflow completed for ${{ steps.extract.outputs.symbol }} ${{ steps.extract.outputs.version }}.
+
+      - name: Close issue
+        uses: peter-evans/close-issue@v3
+        with:
+          issue-number: ${{ github.event.issue.number }}

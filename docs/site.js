@@ -99,6 +99,7 @@ let charts = {};
 let tradeTablePage = 1;
 let tradePageSize = 25;
 let txPage = 1;
+const PAPER_TRADING_SUPPORTED_VERSIONS = new Set(['v1']);
 
 
 
@@ -123,6 +124,7 @@ let txPage = 1;
       sel.value = activeDataset;
       sel.addEventListener('change', e => {
         activeDataset = sel.value;
+        activeMode = activeDataset;
         loadSymbolsAndInit();
       });
       // Insert below symbol dropdown
@@ -335,23 +337,24 @@ function buildTabs() {
   addBtn('all','All Versions',null);
   for (const [vk, cfg] of Object.entries(vers)) addBtn(vk, getVersionLabel(activeSym, vk), cfg.color);
 
-  // Add Rerun Backtest button if a specific version is selected (not 'all') and mode is backtest
-  const rerunBtnId = 'rerunBacktestBtn';
+  const rerunBtnId = 'rerunWorkflowBtn';
   let rerunBtn = document.getElementById(rerunBtnId);
-  if (activeTab !== 'all' && activeMode === 'backtest') {
+  const shouldShowBacktest = activeTab !== 'all' && activeDataset === 'backtest';
+  const shouldShowPaper = activeTab !== 'all' && activeDataset === 'paper' && PAPER_TRADING_SUPPORTED_VERSIONS.has(activeTab);
+  if (shouldShowBacktest || shouldShowPaper) {
     if (!rerunBtn) {
       rerunBtn = document.createElement('button');
       rerunBtn.id = rerunBtnId;
-      rerunBtn.textContent = 'Rerun Backtest';
       rerunBtn.style = 'margin-left:16px;padding:6px 18px;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;';
-      rerunBtn.onclick = function() {
-        rerunBacktest(activeSym, activeTab);
-      };
       tabEl.appendChild(rerunBtn);
-    } else {
-      tabEl.appendChild(rerunBtn);
-      rerunBtn.style.display = '';
     }
+    rerunBtn.textContent = shouldShowBacktest ? 'Rerun Backtest' : 'Rerun Paper Trading';
+    rerunBtn.onclick = function() {
+      if (shouldShowBacktest) rerunBacktest(activeSym, activeTab);
+      else rerunPaperTrading(activeSym, activeTab);
+    };
+    tabEl.appendChild(rerunBtn);
+    rerunBtn.style.display = '';
   } else if (rerunBtn) {
     rerunBtn.style.display = 'none';
   }
@@ -367,6 +370,18 @@ function rerunBacktest(symbol, version) {
   const url = `https://github.com/rcaldwell67/pinescripts/issues/new?title=${issueTitle}&body=${issueBody}`;
   window.open(url, '_blank');
   updateWorkflowStatus('Opened GitHub issue form in a new tab. Submit it to start the rerun workflow.', '#58a6ff');
+}
+
+function rerunPaperTrading(symbol, version) {
+  const sym = symbol.toUpperCase();
+  const ver = version.toUpperCase();
+  const issueTitle = encodeURIComponent(`Rerun Paper Trading: ${sym} ${ver}`);
+  const issueBody = encodeURIComponent(
+    `Please rerun paper trading for ${sym} version ${ver}.\n\n_This request was generated from the dashboard UI._`
+  );
+  const url = `https://github.com/rcaldwell67/pinescripts/issues/new?title=${issueTitle}&body=${issueBody}`;
+  window.open(url, '_blank');
+  updateWorkflowStatus('Opened GitHub issue form in a new tab. Submit it to start the paper-trading rerun workflow.', '#58a6ff');
 }
 
 function updateWorkflowStatus(msg, color) {

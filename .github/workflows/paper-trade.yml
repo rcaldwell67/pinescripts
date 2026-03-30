@@ -1,0 +1,78 @@
+name: Paper Trade (Generic)
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+    inputs:
+      symbol:
+        description: "Optional symbol to run, e.g. BTC/USD"
+        required: false
+        type: string
+      version:
+        description: "Strategy version to run"
+        required: false
+        default: "v1"
+        type: string
+
+concurrency:
+  group: paper-trade-generic
+  cancel-in-progress: false
+
+jobs:
+  paper-trade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    env:
+      ALPACA_PAPER_API_KEY: ${{ secrets.ALPACA_PAPER_API_KEY }}
+      ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run paper-trading simulation
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ github.event.inputs.version || 'v1' }}"
+          SYMBOL="${{ github.event.inputs.symbol || '' }}"
+
+          if [[ -n "$SYMBOL" ]]; then
+            echo "Running paper trading for $SYMBOL $VERSION"
+            python backend/paper_trading/paper_trade_backtrader_alpaca.py --symbol "$SYMBOL" --version "$VERSION"
+          else
+            echo "Running paper trading for all symbols, version $VERSION"
+            python backend/paper_trading/paper_trade_backtrader_alpaca.py --all-symbols --version "$VERSION"
+          fi
+
+      - name: Commit updated DB
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/data/tradingcopilot.db
+          if git diff --cached --quiet; then
+            echo "No DB changes to commit."
+            exit 0
+          fi
+          git commit -m "chore: paper trade $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git pull --rebase origin main
+          git push origin HEAD:main
