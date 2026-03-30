@@ -2,18 +2,19 @@
   "BTC/USD": {
     "v1": [
       {
-        "beginning_equity": 9800.0,
-        "final_equity": 130066.25552678992,
-        "total_trades": 503,
-        "winning_trades": 277,
-        "losing_trades": 226,
-        "win_rate": 55.069582504970185,
-        "average_pnl": 238.7003091983898,
-        "total_pnl": 120066.25552679006,
+        "version": "v1",
+        "beginning_equity": 10000.0,
+        "final_equity": 142106.36947787052,
+        "total_trades": 513,
+        "winning_trades": 283,
+        "losing_trades": 230,
+        "win_rate": 55.165692007797276,
+        "average_pnl": 257.51728943054695,
+        "total_pnl": 132106.36947787058,
         "max_drawdown": 27605.47105115917,
-        "net_return_pct": 1227.2066890488766,
+        "net_return_pct": 1321.0636947787054,
         "first_trade_date": "2026-01-06 08:20:00+00:00",
-        "last_trade_date": "2026-03-28 10:20:00+00:00"
+        "last_trade_date": "2026-03-30 18:40:00+00:00"
       }
     ]
   }
