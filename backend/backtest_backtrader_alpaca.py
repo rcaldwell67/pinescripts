@@ -224,7 +224,10 @@ def save_to_db(symbol: str, version: str,
 
     conn = sqlite3.connect(str(DB_PATH), timeout=30)
     conn.execute("PRAGMA journal_mode=DELETE")
-    conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+    try:
+        conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+    except sqlite3.OperationalError:
+        pass
 
     # Replace the existing summary row for this symbol+version (if any)
     notes = f"{VERSION_MAP.get(version, version)} backtest summary"

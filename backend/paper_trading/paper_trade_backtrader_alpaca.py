@@ -87,7 +87,10 @@ def _metrics_for_trades(symbol: str, version: str, trades, df) -> dict[str, obje
 def save_paper_to_db(symbol: str, version: str, trades, df) -> None:
     conn = sqlite3.connect(str(DB_PATH), timeout=30)
     conn.execute("PRAGMA journal_mode=DELETE")
-    conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+    try:
+        conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+    except sqlite3.OperationalError:
+        pass
 
     notes = f"{VERSION_MAP.get(version, version)} paper trading summary"
     conn.execute(
