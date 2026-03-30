@@ -11,6 +11,14 @@ jobs:
   rerun-backtest:
     if: startsWith(github.event.issue.title, 'Rerun Backtest:')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to commit updated DB
+      issues: write     # needed to comment and close issue
+    env:
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
+      ALPACA_PAPER_API_KEY: ${{ secrets.ALPACA_PAPER_API_KEY }}
+      ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -38,6 +46,21 @@ jobs:
         run: |
           echo "Running backtest for symbol ${{ steps.extract.outputs.symbol }} version ${{ steps.extract.outputs.version }}..."
           python backend/backtest_backtrader_alpaca.py --symbol "${{ steps.extract.outputs.symbol }}" --version "${{ steps.extract.outputs.version }}"
+
+      - name: Commit updated DB
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/data/tradingcopilot.db
+          if git diff --cached --quiet; then
+            echo "No DB changes to commit."
+          else
+            git commit -m "chore: rerun backtest ${{ steps.extract.outputs.symbol }} ${{ steps.extract.outputs.version }}"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
 
       - name: Comment with result
         uses: peter-evans/create-or-update-comment@v4
