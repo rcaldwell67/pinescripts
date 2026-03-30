@@ -111,10 +111,22 @@ def fetch_ohlcv_yfinance(symbol: str) -> "pd.DataFrame":
 
     # Reset index to convert Date from index to column
     df = df.reset_index()
-    
-    # Normalize column names (yfinance uses "Date" as the index column name)
-    df.columns = [c.lower() for c in df.columns]
-    df = df.rename(columns={"date": "timestamp"})
+
+    # Normalize column names. In some yfinance versions, columns may be tuples
+    # (MultiIndex), e.g. ('Open', 'CLM'). Flatten before lowercasing.
+    def _norm_col_name(col: object) -> str:
+        if isinstance(col, tuple):
+            parts = [str(p).strip() for p in col if p not in (None, "")]
+            return (parts[0] if parts else str(col)).lower()
+        return str(col).strip().lower()
+
+    df.columns = [_norm_col_name(c) for c in df.columns]
+
+    # Accept common timestamp column variants from different providers/versions
+    ts_col = next((c for c in ("date", "datetime", "timestamp", "index") if c in df.columns), None)
+    if ts_col is None:
+        raise RuntimeError(f"Yahoo Finance data missing timestamp column. Columns: {list(df.columns)}")
+    df = df.rename(columns={ts_col: "timestamp"})
     
     # Ensure required columns exist
     required = {"timestamp", "open", "high", "low", "close", "volume"}
