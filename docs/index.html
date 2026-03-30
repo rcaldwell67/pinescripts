@@ -1382,19 +1382,18 @@ async function handleSymbolSelect(newSym, dbInstance) {
   Object.keys(vers).forEach(v => {
     loaded[activeSym][v] = byVersion[v] ? byVersion[v] : [];
   });
-  showDashboardData();
-  buildTabs();
-  setTimeout(() => {
-    render();
-    updateLastUpdated();
-    updateModeButtonStates();
-  }, 0);
-}
-
-function hideDashboardData() {
-  document.getElementById('balanceBar').style.display = 'none';
-  document.getElementById('lastUpdated').style.display = 'none';
-  document.getElementById('tabs').style.display = 'none';
+  hideDashboardData();
+  activeSym = '';
+  // Add Symbol input logic (GitHub Issue automation)
+  const addInput = document.getElementById('addSymbolInput');
+  const addBtn = document.getElementById('addSymbolBtn');
+  addBtn.addEventListener('click', () => {
+    /* Lines 1460-1469 omitted */
+    window.open(url, '_blank');
+  });
+  addInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') addBtn.click();
+  });
   document.getElementById('cards').style.display = 'none';
   const panels = document.querySelectorAll('.panel');
   panels.forEach(p => p.style.display = 'none');
