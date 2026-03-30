@@ -257,20 +257,9 @@ function buildSymbolSwitcher(symbols) {
     if (child.tagName === 'LABEL' || keepIds.includes(child.id)) return;
     switcher.removeChild(child);
   });
-  // Optionally, add symbol buttons dynamically (if you want buttons in addition to the select);
-  /*
-  symbols.forEach(sym => {
-    const btn = document.createElement('button');
-    btn.className = 'sym-btn';
-    btn.setAttribute('data-sym', sym);
-    btn.textContent = INSTRUMENTS[sym]?.label || sym;
-    // btn.addEventListener('click', () => {
-    //   document.getElementById('symbolSelect').value = sym;
-    //   handleSymbolSelect(sym);
-    // });
-    // switcher.appendChild(btn);
-  });
-  */
+  // Optionally, add symbol buttons dynamically (if you want buttons in addition to the select)
+  // (Commented out for now)
+}
 
 
 function buildInstruments(symbols) {
