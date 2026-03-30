@@ -1346,6 +1346,7 @@ async function handleSymbolSelect(newSym, dbInstance) {
   }
   // Use dbInstance if provided, else window._SQL_DB
   const db = dbInstance || window._SQL_DB;
+  console.log('[DEBUG] DB instance in handleSymbolSelect:', db);
   if (!db) {
     console.error('No SQL DB instance available');
     return;
@@ -1358,6 +1359,7 @@ async function handleSymbolSelect(newSym, dbInstance) {
   let rows = [];
   try {
     const res = db.exec(`SELECT * FROM ${table} WHERE symbol = ?`, [activeSym]);
+    console.log('[DEBUG] Query result for', table, 'symbol', activeSym, ':', res);
     if (res.length > 0) {
       const cols = res[0].columns;
       const values = res[0].values;
