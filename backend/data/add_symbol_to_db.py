@@ -7,15 +7,15 @@ def add_symbol(symbol, description=None):
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
     try:
-                c.execute(
-                        '''
-                        INSERT INTO symbols (symbol, description)
-                        VALUES (?, ?)
-                        ON CONFLICT(symbol) DO UPDATE SET
-                            description = COALESCE(excluded.description, symbols.description)
-                        ''',
-                        (symbol, description),
-                )
+        c.execute(
+            '''
+            INSERT INTO symbols (symbol, description)
+            VALUES (?, ?)
+            ON CONFLICT(symbol) DO UPDATE SET
+              description = COALESCE(excluded.description, symbols.description)
+            ''',
+            (symbol, description),
+        )
         conn.commit()
         print(f"Symbol {symbol} added to database.")
     finally:
