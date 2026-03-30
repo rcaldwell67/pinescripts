@@ -31,19 +31,30 @@ jobs:
         env:
           ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
           ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
+          ALPACA_PAPER_API_KEY: ${{ secrets.ALPACA_PAPER_API_KEY }}
+          ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
         run: |
           SYMBOL="${{ steps.extract.outputs.symbol }}"
-          if [ -z "$ALPACA_API_KEY" ] || [ -z "$ALPACA_API_SECRET" ]; then
+          KEY="${ALPACA_PAPER_API_KEY:-$ALPACA_API_KEY}"
+          SECRET="${ALPACA_PAPER_API_SECRET:-$ALPACA_API_SECRET}"
+          if [ -z "$KEY" ] || [ -z "$SECRET" ]; then
             echo "Alpaca API keys not set. Validation is required."
             exit 1
           fi
           # Validate symbol exists on Alpaca Paper Trading assets.
-          RESP=$(curl -s -H "APCA-API-KEY-ID: $ALPACA_API_KEY" -H "APCA-API-SECRET-KEY: $ALPACA_API_SECRET" \
+          STATUS=$(curl -s -o /tmp/alpaca_resp.json -w "%{http_code}" \
+            -H "APCA-API-KEY-ID: $KEY" \
+            -H "APCA-API-SECRET-KEY: $SECRET" \
             "https://paper-api.alpaca.markets/v2/assets/$SYMBOL")
-          if echo "$RESP" | grep -q '"symbol"'; then
+          RESP=$(cat /tmp/alpaca_resp.json)
+          if [ "$STATUS" = "200" ] && echo "$RESP" | grep -q '"symbol"'; then
             echo "Alpaca validation passed for $SYMBOL"
+          elif [ "$STATUS" = "401" ] || [ "$STATUS" = "403" ]; then
+            echo "Alpaca Paper authentication failed (HTTP $STATUS). Check ALPACA_PAPER_API_KEY/ALPACA_PAPER_API_SECRET (or fallback ALPACA_API_KEY/ALPACA_API_SECRET)."
+            echo "$RESP"
+            exit 1
           else
-            echo "Alpaca validation failed for $SYMBOL"
+            echo "Alpaca validation failed for $SYMBOL (HTTP $STATUS)"
             echo "$RESP"
             exit 1
           fi
