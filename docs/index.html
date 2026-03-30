@@ -324,6 +324,7 @@ function initStateObjects(symbols) {
   loaded = _modeCache['backtest']; // Always set loaded after _modeCache is built
   // For backtestSelections, initialize for all symbols
   window.backtestSelections = {};
+
   symbols.forEach(sym => {
     window.backtestSelections[sym] = {};
     // Optionally, set defaults for known versions
@@ -333,9 +334,6 @@ function initStateObjects(symbols) {
       });
     }
   });
-
-
-
 
 let loaded; // Global reference to the currently loaded data for the active mode
 let _modeCache;
