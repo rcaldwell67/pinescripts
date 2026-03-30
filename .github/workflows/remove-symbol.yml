@@ -6,7 +6,7 @@ on:
 
 jobs:
   remove-symbol:
-    if: contains(github.event.issue.labels.*.name, 'remove-symbol')
+    if: ${{ contains(github.event.issue.labels.*.name, 'remove-symbol') || startsWith(github.event.issue.title, 'Remove symbol:') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
