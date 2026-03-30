@@ -1205,6 +1205,20 @@ document.getElementById('v2DatasetSelect')?.addEventListener('change', event => 
         db = new SQL.Database(new Uint8Array(dbBuffer));
       }
       
+      // Ensure alpaca_symbols table exists
+      try {
+        db.run(`
+          CREATE TABLE IF NOT EXISTS alpaca_symbols (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            symbol TEXT UNIQUE NOT NULL,
+            name TEXT,
+            synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          )
+        `);
+      } catch (e) {
+        console.warn('Could not ensure alpaca_symbols table exists:', e);
+      }
+      
       // Query alpaca_symbols table
       const res = db.exec('SELECT symbol, name FROM alpaca_symbols ORDER BY symbol');
       const symbols_data = [];
@@ -1220,10 +1234,13 @@ document.getElementById('v2DatasetSelect')?.addEventListener('change', event => 
       }
       
       if (symbols_data.length === 0) {
-        select.innerHTML = '<option value="">No symbols cached (run sync workflow)</option>';
+        const msg = 'Symbols cache is empty. Run the "Sync Alpaca Symbols to Database" workflow to populate this list. Go to GitHub Actions and trigger it manually.';
+        select.innerHTML = '<option value="">Cache empty - see console message</option>';
         select.disabled = true;
         loadBtn.disabled = false;
         loadBtn.textContent = 'Refresh';
+        console.info(msg);
+        alert(msg);
         return;
       }
       
@@ -1240,11 +1257,11 @@ document.getElementById('v2DatasetSelect')?.addEventListener('change', event => 
       loadBtn.textContent = 'Refresh';
     } catch (err) {
       console.error('Error loading cached Alpaca symbols:', err);
-      select.innerHTML = '<option value="">Error loading symbols (check console)</option>';
+      select.innerHTML = '<option value="">Error (see console)</option>';
       select.disabled = true;
       loadBtn.disabled = false;
       loadBtn.textContent = 'Refresh';
-      alert('Failed to load symbols from cache: ' + err.message);
+      alert('Error loading symbols: ' + err.message + '. Check browser console for details.');
     }
   }
   

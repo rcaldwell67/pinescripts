@@ -6,6 +6,10 @@ on:
     - cron: '0 2 * * *'
   workflow_dispatch:
     # Allow manual trigger from Actions tab
+  push:
+    paths:
+      - '.github/workflows/sync-alpaca-symbols.yml'
+      - 'backend/data/sync_alpaca_symbols.py'
 
 jobs:
   sync-symbols:
