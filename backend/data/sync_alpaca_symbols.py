@@ -2,7 +2,6 @@
 import sqlite3
 import os
 import sys
-import json
 
 def sync_alpaca_symbols():
     """Fetch active US equity assets from Alpaca and store in alpaca_symbols table."""
@@ -13,12 +12,26 @@ def sync_alpaca_symbols():
         sys.exit(1)
     
     db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../docs/data/tradingcopilot.db'))
+
+    key = os.getenv('ALPACA_PAPER_API_KEY') or os.getenv('ALPACA_API_KEY')
+    secret = os.getenv('ALPACA_PAPER_API_SECRET') or os.getenv('ALPACA_API_SECRET')
+    if not key or not secret:
+        print(
+            'Error: Alpaca credentials are required. Set ALPACA_PAPER_API_KEY and '
+            'ALPACA_PAPER_API_SECRET (or ALPACA_API_KEY/ALPACA_API_SECRET).'
+        )
+        sys.exit(1)
     
     print(f"Fetching Alpaca symbols from paper-api.alpaca.markets...")
     try:
-        # Fetch from Alpaca's public assets endpoint
+        # Fetch active US equities from Alpaca with API authentication.
         response = requests.get(
             'https://paper-api.alpaca.markets/v2/assets?status=active&asset_class=us_equity',
+            headers={
+                'APCA-API-KEY-ID': key,
+                'APCA-API-SECRET-KEY': secret,
+                'Accept': 'application/json',
+            },
             timeout=30
         )
         response.raise_for_status()
