@@ -403,8 +403,13 @@ let txPage = 1;
       throw new Error('sql.js not loaded');
     }
     // Fetch the SQLite database file
-    const dbReq = await fetch('https://github.com/rcaldwell67/pinescripts/docs/data/tradingcopilot.db');
-    if (!dbReq.ok) throw new Error('Failed to fetch tradingcopilot.db');
+    console.log('[DEBUG] Attempting to fetch /pinescripts/docs/data/tradingcopilot.db ...');
+    const dbReq = await fetch('/pinescripts/docs/data/tradingcopilot.db');
+    console.log('[DEBUG] Fetch response for tradingcopilot.db:', dbReq);
+    if (!dbReq.ok) {
+      console.error('[ERROR] Failed to fetch tradingcopilot.db. Status:', dbReq.status, dbReq.statusText);
+      throw new Error('Failed to fetch tradingcopilot.db');
+    }
     const dbBuffer = await dbReq.arrayBuffer();
     // Initialize sql.js
     const SQL = await window.initSqlJs({ locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.8.0/dist/${file}` });
