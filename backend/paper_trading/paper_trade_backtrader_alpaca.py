@@ -129,7 +129,7 @@ def save_paper_to_db(symbol: str, version: str, trades, df, *, force_reset: bool
                 version,
                 entry_time,
                 exit_time,
-                "long",
+                "short",  # v1 strategy is shorts-only
                 float(trade.get("entry", 0.0) or 0.0),
                 float(trade.get("exit", 0.0) or 0.0),
                 _result_label(trade.get("exit_type")),

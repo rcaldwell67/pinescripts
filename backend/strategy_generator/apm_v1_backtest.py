@@ -19,7 +19,10 @@ def backtest_apm_v1(df):
     entries = apm_v1_signals(df)
     equity = INITIAL_EQUITY
     trades = []
+    open_until = -1   # bar index at which the current trade exits
     for i in entries:
+        if i <= open_until:   # skip signals while a trade is open
+            continue
         entry_price = df['Close'].iloc[i]
         atr = df['atr'].iloc[i]
         sl = entry_price + ATR_MULT_SL * atr
@@ -50,8 +53,10 @@ def backtest_apm_v1(df):
                 exit_type = 'take_profit'
                 break
         if exit_price is None:
-            exit_price = df['Close'].iloc[min(i+100, len(df)-1)]
+            j = min(i + 100, len(df) - 1)
+            exit_price = df['Close'].iloc[j]
             exit_type = 'max_bars_exit'
+        open_until = j
         pnl = (exit_price - entry_price) * qty * -1  # Short
         equity += pnl
         trades.append({'entry_idx': i, 'exit_idx': j, 'entry': entry_price, 'exit': exit_price, 'qty': qty, 'pnl': pnl, 'exit_type': exit_type, 'equity': equity})
