@@ -6,5 +6,9 @@
   {
     "symbol": "CLM",
     "description": null
+  },
+  {
+    "symbol": "ETH",
+    "description": "Ethereum"
   }
 ]
