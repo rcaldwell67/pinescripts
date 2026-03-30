@@ -1282,33 +1282,6 @@ function render() {
 }
 
 
-// Populate symbol dropdown from CSV and handle selection (fully dynamic, no static symbolMap)
-function populateSymbolDropdown() {
-  fetch('data/symbols.json?v=' + Date.now(), { cache: 'no-store' })
-    .then(resp => resp.json())
-    .then(symbolsArr => {
-      console.log('[DEBUG] Loaded symbols from symbols.json:', symbolsArr);
-      const select = document.getElementById('symbolSelect');
-      select.innerHTML = '<option value="">Select...</option>';
-      symbolsArr.forEach(obj => {
-        // obj: { symbol: 'BTC_USD', description: 'Bitcoin/US Dollar' }
-        const opt = document.createElement('option');
-        opt.value = obj.symbol;
-        opt.textContent = obj.symbol + (obj.description ? ' — ' + obj.description : '');
-        select.appendChild(opt);
-      });
-      select.value = '';
-      // Only add event listener after loaded is initialized
-      setTimeout(() => {
-        select.addEventListener('change', function() {
-          handleSymbolSelect(this.value);
-        });
-      }, 0);
-    })
-    .catch(err => {
-      console.error('[DEBUG] Failed to load symbols.json:', err);
-    });
-}
 
 
 
@@ -1453,7 +1426,6 @@ document.getElementById('v2DatasetSelect')?.addEventListener('change', event => 
 (async () => {
   hideDashboardData();
   activeSym = '';
-  populateSymbolDropdown();
   // Add Symbol input logic (GitHub Issue automation)
   const addInput = document.getElementById('addSymbolInput');
   const addBtn = document.getElementById('addSymbolBtn');
