@@ -803,12 +803,12 @@ function updateVerFilter() {
 }
 
 function renderTransactionsTable() {
+  updateVerFilter();
   const verF    = document.getElementById('txVerFilter').value;
   const tfF     = document.getElementById('txTfFilter').value;
   const actionF = document.getElementById('txActionFilter').value;
   const dirF    = document.getElementById('txDirFilter').value;
   const typeF   = document.getElementById('txTypeFilter').value;
-  updateVerFilter();
   let txns = buildTransactions();
   if (verF    !== 'all') txns = txns.filter(t => t.ver === verF);
   if (tfF     !== 'all') txns = txns.filter(t => t.cfg.tf === tfF);
