@@ -56,6 +56,8 @@ jobs:
           RESP=$(cat /tmp/alpaca_resp.json)
           if [ "$STATUS" = "200" ] && echo "$RESP" | grep -q '"symbol"'; then
             echo "Alpaca validation passed for $SYMBOL"
+            DESC=$(echo "$RESP" | sed -n 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n1)
+            DESC=$(echo "$DESC" | tr '\r\n' ' ' | xargs)
           elif [ "$STATUS" = "401" ] || [ "$STATUS" = "403" ]; then
             echo "Alpaca Paper authentication failed (HTTP $STATUS). Check ALPACA_PAPER_API_KEY/ALPACA_PAPER_API_SECRET (or fallback ALPACA_API_KEY/ALPACA_API_SECRET)."
             echo "$RESP"
@@ -65,7 +67,16 @@ jobs:
             echo "$RESP"
             exit 1
           fi
-          python backend/data/add_symbol_to_db.py "${{ steps.parse.outputs.symbol }}" "${{ steps.parse.outputs.desc }}"
+          ISSUE_DESC="${{ steps.parse.outputs.desc }}"
+          FINAL_DESC="$DESC"
+          if [ -z "$FINAL_DESC" ]; then
+            FINAL_DESC="$ISSUE_DESC"
+          fi
+          if [ -n "$FINAL_DESC" ]; then
+            python backend/data/add_symbol_to_db.py "${{ steps.parse.outputs.symbol }}" "$FINAL_DESC"
+          else
+            python backend/data/add_symbol_to_db.py "${{ steps.parse.outputs.symbol }}"
+          fi
 
       - name: Install dependencies
         run: |
