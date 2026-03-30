@@ -133,6 +133,7 @@ function getSymbolAliases(sym) {
         pendingDatasetSymbol = (currentSelect && currentSelect.value) || activeSym || '';
         activeDataset = nextDataset;
         activeMode = activeDataset;
+        resetTransactionFilters();
         addDatasetSelector();
         loadSymbolsAndInit();
       });
@@ -802,6 +803,15 @@ function updateVerFilter() {
   if ([...tfsel.options].some(o=>o.value===tfcur)) tfsel.value = tfcur;
 }
 
+function resetTransactionFilters() {
+  const ids = ['txVerFilter', 'txTfFilter', 'txActionFilter', 'txDirFilter', 'txTypeFilter'];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = 'all';
+  });
+  txPage = 1;
+}
+
 function renderTransactionsTable() {
   updateVerFilter();
   const verF    = document.getElementById('txVerFilter').value;
@@ -1215,6 +1225,7 @@ async function handleSymbolSelect(newSym, dbInstance) {
   }
   if (newSym === activeSym) return;
   activeSym = newSym;
+  resetTransactionFilters();
   activeTab = 'all'; tradeTablePage = 1; txPage = 1;
   const removeBtn = document.getElementById('removeSymbolBtn');
   if (removeBtn) { removeBtn.disabled = false; removeBtn.style.opacity = '1'; }
