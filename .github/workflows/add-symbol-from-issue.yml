@@ -82,29 +82,22 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
-      - name: Run backtest scripts
-        run: |
-          set -e
-          echo "Running baseline backtest runner"
-          python backend/strategy_generator/run_apm_v1_backtest.py
-
-          EXTRA_FILES=""
-          if [ -d "scripts" ]; then
-            EXTRA_FILES=$(find scripts -type f -name 'backtest_*.py' 2>/dev/null || true)
-          fi
-          EXTRA_FILES=$(echo "$EXTRA_FILES" | sed '/^$/d')
-          if [ -n "$EXTRA_FILES" ]; then
-            echo "$EXTRA_FILES" | while IFS= read -r f; do
-              echo "Running $f"
-              python "$f"
-            done
-          else
-            echo "No additional scripts/backtest_*.py files found."
-          fi
         env:
           ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
           ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
+          ALPACA_PAPER_API_KEY: ${{ secrets.ALPACA_PAPER_API_KEY }}
+          ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
+
+      - name: Run backtest for new symbol
+        env:
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
+          ALPACA_PAPER_API_KEY: ${{ secrets.ALPACA_PAPER_API_KEY }}
+          ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
+        run: |
+          SYMBOL="${{ steps.parse.outputs.symbol }}"
+          echo "Running backtest for symbol: $SYMBOL (version: v1)"
+          python backend/backtest_backtrader_alpaca.py --symbol "$SYMBOL" --version "v1"
       - name: Commit DB changes
         run: |
           git config --global user.name 'github-actions'
