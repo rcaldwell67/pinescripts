@@ -17,5 +17,24 @@
         "last_trade_date": "2026-03-30 18:40:00+00:00"
       }
     ]
+  },
+  "CLM": {
+    "v1": [
+      {
+        "version": "v1",
+        "beginning_equity": 10000.0,
+        "final_equity": 12864.7888628531,
+        "total_trades": 12,
+        "winning_trades": 12,
+        "losing_trades": 0,
+        "win_rate": 100.0,
+        "average_pnl": 238.7324052377583,
+        "total_pnl": 2864.7888628530995,
+        "max_drawdown": 0.0,
+        "net_return_pct": 28.647888628531,
+        "first_trade_date": "2026-03-04 15:30:00+00:00",
+        "last_trade_date": "2026-03-26 15:30:00+00:00"
+      }
+    ]
   }
 }
