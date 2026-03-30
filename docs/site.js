@@ -1177,50 +1177,74 @@ document.getElementById('v2DatasetSelect')?.addEventListener('change', event => 
   hideDashboardData();
   activeSym = '';
   
-  // Fetch symbols from Alpaca Paper Trading API
+  // Refresh symbols from local cache (alpaca_symbols table)
   async function loadAlpacaSymbols() {
     const select = document.getElementById('alpacaSymbolSelect');
     const loadBtn = document.getElementById('loadAlpacaSymbolsBtn');
     
     loadBtn.disabled = true;
-    loadBtn.textContent = 'Loading...';
-    select.innerHTML = '<option value="">Loading...</option>';
+    loadBtn.textContent = 'Refreshing...';
+    select.innerHTML = '<option value="">Refreshing...</option>';
     
     try {
-      const response = await fetch('https://paper-api.alpaca.markets/v2/assets?status=active&asset_class=us_equity', {
-        headers: {
-          'Accept': 'application/json'
+      // Use the local SQL.js DB instance if available, otherwise fetch DB file
+      let db = window._SQL_DB;
+      if (!db) {
+        const dbPaths = ['data/tradingcopilot.db', 'docs/data/tradingcopilot.db'];
+        let dbReq = null;
+        for (const dbPath of dbPaths) {
+          try {
+            dbReq = await fetch(dbPath + '?v=' + Date.now());
+            if (dbReq.ok) break;
+          } catch (e) {}
         }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: Unable to fetch symbols. Please try again.`);
+        if (!dbReq || !dbReq.ok) throw new Error('Could not load database file');
+        
+        const dbBuffer = await dbReq.arrayBuffer();
+        const SQL = await window.initSqlJs({ locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.8.0/dist/${file}` });
+        db = new SQL.Database(new Uint8Array(dbBuffer));
       }
       
-      const assets = await response.json();
-      const symbols = assets
-        .map(a => a.symbol)
-        .sort()
-        .slice(0, 500); // Limit to first 500 for performance
+      // Query alpaca_symbols table
+      const res = db.exec('SELECT symbol, name FROM alpaca_symbols ORDER BY symbol');
+      const symbols_data = [];
+      
+      if (res.length > 0) {
+        const cols = res[0].columns;
+        const values = res[0].values;
+        symbols_data.push(...values.map(row => {
+          const obj = {};
+          cols.forEach((col, i) => { obj[col] = row[i]; });
+          return obj;
+        }));
+      }
+      
+      if (symbols_data.length === 0) {
+        select.innerHTML = '<option value="">No symbols cached (run sync workflow)</option>';
+        select.disabled = true;
+        loadBtn.disabled = false;
+        loadBtn.textContent = 'Refresh';
+        return;
+      }
       
       select.innerHTML = '<option value="">Select a symbol...</option>';
-      symbols.forEach(sym => {
+      symbols_data.forEach(sym => {
         const opt = document.createElement('option');
-        opt.value = sym;
-        opt.textContent = sym;
+        opt.value = sym.symbol;
+        opt.textContent = sym.name ? `${sym.symbol} - ${sym.name}` : sym.symbol;
         select.appendChild(opt);
       });
       
       select.disabled = false;
       loadBtn.disabled = false;
-      loadBtn.textContent = 'Load';
+      loadBtn.textContent = 'Refresh';
     } catch (err) {
-      console.error('Error loading Alpaca symbols:', err);
-      select.innerHTML = '<option value="">Error loading symbols (check browser console)</option>';
+      console.error('Error loading cached Alpaca symbols:', err);
+      select.innerHTML = '<option value="">Error loading symbols (check console)</option>';
       select.disabled = true;
       loadBtn.disabled = false;
-      loadBtn.textContent = 'Load';
-      alert('Failed to load symbols from Alpaca: ' + err.message);
+      loadBtn.textContent = 'Refresh';
+      alert('Failed to load symbols from cache: ' + err.message);
     }
   }
   

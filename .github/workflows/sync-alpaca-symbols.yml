@@ -1,0 +1,38 @@
+name: Sync Alpaca Symbols to Database
+
+on:
+  schedule:
+    # Run daily at 2 AM UTC (10 PM EST)
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    # Allow manual trigger from Actions tab
+
+jobs:
+  sync-symbols:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Sync Alpaca symbols to database
+        run: |
+          python backend/data/sync_alpaca_symbols.py
+
+      - name: Commit and push DB changes
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+          git add docs/data/tradingcopilot.db
+          git diff --cached --quiet && echo 'No changes to commit' || (git commit -m "Sync Alpaca symbols to database" && git push)
