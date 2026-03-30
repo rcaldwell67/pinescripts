@@ -110,6 +110,10 @@ function getSymbolAliases(sym) {
   return [...new Set([raw.toUpperCase(), slash, underscore])];
 }
 
+function getNormalizedSymbolKey(sym) {
+  return String(sym || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
 
 
   // --- Dataset selector logic ---
@@ -1246,13 +1250,14 @@ async function handleSymbolSelect(newSym, dbInstance) {
     // Prefer trade-level rows for every dataset. Symbol formats vary across
     // sources (e.g. BTC/USD vs BTC_USD), so query common aliases.
     const symbolAliases = getSymbolAliases(activeSym);
+    const normalizedSymbol = getNormalizedSymbolKey(activeSym);
     const modeFilter = activeDataset === 'backtest' ? 'backtest' : (activeDataset === 'paper' ? 'paper' : 'live');
     let rows = [];
     try {
       const stmt = db.prepare(
-        'SELECT * FROM trades WHERE UPPER(symbol) IN (?, ?, ?) AND mode = ? ORDER BY entry_time'
+        "SELECT * FROM trades WHERE REPLACE(REPLACE(REPLACE(REPLACE(UPPER(symbol), '/', ''), '_', ''), '-', ''), ' ', '') = ? AND mode = ? ORDER BY entry_time"
       );
-      stmt.bind([symbolAliases[0] || '', symbolAliases[1] || '', symbolAliases[2] || '', modeFilter]);
+      stmt.bind([normalizedSymbol, modeFilter]);
       while (stmt.step()) {
         rows.push(stmt.getAsObject());
       }
@@ -1260,16 +1265,16 @@ async function handleSymbolSelect(newSym, dbInstance) {
     } catch (e) {
       console.error('Error querying trades table:', e);
     }
-    console.log('[DEBUG] trade rows fetched for', activeSym, 'aliases:', symbolAliases, 'count:', rows.length, rows);
+    console.log('[DEBUG] trade rows fetched for', activeSym, 'aliases:', symbolAliases, 'normalized:', normalizedSymbol, 'count:', rows.length, rows);
 
     // Backtest fallback: older DB snapshots may only have summary rows.
     let summaryRows = [];
     if (activeDataset === 'backtest' && rows.length === 0) {
       try {
         const stmt = db.prepare(
-          'SELECT metrics, notes, timestamp FROM backtest_results WHERE UPPER(symbol) IN (?, ?, ?) ORDER BY timestamp'
+          "SELECT metrics, notes, timestamp FROM backtest_results WHERE REPLACE(REPLACE(REPLACE(REPLACE(UPPER(symbol), '/', ''), '_', ''), '-', ''), ' ', '') = ? ORDER BY timestamp"
         );
-        stmt.bind([symbolAliases[0] || '', symbolAliases[1] || '', symbolAliases[2] || '']);
+        stmt.bind([normalizedSymbol]);
         while (stmt.step()) {
           summaryRows.push(stmt.getAsObject());
         }
