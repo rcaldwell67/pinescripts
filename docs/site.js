@@ -7,7 +7,7 @@ function buildSymbolSwitcher(symbols) {
   const switcher = document.querySelector('.sym-switcher');
   if (!switcher) return;
   // Remove all children except the label, select, input, and add button
-  const keepIds = ['symbolSelect', 'addSymbolInput', 'addSymbolBtn'];
+  const keepIds = ['symbolSelect', 'addSymbolInput', 'addSymbolBtn', 'removeSymbolBtn'];
 
   Array.from(switcher.children).forEach(child => {
     if (child.tagName === 'LABEL' || keepIds.includes(child.id)) return;
@@ -1089,11 +1089,15 @@ async function handleSymbolSelect(newSym, dbInstance) {
   if (!newSym) {
     hideDashboardData();
     updateModeButtonStates();
+    const removeBtn = document.getElementById('removeSymbolBtn');
+    if (removeBtn) { removeBtn.disabled = true; removeBtn.style.opacity = '0.4'; }
     return;
   }
   if (newSym === activeSym) return;
   activeSym = newSym;
   activeTab = 'all'; tradeTablePage = 1; txPage = 1;
+  const removeBtn = document.getElementById('removeSymbolBtn');
+  if (removeBtn) { removeBtn.disabled = false; removeBtn.style.opacity = '1'; }
   if (!loaded[activeSym]) loaded[activeSym] = {};
   const vers = INSTRUMENTS[activeSym]?.versions;
   if (!vers) {
@@ -1189,6 +1193,20 @@ document.getElementById('v2DatasetSelect')?.addEventListener('change', event => 
   });
   addInput.addEventListener('keydown', e => {
     if (e.key === 'Enter') addBtn.click();
+  });
+
+  // Remove Symbol button logic (GitHub Issue automation)
+  const removeBtn = document.getElementById('removeSymbolBtn');
+  removeBtn.addEventListener('click', () => {
+    if (!activeSym) return;
+    const confirmed = confirm(`Remove symbol "${activeSym}" from the database?\n\nThis will open a GitHub issue to trigger the removal workflow.`);
+    if (!confirmed) return;
+    const title = encodeURIComponent('Remove symbol: ' + activeSym);
+    const body = encodeURIComponent(
+      `Symbol: ${activeSym}\n\n_This removal was requested from the dashboard UI._`
+    );
+    const url = `https://github.com/rcaldwell67/pinescripts/issues/new?title=${title}&body=${body}&labels=remove-symbol`;
+    window.open(url, '_blank');
   });
 })();
 

@@ -1,0 +1,61 @@
+name: Remove Symbol from Database
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  remove-symbol:
+    if: contains(github.event.issue.labels.*.name, 'remove-symbol')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Parse symbol from issue
+        id: parse
+        run: |
+          python - <<'PY'
+          import os, re
+          title = os.environ.get('ISSUE_TITLE', '')
+          body = os.environ.get('ISSUE_BODY', '')
+          # Try title first: "Remove symbol: BTC_USD"
+          m = re.search(r'Remove symbol:\s*([A-Za-z0-9_\-]+)', title, re.IGNORECASE)
+          if not m:
+              # Fall back to body: "Symbol: BTC_USD"
+              m = re.search(r'Symbol:\s*([A-Za-z0-9_\-]+)', body)
+          symbol = (m.group(1) if m else '').upper().strip()
+          if not symbol:
+              raise SystemExit('Could not parse symbol from issue title or body')
+          out = os.environ['GITHUB_OUTPUT']
+          with open(out, 'a', encoding='utf-8') as f:
+              f.write(f'symbol={symbol}\n')
+          PY
+        env:
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Remove symbol from database
+        run: |
+          SYMBOL="${{ steps.parse.outputs.symbol }}"
+          python backend/data/remove_symbol_from_db.py "$SYMBOL"
+
+      - name: Commit DB changes
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+          git add docs/data/tradingcopilot.db
+          git diff --cached --quiet && echo 'No changes to commit' || git commit -m "Remove symbol ${{ steps.parse.outputs.symbol }} via issue #${{ github.event.issue.number }}"
+          git push
+
+      - name: Comment and close issue
+        uses: peter-evans/close-issue@v3
+        with:
+          comment: "Symbol ${{ steps.parse.outputs.symbol }} has been removed from docs/data/tradingcopilot.db successfully."
