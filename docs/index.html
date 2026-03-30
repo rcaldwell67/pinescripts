@@ -256,10 +256,10 @@ function buildSymbolSwitcher(symbols) {
   Array.from(switcher.children).forEach(child => {
     if (child.tagName === 'LABEL' || keepIds.includes(child.id)) return;
     switcher.removeChild(child);
-  });
   // Optionally, add symbol buttons dynamically (if you want buttons in addition to the select)
   // (Commented out for now)
 
+  </script>
 
 
 function buildInstruments(symbols) {
@@ -273,10 +273,10 @@ function buildInstruments(symbols) {
     { key: 'v4', label: 'v4 · 30m Both', tf: '30m', color: '#bc8cff' },
     { key: 'v5', label: 'v5 · 1h Longs', tf: '1h', color: '#d29922' },
     { key: 'v6', label: 'v6 · 1D Both', tf: '1D', color: '#ff7b72' }
-  ];
   symbols.forEach(sym => {
     // Normalize symbol for file paths
     const fileSym = sym.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+  </script>
     // Label: SYMBOL_KEY -> SYMBOL-LABEL
     const label = sym.replace(/_/g, '-');
     const versions = {};
