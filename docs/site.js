@@ -209,6 +209,12 @@ let txPage = 1;
     const select = document.getElementById('symbolSelect');
     select.innerHTML = '';
     select.disabled = true;
+
+    const placeholderOpt = document.createElement('option');
+    placeholderOpt.value = '';
+    placeholderOpt.textContent = 'Select...';
+    select.appendChild(placeholderOpt);
+
     symbolsData.forEach(obj => {
       const opt = document.createElement('option');
       opt.value = obj.symbol;
