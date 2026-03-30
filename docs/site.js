@@ -215,7 +215,7 @@ let txPage = 1;
     placeholderOpt.textContent = 'Select...';
     select.appendChild(placeholderOpt);
 
-    symbolsData.forEach(obj => {
+    [...symbolsData].sort((a, b) => a.symbol.localeCompare(b.symbol)).forEach(obj => {
       const opt = document.createElement('option');
       opt.value = obj.symbol;
       opt.textContent = obj.description ? `${obj.symbol} - ${obj.description}` : obj.symbol;
