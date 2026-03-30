@@ -102,6 +102,14 @@ let txPage = 1;
 const PAPER_TRADING_SUPPORTED_VERSIONS = new Set(['v1']);
 let pendingDatasetSymbol = '';
 
+function getSymbolAliases(sym) {
+  const raw = String(sym || '').trim();
+  if (!raw) return [];
+  const slash = raw.replace(/_/g, '/').toUpperCase();
+  const underscore = raw.replace(/[^A-Za-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '').toUpperCase();
+  return [...new Set([raw.toUpperCase(), slash, underscore])];
+}
+
 
 
   // --- Dataset selector logic ---
@@ -1224,44 +1232,46 @@ async function handleSymbolSelect(newSym, dbInstance) {
     console.error('No SQL DB instance available');
     return;
   }
-    // Backtest mode reads existing summary rows from backtest_results.
-    // Paper/live continue to use trade-level rows from trades.
-    // Use prepare/bind/step for parameterized queries — db.exec() does not
-    // reliably support positional ? bindings in sql.js.
+    // Prefer trade-level rows for every dataset. Symbol formats vary across
+    // sources (e.g. BTC/USD vs BTC_USD), so query common aliases.
+    const symbolAliases = getSymbolAliases(activeSym);
+    const modeFilter = activeDataset === 'backtest' ? 'backtest' : (activeDataset === 'paper' ? 'paper' : 'live');
     let rows = [];
-    if (activeDataset === 'backtest') {
+    try {
+      const stmt = db.prepare(
+        'SELECT * FROM trades WHERE UPPER(symbol) IN (?, ?, ?) AND mode = ? ORDER BY entry_time'
+      );
+      stmt.bind([symbolAliases[0] || '', symbolAliases[1] || '', symbolAliases[2] || '', modeFilter]);
+      while (stmt.step()) {
+        rows.push(stmt.getAsObject());
+      }
+      stmt.free();
+    } catch (e) {
+      console.error('Error querying trades table:', e);
+    }
+    console.log('[DEBUG] trade rows fetched for', activeSym, 'aliases:', symbolAliases, 'count:', rows.length, rows);
+
+    // Backtest fallback: older DB snapshots may only have summary rows.
+    let summaryRows = [];
+    if (activeDataset === 'backtest' && rows.length === 0) {
       try {
         const stmt = db.prepare(
-          'SELECT metrics, notes, timestamp FROM backtest_results WHERE symbol = ? ORDER BY timestamp'
+          'SELECT metrics, notes, timestamp FROM backtest_results WHERE UPPER(symbol) IN (?, ?, ?) ORDER BY timestamp'
         );
-        stmt.bind([activeSym]);
+        stmt.bind([symbolAliases[0] || '', symbolAliases[1] || '', symbolAliases[2] || '']);
         while (stmt.step()) {
-          rows.push(stmt.getAsObject());
+          summaryRows.push(stmt.getAsObject());
         }
         stmt.free();
       } catch (e) {
         console.error('Error querying backtest_results table:', e);
       }
-    } else {
-      const modeFilter = activeDataset === 'paper' ? 'paper' : 'live';
-      try {
-        const stmt = db.prepare(
-          'SELECT * FROM trades WHERE symbol = ? AND mode = ? ORDER BY entry_time'
-        );
-        stmt.bind([activeSym, modeFilter]);
-        while (stmt.step()) {
-          rows.push(stmt.getAsObject());
-        }
-        stmt.free();
-      } catch (e) {
-        console.error('Error querying trades table:', e);
-      }
+      console.log('[DEBUG] backtest summary rows fetched for', activeSym, 'count:', summaryRows.length);
     }
-    console.log('[DEBUG] rows fetched for', activeSym, ':', rows.length, rows);
     // Group by version and store in loaded cache
     const byVersion = {};
-    if (activeDataset === 'backtest') {
-      rows.forEach(r => {
+    if (activeDataset === 'backtest' && rows.length === 0) {
+      summaryRows.forEach(r => {
         let metrics = null;
         try {
           metrics = JSON.parse(r.metrics || '{}');
@@ -1311,8 +1321,12 @@ async function handleSymbolSelect(newSym, dbInstance) {
       });
     } else {
       rows.forEach(r => {
-        if (!byVersion[r.version]) byVersion[r.version] = [];
-        byVersion[r.version].push(r);
+        const versionKey = String(r.version || 'v1').toLowerCase();
+        if (!byVersion[versionKey]) byVersion[versionKey] = [];
+        byVersion[versionKey].push({
+          ...r,
+          version: versionKey,
+        });
       });
     }
     Object.keys(vers).forEach(v => {
