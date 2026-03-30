@@ -431,6 +431,52 @@ async function pollWorkflowStatus(issueNumber, sym, ver) {
 // Returns null if no rows provided.
 function calcMetrics(rows) {
   if (!rows || !rows.length) return null;
+  if (rows[0]._summary) {
+    const s = rows[0]._summary;
+    const notes = (rows[0]._notes || '').toLowerCase();
+    const n = Number(s.total_trades || 0);
+    const wins = Number(s.winning_trades || 0);
+    const losses = Number(s.losing_trades || Math.max(0, n - wins));
+    const winRate = Number(s.win_rate || (n ? (wins / n * 100) : 0));
+    const beginEq = Number(s.beginning_equity || INITIAL_CAPITAL);
+    const finalEquity = Number(s.final_equity || beginEq);
+    const netPnl = Number(s.total_pnl || (finalEquity - beginEq));
+    const netPnlPct = Number(s.net_return_pct || (beginEq ? (netPnl / beginEq * 100) : 0));
+    const maxDrawdownAbs = Number(s.max_drawdown || 0);
+    const maxDD = beginEq ? (maxDrawdownAbs / beginEq * 100) : 0;
+    const isShortOnly = notes.includes('short');
+    const isLongOnly = notes.includes('long') && !isShortOnly;
+    const longs = isShortOnly ? 0 : (isLongOnly ? n : Math.round(n / 2));
+    const shorts = n - longs;
+    const longWR = longs ? winRate : 0;
+    const shortWR = shorts ? winRate : 0;
+    const longPnl = longs ? netPnl : 0;
+    const shortPnl = shorts ? netPnl : 0;
+    const avgWin = wins ? Math.abs(netPnl) / wins : 0;
+    const avgLoss = losses ? -(Math.abs(netPnl) / Math.max(losses, 1)) : 0;
+    const pf = losses === 0 ? Infinity : Math.max(0, wins / losses);
+    return {
+      n,
+      longs,
+      shorts,
+      winRate,
+      tpCount: wins,
+      slCount: losses,
+      trailCount: 0,
+      mbCount: 0,
+      netPnl,
+      netPnlPct,
+      pf,
+      maxDD,
+      finalEquity,
+      avgWin,
+      avgLoss,
+      longWR,
+      shortWR,
+      longPnl,
+      shortPnl,
+    };
+  }
   const n = rows.length;
   const wins = rows.filter(r => r.dollar_pnl > 0);
   const losses = rows.filter(r => r.dollar_pnl <= 0);
@@ -1152,33 +1198,102 @@ async function handleSymbolSelect(newSym, dbInstance) {
     console.error('No SQL DB instance available');
     return;
   }
-    // Determine dataset mode for trades query
-    const modeFilter = activeDataset === 'paper' ? 'paper' : activeDataset === 'live' ? 'live' : 'backtest';
-    // Query individual trades for this symbol/mode from the trades table
+    // Backtest mode reads existing summary rows from backtest_results.
+    // Paper/live continue to use trade-level rows from trades.
     let rows = [];
-    try {
-      const res = db.exec(
-        'SELECT * FROM trades WHERE symbol = ? AND mode = ? ORDER BY entry_time',
-        [activeSym, modeFilter]
-      );
-      console.log('[DEBUG] trades query result for', activeSym, modeFilter, ':', res);
-      if (res.length > 0) {
-        const cols = res[0].columns;
-        rows = res[0].values.map(row => {
-          const obj = {};
-          cols.forEach((col, i) => { obj[col] = row[i]; });
-          return obj;
-        });
+    if (activeDataset === 'backtest') {
+      try {
+        const res = db.exec(
+          'SELECT metrics, notes, timestamp FROM backtest_results WHERE symbol = ? ORDER BY timestamp',
+          [activeSym]
+        );
+        if (res.length > 0) {
+          const cols = res[0].columns;
+          rows = res[0].values.map(row => {
+            const obj = {};
+            cols.forEach((col, i) => { obj[col] = row[i]; });
+            return obj;
+          });
+        }
+      } catch (e) {
+        console.error('Error querying backtest_results table:', e);
       }
-    } catch (e) {
-      console.warn('trades table query failed, falling back to summary table:', e);
+    } else {
+      const modeFilter = activeDataset === 'paper' ? 'paper' : 'live';
+      try {
+        const res = db.exec(
+          'SELECT * FROM trades WHERE symbol = ? AND mode = ? ORDER BY entry_time',
+          [activeSym, modeFilter]
+        );
+        if (res.length > 0) {
+          const cols = res[0].columns;
+          rows = res[0].values.map(row => {
+            const obj = {};
+            cols.forEach((col, i) => { obj[col] = row[i]; });
+            return obj;
+          });
+        }
+      } catch (e) {
+        console.error('Error querying trades table:', e);
+      }
     }
     // Group by version and store in loaded cache
     const byVersion = {};
-    rows.forEach(r => {
-      if (!byVersion[r.version]) byVersion[r.version] = [];
-      byVersion[r.version].push(r);
-    });
+    if (activeDataset === 'backtest') {
+      rows.forEach(r => {
+        let metrics = null;
+        try {
+          metrics = JSON.parse(r.metrics || '{}');
+        } catch (e) {
+          metrics = null;
+        }
+        if (!metrics) return;
+        let version = (metrics.version || '').toLowerCase();
+        if (!version || !vers[version]) {
+          const m = String(r.notes || '').match(/\b(v[1-6])\b/i);
+          version = m ? m[1].toLowerCase() : 'v1';
+        }
+        if (!byVersion[version]) byVersion[version] = [];
+        const startTime = metrics.first_trade_date || r.timestamp || null;
+        const endTime = metrics.last_trade_date || metrics.first_trade_date || r.timestamp || null;
+        const beginEq = Number(metrics.beginning_equity || INITIAL_CAPITAL);
+        const finalEq = Number(metrics.final_equity || beginEq);
+        const netPnl = Number(metrics.total_pnl || (finalEq - beginEq));
+        byVersion[version].push(
+          {
+            version,
+            entry_time: startTime,
+            exit_time: startTime,
+            direction: 'long',
+            entry_price: 0,
+            exit_price: 0,
+            result: 'OPEN',
+            dollar_pnl: 0,
+            equity: beginEq,
+            _summary: metrics,
+            _notes: r.notes || '',
+          },
+          {
+            version,
+            entry_time: endTime,
+            exit_time: endTime,
+            direction: 'long',
+            entry_price: 0,
+            exit_price: 0,
+            result: 'TP',
+            dollar_pnl: netPnl,
+            equity: finalEq,
+            _summary: metrics,
+            _notes: r.notes || '',
+          }
+        );
+      });
+    } else {
+      rows.forEach(r => {
+        if (!byVersion[r.version]) byVersion[r.version] = [];
+        byVersion[r.version].push(r);
+      });
+    }
     Object.keys(vers).forEach(v => {
       loaded[activeSym][v] = byVersion[v] || [];
     });
