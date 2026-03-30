@@ -45,6 +45,25 @@ def create_database(db_path):
         )
     ''')
     conn.commit()
+        # Individual Trades Table (backtest, paper, live)
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS trades (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                symbol TEXT NOT NULL,
+                version TEXT NOT NULL DEFAULT 'v1',
+                mode TEXT NOT NULL DEFAULT 'backtest',
+                entry_time DATETIME,
+                exit_time DATETIME,
+                direction TEXT,
+                entry_price REAL,
+                exit_price REAL,
+                result TEXT,
+                pnl_pct REAL,
+                dollar_pnl REAL,
+                equity REAL
+            )
+        ''')
+        conn.commit()
     conn.close()
 
 if __name__ == "__main__":

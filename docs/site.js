@@ -427,6 +427,46 @@ async function pollWorkflowStatus(issueNumber, sym, ver) {
   }
   check();
 }
+// Compute summary metrics from an array of individual trade rows.
+// Returns null if no rows provided.
+function calcMetrics(rows) {
+  if (!rows || !rows.length) return null;
+  const n = rows.length;
+  const wins = rows.filter(r => r.dollar_pnl > 0);
+  const losses = rows.filter(r => r.dollar_pnl <= 0);
+  const longs = rows.filter(r => r.direction === 'long').length;
+  const shorts = rows.filter(r => r.direction === 'short').length;
+  const tpCount = rows.filter(r => (r.result||'').toUpperCase() === 'TP').length;
+  const slCount = rows.filter(r => (r.result||'').toUpperCase() === 'SL').length;
+  const trailCount = rows.filter(r => { const u = (r.result||'').toUpperCase(); return u === 'TRAIL' || u === 'TRAILING'; }).length;
+  const mbCount = rows.filter(r => (r.result||'').toUpperCase() === 'MB').length;
+  const grossWin = wins.reduce((s, r) => s + r.dollar_pnl, 0);
+  const grossLoss = Math.abs(losses.reduce((s, r) => s + r.dollar_pnl, 0));
+  const netPnl = grossWin - grossLoss;
+  const netPnlPct = (netPnl / INITIAL_CAPITAL) * 100;
+  const pf = grossLoss === 0 ? Infinity : grossWin / grossLoss;
+  const avgWin = wins.length ? grossWin / wins.length : 0;
+  const avgLoss = losses.length ? -(grossLoss / losses.length) : 0;
+  const winRate = (wins.length / n) * 100;
+  let peak = INITIAL_CAPITAL, maxDD = 0;
+  for (const r of rows) {
+    if (r.equity > peak) peak = r.equity;
+    const dd = peak > 0 ? (peak - r.equity) / peak * 100 : 0;
+    if (dd > maxDD) maxDD = dd;
+  }
+  const finalEquity = rows[rows.length - 1].equity;
+  const longRows = rows.filter(r => r.direction === 'long');
+  const shortRows = rows.filter(r => r.direction === 'short');
+  const longWR = longRows.length ? longRows.filter(r => r.dollar_pnl > 0).length / longRows.length * 100 : 0;
+  const shortWR = shortRows.length ? shortRows.filter(r => r.dollar_pnl > 0).length / shortRows.length * 100 : 0;
+  const longPnl = longRows.reduce((s, r) => s + r.dollar_pnl, 0);
+  const shortPnl = shortRows.reduce((s, r) => s + r.dollar_pnl, 0);
+  return { n, longs, shorts, winRate, tpCount, slCount, trailCount, mbCount, netPnl, netPnlPct, pf, maxDD, finalEquity, avgWin, avgLoss, longWR, shortWR, longPnl, shortPnl };
+}
+
+// No mode-toggle buttons exist in the current UI; this is a no-op placeholder.
+function updateModeButtonStates() {}
+
 function renderCards(rows) {
   const cardEl = document.getElementById('cards');
   const vers = INSTRUMENTS[activeSym].versions;
@@ -1112,37 +1152,50 @@ async function handleSymbolSelect(newSym, dbInstance) {
     console.error('No SQL DB instance available');
     return;
   }
-  // Determine table name based on dataset
-  let table = 'backtest_results';
-  if (activeDataset === 'paper') table = 'paper_trading_results';
-  else if (activeDataset === 'live') table = 'live_trading_results';
-  // Query all rows for this symbol, grouped by version
-  let rows = [];
-  try {
-    const res = db.exec(`SELECT * FROM ${table} WHERE symbol = ?`, [activeSym]);
-    console.log('[DEBUG] Query result for', table, 'symbol', activeSym, ':', res);
-    if (res.length > 0) {
-      const cols = res[0].columns;
-      const values = res[0].values;
-      rows = values.map(row => {
-        const obj = {};
-        cols.forEach((col, i) => { obj[col] = row[i]; });
-        return obj;
-      });
+    // Determine dataset mode for trades query
+    const modeFilter = activeDataset === 'paper' ? 'paper' : activeDataset === 'live' ? 'live' : 'backtest';
+    // Query individual trades for this symbol/mode from the trades table
+    let rows = [];
+    try {
+      const res = db.exec(
+        'SELECT * FROM trades WHERE symbol = ? AND mode = ? ORDER BY entry_time',
+        [activeSym, modeFilter]
+      );
+      console.log('[DEBUG] trades query result for', activeSym, modeFilter, ':', res);
+      if (res.length > 0) {
+        const cols = res[0].columns;
+        rows = res[0].values.map(row => {
+          const obj = {};
+          cols.forEach((col, i) => { obj[col] = row[i]; });
+          return obj;
+        });
+      }
+    } catch (e) {
+      console.warn('trades table query failed, falling back to summary table:', e);
     }
-  } catch (e) {
-    console.error('Error querying results table:', e);
-    rows = [];
-  }
-  // Group by version
-  const byVersion = {};
-  rows.forEach(r => {
-    if (!byVersion[r.version]) byVersion[r.version] = [];
-    byVersion[r.version].push(r);
-  });
-  Object.keys(vers).forEach(v => {
-    loaded[activeSym][v] = byVersion[v] ? byVersion[v] : [];
-  });
+    // Group by version and store in loaded cache
+    const byVersion = {};
+    rows.forEach(r => {
+      if (!byVersion[r.version]) byVersion[r.version] = [];
+      byVersion[r.version].push(r);
+    });
+    Object.keys(vers).forEach(v => {
+      loaded[activeSym][v] = byVersion[v] || [];
+    });
+    // Show or hide dashboard based on whether any data was found
+    const hasAnyData = Object.values(loaded[activeSym]).some(v => v && v.length > 0);
+    const noDataNotice = document.getElementById('noDataNotice');
+    if (noDataNotice) noDataNotice.style.display = hasAnyData ? 'none' : '';
+    if (hasAnyData) {
+      showDashboardData();
+    } else {
+      hideDashboardData();
+      if (noDataNotice) noDataNotice.style.display = '';
+    }
+    buildTabs();
+    render();
+    updateLastUpdated();
+    updateModeButtonStates();
 }
 
 // --- Ensure loadSymbolsAndInit is called at script end ---
