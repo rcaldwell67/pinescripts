@@ -4,7 +4,7 @@ import os
 import sys
 
 def sync_alpaca_symbols():
-    """Fetch active US equity assets from Alpaca and store in alpaca_symbols table."""
+    """Fetch active Alpaca assets and store in alpaca_symbols table with type metadata."""
     try:
         import requests
     except ImportError:
@@ -22,20 +22,31 @@ def sync_alpaca_symbols():
         )
         sys.exit(1)
     
-    print(f"Fetching Alpaca symbols from paper-api.alpaca.markets...")
+    print("Fetching Alpaca symbols from paper-api.alpaca.markets...")
     try:
-        # Fetch active US equities from Alpaca with API authentication.
-        response = requests.get(
-            'https://paper-api.alpaca.markets/v2/assets?status=active&asset_class=us_equity',
-            headers={
-                'APCA-API-KEY-ID': key,
-                'APCA-API-SECRET-KEY': secret,
-                'Accept': 'application/json',
-            },
-            timeout=30
-        )
-        response.raise_for_status()
-        assets = response.json()
+        headers = {
+            'APCA-API-KEY-ID': key,
+            'APCA-API-SECRET-KEY': secret,
+            'Accept': 'application/json',
+        }
+        endpoints = [
+            ('https://paper-api.alpaca.markets/v2/assets?status=active&asset_class=us_equity', 'stock'),
+            ('https://paper-api.alpaca.markets/v2/assets?status=active&asset_class=crypto', 'crypto'),
+        ]
+
+        assets = []
+        for url, forced_type in endpoints:
+            response = requests.get(url, headers=headers, timeout=30)
+            response.raise_for_status()
+            rows = response.json()
+            for asset in rows:
+                symbol = asset.get('symbol')
+                if not symbol:
+                    continue
+                name = asset.get('name')
+                asset_class = (asset.get('asset_class') or '').lower().strip()
+                symbol_type = 'crypto' if (forced_type == 'crypto' or asset_class == 'crypto') else 'stock'
+                assets.append((symbol, name, symbol_type))
     except Exception as e:
         print(f"Error fetching from Alpaca: {e}")
         sys.exit(1)
@@ -44,12 +55,11 @@ def sync_alpaca_symbols():
         print("No assets returned from Alpaca.")
         sys.exit(1)
     
-    # Extract symbol and name
-    symbols_data = [
-        (asset.get('symbol'), asset.get('name'))
-        for asset in assets
-        if asset.get('symbol')
-    ]
+    # De-duplicate by symbol while preserving latest encountered metadata.
+    dedup = {}
+    for symbol, name, symbol_type in assets:
+        dedup[symbol] = (symbol, name, symbol_type)
+    symbols_data = sorted(dedup.values(), key=lambda row: row[0])
     
     print(f"Fetched {len(symbols_data)} symbols from Alpaca.")
     
@@ -64,14 +74,20 @@ def sync_alpaca_symbols():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 symbol TEXT UNIQUE NOT NULL,
                 name TEXT,
+                type TEXT,
                 synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
+
+        # Lightweight migration for older DBs that do not have the type column yet.
+        existing_cols = {row[1] for row in c.execute('PRAGMA table_info(alpaca_symbols)').fetchall()}
+        if 'type' not in existing_cols:
+            c.execute("ALTER TABLE alpaca_symbols ADD COLUMN type TEXT DEFAULT 'stock'")
         
         # Clear existing data and insert fresh symbols
         c.execute('DELETE FROM alpaca_symbols')
         c.executemany(
-            'INSERT INTO alpaca_symbols (symbol, name) VALUES (?, ?)',
+            'INSERT INTO alpaca_symbols (symbol, name, type) VALUES (?, ?, ?)',
             symbols_data
         )
         

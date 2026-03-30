@@ -7,7 +7,7 @@ function buildSymbolSwitcher(symbols) {
   const switcher = document.querySelector('.sym-switcher');
   if (!switcher) return;
   // Remove all children except the label, select, input, and add button
-  const keepIds = ['symbolSelect', 'alpacaSymbolSelect', 'loadAlpacaSymbolsBtn', 'addSymbolBtn', 'removeSymbolBtn'];
+  const keepIds = ['symbolSelect', 'alpacaSymbolSelect', 'alpacaTypeFilters', 'loadAlpacaSymbolsBtn', 'addSymbolBtn', 'removeSymbolBtn'];
 
   Array.from(switcher.children).forEach(child => {
     if (child.tagName === 'LABEL' || keepIds.includes(child.id)) return;
@@ -1176,6 +1176,83 @@ document.getElementById('v2DatasetSelect')?.addEventListener('change', event => 
 (async () => {
   hideDashboardData();
   activeSym = '';
+
+  let alpacaSymbolsCache = [];
+
+  function normalizeSymbolType(value) {
+    const raw = (value || '').toString().trim().toLowerCase();
+    if (!raw) return 'stock';
+    if (raw.includes('crypto')) return 'crypto';
+    return 'stock';
+  }
+
+  function getSelectedSymbolTypes() {
+    const checks = document.querySelectorAll('#alpacaTypeFilters input[type="checkbox"]');
+    const selected = new Set();
+    checks.forEach(chk => {
+      if (chk.checked) selected.add(chk.value);
+    });
+    return selected;
+  }
+
+  function applyAlpacaSymbolTypeFilters() {
+    const select = document.getElementById('alpacaSymbolSelect');
+    const selectedTypes = getSelectedSymbolTypes();
+    const filtered = alpacaSymbolsCache.filter(sym => selectedTypes.has(sym.type));
+
+    select.innerHTML = '<option value="">Select a symbol...</option>';
+    filtered.forEach(sym => {
+      const opt = document.createElement('option');
+      opt.value = sym.symbol;
+      opt.textContent = sym.name ? `${sym.symbol} - ${sym.name}` : sym.symbol;
+      select.appendChild(opt);
+    });
+
+    select.disabled = filtered.length === 0;
+    if (filtered.length === 0) {
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = 'No symbols match selected type(s)';
+      select.appendChild(opt);
+      select.value = '';
+    }
+  }
+
+  function renderAlpacaTypeFilters(symbolsData) {
+    const wrap = document.getElementById('alpacaTypeFilters');
+    if (!wrap) return;
+
+    const types = [...new Set(symbolsData.map(item => normalizeSymbolType(item.type)))].sort();
+    if (!types.length) {
+      wrap.innerHTML = '';
+      wrap.style.display = 'none';
+      return;
+    }
+
+    wrap.innerHTML = '';
+    types.forEach(type => {
+      const label = document.createElement('label');
+      label.style.display = 'inline-flex';
+      label.style.alignItems = 'center';
+      label.style.gap = '4px';
+      label.style.cursor = 'pointer';
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.value = type;
+      checkbox.checked = true;
+      checkbox.addEventListener('change', applyAlpacaSymbolTypeFilters);
+
+      const text = document.createElement('span');
+      text.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+
+      label.appendChild(checkbox);
+      label.appendChild(text);
+      wrap.appendChild(label);
+    });
+
+    wrap.style.display = 'inline-flex';
+  }
   
   // Refresh symbols from local cache (alpaca_symbols table)
   async function loadAlpacaSymbols() {
@@ -1212,15 +1289,22 @@ document.getElementById('v2DatasetSelect')?.addEventListener('change', event => 
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             symbol TEXT UNIQUE NOT NULL,
             name TEXT,
+            type TEXT,
             synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
           )
         `);
+
+        const tableInfoRes = db.exec('PRAGMA table_info(alpaca_symbols)');
+        const colNames = tableInfoRes.length > 0 ? tableInfoRes[0].values.map(row => String(row[1])) : [];
+        if (!colNames.includes('type')) {
+          db.run("ALTER TABLE alpaca_symbols ADD COLUMN type TEXT DEFAULT 'stock'");
+        }
       } catch (e) {
         console.warn('Could not ensure alpaca_symbols table exists:', e);
       }
       
       // Query alpaca_symbols table
-      const res = db.exec('SELECT symbol, name FROM alpaca_symbols ORDER BY symbol');
+      const res = db.exec('SELECT symbol, name, COALESCE(type, "stock") AS type FROM alpaca_symbols ORDER BY symbol');
       const symbols_data = [];
       
       if (res.length > 0) {
@@ -1237,22 +1321,27 @@ document.getElementById('v2DatasetSelect')?.addEventListener('change', event => 
         const msg = 'Symbols cache is empty. Run the "Sync Alpaca Symbols to Database" workflow to populate this list. Go to GitHub Actions and trigger it manually.';
         select.innerHTML = '<option value="">Cache empty - see console message</option>';
         select.disabled = true;
+        const filterWrap = document.getElementById('alpacaTypeFilters');
+        if (filterWrap) {
+          filterWrap.innerHTML = '';
+          filterWrap.style.display = 'none';
+        }
         loadBtn.disabled = false;
         loadBtn.textContent = 'Refresh';
         console.info(msg);
         alert(msg);
         return;
       }
-      
-      select.innerHTML = '<option value="">Select a symbol...</option>';
-      symbols_data.forEach(sym => {
-        const opt = document.createElement('option');
-        opt.value = sym.symbol;
-        opt.textContent = sym.name ? `${sym.symbol} - ${sym.name}` : sym.symbol;
-        select.appendChild(opt);
-      });
-      
-      select.disabled = false;
+
+      alpacaSymbolsCache = symbols_data.map(item => ({
+        symbol: item.symbol,
+        name: item.name,
+        type: normalizeSymbolType(item.type),
+      }));
+
+      renderAlpacaTypeFilters(alpacaSymbolsCache);
+      applyAlpacaSymbolTypeFilters();
+
       loadBtn.disabled = false;
       loadBtn.textContent = 'Refresh';
     } catch (err) {
