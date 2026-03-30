@@ -2,5 +2,9 @@
   {
     "symbol": "BTC_USD",
     "description": "Bitcoin/US Dollar"
+  },
+  {
+    "symbol": "CLM",
+    "description": null
   }
 ]
