@@ -110,39 +110,33 @@ const PAPER_TRADING_SUPPORTED_VERSIONS = new Set(['v1']);
   }
 
   function addDatasetSelector() {
-    let sel = document.getElementById('datasetSelector');
-    if (!sel) {
-      sel = document.createElement('select');
-      sel.id = 'datasetSelector';
-      sel.className = 'tx-select';
-      sel.style.marginTop = '8px';
-      sel.innerHTML = `
-        <option value="backtest">Backtest Results</option>
-        <option value="paper">Paper Trading Results</option>
-        <option value="live">Live Trading Results</option>
-      `;
-      sel.value = activeDataset;
-      sel.addEventListener('change', e => {
-        activeDataset = sel.value;
+    const wrap = document.getElementById('datasetModeButtons');
+    if (!wrap) return;
+
+    const buttons = wrap.querySelectorAll('.mode-btn');
+    buttons.forEach(btn => {
+      if (btn.dataset.bound === '1') return;
+      btn.dataset.bound = '1';
+      btn.addEventListener('click', () => {
+        const nextDataset = btn.dataset.mode;
+        if (!nextDataset || nextDataset === activeDataset) return;
+        activeDataset = nextDataset;
         activeMode = activeDataset;
+        addDatasetSelector();
         loadSymbolsAndInit();
       });
-      // Insert below symbol dropdown
-      const symSel = document.getElementById('symbolSelect');
-      if (symSel && !document.getElementById('datasetSelector')) {
-        if (symSel.nextSibling) {
-          symSel.parentNode.insertBefore(sel, symSel.nextSibling);
-        } else {
-          symSel.parentNode.appendChild(sel);
-        }
-      }
-    } else {
-      sel.value = activeDataset;
-    }
+    });
+
+    buttons.forEach(btn => {
+      const isActive = btn.dataset.mode === activeDataset;
+      btn.classList.toggle('active', isActive);
+      btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
   }
 
   // --- New: Load symbols and results from selected dataset JSON ---
   async function loadSymbolsAndInit() {
+    activeMode = activeDataset;
     addDatasetSelector();
     console.log('[DEBUG] loadSymbolsAndInit called');
     if (typeof window.initSqlJs === 'undefined') {
