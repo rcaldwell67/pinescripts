@@ -203,29 +203,29 @@
   <div class="grid-3" id="topRow">
     <div class="panel chart-wrap tall" style="grid-column: span 2;">
       <h2>Equity Curve</h2>
-      <canvas id="equityChart"></canvas>
+      <canvas id="equityChart">Equity curve chart. Shows account equity over time for selected strategy/version.</canvas>
       <div class="legend" id="equityLegend"></div>
     </div>
     <div class="panel chart-wrap">
       <h2>Trade Outcomes</h2>
-      <canvas id="outcomeChart"></canvas>
+      <canvas id="outcomeChart">Trade outcomes chart. Shows distribution of trade results (TP, SL, Trail, MB, Other).</canvas>
       <div id="outcomeLegend" style="margin-top:12px;font-size:12px;"></div>
     </div>
   </div>
   <div class="grid-2" id="midRow">
     <div class="panel chart-wrap">
       <h2 id="dirChartTitle">P&amp;L by Direction</h2>
-      <canvas id="directionChart"></canvas>
+      <canvas id="directionChart">P&amp;L by direction chart. Shows profit and loss by trade direction (long/short).</canvas>
     </div>
     <div class="panel chart-wrap">
       <h2>Monthly P&amp;L</h2>
-      <canvas id="monthlyChart"></canvas>
+      <canvas id="monthlyChart">Monthly P&amp;L chart. Shows profit and loss by month.</canvas>
     </div>
   </div>
   <div id="yearSection" style="display:none; margin-bottom:16px;">
     <div class="panel chart-wrap tall">
       <h2 id="yearChartTitle">Year-by-Year Breakdown</h2>
-      <canvas id="yearChart"></canvas>
+      <canvas id="yearChart">Year-by-year breakdown chart. Shows annual performance for selected strategy/version.</canvas>
     </div>
   </div>
   <div class="panel" style="margin-bottom:16px;">
@@ -256,7 +256,7 @@ function buildSymbolSwitcher(symbols) {
     if (child.tagName === 'LABEL' || keepIds.includes(child.id)) return;
     switcher.removeChild(child);
   });
-  // Optionally, add symbol buttons dynamically (if you want buttons in addition to the select)
+  // Optionally, add symbol buttons dynamically (if you want buttons in addition to the select);
   /*
   symbols.forEach(sym => {
     const btn = document.createElement('button');
@@ -270,7 +270,6 @@ function buildSymbolSwitcher(symbols) {
     switcher.appendChild(btn);
   });
   */
-}
 
 
 function buildInstruments(symbols) {
@@ -333,18 +332,18 @@ function initStateObjects(symbols) {
   });
   loaded = _modeCache['backtest']; // Always set loaded after _modeCache is built
   // For backtestSelections, initialize for all symbols
-  backtestSelections = {};
+  window.backtestSelections = {};
   symbols.forEach(sym => {
-    backtestSelections[sym] = {};
+    window.backtestSelections[sym] = {};
     // Optionally, set defaults for known versions
     if (INSTRUMENTS[sym] && INSTRUMENTS[sym].versions) {
       Object.keys(INSTRUMENTS[sym].versions).forEach(ver => {
-        backtestSelections[sym][ver] = 'main';
+        window.backtestSelections[sym][ver] = 'main';
       });
     }
   });
-}
-}
+
+
 
 
 let loaded; // Global reference to the currently loaded data for the active mode
@@ -360,7 +359,7 @@ let txPage = 1;
 
 
   // --- Dataset selector logic ---
-  let activeDataset = 'backtest'; // 'backtest' or 'paper'
+  let activeDataset = 'backtest'; // 'backtest' or 'paper';
   function getResultsJsonFile() {
     return activeDataset === 'backtest' ? 'data/backtest_results.json' : 'data/paper_trading_results.json';
   }
@@ -434,7 +433,7 @@ let txPage = 1;
     }
     // Prepare symbol list and UI
     const symbols = symbolsData.map(obj => obj.symbol);
-    SYMBOLS = symbols;
+    window.SYMBOLS = symbols;
     INSTRUMENTS = buildInstruments(symbols);
     initStateObjects(symbols);
     // Populate symbol selector
