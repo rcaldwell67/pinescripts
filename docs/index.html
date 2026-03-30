@@ -264,6 +264,9 @@ function buildSymbolSwitcher(symbols) {
     btn.className = 'sym-btn';
     btn.setAttribute('data-sym', sym);
     btn.textContent = INSTRUMENTS[sym]?.label || sym;
+    // ...rest of button logic...
+  });
+  */
     btn.addEventListener('click', () => {
       document.getElementById('symbolSelect').value = sym;
       handleSymbolSelect(sym);
