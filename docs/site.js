@@ -1253,6 +1253,7 @@ async function handleSymbolSelect(newSym, dbInstance) {
         console.error('Error querying trades table:', e);
       }
     }
+    console.log('[DEBUG] rows fetched for', activeSym, ':', rows.length, rows);
     // Group by version and store in loaded cache
     const byVersion = {};
     if (activeDataset === 'backtest') {
@@ -1313,8 +1314,10 @@ async function handleSymbolSelect(newSym, dbInstance) {
     Object.keys(vers).forEach(v => {
       loaded[activeSym][v] = byVersion[v] || [];
     });
+    console.log('[DEBUG] byVersion keys:', Object.keys(byVersion), 'loaded[activeSym]:', loaded[activeSym]);
     // Show or hide dashboard based on whether any data was found
     const hasAnyData = Object.values(loaded[activeSym]).some(v => v && v.length > 0);
+    console.log('[DEBUG] hasAnyData:', hasAnyData);
     const noDataNotice = document.getElementById('noDataNotice');
     if (noDataNotice) noDataNotice.style.display = hasAnyData ? 'none' : '';
     if (hasAnyData) {

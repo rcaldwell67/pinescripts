@@ -5,6 +5,9 @@ import os
 def create_database(db_path):
     os.makedirs(os.path.dirname(db_path), exist_ok=True)
     conn = sqlite3.connect(db_path)
+    # Use DELETE (rollback) journal mode so the .db file is fully self-contained
+    # and can be loaded by sql.js in the browser without needing -wal/-shm files.
+    conn.execute("PRAGMA journal_mode=DELETE")
     c = conn.cursor()
     # Backtest Results Table
     c.execute('''

@@ -8,3 +8,7 @@ node_modules
 .env.example
 __pycache__/
 *.pyc
+
+# SQLite WAL and shared-memory sidecar files — never commit these
+*.db-wal
+*.db-shm
