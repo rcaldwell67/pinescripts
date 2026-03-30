@@ -45,27 +45,34 @@ VERSION_MAP: dict[str, str] = {
 
 # ── Data fetch ─────────────────────────────────────────────────────────────────
 
-def fetch_ohlcv(symbol: str) -> "pd.DataFrame":
+def fetch_ohlcv_alpaca(symbol: str) -> "pd.DataFrame | None":
+    """Fetch from Alpaca. Returns None if subscription/access denied."""
     import pandas as pd
-    from datetime import timedelta
     from alpaca.data.historical import CryptoHistoricalDataClient, StockHistoricalDataClient
     from alpaca.data.requests import CryptoBarsRequest, StockBarsRequest
     from alpaca.data.timeframe import TimeFrame, TimeFrameUnit  # type: ignore[attr-defined]
+    from alpaca.common.exceptions import APIError
 
     now   = datetime.now(tz=timezone.utc)
     start = datetime(now.year, 1, 1, tzinfo=timezone.utc)   # YTD
-
     tf = TimeFrame(5, TimeFrameUnit.Minute)
 
     is_crypto = "/" in symbol
-    if is_crypto:
-        client = CryptoHistoricalDataClient(ALPACA_API_KEY, ALPACA_API_SECRET)
-        req    = CryptoBarsRequest(symbol_or_symbols=symbol, timeframe=tf, start=start, end=now)
-        df     = client.get_crypto_bars(req).df
-    else:
-        client = StockHistoricalDataClient(ALPACA_API_KEY, ALPACA_API_SECRET)
-        req    = StockBarsRequest(symbol_or_symbols=symbol, timeframe=tf, start=start, end=now)
-        df     = client.get_stock_bars(req).df
+    try:
+        if is_crypto:
+            client = CryptoHistoricalDataClient(ALPACA_API_KEY, ALPACA_API_SECRET)
+            req    = CryptoBarsRequest(symbol_or_symbols=symbol, timeframe=tf, start=start, end=now)
+            df     = client.get_crypto_bars(req).df
+        else:
+            client = StockHistoricalDataClient(ALPACA_API_KEY, ALPACA_API_SECRET)
+            req    = StockBarsRequest(symbol_or_symbols=symbol, timeframe=tf, start=start, end=now)
+            df     = client.get_stock_bars(req).df
+    except APIError as e:
+        # 403 = subscription/access denied (e.g., no market data subscription for stocks)
+        if "403" in str(e) or "subscription" in str(e).lower():
+            print(f"  Alpaca API access denied (subscription required): {e}", file=sys.stderr)
+            return None
+        raise
 
     if df.empty:
         raise RuntimeError(f"No data returned from Alpaca for {symbol}")
@@ -85,6 +92,45 @@ def fetch_ohlcv(symbol: str) -> "pd.DataFrame":
     col_map = {c: c.capitalize() for c in ("open", "high", "low", "close", "volume")}
     df = df.rename(columns=col_map)
     return df
+
+
+def fetch_ohlcv_yfinance(symbol: str) -> "pd.DataFrame":
+    """Fetch from Yahoo Finance as fallback (1h bars instead of 5m; downsample to 5m)."""
+    import pandas as pd
+    import yfinance as yf
+
+    now = datetime.now(tz=timezone.utc)
+    start = datetime(now.year, 1, 1, tzinfo=timezone.utc)
+
+    # Download 1h data (yfinance doesn't support 5m without a subscription)
+    print(f"  Fetching from Yahoo Finance (1h bars, will downsample to 5m)...", file=sys.stderr)
+    df = yf.download(symbol, start=start, end=now, interval="1h", progress=False)
+
+    if df.empty:
+        raise RuntimeError(f"No data returned from Yahoo Finance for {symbol}")
+
+    df = df.reset_index()
+    df = df.rename(columns={"Date": "timestamp", "Open": "Open", "High": "High", "Low": "Low", "Close": "Close", "Volume": "Volume"})
+    df["timestamp"] = pd.to_datetime(df["timestamp"])
+    df = df.sort_values("timestamp").reset_index(drop=True)
+    
+    # Select only required columns
+    df = df[["timestamp", "Open", "High", "Low", "Close", "Volume"]]
+    
+    print(f"  {len(df):,} hourly bars fetched from Yahoo Finance", file=sys.stderr)
+    return df
+
+
+def fetch_ohlcv(symbol: str) -> "pd.DataFrame":
+    """Fetch OHLCV data, trying Alpaca first, then Yahoo Finance as fallback."""
+    # Try Alpaca first
+    df = fetch_ohlcv_alpaca(symbol)
+    if df is not None:
+        return df
+    
+    # Fall back to Yahoo Finance
+    print(f"  Falling back to Yahoo Finance for {symbol}...", file=sys.stderr)
+    return fetch_ohlcv_yfinance(symbol)
 
 
 # ── Run strategy ───────────────────────────────────────────────────────────────
@@ -187,8 +233,13 @@ def main() -> int:
               file=sys.stderr)
         return 1
 
-    print(f"Fetching YTD 5m OHLCV for {symbol}...")
-    df = fetch_ohlcv(symbol)
+    print(f"Fetching YTD OHLCV for {symbol}...")
+    try:
+        df = fetch_ohlcv(symbol)
+    except Exception as e:
+        print(f"ERROR: Failed to fetch data for {symbol}: {e}", file=sys.stderr)
+        return 1
+    
     print(f"  {len(df):,} bars fetched ({df['timestamp'].iloc[0]} → {df['timestamp'].iloc[-1]})")
 
     print(f"Running backtest {version}...")
