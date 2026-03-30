@@ -249,6 +249,9 @@ let txPage = 1;
     buildSymbolSwitcher(symbols);
     // Save db instance for later use
     window._SQL_DB = db;
+    // Reset active selection so re-selecting the same symbol after a dataset
+    // switch doesn't hit the early-exit guard in handleSymbolSelect.
+    activeSym = '';
     console.log('[DEBUG] loadSymbolsAndInit complete');
   }
 
@@ -1219,39 +1222,33 @@ async function handleSymbolSelect(newSym, dbInstance) {
   }
     // Backtest mode reads existing summary rows from backtest_results.
     // Paper/live continue to use trade-level rows from trades.
+    // Use prepare/bind/step for parameterized queries — db.exec() does not
+    // reliably support positional ? bindings in sql.js.
     let rows = [];
     if (activeDataset === 'backtest') {
       try {
-        const res = db.exec(
-          'SELECT metrics, notes, timestamp FROM backtest_results WHERE symbol = ? ORDER BY timestamp',
-          [activeSym]
+        const stmt = db.prepare(
+          'SELECT metrics, notes, timestamp FROM backtest_results WHERE symbol = ? ORDER BY timestamp'
         );
-        if (res.length > 0) {
-          const cols = res[0].columns;
-          rows = res[0].values.map(row => {
-            const obj = {};
-            cols.forEach((col, i) => { obj[col] = row[i]; });
-            return obj;
-          });
+        stmt.bind([activeSym]);
+        while (stmt.step()) {
+          rows.push(stmt.getAsObject());
         }
+        stmt.free();
       } catch (e) {
         console.error('Error querying backtest_results table:', e);
       }
     } else {
       const modeFilter = activeDataset === 'paper' ? 'paper' : 'live';
       try {
-        const res = db.exec(
-          'SELECT * FROM trades WHERE symbol = ? AND mode = ? ORDER BY entry_time',
-          [activeSym, modeFilter]
+        const stmt = db.prepare(
+          'SELECT * FROM trades WHERE symbol = ? AND mode = ? ORDER BY entry_time'
         );
-        if (res.length > 0) {
-          const cols = res[0].columns;
-          rows = res[0].values.map(row => {
-            const obj = {};
-            cols.forEach((col, i) => { obj[col] = row[i]; });
-            return obj;
-          });
+        stmt.bind([activeSym, modeFilter]);
+        while (stmt.step()) {
+          rows.push(stmt.getAsObject());
         }
+        stmt.free();
       } catch (e) {
         console.error('Error querying trades table:', e);
       }
