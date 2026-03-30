@@ -1311,6 +1311,24 @@ function populateSymbolDropdown() {
 }
 
 
+
+function hideDashboardData() {
+  document.getElementById('balanceBar').style.display = 'none';
+  document.getElementById('lastUpdated').style.display = 'none';
+  document.getElementById('tabs').style.display = 'none';
+  document.getElementById('cards').style.display = 'none';
+  const panels = document.querySelectorAll('.panel');
+  panels.forEach(p => p.style.display = 'none');
+}
+function showDashboardData() {
+  document.getElementById('balanceBar').style.display = '';
+  document.getElementById('lastUpdated').style.display = '';
+  document.getElementById('tabs').style.display = '';
+  document.getElementById('cards').style.display = '';
+  const panels = document.querySelectorAll('.panel');
+  panels.forEach(p => p.style.display = '');
+}
+
 // --- New: handleSymbolSelect loads from SQLite for backtest/paper ---
 let _pendingSymbolSelect = null;
 async function handleSymbolSelect(newSym, dbInstance) {
@@ -1382,29 +1400,13 @@ async function handleSymbolSelect(newSym, dbInstance) {
   Object.keys(vers).forEach(v => {
     loaded[activeSym][v] = byVersion[v] ? byVersion[v] : [];
   });
-  hideDashboardData();
-  activeSym = '';
-  // Add Symbol input logic (GitHub Issue automation)
-  const addInput = document.getElementById('addSymbolInput');
-  const addBtn = document.getElementById('addSymbolBtn');
-  addBtn.addEventListener('click', () => {
-    /* Lines 1460-1469 omitted */
-    window.open(url, '_blank');
-  });
-  addInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter') addBtn.click();
-  });
-  document.getElementById('cards').style.display = 'none';
-  const panels = document.querySelectorAll('.panel');
-  panels.forEach(p => p.style.display = 'none');
-}
-function showDashboardData() {
-  document.getElementById('balanceBar').style.display = '';
-  document.getElementById('lastUpdated').style.display = '';
-  document.getElementById('tabs').style.display = '';
-  document.getElementById('cards').style.display = '';
-  const panels = document.querySelectorAll('.panel');
-  panels.forEach(p => p.style.display = '');
+  showDashboardData();
+  buildTabs();
+  setTimeout(() => {
+    render();
+    updateLastUpdated();
+    updateModeButtonStates();
+  }, 0);
 }
 
 document.querySelectorAll('.mode-btn').forEach(btn => {
