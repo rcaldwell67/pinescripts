@@ -19,27 +19,27 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-        - name: Export backtest_results from DB to JSON (grouped by symbol and version)
-          run: |
-            python3 <<EOF
-            import sqlite3, json
-            from collections import defaultdict
-            conn = sqlite3.connect('docs/data/tradingcopilot.db')
-            c = conn.cursor()
-            c.execute('SELECT symbol, metrics FROM backtest_results')
-            rows = c.fetchall()
-            result = defaultdict(lambda: defaultdict(list))
-            for symbol, metrics in rows:
-              try:
-                m = json.loads(metrics)
-              except Exception:
-                continue
-              version = m.get('version', 'v1')  # Default to v1 if not present
-              result[symbol][version].append(m)
-            with open('docs/data/backtest_results.json', 'w') as f:
-              json.dump(result, f, indent=2)
-            conn.close()
-            EOF
+      - name: Export backtest_results from DB to JSON (grouped by symbol and version)
+        run: |
+          python3 <<EOF
+          import sqlite3, json
+          from collections import defaultdict
+          conn = sqlite3.connect('docs/data/tradingcopilot.db')
+          c = conn.cursor()
+          c.execute('SELECT symbol, metrics FROM backtest_results')
+          rows = c.fetchall()
+          result = defaultdict(lambda: defaultdict(list))
+          for symbol, metrics in rows:
+            try:
+              m = json.loads(metrics)
+            except Exception:
+              continue
+            version = m.get('version', 'v1')  # Default to v1 if not present
+            result[symbol][version].append(m)
+          with open('docs/data/backtest_results.json', 'w') as f:
+            json.dump(result, f, indent=2)
+          conn.close()
+          EOF
       - name: Commit and push backtest_results.json
         run: |
           git config --global user.name 'github-actions'
