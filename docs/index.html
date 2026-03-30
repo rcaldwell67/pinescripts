@@ -1326,11 +1326,22 @@ function populateSymbolDropdown() {
 
 
 // --- New: handleSymbolSelect loads from SQLite for backtest/paper ---
+let _pendingSymbolSelect = null;
 async function handleSymbolSelect(newSym, dbInstance) {
+  // If loaded is not ready, queue the request and retry soon
   if (typeof loaded === 'undefined' || !loaded) {
-    console.warn('[Dropdown] handleSymbolSelect called before loaded is initialized. Ignoring.');
+    _pendingSymbolSelect = { newSym, dbInstance };
+    setTimeout(() => {
+      if (_pendingSymbolSelect && typeof loaded !== 'undefined' && loaded) {
+        const { newSym, dbInstance } = _pendingSymbolSelect;
+        _pendingSymbolSelect = null;
+        handleSymbolSelect(newSym, dbInstance);
+      }
+    }, 50);
     return;
   }
+  // If another pending request is queued, clear it (only latest matters)
+  _pendingSymbolSelect = null;
   console.log('[Dropdown] handleSymbolSelect proceeding for', newSym, 'dataset:', activeDataset);
   if (!newSym) {
     hideDashboardData();
