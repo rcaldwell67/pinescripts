@@ -99,6 +99,7 @@ let charts = {};
 let tradeTablePage = 1;
 let tradePageSize = 25;
 let txPage = 1;
+let txPageSize = 25;
 const PAPER_TRADING_SUPPORTED_VERSIONS = new Set(['v1']);
 let pendingDatasetSymbol = '';
 
