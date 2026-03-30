@@ -10,7 +10,6 @@
       - generic [ref=e7]: "Symbol:"
       - combobox "Symbol:" [ref=e8] [cursor=pointer]:
         - option "Select..." [selected]
-        - option "BTC_USD — Bitcoin/US Dollar"
       - textbox "Add Symbol..." [ref=e9]
       - button "Add" [ref=e10] [cursor=pointer]
   - main [ref=e11]

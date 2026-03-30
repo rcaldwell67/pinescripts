@@ -400,6 +400,7 @@ let txPage = 1;
     addDatasetSelector();
     console.log('[DEBUG] loadSymbolsAndInit called');
     if (typeof window.initSqlJs === 'undefined') {
+      console.error('[DEBUG] sql.js not loaded');
       throw new Error('sql.js not loaded');
     }
     // Fetch the SQLite database file
@@ -411,15 +412,17 @@ let txPage = 1;
       throw new Error('Failed to fetch tradingcopilot.db');
     }
     const dbBuffer = await dbReq.arrayBuffer();
+    console.log('[DEBUG] DB file loaded, initializing sql.js...');
     // Initialize sql.js
     const SQL = await window.initSqlJs({ locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.8.0/dist/${file}` });
     const db = new SQL.Database(new Uint8Array(dbBuffer));
+    console.log('[DEBUG] SQL.js initialized, DB instance created:', db);
     // Query the symbols table
     let symbolsData = [];
     try {
       const res = db.exec('SELECT symbol, description FROM symbols');
+      console.log('[DEBUG] symbols table query result:', res);
       if (res.length > 0) {
-        console.log('[DEBUG] Symbols query result:', res);
         const cols = res[0].columns;
         const values = res[0].values;
         symbolsData = values.map(row => {
@@ -427,15 +430,20 @@ let txPage = 1;
           cols.forEach((col, i) => { obj[col] = row[i]; });
           return obj;
         });
+        console.log('[DEBUG] symbolsData array:', symbolsData);
+      } else {
+        console.warn('[DEBUG] symbols table query returned no results');
       }
     } catch (e) {
-      console.error('Error querying symbols table:', e);
+      console.error('[DEBUG] Error querying symbols table:', e);
       throw new Error('Failed to query symbols table');
     }
     // Prepare symbol list and UI
     const symbols = symbolsData.map(obj => obj.symbol);
+    console.log('[DEBUG] symbols array:', symbols);
     window.SYMBOLS = symbols;
     INSTRUMENTS = buildInstruments(symbols);
+    console.log('[DEBUG] INSTRUMENTS object:', INSTRUMENTS);
     initStateObjects(symbols);
     // Populate symbol selector
     const select = document.getElementById('symbolSelect');
@@ -447,6 +455,7 @@ let txPage = 1;
       opt.textContent = obj.description ? `${obj.symbol} — ${obj.description}` : obj.symbol;
       select.appendChild(opt);
     });
+    console.log('[DEBUG] symbolSelect options populated:', select.innerHTML);
     select.value = '';
     // Wait for loaded to be initialized, then enable and attach event (robust)
     function enableDropdownWhenReady() {
@@ -474,6 +483,7 @@ let txPage = 1;
     buildSymbolSwitcher(symbols);
     // Save db instance for later use
     window._SQL_DB = db;
+    console.log('[DEBUG] loadSymbolsAndInit complete');
   }
 
   window.addEventListener('DOMContentLoaded', function() {
