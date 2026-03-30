@@ -95,7 +95,7 @@ def fetch_ohlcv_alpaca(symbol: str) -> "pd.DataFrame | None":
 
 
 def fetch_ohlcv_yfinance(symbol: str) -> "pd.DataFrame":
-    """Fetch from Yahoo Finance as fallback (1h bars instead of 5m; downsample to 5m)."""
+    """Fetch from Yahoo Finance as fallback (1h bars instead of 5m)."""
     import pandas as pd
     import yfinance as yf
 
@@ -103,16 +103,29 @@ def fetch_ohlcv_yfinance(symbol: str) -> "pd.DataFrame":
     start = datetime(now.year, 1, 1, tzinfo=timezone.utc)
 
     # Download 1h data (yfinance doesn't support 5m without a subscription)
-    print(f"  Fetching from Yahoo Finance (1h bars, will downsample to 5m)...", file=sys.stderr)
+    print(f"  Fetching from Yahoo Finance (1h bars)...", file=sys.stderr)
     df = yf.download(symbol, start=start, end=now, interval="1h", progress=False)
 
     if df.empty:
         raise RuntimeError(f"No data returned from Yahoo Finance for {symbol}")
 
+    # Reset index to convert Date from index to column
     df = df.reset_index()
-    df = df.rename(columns={"Date": "timestamp", "Open": "Open", "High": "High", "Low": "Low", "Close": "Close", "Volume": "Volume"})
+    
+    # Normalize column names (yfinance uses "Date" as the index column name)
+    df.columns = [c.lower() for c in df.columns]
+    df = df.rename(columns={"date": "timestamp"})
+    
+    # Ensure required columns exist
+    required = {"timestamp", "open", "high", "low", "close", "volume"}
+    if not required.issubset(set(df.columns)):
+        raise RuntimeError(f"Yahoo Finance data missing columns: {required - set(df.columns)}")
+    
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     df = df.sort_values("timestamp").reset_index(drop=True)
+    
+    # Capitalize column names for strategy compatibility
+    df = df.rename(columns={"open": "Open", "high": "High", "low": "Low", "close": "Close", "volume": "Volume"})
     
     # Select only required columns
     df = df[["timestamp", "Open", "High", "Low", "Close", "Volume"]]
