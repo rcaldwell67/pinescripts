@@ -1312,6 +1312,27 @@ function showDashboardData() {
 }
 
 // --- New: handleSymbolSelect loads from SQLite for backtest/paper ---
+
+// Add debug logs to loadSymbolsAndInit
+async function loadSymbolsAndInit() {
+  console.log('[DEBUG] loadSymbolsAndInit: called');
+  try {
+    const dbUrl = 'data/tradingcopilot.db';
+    console.log('[DEBUG] Attempting to fetch DB from:', dbUrl);
+    const response = await fetch(dbUrl);
+    if (!response.ok) {
+      console.error('[DEBUG] Fetch failed:', response.status, response.statusText);
+      return;
+    }
+    const buf = await response.arrayBuffer();
+    console.log('[DEBUG] DB file fetched, size:', buf.byteLength);
+    // ...existing code to initialize sql.js and continue...
+    // (If you have a window._SQL_DB or similar, add a debug log after that too)
+  } catch (e) {
+    console.error('[DEBUG] Error in loadSymbolsAndInit:', e);
+  }
+  console.log('[DEBUG] loadSymbolsAndInit: completed');
+}
 let _pendingSymbolSelect = null;
 async function handleSymbolSelect(newSym, dbInstance) {
   // If loaded is not ready, queue the request and retry soon
@@ -1382,20 +1403,18 @@ async function handleSymbolSelect(newSym, dbInstance) {
   Object.keys(vers).forEach(v => {
     loaded[activeSym][v] = byVersion[v] ? byVersion[v] : [];
   });
-  showDashboardData();
-  buildTabs();
-  setTimeout(() => {
-    render();
-    updateLastUpdated();
-    updateModeButtonStates();
-  }, 0);
+</script>
+<script>
+// --- Ensure loadSymbolsAndInit is called at script end ---
+hideDashboardData();
+activeSym = '';
+if (typeof loadSymbolsAndInit === 'function') {
+  console.log('[DEBUG] Calling loadSymbolsAndInit at script end');
+  loadSymbolsAndInit();
+} else {
+  console.error('[DEBUG] loadSymbolsAndInit is not defined');
 }
-
-document.querySelectorAll('.mode-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    if (btn.dataset.mode === activeMode) return;
-    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+console.log('[DEBUG] End of <script> block reached');
     activeMode = btn.dataset.mode;
     loaded = _modeCache[activeMode];
     activeTab = 'all'; tradeTablePage = 1; txPage = 1;
