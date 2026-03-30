@@ -405,9 +405,12 @@ let txPage = 1;
       throw new Error('sql.js not loaded');
     }
     // Fetch the SQLite database file
-    console.log('[DEBUG] Attempting to fetch data/tradingcopilot.db ...');
-    const dbReq = await fetch('data/tradingcopilot.db');
-    console.log('[DEBUG] Fetch response for tradingcopilot.db:', dbReq);
+    const dbPath = 'data/tradingcopilot.db';
+    console.log('[DEBUG] window.location.href:', window.location.href);
+    const resolvedUrl = new URL(dbPath, window.location.href).toString();
+    console.log('[DEBUG] Attempting to fetch', dbPath, '->', resolvedUrl);
+    const dbReq = await fetch(dbPath);
+    console.log('[DEBUG] Fetch response for', dbPath + ':', dbReq);
     if (!dbReq.ok) {
       console.error('[ERROR] Failed to fetch tradingcopilot.db. Status:', dbReq.status, dbReq.statusText);
       throw new Error('Failed to fetch tradingcopilot.db');

@@ -18,10 +18,10 @@ with sync_playwright() as p:
     symbols = [opt.inner_text() for opt in options if opt.get_attribute('value')]
     print('Symbols found:', symbols)
 
-    # Select BTCUSD if present
-    if any('BTCUSD' in s for s in symbols):
-        page.select_option('#symbolSelect', value='BTCUSD')
-        print('Selected BTCUSD.')
+    # Select BTC_USD if present
+    if any('BTC_USD' in s for s in symbols):
+        page.select_option('#symbolSelect', value='BTC_USD')
+        print('Selected BTC_USD.')
         # Wait for dashboard data to attempt to load
         page.wait_for_timeout(2000)
         # Check for cards or error messages
@@ -35,6 +35,6 @@ with sync_playwright() as p:
         if no_data:
             print('No Data Is Available For That Selection (notice shown)')
     else:
-        print('BTCUSD not found in symbol dropdown.')
+        print('BTC_USD not found in symbol dropdown.')
 
     browser.close()
