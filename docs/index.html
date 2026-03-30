@@ -395,63 +395,62 @@ let txPage = 1;
   // --- New: Load symbols and results from selected dataset JSON ---
   async function loadSymbolsAndInit() {
     addDatasetSelector();
-    console.log(`[Dropdown] Fetching symbols.json and ${getResultsJsonFile()}...`);
-    try {
-      const [symbolsResp, resultsResp] = await Promise.all([
-        fetch('data/symbols.json'),
-        fetch(getResultsJsonFile())
-      ]);
-      if (!symbolsResp.ok) throw new Error('Failed to fetch symbols.json');
-      if (!resultsResp.ok) throw new Error('Failed to fetch results JSON');
-      const symbolsData = await symbolsResp.json();
-      const resultsData = await resultsResp.json();
-      window.BACKTEST_RESULTS = resultsData; // Expose for debugging (name kept for compatibility)
-      console.log(`[Dropdown] Loaded ${symbolsData.length} symbols and ${getResultsJsonFile()}`);
-      const symbols = symbolsData.map(obj => obj.symbol);
-      SYMBOLS = symbols;
-      INSTRUMENTS = buildInstruments(symbols);
-      initStateObjects(symbols);
-      // Populate symbol selector
-      const select = document.getElementById('symbolSelect');
-      select.innerHTML = '';
-      select.disabled = true;
-      symbolsData.forEach(obj => {
-        const opt = document.createElement('option');
-        opt.value = obj.symbol;
-        opt.textContent = obj.description ? `${obj.symbol} — ${obj.description}` : obj.symbol;
-        select.appendChild(opt);
-      });
-      select.value = '';
-      // Wait for loaded to be initialized, then enable and attach event (robust)
-      function enableDropdownWhenReady() {
-        if (typeof loaded !== 'undefined' && loaded) {
-          // Remove all previous event listeners by replacing the element
-          const oldSelect = select;
-          const newSelect = oldSelect.cloneNode(true);
-          oldSelect.parentNode.replaceChild(newSelect, oldSelect);
-          newSelect.disabled = false;
-          // Debounce handler to avoid slow UI and race conditions
-          let debounceTimer = null;
-          newSelect.addEventListener('change', function() {
-            if (debounceTimer) clearTimeout(debounceTimer);
-            const value = this.value;
-            debounceTimer = setTimeout(() => {
-              handleSymbolSelect(value);
-            }, 100); // 100ms debounce
-          });
-          console.log('[Dropdown] Dropdown enabled and event attached. Ready for user interaction.');
-        } else {
-          setTimeout(enableDropdownWhenReady, 50);
-        }
+    console.log('[DEBUG] loadSymbolsAndInit called');
+    const [symbolsResp, resultsResp] = await Promise.all([
+      fetch('data/symbols.json'),
+      fetch(getResultsJsonFile())
+    ]);
+    if (!symbolsResp.ok) throw new Error('Failed to fetch symbols.json');
+    if (!resultsResp.ok) throw new Error('Failed to fetch results JSON');
+    const symbolsData = await symbolsResp.json();
+    const resultsData = await resultsResp.json();
+    window.BACKTEST_RESULTS = resultsData; // Expose for debugging (name kept for compatibility)
+    console.log(`[Dropdown] Loaded ${symbolsData.length} symbols and ${getResultsJsonFile()}`);
+    const symbols = symbolsData.map(obj => obj.symbol);
+    SYMBOLS = symbols;
+    INSTRUMENTS = buildInstruments(symbols);
+    initStateObjects(symbols);
+    // Populate symbol selector
+    const select = document.getElementById('symbolSelect');
+    select.innerHTML = '';
+    select.disabled = true;
+    symbolsData.forEach(obj => {
+      const opt = document.createElement('option');
+      opt.value = obj.symbol;
+      opt.textContent = obj.description ? `${obj.symbol} — ${obj.description}` : obj.symbol;
+      select.appendChild(opt);
+    });
+    select.value = '';
+    // Wait for loaded to be initialized, then enable and attach event (robust)
+    function enableDropdownWhenReady() {
+      if (typeof loaded !== 'undefined' && loaded) {
+        // Remove all previous event listeners by replacing the element
+        const oldSelect = select;
+        const newSelect = oldSelect.cloneNode(true);
+        oldSelect.parentNode.replaceChild(newSelect, oldSelect);
+        newSelect.disabled = false;
+        // Debounce handler to avoid slow UI and race conditions
+        let debounceTimer = null;
+        newSelect.addEventListener('change', function() {
+          if (debounceTimer) clearTimeout(debounceTimer);
+          const value = this.value;
+          debounceTimer = setTimeout(() => {
+            handleSymbolSelect(value);
+          }, 100); // 100ms debounce
+        });
+        console.log('[Dropdown] Dropdown enabled and event attached. Ready for user interaction.');
+      } else {
+        setTimeout(enableDropdownWhenReady, 50);
       }
-      enableDropdownWhenReady();
-      buildSymbolSwitcher(symbols);
-    } catch (err) {
-      console.error('[Dropdown] Error loading symbols or results:', err);
     }
+    enableDropdownWhenReady();
+    buildSymbolSwitcher(symbols);
   }
 
-  window.addEventListener('DOMContentLoaded', loadSymbolsAndInit);
+  window.addEventListener('DOMContentLoaded', function() {
+    console.log('[DEBUG] DOMContentLoaded event fired');
+    loadSymbolsAndInit();
+  });
 
   const INITIAL_CAPITAL = 10000;
 
