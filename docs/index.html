@@ -488,14 +488,7 @@ let txPage = 1;
   }
 
 
-  window.addEventListener('DOMContentLoaded', function() {
-    console.log('[DEBUG] DOMContentLoaded event fired');
-    try {
-      loadSymbolsAndInit();
-    } catch (e) {
-      console.error('[DEBUG] Error in loadSymbolsAndInit:', e);
-    }
-  });
+
   console.log('[DEBUG] After DOMContentLoaded event handler registration');
 
   const INITIAL_CAPITAL = 10000;
