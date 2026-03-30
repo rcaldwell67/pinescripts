@@ -393,19 +393,32 @@ let txPage = 1;
       console.error('[DEBUG] sql.js not loaded');
       throw new Error('sql.js not loaded');
     }
-    // Fetch the SQLite database file
-    const dbPath = 'data/tradingcopilot.db';
-    console.log('[DEBUG] window.location.href:', window.location.href);
-    const resolvedUrl = new URL(dbPath, window.location.href).toString();
-    console.log('[DEBUG] Attempting to fetch', dbPath, '->', resolvedUrl);
-    const dbReq = await fetch(dbPath);
-    console.log('[DEBUG] Fetch response for', dbPath + ':', dbReq);
-    if (!dbReq.ok) {
-      console.error('[ERROR] Failed to fetch tradingcopilot.db. Status:', dbReq.status, dbReq.statusText);
+    // Fetch the SQLite database file with fallback logic
+    const dbPaths = ['data/tradingcopilot.db', 'docs/data/tradingcopilot.db'];
+    let dbReq = null, dbPathUsed = '';
+    for (const dbPath of dbPaths) {
+      try {
+        console.log('[DEBUG] window.location.href:', window.location.href);
+        // Add cache-busting query string
+        const cacheBustedPath = dbPath + '?v=' + Date.now();
+        const resolvedUrl = new URL(cacheBustedPath, window.location.href).toString();
+        console.log('[DEBUG] Attempting to fetch', cacheBustedPath, '->', resolvedUrl);
+        dbReq = await fetch(cacheBustedPath);
+        console.log('[DEBUG] Fetch response for', cacheBustedPath + ':', dbReq);
+        if (dbReq.ok) {
+          dbPathUsed = dbPath;
+          break;
+        }
+      } catch (e) {
+        console.error('[ERROR] Exception fetching', dbPath, e);
+      }
+    }
+    if (!dbReq || !dbReq.ok) {
+      console.error('[ERROR] Failed to fetch tradingcopilot.db from all tried paths. Last status:', dbReq?.status, dbReq?.statusText);
       throw new Error('Failed to fetch tradingcopilot.db');
     }
     const dbBuffer = await dbReq.arrayBuffer();
-    console.log('[DEBUG] DB file loaded, initializing sql.js...');
+    console.log('[DEBUG] DB file loaded from', dbPathUsed, ', initializing sql.js...');
     // Initialize sql.js
     const SQL = await window.initSqlJs({ locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.8.0/dist/${file}` });
     const db = new SQL.Database(new Uint8Array(dbBuffer));
@@ -1371,8 +1384,7 @@ async function handleSymbolSelect(newSym, dbInstance) {
     loaded[activeSym][v] = byVersion[v] ? byVersion[v] : [];
   });
 }
-</script>
-<script>
+
 // --- Ensure loadSymbolsAndInit is called at script end ---
 hideDashboardData();
 activeSym = '';
@@ -1382,6 +1394,7 @@ if (typeof loadSymbolsAndInit === 'function') {
 } else {
   console.error('[DEBUG] loadSymbolsAndInit is not defined');
 }
+</script>
 
 async function handleBacktestVariantChange(ver, value) {
   if (!activeSym) return;
@@ -1422,8 +1435,7 @@ document.getElementById('v2DatasetSelect')?.addEventListener('change', event => 
   addInput.addEventListener('keydown', e => {
     if (e.key === 'Enter') addBtn.click();
   });
-})();
-console.log('[DEBUG] End of <script> block reached');
+</script>
 </script>
 </body>
 </html>
