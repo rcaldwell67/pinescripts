@@ -17,3 +17,7 @@
 6. Make sure backtesting and paper trading are 100% for v1-v6
 
 7. Housekeeping, remove all files/folders that are not in use by the project
+
+Note:
+- Current v1 paper-trading data has been corrected and made incremental (append new trades each run).
+- Current implementation is simulation-based (using strategy backtest logic on fresh OHLCV), not live order placement through Alpaca Paper Trading API yet.
