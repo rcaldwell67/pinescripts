@@ -270,6 +270,7 @@ function buildSymbolSwitcher(symbols) {
     switcher.appendChild(btn);
   });
   */
+}
 
 
 function buildInstruments(symbols) {
@@ -318,9 +319,7 @@ function buildInstruments(symbols) {
     instruments[sym] = { label, versions };
   });
   return instruments;
-
-
-
+}
 
 function initStateObjects(symbols) {
   // For each mode, create an object with all symbols as keys
@@ -344,6 +343,7 @@ function initStateObjects(symbols) {
       });
     }
   });
+}
 }
 
 
@@ -524,30 +524,6 @@ let txPage = 1;
       }
     }
   }
-  }
-  const longs  = rows.filter(r => r.direction === 'long');
-  const shorts = rows.filter(r => r.direction === 'short');
-  const finalEquity = rows[rows.length-1]?.equity ?? INITIAL_CAPITAL;
-  const netPnl = finalEquity - INITIAL_CAPITAL;
-  return {
-    n: rows.length,
-    winRate:  wins.length / rows.length * 100,
-    netPnl:   netPnl,
-    netPnlPct: netPnl / INITIAL_CAPITAL * 100,
-    pf, maxDD,
-    finalEquity,
-    avgWin:  wins.length   ? grossWin   / wins.length   : 0,
-    avgLoss: losses.length ? -grossLoss / losses.length : 0,
-    tpCount:    rows.filter(r=>r.result==='TP').length,
-    slCount:    rows.filter(r=>r.result==='SL').length,
-    trailCount: rows.filter(r=>r.result==='TRAIL'||r.result==='TRAILING').length,
-    mbCount:    rows.filter(r=>r.result==='MB').length,
-    longs: longs.length, shorts: shorts.length,
-    longWR:  longs.length  ? longs.filter(r=>r.dollar_pnl>0).length  / longs.length  * 100 : 0,
-    shortWR: shorts.length ? shorts.filter(r=>r.dollar_pnl>0).length / shorts.length * 100 : 0,
-    longPnl:  longs.reduce((s,r)=>s+r.dollar_pnl,0),
-    shortPnl: shorts.reduce((s,r)=>s+r.dollar_pnl,0),
-  };
 }
 
 const fmt$   = n => (n>=0?'+$':'-$') + Math.abs(n).toFixed(2);
@@ -607,7 +583,7 @@ function buildTabs() {
   } else if (rerunBtn) {
     rerunBtn.style.display = 'none';
   }
-// Stub for rerun backtest logic
+}
 function rerunBacktest(symbol, version) {
   // Open a pre-filled GitHub Issue for rerun-backtest, matching add-symbol pattern
   const sym = symbol.toUpperCase();
