@@ -281,17 +281,21 @@ function getNormalizedSymbolKey(sym) {
   console.log('[DEBUG] After DOMContentLoaded event handler registration');
 
   const DEFAULT_INITIAL_CAPITAL = 1000;
+  const PAPER_INITIAL_CAPITAL = 100000;
+
+  function getDatasetInitialCapital() {
+    return activeDataset === 'paper' ? PAPER_INITIAL_CAPITAL : DEFAULT_INITIAL_CAPITAL;
+  }
 
   function normalizeBeginningEquity(beginEq) {
-    // Paper rows can contain broker-account-sized equity (e.g. 100000).
-    // Keep dashboard comparisons aligned to strategy baseline.
-    if (!Number.isFinite(beginEq) || beginEq <= 0) return DEFAULT_INITIAL_CAPITAL;
-    if (activeDataset === 'paper' && beginEq >= 10000) return DEFAULT_INITIAL_CAPITAL;
+    if (!Number.isFinite(beginEq) || beginEq <= 0) return getDatasetInitialCapital();
+    // Paper trading baseline should reflect the funded paper account.
+    if (activeDataset === 'paper' && beginEq < 10000) return PAPER_INITIAL_CAPITAL;
     return beginEq;
   }
 
   function getInitialCapitalFromRows(rows) {
-    if (!rows || !rows.length) return DEFAULT_INITIAL_CAPITAL;
+    if (!rows || !rows.length) return getDatasetInitialCapital();
     if (rows[0]._summary) {
       const s = rows[0]._summary || {};
       const beginEq = Number(s.beginning_equity);
@@ -304,7 +308,7 @@ function getNormalizedSymbolKey(sym) {
       const beginEq = eq - pnl;
       if (Number.isFinite(beginEq) && beginEq > 0) return normalizeBeginningEquity(beginEq);
     }
-    return DEFAULT_INITIAL_CAPITAL;
+    return getDatasetInitialCapital();
   }
 
   function getSymbolInitialCapital(sym) {
@@ -312,7 +316,7 @@ function getNormalizedSymbolKey(sym) {
     for (const rows of Object.values(byVersion)) {
       if (rows && rows.length) return getInitialCapitalFromRows(rows);
     }
-    return DEFAULT_INITIAL_CAPITAL;
+    return getDatasetInitialCapital();
   }
 
   function getActiveRows() {
@@ -504,7 +508,7 @@ function calcMetrics(rows) {
     const wins = Number(s.winning_trades || 0);
     const losses = Number(s.losing_trades || Math.max(0, n - wins));
     const winRate = Number(s.win_rate || (n ? (wins / n * 100) : 0));
-    const beginEq = Number(s.beginning_equity || beginEqFromRows || DEFAULT_INITIAL_CAPITAL);
+    const beginEq = Number(s.beginning_equity || beginEqFromRows || getDatasetInitialCapital());
     const finalEquity = Number(s.final_equity || beginEq);
     const netPnl = Number(s.total_pnl || (finalEquity - beginEq));
     const netPnlPct = Number(s.net_return_pct || (beginEq ? (netPnl / beginEq * 100) : 0));
@@ -638,7 +642,7 @@ function renderEquityChart(rows) {
   }
   const allPts = datasets.flatMap(d=>d.data);
   if (allPts.length) {
-    const baselineCapital = activeTab === 'all' ? getSymbolInitialCapital(activeSym) : (calcMetrics(rows)?.beginEq || DEFAULT_INITIAL_CAPITAL);
+    const baselineCapital = activeTab === 'all' ? getSymbolInitialCapital(activeSym) : (calcMetrics(rows)?.beginEq || getDatasetInitialCapital());
     const minX = allPts.reduce((a,b)=>a.x<b.x?a:b,allPts[0]).x;
     const maxX = allPts.reduce((a,b)=>a.x>b.x?a:b,allPts[0]).x;
     datasets.push({ label:'Baseline', data:[{x:minX,y:baselineCapital},{x:maxX,y:baselineCapital}], borderColor:'#30363d', borderWidth:1, borderDash:[4,4], pointRadius:0 });
@@ -865,7 +869,7 @@ function getAllSymbolsCumulativeEquity() {
   let baseline = 0;
   let equity = 0;
   for (const item of perSymbol.values()) {
-    const start = Number.isFinite(item.startCapital) && item.startCapital > 0 ? item.startCapital : DEFAULT_INITIAL_CAPITAL;
+    const start = Number.isFinite(item.startCapital) && item.startCapital > 0 ? item.startCapital : getDatasetInitialCapital();
     baseline += start;
     equity += (start + item.totalNet);
   }
@@ -1247,6 +1251,7 @@ function renderComparisonTable() {
 }
 
 function updateBalanceBar(rows) {
+  const beginEl = document.getElementById('beginningBalanceVal');
   const endEl   = document.getElementById('endingBalanceVal');
   const totalEl = document.getElementById('totalEquityVal');
   const totalAllEl = document.getElementById('totalEquityAllVal');
@@ -1258,6 +1263,8 @@ function updateBalanceBar(rows) {
     el.textContent = '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     el.className = 'bal-value ' + (n > baseline ? 'positive' : n < baseline ? 'negative' : 'neutral');
   };
+
+  fmtBal(startCapital, beginEl, startCapital);
 
   // Ending balance: only meaningful when a single version is selected
   if (!rows || !rows.length) {
@@ -1435,7 +1442,7 @@ async function handleSymbolSelect(newSym, dbInstance) {
         if (!byVersion[version]) byVersion[version] = [];
         const startTime = metrics.first_trade_date || r.timestamp || null;
         const endTime = metrics.last_trade_date || metrics.first_trade_date || r.timestamp || null;
-        const beginEq = Number(metrics.beginning_equity || DEFAULT_INITIAL_CAPITAL);
+        const beginEq = Number(metrics.beginning_equity || getDatasetInitialCapital());
         const finalEq = Number(metrics.final_equity || beginEq);
         const netPnl = Number(metrics.total_pnl || (finalEq - beginEq));
         byVersion[version].push(
