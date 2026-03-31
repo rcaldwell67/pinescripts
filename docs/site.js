@@ -1175,9 +1175,11 @@ function renderComparisonTable() {
 function updateBalanceBar(rows) {
   const endEl   = document.getElementById('endingBalanceVal');
   const totalEl = document.getElementById('totalEquityVal');
+  const totalAllEl = document.getElementById('totalEquityAllVal');
   const vers = INSTRUMENTS[activeSym].versions;
   const startCapital = getSymbolInitialCapital(activeSym);
   const fmtBal = (n, el) => {
+    if (!el) return;
     el.textContent = '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     el.className = 'bal-value ' + (n > startCapital ? 'positive' : n < startCapital ? 'negative' : 'neutral');
   };
@@ -1198,8 +1200,11 @@ function updateBalanceBar(rows) {
   const totalNetProfit = versionMetrics.reduce((sum, m) => sum + (m.finalEquity - m.beginEq), 0);
   if (totalNetProfit === 0 && versionMetrics.length === 0) {
     totalEl.textContent = '-'; totalEl.className = 'bal-value neutral';
+    if (totalAllEl) { totalAllEl.textContent = '-'; totalAllEl.className = 'bal-value neutral'; }
   } else {
-    fmtBal(startCapital + totalNetProfit, totalEl);
+    const cumulativeEquity = startCapital + totalNetProfit;
+    fmtBal(cumulativeEquity, totalEl);
+    fmtBal(cumulativeEquity, totalAllEl);
   }
 }
 
