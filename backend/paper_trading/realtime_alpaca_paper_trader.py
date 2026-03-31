@@ -147,6 +147,13 @@ class AlpacaPaperAPI:
         data = self._request("GET", "/v2/orders", params=params)
         return data if isinstance(data, list) else []
 
+    def get_closed_orders(self, *, after: str | None = None, limit: int = 200) -> list[dict[str, Any]]:
+        params: dict[str, Any] = {"status": "closed", "direction": "desc", "limit": limit}
+        if after:
+            params["after"] = after
+        data = self._request("GET", "/v2/orders", params=params)
+        return data if isinstance(data, list) else []
+
     def get_position(self, symbol: str) -> dict[str, Any] | None:
         try:
             return self._request("GET", f"/v2/positions/{symbol}")
@@ -271,6 +278,82 @@ def _upsert_summary(conn: sqlite3.Connection, symbol: str, version: str, status:
     )
 
 
+def _ensure_account_info_table(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS Account_Info (
+            account_id TEXT PRIMARY KEY,
+            account_number TEXT,
+            currency TEXT,
+            status TEXT,
+            beginning_balance REAL,
+            current_balance REAL,
+            buying_power REAL,
+            cash REAL,
+            last_event TEXT,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+
+
+def _to_float(value: Any, default: float = 0.0) -> float:
+    try:
+        if value is None:
+            return default
+        return float(value)
+    except Exception:
+        return default
+
+
+def _upsert_account_info(conn: sqlite3.Connection, account: dict[str, Any], *, event_type: str) -> None:
+    _ensure_account_info_table(conn)
+    account_id = str(account.get("id") or "paper-account")
+    account_number = str(account.get("account_number") or "")
+    currency = str(account.get("currency") or "USD")
+    status = str(account.get("status") or "")
+    current_balance = _to_float(account.get("equity") or account.get("last_equity") or account.get("cash"), 0.0)
+    buying_power = _to_float(account.get("buying_power"), 0.0)
+    cash = _to_float(account.get("cash"), 0.0)
+
+    existing = conn.execute(
+        "SELECT beginning_balance FROM Account_Info WHERE account_id = ? LIMIT 1",
+        (account_id,),
+    ).fetchone()
+    beginning_balance = _to_float(existing[0], current_balance) if existing else current_balance
+
+    conn.execute(
+        """
+        INSERT INTO Account_Info (
+            account_id, account_number, currency, status,
+            beginning_balance, current_balance, buying_power, cash, last_event, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(account_id) DO UPDATE SET
+            account_number = excluded.account_number,
+            currency = excluded.currency,
+            status = excluded.status,
+            beginning_balance = Account_Info.beginning_balance,
+            current_balance = excluded.current_balance,
+            buying_power = excluded.buying_power,
+            cash = excluded.cash,
+            last_event = excluded.last_event,
+            updated_at = excluded.updated_at
+        """,
+        (
+            account_id,
+            account_number,
+            currency,
+            status,
+            beginning_balance,
+            current_balance,
+            buying_power,
+            cash,
+            event_type,
+            datetime.now(timezone.utc).isoformat(),
+        ),
+    )
+
+
 def _ensure_fill_table(conn: sqlite3.Connection) -> None:
     conn.execute(
         """
@@ -296,6 +379,20 @@ def _ensure_fill_table(conn: sqlite3.Connection) -> None:
             version TEXT NOT NULL,
             trade_id INTEGER NOT NULL,
             role TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS paper_order_events (
+            event_id TEXT PRIMARY KEY,
+            order_id TEXT NOT NULL,
+            symbol TEXT,
+            status TEXT,
+            event_type TEXT,
+            event_time TEXT,
+            raw_json TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
         """
@@ -485,6 +582,67 @@ def _sync_fill_events(
                     (db_symbol, version, ts, price, base_equity),
                 )
                 _link_order_to_trade(conn, order_id, db_symbol, version, int(cur.lastrowid), "entry")
+
+        if side in {"buy", "sell"}:
+            try:
+                _upsert_account_info(conn, api.get_account(), event_type=f"fill:{side}")
+            except Exception:
+                # Non-fatal: keep fill ingestion moving even if account refresh fails.
+                pass
+    return inserted
+
+
+def _sync_canceled_orders(conn: sqlite3.Connection, api: AlpacaPaperAPI, symbols: list[str]) -> int:
+    _ensure_fill_table(conn)
+    row = conn.execute(
+        "SELECT MAX(event_time) FROM paper_order_events WHERE event_type = 'cancel'"
+    ).fetchone()
+    after = row[0] if row and row[0] else None
+
+    valid_symbols = {_order_symbol(s) for s in symbols}
+    closed_orders = api.get_closed_orders(after=after, limit=200)
+    inserted = 0
+    cancel_statuses = {"canceled", "expired", "rejected"}
+
+    for order in closed_orders:
+        status = str(order.get("status") or "").lower().strip()
+        if status not in cancel_statuses:
+            continue
+        symbol = str(order.get("symbol") or "").strip()
+        if valid_symbols and symbol and symbol not in valid_symbols:
+            continue
+        order_id = str(order.get("id") or "").strip()
+        event_time = (
+            str(order.get("canceled_at") or "").strip()
+            or str(order.get("updated_at") or "").strip()
+            or str(order.get("submitted_at") or "").strip()
+            or datetime.now(timezone.utc).isoformat()
+        )
+        if not order_id:
+            continue
+        event_id = f"{order_id}:{status}:{event_time}"
+        exists = conn.execute(
+            "SELECT 1 FROM paper_order_events WHERE event_id = ? LIMIT 1",
+            (event_id,),
+        ).fetchone()
+        if exists:
+            continue
+
+        conn.execute(
+            """
+            INSERT INTO paper_order_events (
+                event_id, order_id, symbol, status, event_type, event_time, raw_json
+            ) VALUES (?, ?, ?, ?, 'cancel', ?, ?)
+            """,
+            (event_id, order_id, symbol, status, event_time, json.dumps(order)),
+        )
+        inserted += 1
+
+    if inserted > 0:
+        try:
+            _upsert_account_info(conn, api.get_account(), event_type="cancel")
+        except Exception:
+            pass
     return inserted
 
 
@@ -596,6 +754,7 @@ def main() -> int:
             loop_count += 1
             account = api.get_account()
             account_equity = float(account.get("equity") or account.get("last_equity") or 100000.0)
+            _upsert_account_info(conn, account, event_type="heartbeat")
             print(f"\n[{datetime.now(timezone.utc).isoformat()}] Monitoring pass #{loop_count} (equity={account_equity:.2f})")
 
             symbols_this_pass = symbols
@@ -643,7 +802,9 @@ def main() -> int:
                     print(f"ERROR {symbol}: {exc}")
 
             fill_count = _sync_fill_events(conn, api, symbols, version, account_equity)
+            cancel_count = _sync_canceled_orders(conn, api, symbols)
             print(f"Synced fill activities: {fill_count}")
+            print(f"Synced cancel activities: {cancel_count}")
             conn.commit()
 
             if args.loop_seconds <= 0 and not stream_enabled:

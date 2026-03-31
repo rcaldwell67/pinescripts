@@ -86,6 +86,21 @@ def create_database(db_path):
             generated_at TEXT NOT NULL
         )
     ''')
+    # Account Info Table (Alpaca paper/live account snapshot)
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS Account_Info (
+            account_id TEXT PRIMARY KEY,
+            account_number TEXT,
+            currency TEXT,
+            status TEXT,
+            beginning_balance REAL,
+            current_balance REAL,
+            buying_power REAL,
+            cash REAL,
+            last_event TEXT,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
     conn.commit()
     conn.close()
 
