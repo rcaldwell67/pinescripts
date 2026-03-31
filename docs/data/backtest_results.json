@@ -4,7 +4,7 @@
       {
         "symbol": "CLM",
         "version": "v1",
-        "beginning_equity": 100000.0,
+        "beginning_equity": 10000.0,
         "final_equity": 10582.48316342843,
         "total_trades": 3,
         "winning_trades": 3,
@@ -24,7 +24,7 @@
       {
         "symbol": "CRF",
         "version": "v1",
-        "beginning_equity": 100000.0,
+        "beginning_equity": 10000.0,
         "final_equity": 10763.703830127879,
         "total_trades": 3,
         "winning_trades": 3,
@@ -44,7 +44,7 @@
       {
         "symbol": "ETH/USD",
         "version": "v1",
-        "beginning_equity": 100000.0,
+        "beginning_equity": 10000.0,
         "final_equity": 22701.737933879365,
         "total_trades": 150,
         "winning_trades": 84,
@@ -64,16 +64,16 @@
       {
         "symbol": "BTC/USD",
         "version": "v1",
-        "beginning_equity": 100000.0,
-        "final_equity": 14282.933712676037,
+        "beginning_equity": 10000.0,
+        "final_equity": 14155.685188097596,
         "total_trades": 148,
         "winning_trades": 73,
         "losing_trades": 75,
         "win_rate": 49.32432432432432,
-        "average_pnl": 28.93874130186505,
-        "total_pnl": 4282.933712676027,
-        "max_drawdown": 1537.172259064113,
-        "net_return_pct": 42.829337126760365,
+        "average_pnl": 28.07895397363234,
+        "total_pnl": 4155.685188097586,
+        "max_drawdown": 1549.6592281299363,
+        "net_return_pct": 41.556851880975955,
         "first_trade_date": "2026-01-06 08:20:00+00:00",
         "last_trade_date": "2026-03-30 18:40:00+00:00"
       }
