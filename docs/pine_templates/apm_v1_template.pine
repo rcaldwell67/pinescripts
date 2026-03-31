@@ -74,9 +74,9 @@ strategy(
 	shorttitle        = "APM v2.5",
 	overlay           = true,
 	pyramiding        = 0,
-	initial_capital   = 10000,
+	initial_capital = 100000,
 	default_qty_type  = strategy.cash,
-	default_qty_value = 10000,        // overridden by risk-based sizing below
+	default_qty_value = 100000,        // overridden by risk-based sizing below
 	commission_type   = strategy.commission.percent,
 	commission_value  = 0.06,
 	slippage          = 1)
@@ -162,9 +162,9 @@ i_risk_pct   = input.float(1.0,  "Risk per trade (%)",   group=G_RISK, minval=0.
 	shorttitle        = "APM v1.1 5m",
 	overlay           = true,
 	pyramiding        = 0,
-	initial_capital   = 10000,
+	initial_capital = 100000,
 	default_qty_type  = strategy.cash,
-	default_qty_value = 10000,        // overridden by risk-based sizing
+	default_qty_value = 100000,        // overridden by risk-based sizing
 	commission_type   = strategy.commission.percent,
 	commission_value  = 0.06,
 	slippage          = 1)
@@ -175,9 +175,9 @@ strategy(
 	shorttitle      = "APMv1.1-5m", // <= 10 chars for MCP
 	overlay         = true,
 	pyramiding      = 0,
-	initial_capital = 10000,
+	initial_capital = 100000,
 	default_qty_type = strategy.cash,
-	default_qty_value = 10000,        // overridden by risk-based sizing
+	default_qty_value = 100000,        // overridden by risk-based sizing
 	commission_type = strategy.commission.percent,
 	commission_value = 0.06,
 	slippage        = 1

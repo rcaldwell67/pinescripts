@@ -4,7 +4,7 @@
       {
         "symbol": "CLM",
         "version": "v1",
-        "beginning_equity": 10000.0,
+        "beginning_equity": 100000.0,
         "final_equity": 10582.48316342843,
         "total_trades": 3,
         "winning_trades": 3,
@@ -24,7 +24,7 @@
       {
         "symbol": "CRF",
         "version": "v1",
-        "beginning_equity": 10000.0,
+        "beginning_equity": 100000.0,
         "final_equity": 10763.703830127879,
         "total_trades": 3,
         "winning_trades": 3,
@@ -44,7 +44,7 @@
       {
         "symbol": "ETH/USD",
         "version": "v1",
-        "beginning_equity": 10000.0,
+        "beginning_equity": 100000.0,
         "final_equity": 22701.737933879365,
         "total_trades": 150,
         "winning_trades": 84,
@@ -64,7 +64,7 @@
       {
         "symbol": "BTC/USD",
         "version": "v1",
-        "beginning_equity": 10000.0,
+        "beginning_equity": 100000.0,
         "final_equity": 14282.933712676037,
         "total_trades": 148,
         "winning_trades": 73,

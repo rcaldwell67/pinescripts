@@ -53,7 +53,7 @@ def _metrics_for_trades(symbol: str, version: str, trades, df) -> dict[str, obje
     equity_col = "equity"
 
     total_trades = len(trades)
-    initial_equity = float(trades[equity_col].iloc[0] - trades[pnl_col].iloc[0]) if total_trades else 10000.0
+    initial_equity = float(trades[equity_col].iloc[0] - trades[pnl_col].iloc[0]) if total_trades else 100000.0
     final_equity = float(trades[equity_col].iloc[-1]) if total_trades else initial_equity
     win_trades = int((trades[pnl_col] > 0).sum()) if total_trades else 0
     loss_trades = int((trades[pnl_col] <= 0).sum()) if total_trades else 0

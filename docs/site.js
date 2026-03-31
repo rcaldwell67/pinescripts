@@ -280,7 +280,7 @@ function getNormalizedSymbolKey(sym) {
 
   console.log('[DEBUG] After DOMContentLoaded event handler registration');
 
-  const INITIAL_CAPITAL = 10000;
+  const INITIAL_CAPITAL = 100000;
 
   function getActiveRows() {
     return activeTab === 'all'

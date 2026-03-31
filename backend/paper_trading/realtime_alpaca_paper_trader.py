@@ -317,7 +317,7 @@ def main() -> int:
 
     api = AlpacaPaperAPI()
     account = api.get_account()
-    account_equity = float(account.get("equity") or account.get("last_equity") or 10000.0)
+    account_equity = float(account.get("equity") or account.get("last_equity") or 100000.0)
 
     conn = sqlite3.connect(str(DB_PATH), timeout=30)
     conn.execute("PRAGMA journal_mode=DELETE")
