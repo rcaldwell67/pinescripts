@@ -796,17 +796,84 @@ function renderTradeTable(rows) {
       <td>$${r.equity?.toFixed(2)}</td>
     </tr>`;
   }).join('')}</tbody></table>${pagCtrl}`;
+
+  function parseDashboardTimeValue(value) {
+    if (!value) return 0;
+    const ms = new Date(String(value).replace(' ', 'T')).getTime();
+    return Number.isFinite(ms) ? ms : 0;
+  }
+
+  function getAllSymbolsCumulativeEquity() {
+    const db = window._SQL_DB;
+    if (!db) return null;
+    const modeFilter = activeDataset === 'backtest' ? 'backtest' : (activeDataset === 'paper' ? 'paper' : 'live');
+    const rowsBySymbolVersion = new Map();
+    try {
+      const stmt = db.prepare('SELECT symbol, version, equity, dollar_pnl, direction, result, entry_time, exit_time FROM trades WHERE mode = ?');
+      stmt.bind([modeFilter]);
+      while (stmt.step()) {
+        const r = stmt.getAsObject();
+        const symKey = getNormalizedSymbolKey(r.symbol || '');
+        const verKey = String(r.version || 'v1').toLowerCase();
+        if (!symKey) continue;
+        const key = `${symKey}|${verKey}`;
+        if (!rowsBySymbolVersion.has(key)) rowsBySymbolVersion.set(key, []);
+        rowsBySymbolVersion.get(key).push({
+          symbol: symKey,
+          version: verKey,
+          equity: Number(r.equity),
+          dollar_pnl: Number(r.dollar_pnl),
+          direction: r.direction,
+          result: r.result,
+          entry_time: r.entry_time,
+          exit_time: r.exit_time,
+        });
+      }
+      stmt.free();
+    } catch (e) {
+      console.error('Error computing all-symbol cumulative equity:', e);
+      return null;
+    }
+
+    const perSymbol = new Map();
+    for (const groupedRows of rowsBySymbolVersion.values()) {
+      if (!groupedRows.length) continue;
+      groupedRows.sort((a, b) => parseDashboardTimeValue(a.entry_time || a.exit_time) - parseDashboardTimeValue(b.entry_time || b.exit_time));
+      const metrics = calcMetrics(groupedRows);
+      if (!metrics) continue;
+      const symbolKey = groupedRows[0].symbol;
+      if (!perSymbol.has(symbolKey)) {
+        perSymbol.set(symbolKey, { startCapital: metrics.beginEq, totalNet: 0 });
+      }
+      const current = perSymbol.get(symbolKey);
+      current.totalNet += (metrics.finalEquity - metrics.beginEq);
+      if ((!Number.isFinite(current.startCapital) || current.startCapital <= 0) && Number.isFinite(metrics.beginEq) && metrics.beginEq > 0) {
+        current.startCapital = metrics.beginEq;
+      }
+    }
+
+    if (!perSymbol.size) return null;
+    let baseline = 0;
+    let equity = 0;
+    for (const item of perSymbol.values()) {
+      const start = Number.isFinite(item.startCapital) && item.startCapital > 0 ? item.startCapital : DEFAULT_INITIAL_CAPITAL;
+      baseline += start;
+      equity += (start + item.totalNet);
+    }
+    return { equity, baseline };
+  }
 }
 
 function buildTransactions() {
   const txns = [];
   const symData = INSTRUMENTS[activeSym];
+    const totalAllSymbolsEl = document.getElementById('totalEquityAllSymbolsVal');
   for (const [ver, cfg] of Object.entries(symData.versions)) {
     const rows = loaded[activeSym][ver] || [];
-    let prevEquity = getInitialCapitalFromRows(rows);
+    const fmtBal = (n, el, baseline = startCapital) => {
     for (const r of rows) {
       const begEquity = prevEquity;
-      const isLong = r.direction === 'long';
+      el.className = 'bal-value ' + (n > baseline ? 'positive' : n < baseline ? 'negative' : 'neutral');
       txns.push({ time:r.entry_time, sym:activeSym, ver, cfg, symLabel:symData.label,
         action: isLong?'BUY':'SELL', price:r.entry_price, type:'Open',
         direction:r.direction, pnl:null, result:null, begEquity, endEquity:null });
@@ -1206,6 +1273,15 @@ function updateBalanceBar(rows) {
     fmtBal(cumulativeEquity, totalEl);
     fmtBal(cumulativeEquity, totalAllEl);
   }
+
+  const allSymbolsTotals = getAllSymbolsCumulativeEquity();
+  if (!totalAllSymbolsEl) return;
+  if (!allSymbolsTotals || !Number.isFinite(allSymbolsTotals.equity)) {
+    totalAllSymbolsEl.textContent = '-';
+    totalAllSymbolsEl.className = 'bal-value neutral';
+    return;
+  }
+  fmtBal(allSymbolsTotals.equity, totalAllSymbolsEl, allSymbolsTotals.baseline);
 }
 
 function render() {
