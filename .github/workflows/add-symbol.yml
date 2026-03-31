@@ -4,6 +4,10 @@ on:
   issues:
     types: [opened, edited, labeled, reopened]
 
+concurrency:
+  group: db-writer-main
+  cancel-in-progress: false
+
 jobs:
   add-symbol:
     if: ${{ (startsWith(github.event.issue.title, 'Symbol Addition Request:') || startsWith(github.event.issue.title, 'Add symbol:')) && !contains(github.event.issue.labels.*.name, 'add-symbol') }}

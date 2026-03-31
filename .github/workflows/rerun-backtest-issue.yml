@@ -7,6 +7,10 @@ on:
     # Only run if the issue title starts with 'Rerun Backtest:'
     # This is enforced in the workflow jobs below
 
+concurrency:
+  group: db-writer-main
+  cancel-in-progress: false
+
 jobs:
   rerun-backtest:
     if: startsWith(github.event.issue.title, 'Rerun Backtest:')

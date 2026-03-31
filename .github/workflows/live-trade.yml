@@ -21,7 +21,7 @@ on:
         type: string
 
 concurrency:
-  group: live-trade-manual
+  group: db-writer-main
   cancel-in-progress: false
 
 jobs:

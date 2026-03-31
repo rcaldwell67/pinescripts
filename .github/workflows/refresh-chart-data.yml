@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: refresh-chart-data
+  group: db-writer-main
   cancel-in-progress: false
 
 jobs:

@@ -19,6 +19,21 @@ on:
         required: false
         default: "realtime"
         type: string
+      max_open_positions:
+        description: "Realtime mode: max simultaneous open positions"
+        required: false
+        default: "8"
+        type: string
+      close_on_signal:
+        description: "Realtime mode: close existing position when a fresh signal appears"
+        required: false
+        default: "false"
+        type: string
+      stream_bars:
+        description: "Realtime mode (manual only): trigger evaluations from Alpaca websocket bars"
+        required: false
+        default: "false"
+        type: string
       force_reset:
         description: "Delete and regenerate all paper trades (instead of appending new)"
         required: false
@@ -26,7 +41,7 @@ on:
         type: string
 
 concurrency:
-  group: paper-trade-generic
+  group: db-writer-main
   cancel-in-progress: false
 
 jobs:
@@ -64,6 +79,9 @@ jobs:
           VERSION="${{ github.event.inputs.version || 'v1' }}"
           SYMBOL="${{ github.event.inputs.symbol || '' }}"
           EXECUTION_MODE="${{ github.event.inputs.execution_mode || 'realtime' }}"
+          MAX_OPEN_POSITIONS="${{ github.event.inputs.max_open_positions || '8' }}"
+          CLOSE_ON_SIGNAL="${{ github.event.inputs.close_on_signal || 'false' }}"
+          STREAM_BARS="${{ github.event.inputs.stream_bars || 'false' }}"
           FORCE_RESET_FLAG=""
           if [[ "${{ github.event.inputs.force_reset || 'false' }}" == "true" ]]; then
             FORCE_RESET_FLAG="--force-reset"
@@ -89,7 +107,17 @@ jobs:
             fi
           else
             echo "Running realtime Alpaca paper trading ($TARGET_FLAG) for version $VERSION"
-            python backend/paper_trading/realtime_alpaca_paper_trader.py $TARGET_FLAG --version "$VERSION"
+            EXTRA_FLAGS="--max-open-positions ${MAX_OPEN_POSITIONS}"
+            if [[ "${CLOSE_ON_SIGNAL,,}" == "true" || "${CLOSE_ON_SIGNAL}" == "1" || "${CLOSE_ON_SIGNAL,,}" == "yes" ]]; then
+              EXTRA_FLAGS+=" --close-on-signal"
+            fi
+
+            # Keep websocket mode manual-only to avoid long-running stream sessions on schedule triggers.
+            if [[ "${{ github.event_name }}" == "workflow_dispatch" && ( "${STREAM_BARS,,}" == "true" || "${STREAM_BARS}" == "1" || "${STREAM_BARS,,}" == "yes" ) ]]; then
+              EXTRA_FLAGS+=" --stream-bars"
+            fi
+
+            python backend/paper_trading/realtime_alpaca_paper_trader.py $TARGET_FLAG --version "$VERSION" $EXTRA_FLAGS
           fi
 
       - name: Verify parity (v1 simulation)

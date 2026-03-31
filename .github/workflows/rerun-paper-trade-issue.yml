@@ -4,6 +4,10 @@ on:
   issues:
     types: [opened]
 
+concurrency:
+  group: db-writer-main
+  cancel-in-progress: false
+
 jobs:
   rerun-paper-trade:
     if: startsWith(github.event.issue.title, 'Rerun Paper Trading:')
@@ -53,12 +57,17 @@ jobs:
 
       - name: Run paper trading for symbol and version
         run: |
-          echo "Running paper trading for symbol ${{ steps.extract.outputs.symbol }} version ${{ steps.extract.outputs.version }}..."
-          if [[ "${{ steps.extract.outputs.version }}" == "v1" ]]; then
-            python reset_v1_aligned_backtest_paper.py --symbol "${{ steps.extract.outputs.symbol }}"
-          else
-            python backend/paper_trading/paper_trade_backtrader_alpaca.py --symbol "${{ steps.extract.outputs.symbol }}" --version "${{ steps.extract.outputs.version }}"
+          set -euo pipefail
+          SYMBOL="${{ steps.extract.outputs.symbol }}"
+          VERSION="${{ steps.extract.outputs.version }}"
+          echo "Running realtime paper trading for symbol ${SYMBOL} version ${VERSION}..."
+
+          if [[ "$VERSION" != "v1" ]]; then
+            echo "Issue rerun supports realtime Alpaca paper trading for v1 only. Received: $VERSION" >&2
+            exit 1
           fi
+
+          python backend/paper_trading/realtime_alpaca_paper_trader.py --symbol "$SYMBOL" --version "$VERSION"
 
       - name: Commit updated DB
         shell: bash

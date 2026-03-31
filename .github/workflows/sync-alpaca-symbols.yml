@@ -11,6 +11,10 @@ on:
       - '.github/workflows/sync-alpaca-symbols.yml'
       - 'backend/data/sync_alpaca_symbols.py'
 
+concurrency:
+  group: db-writer-main
+  cancel-in-progress: false
+
 jobs:
   sync-symbols:
     runs-on: ubuntu-latest
