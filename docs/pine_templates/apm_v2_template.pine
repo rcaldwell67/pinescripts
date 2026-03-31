@@ -8,7 +8,7 @@
 // Adaptive Pullback Momentum v2.0
 // ...existing code...
 
-strategy("Adaptive Pullback Momentum v2.5", shorttitle="APM v2.5", overlay=true, pyramiding=0, initial_capital=100000, default_qty_type=strategy.cash, default_qty_value=100000, commission_type=strategy.commission.percent, commission_value=0.06, slippage=1)
+strategy("Adaptive Pullback Momentum v2.5", shorttitle="APM v2.5", overlay=true, pyramiding=0, initial_capital=1000, default_qty_type=strategy.cash, default_qty_value=1000, commission_type=strategy.commission.percent, commission_value=0.06, slippage=1)
 
 // ─── Inputs ────────────────────────────────────────────────────────────────
 // ─── Inputs ────────────────────────────────────────────────────────────────

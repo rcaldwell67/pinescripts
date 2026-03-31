@@ -27,7 +27,7 @@ DEFAULT_V1_PARAMS: dict[str, Any] = {
         "trail_dist_atr_mult": 0.1,
         "risk_pct": 2.0,
         "max_bars_in_trade": 100,
-        "initial_equity": 100000.0,
+        "initial_equity": 1000.0,
     },
 }
 
