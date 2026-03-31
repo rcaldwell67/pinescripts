@@ -280,7 +280,32 @@ function getNormalizedSymbolKey(sym) {
 
   console.log('[DEBUG] After DOMContentLoaded event handler registration');
 
-  const INITIAL_CAPITAL = 100000;
+  const DEFAULT_INITIAL_CAPITAL = 1000;
+
+  function getInitialCapitalFromRows(rows) {
+    if (!rows || !rows.length) return DEFAULT_INITIAL_CAPITAL;
+    if (rows[0]._summary) {
+      const s = rows[0]._summary || {};
+      const beginEq = Number(s.beginning_equity);
+      return Number.isFinite(beginEq) && beginEq > 0 ? beginEq : DEFAULT_INITIAL_CAPITAL;
+    }
+    const first = rows[0] || {};
+    const eq = Number(first.equity);
+    const pnl = Number(first.dollar_pnl);
+    if (Number.isFinite(eq) && Number.isFinite(pnl)) {
+      const beginEq = eq - pnl;
+      if (Number.isFinite(beginEq) && beginEq > 0) return beginEq;
+    }
+    return DEFAULT_INITIAL_CAPITAL;
+  }
+
+  function getSymbolInitialCapital(sym) {
+    const byVersion = loaded?.[sym] || {};
+    for (const rows of Object.values(byVersion)) {
+      if (rows && rows.length) return getInitialCapitalFromRows(rows);
+    }
+    return DEFAULT_INITIAL_CAPITAL;
+  }
 
   function getActiveRows() {
     return activeTab === 'all'
@@ -463,6 +488,7 @@ async function pollWorkflowStatus(issueNumber, sym, ver, workflowName = 'Rerun B
 // Returns null if no rows provided.
 function calcMetrics(rows) {
   if (!rows || !rows.length) return null;
+  const beginEqFromRows = getInitialCapitalFromRows(rows);
   if (rows[0]._summary) {
     const s = rows[0]._summary;
     const notes = (rows[0]._notes || '').toLowerCase();
@@ -470,7 +496,7 @@ function calcMetrics(rows) {
     const wins = Number(s.winning_trades || 0);
     const losses = Number(s.losing_trades || Math.max(0, n - wins));
     const winRate = Number(s.win_rate || (n ? (wins / n * 100) : 0));
-    const beginEq = Number(s.beginning_equity || INITIAL_CAPITAL);
+    const beginEq = Number(s.beginning_equity || beginEqFromRows || DEFAULT_INITIAL_CAPITAL);
     const finalEquity = Number(s.final_equity || beginEq);
     const netPnl = Number(s.total_pnl || (finalEquity - beginEq));
     const netPnlPct = Number(s.net_return_pct || (beginEq ? (netPnl / beginEq * 100) : 0));
@@ -507,6 +533,7 @@ function calcMetrics(rows) {
       shortWR,
       longPnl,
       shortPnl,
+      beginEq,
     };
   }
   const n = rows.length;
@@ -521,12 +548,12 @@ function calcMetrics(rows) {
   const grossWin = wins.reduce((s, r) => s + r.dollar_pnl, 0);
   const grossLoss = Math.abs(losses.reduce((s, r) => s + r.dollar_pnl, 0));
   const netPnl = grossWin - grossLoss;
-  const netPnlPct = (netPnl / INITIAL_CAPITAL) * 100;
+  const netPnlPct = beginEqFromRows ? (netPnl / beginEqFromRows) * 100 : 0;
   const pf = grossLoss === 0 ? Infinity : grossWin / grossLoss;
   const avgWin = wins.length ? grossWin / wins.length : 0;
   const avgLoss = losses.length ? -(grossLoss / losses.length) : 0;
   const winRate = (wins.length / n) * 100;
-  let peak = INITIAL_CAPITAL, maxDD = 0;
+  let peak = beginEqFromRows, maxDD = 0;
   for (const r of rows) {
     if (r.equity > peak) peak = r.equity;
     const dd = peak > 0 ? (peak - r.equity) / peak * 100 : 0;
@@ -539,7 +566,7 @@ function calcMetrics(rows) {
   const shortWR = shortRows.length ? shortRows.filter(r => r.dollar_pnl > 0).length / shortRows.length * 100 : 0;
   const longPnl = longRows.reduce((s, r) => s + r.dollar_pnl, 0);
   const shortPnl = shortRows.reduce((s, r) => s + r.dollar_pnl, 0);
-  return { n, longs, shorts, winRate, tpCount, slCount, trailCount, mbCount, netPnl, netPnlPct, pf, maxDD, finalEquity, avgWin, avgLoss, longWR, shortWR, longPnl, shortPnl };
+  return { n, longs, shorts, winRate, tpCount, slCount, trailCount, mbCount, netPnl, netPnlPct, pf, maxDD, finalEquity, avgWin, avgLoss, longWR, shortWR, longPnl, shortPnl, beginEq: beginEqFromRows };
 }
 
 // No mode-toggle buttons exist in the current UI; this is a no-op placeholder.
@@ -570,10 +597,10 @@ function renderCards(rows) {
   cardEl.innerHTML = `
     <div class="card"><div class="label">Total Trades</div><div class="value neutral">${m.n}</div><div class="sub">${m.longs}L / ${m.shorts}S</div></div>
     <div class="card"><div class="label">Win Rate</div><div class="value ${m.winRate>=60?'positive':m.winRate>=50?'neutral':'negative'}">${m.winRate.toFixed(1)}%</div><div class="sub">${m.tpCount} TP - ${m.slCount} SL - ${m.trailCount} Trail${m.mbCount?' - '+m.mbCount+' MB':''}</div></div>
-    <div class="card"><div class="label">Net P&L</div><div class="value ${clsVal(m.netPnl)}">${fmt$(m.netPnl)}</div><div class="sub">${fmtPct(m.netPnlPct)} on $${INITIAL_CAPITAL.toLocaleString()}</div></div>
+    <div class="card"><div class="label">Net P&L</div><div class="value ${clsVal(m.netPnl)}">${fmt$(m.netPnl)}</div><div class="sub">${fmtPct(m.netPnlPct)} on $${m.beginEq.toLocaleString()}</div></div>
     <div class="card"><div class="label">Profit Factor</div><div class="value ${m.pf>=2?'positive':m.pf>=1?'neutral':'negative'}">${fmtPF(m.pf, 3)}</div><div class="sub">Gross Win / Gross Loss</div></div>
     <div class="card"><div class="label">Max Drawdown</div><div class="value ${m.maxDD<5?'positive':m.maxDD<15?'neutral':'negative'}">-${m.maxDD.toFixed(2)}%</div><div class="sub">Peak-to-trough</div></div>
-    <div class="card"><div class="label">Final Equity</div><div class="value ${clsVal(m.finalEquity-INITIAL_CAPITAL)}">$${m.finalEquity.toFixed(2)}</div><div class="sub">Started $${INITIAL_CAPITAL.toLocaleString()}</div></div>`;
+    <div class="card"><div class="label">Final Equity</div><div class="value ${clsVal(m.finalEquity-m.beginEq)}">$${m.finalEquity.toFixed(2)}</div><div class="sub">Started $${m.beginEq.toLocaleString()}</div></div>`;
 }
 
 function renderEquityChart(rows) {
@@ -603,9 +630,10 @@ function renderEquityChart(rows) {
   }
   const allPts = datasets.flatMap(d=>d.data);
   if (allPts.length) {
+    const baselineCapital = activeTab === 'all' ? getSymbolInitialCapital(activeSym) : (calcMetrics(rows)?.beginEq || DEFAULT_INITIAL_CAPITAL);
     const minX = allPts.reduce((a,b)=>a.x<b.x?a:b,allPts[0]).x;
     const maxX = allPts.reduce((a,b)=>a.x>b.x?a:b,allPts[0]).x;
-    datasets.push({ label:'Baseline', data:[{x:minX,y:INITIAL_CAPITAL},{x:maxX,y:INITIAL_CAPITAL}], borderColor:'#30363d', borderWidth:1, borderDash:[4,4], pointRadius:0 });
+    datasets.push({ label:'Baseline', data:[{x:minX,y:baselineCapital},{x:maxX,y:baselineCapital}], borderColor:'#30363d', borderWidth:1, borderDash:[4,4], pointRadius:0 });
   }
   charts.equity = new Chart(ctx, {
     type:'line', data:{ datasets },
@@ -1148,9 +1176,10 @@ function updateBalanceBar(rows) {
   const endEl   = document.getElementById('endingBalanceVal');
   const totalEl = document.getElementById('totalEquityVal');
   const vers = INSTRUMENTS[activeSym].versions;
+  const startCapital = getSymbolInitialCapital(activeSym);
   const fmtBal = (n, el) => {
     el.textContent = '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    el.className = 'bal-value ' + (n > INITIAL_CAPITAL ? 'positive' : n < INITIAL_CAPITAL ? 'negative' : 'neutral');
+    el.className = 'bal-value ' + (n > startCapital ? 'positive' : n < startCapital ? 'negative' : 'neutral');
   };
 
   // Ending balance: only meaningful when a single version is selected
@@ -1161,14 +1190,16 @@ function updateBalanceBar(rows) {
     isNaN(eq) ? (endEl.textContent = '-', endEl.className = 'bal-value neutral') : fmtBal(eq, endEl);
   }
 
-  // Total equity: sum net profits from every loaded version + one INITIAL_CAPITAL base
-  const totalNetProfit = Object.values(loaded[activeSym])
+  // Total equity: sum net profits from every loaded version + one start-capital base.
+  const versionMetrics = Object.values(loaded[activeSym])
     .filter(v => v && v.length)
-    .reduce((sum, v) => sum + (v[v.length - 1].equity - INITIAL_CAPITAL), 0);
-  if (totalNetProfit === 0 && Object.values(loaded[activeSym]).every(v => !v?.length)) {
+    .map(v => calcMetrics(v))
+    .filter(Boolean);
+  const totalNetProfit = versionMetrics.reduce((sum, m) => sum + (m.finalEquity - m.beginEq), 0);
+  if (totalNetProfit === 0 && versionMetrics.length === 0) {
     totalEl.textContent = '-'; totalEl.className = 'bal-value neutral';
   } else {
-    fmtBal(INITIAL_CAPITAL + totalNetProfit, totalEl);
+    fmtBal(startCapital + totalNetProfit, totalEl);
   }
 }
 
