@@ -1,0 +1,112 @@
+name: Rerun Live Trading (via Issue)
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  enforce-live-gate:
+    if: startsWith(github.event.issue.title, 'Rerun Live Trading:')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Require explicit approval label
+        if: ${{ !contains(github.event.issue.labels.*.name, 'approved-live-trade') }}
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            Live trading rerun was blocked.
+
+            Required label: `approved-live-trade`
+
+            Add the label and reopen a new rerun issue request.
+
+      - name: Close unapproved live rerun issue
+        if: ${{ !contains(github.event.issue.labels.*.name, 'approved-live-trade') }}
+        uses: peter-evans/close-issue@v3
+        with:
+          issue-number: ${{ github.event.issue.number }}
+
+  rerun-live-trade:
+    if: startsWith(github.event.issue.title, 'Rerun Live Trading:') && contains(github.event.issue.labels.*.name, 'approved-live-trade')
+    needs: enforce-live-gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+    env:
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
+      ALLOW_ALPACA_LIVE_TRADING: "true"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Extract symbol and version from issue title
+        id: extract
+        run: |
+          python - <<'PY'
+          import os
+          import re
+
+          title = os.environ.get('ISSUE_TITLE', '')
+          match = re.match(r'^Rerun Live Trading:\s+(.+?)\s+(v\d+)\s*$', title, re.IGNORECASE)
+          if not match:
+              raise SystemExit(f'Could not parse symbol/version from issue title: {title!r}')
+
+          symbol = match.group(1).strip().upper()
+          version = match.group(2).strip().lower()
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as f:
+              f.write(f'symbol={symbol}\n')
+              f.write(f'version={version}\n')
+          PY
+        env:
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+
+      - name: Run live trading for symbol and version
+        run: |
+          echo "Running live trading for symbol ${{ steps.extract.outputs.symbol }} version ${{ steps.extract.outputs.version }}..."
+          python backend/live_trading/realtime_alpaca_live_trader.py --symbol "${{ steps.extract.outputs.symbol }}" --version "${{ steps.extract.outputs.version }}"
+
+      - name: Validate live fill/trade consistency
+        run: |
+          python backend/live_trading/verify_live_consistency.py --symbol "${{ steps.extract.outputs.symbol }}" --version "${{ steps.extract.outputs.version }}"
+
+      - name: Commit updated DB
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/data/tradingcopilot.db
+          if git diff --cached --quiet; then
+            echo "No DB changes to commit."
+          else
+            git commit -m "chore: rerun live trading ${{ steps.extract.outputs.symbol }} ${{ steps.extract.outputs.version }}"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+
+      - name: Comment with result
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            ✅ Live-trading rerun workflow completed for ${{ steps.extract.outputs.symbol }} ${{ steps.extract.outputs.version }}.
+
+      - name: Close issue
+        uses: peter-evans/close-issue@v3
+        with:
+          issue-number: ${{ github.event.issue.number }}

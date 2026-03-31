@@ -101,6 +101,7 @@ let tradePageSize = 25;
 let txPage = 1;
 let txPageSize = 25;
 const PAPER_TRADING_SUPPORTED_VERSIONS = new Set(['v1']);
+const LIVE_TRADING_SUPPORTED_VERSIONS = new Set(['v1']);
 let pendingDatasetSymbol = '';
 
 function getSymbolAliases(sym) {
@@ -360,17 +361,21 @@ function buildTabs() {
   let rerunBtn = document.getElementById(rerunBtnId);
   const shouldShowBacktest = activeTab !== 'all' && activeDataset === 'backtest';
   const shouldShowPaper = activeTab !== 'all' && activeDataset === 'paper' && PAPER_TRADING_SUPPORTED_VERSIONS.has(activeTab);
-  if (shouldShowBacktest || shouldShowPaper) {
+  const shouldShowLive = activeTab !== 'all' && activeDataset === 'live' && LIVE_TRADING_SUPPORTED_VERSIONS.has(activeTab);
+  if (shouldShowBacktest || shouldShowPaper || shouldShowLive) {
     if (!rerunBtn) {
       rerunBtn = document.createElement('button');
       rerunBtn.id = rerunBtnId;
       rerunBtn.style = 'margin-left:16px;padding:6px 18px;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;';
       tabEl.appendChild(rerunBtn);
     }
-    rerunBtn.textContent = shouldShowBacktest ? 'Rerun Backtest' : 'Rerun Paper Trading';
+    rerunBtn.textContent = shouldShowBacktest
+      ? 'Rerun Backtest'
+      : (shouldShowPaper ? 'Rerun Paper Trading' : 'Rerun Live Trading');
     rerunBtn.onclick = function() {
       if (shouldShowBacktest) rerunBacktest(activeSym, activeTab);
-      else rerunPaperTrading(activeSym, activeTab);
+      else if (shouldShowPaper) rerunPaperTrading(activeSym, activeTab);
+      else rerunLiveTrading(activeSym, activeTab);
     };
     tabEl.appendChild(rerunBtn);
     rerunBtn.style.display = '';
@@ -382,10 +387,11 @@ function openWorkflowIssue(workflowType, symbol, version) {
   const sym = symbol.toUpperCase();
   const ver = version.toUpperCase();
   const isPaper = workflowType === 'paper';
-  const workflowLabel = isPaper ? 'Paper Trading' : 'Backtest';
+  const isLive = workflowType === 'live';
+  const workflowLabel = isLive ? 'Live Trading' : (isPaper ? 'Paper Trading' : 'Backtest');
   const issueTitle = encodeURIComponent(`Rerun ${workflowLabel}: ${sym} ${ver}`);
   const issueBody = encodeURIComponent(
-    `Please rerun ${isPaper ? 'paper trading' : 'the backtest'} for ${sym} version ${ver}.\n\n_This request was generated from the dashboard UI._`
+    `Please rerun ${isLive ? 'live trading' : (isPaper ? 'paper trading' : 'the backtest')} for ${sym} version ${ver}.\n\n_This request was generated from the dashboard UI._`
   );
   const url = `https://github.com/rcaldwell67/pinescripts/issues/new?title=${issueTitle}&body=${issueBody}`;
   window.open(url, '_blank');
@@ -398,6 +404,10 @@ function rerunBacktest(symbol, version) {
 
 function rerunPaperTrading(symbol, version) {
   openWorkflowIssue('paper', symbol, version);
+}
+
+function rerunLiveTrading(symbol, version) {
+  openWorkflowIssue('live', symbol, version);
 }
 
 function updateWorkflowStatus(msg, color) {
