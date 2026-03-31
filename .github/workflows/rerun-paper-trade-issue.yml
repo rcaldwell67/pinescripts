@@ -55,7 +55,7 @@ jobs:
         run: |
           echo "Running paper trading for symbol ${{ steps.extract.outputs.symbol }} version ${{ steps.extract.outputs.version }}..."
           if [[ "${{ steps.extract.outputs.version }}" == "v1" ]]; then
-            python backend/paper_trading/realtime_alpaca_paper_trader.py --symbol "${{ steps.extract.outputs.symbol }}" --version "${{ steps.extract.outputs.version }}"
+            python reset_v1_aligned_backtest_paper.py --symbol "${{ steps.extract.outputs.symbol }}"
           else
             python backend/paper_trading/paper_trade_backtrader_alpaca.py --symbol "${{ steps.extract.outputs.symbol }}" --version "${{ steps.extract.outputs.version }}"
           fi

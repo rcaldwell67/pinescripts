@@ -11,7 +11,7 @@ import argparse
 import json
 import sqlite3
 import sys
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
@@ -27,7 +27,7 @@ VERSION_NOTE = VERSION_MAP[VERSION]
 
 
 def _backup_db(db_path: Path) -> Path:
-    stamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     backup = db_path.with_name(f"{db_path.stem}.pre_align_v1_{stamp}{db_path.suffix}")
     backup.write_bytes(db_path.read_bytes())
     return backup

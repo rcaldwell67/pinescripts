@@ -76,8 +76,17 @@ jobs:
           fi
 
           if [[ "$EXECUTION_MODE" == "simulation" ]]; then
-            echo "Running simulation paper trading ($TARGET_FLAG) for version $VERSION"
-            python backend/paper_trading/paper_trade_backtrader_alpaca.py $TARGET_FLAG --version "$VERSION" $FORCE_RESET_FLAG
+            if [[ "$VERSION" == "v1" ]]; then
+              echo "Running aligned v1 backtest/paper regeneration ($TARGET_FLAG)"
+              if [[ -n "$SYMBOL" ]]; then
+                python reset_v1_aligned_backtest_paper.py --symbol "$SYMBOL"
+              else
+                python reset_v1_aligned_backtest_paper.py
+              fi
+            else
+              echo "Running simulation paper trading ($TARGET_FLAG) for version $VERSION"
+              python backend/paper_trading/paper_trade_backtrader_alpaca.py $TARGET_FLAG --version "$VERSION" $FORCE_RESET_FLAG
+            fi
           else
             echo "Running realtime Alpaca paper trading ($TARGET_FLAG) for version $VERSION"
             python backend/paper_trading/realtime_alpaca_paper_trader.py $TARGET_FLAG --version "$VERSION"
