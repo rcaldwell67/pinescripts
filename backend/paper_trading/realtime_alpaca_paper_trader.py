@@ -19,8 +19,10 @@ import os
 import sqlite3
 import sys
 import time
+from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
+from threading import Event, Lock, Thread
 from typing import Any
 
 import requests
@@ -37,6 +39,81 @@ from v1_params import get_v1_params
 
 ALPACA_BASE = "https://paper-api.alpaca.markets"
 V1_PARAMS = get_v1_params()
+
+
+class AlpacaBarStreamer:
+    """Optional live bar streamer for event-driven symbol checks."""
+
+    def __init__(self) -> None:
+        self._threads: list[Thread] = []
+        self._streams: list[Any] = []
+        self._pending: dict[str, bool] = defaultdict(bool)
+        self._lock = Lock()
+        self._stop = Event()
+
+    def _mark_symbol(self, symbol: str) -> None:
+        with self._lock:
+            self._pending[symbol] = True
+
+    def drain_ready_symbols(self) -> list[str]:
+        with self._lock:
+            ready = [s for s, v in self._pending.items() if v]
+            for s in ready:
+                self._pending[s] = False
+            return ready
+
+    def start(self, symbols: list[str]) -> bool:
+        key = os.getenv("ALPACA_PAPER_API_KEY") or os.getenv("ALPACA_API_KEY")
+        secret = os.getenv("ALPACA_PAPER_API_SECRET") or os.getenv("ALPACA_API_SECRET")
+        if not key or not secret:
+            return False
+
+        try:
+            from alpaca.data.live import CryptoDataStream, StockDataStream
+        except Exception:
+            return False
+
+        crypto_symbols = [s for s in symbols if "/" in s]
+        stock_symbols = [s for s in symbols if "/" not in s]
+
+        if stock_symbols:
+            stock_stream = StockDataStream(key, secret)
+
+            async def _stock_bar(bar) -> None:
+                symbol = str(getattr(bar, "symbol", "") or "")
+                if symbol:
+                    self._mark_symbol(symbol)
+
+            stock_stream.subscribe_bars(_stock_bar, *stock_symbols)
+            self._streams.append(stock_stream)
+
+        if crypto_symbols:
+            crypto_stream = CryptoDataStream(key, secret)
+
+            async def _crypto_bar(bar) -> None:
+                symbol = str(getattr(bar, "symbol", "") or "")
+                if symbol:
+                    self._mark_symbol(symbol)
+
+            crypto_stream.subscribe_bars(_crypto_bar, *crypto_symbols)
+            self._streams.append(crypto_stream)
+
+        if not self._streams:
+            return False
+
+        for stream in self._streams:
+            t = Thread(target=stream.run, daemon=True)
+            t.start()
+            self._threads.append(t)
+        return True
+
+    def stop(self) -> None:
+        self._stop.set()
+        for stream in self._streams:
+            try:
+                stream.stop()
+            except Exception:
+                pass
 
 
 class AlpacaPaperAPI:
@@ -77,6 +154,13 @@ class AlpacaPaperAPI:
             if "404" in str(exc):
                 return None
             raise
+
+    def list_positions(self) -> list[dict[str, Any]]:
+        data = self._request("GET", "/v2/positions")
+        return data if isinstance(data, list) else []
+
+    def close_position(self, symbol: str) -> dict[str, Any]:
+        return self._request("DELETE", f"/v2/positions/{symbol}")
 
     def submit_short_bracket(self, *, symbol: str, qty: float, take_profit: float, stop_loss: float) -> dict[str, Any]:
         payload = {
@@ -204,9 +288,72 @@ def _ensure_fill_table(conn: sqlite3.Connection) -> None:
         )
         """
     )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS paper_order_trade_links (
+            order_id TEXT PRIMARY KEY,
+            symbol TEXT NOT NULL,
+            version TEXT NOT NULL,
+            trade_id INTEGER NOT NULL,
+            role TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
 
 
-def _sync_fill_events(conn: sqlite3.Connection, api: AlpacaPaperAPI, symbols: list[str], version: str) -> int:
+def _fill_exists(conn: sqlite3.Connection, activity_id: str) -> bool:
+    row = conn.execute("SELECT 1 FROM paper_fill_events WHERE activity_id = ? LIMIT 1", (activity_id,)).fetchone()
+    return bool(row)
+
+
+def _link_order_to_trade(conn: sqlite3.Connection, order_id: str, symbol: str, version: str, trade_id: int, role: str) -> None:
+    if not order_id:
+        return
+    conn.execute(
+        """
+        INSERT OR IGNORE INTO paper_order_trade_links (order_id, symbol, version, trade_id, role)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (order_id, symbol, version, trade_id, role),
+    )
+
+
+def _trade_for_order(conn: sqlite3.Connection, order_id: str) -> tuple[int, str] | None:
+    if not order_id:
+        return None
+    row = conn.execute(
+        "SELECT trade_id, role FROM paper_order_trade_links WHERE order_id = ? LIMIT 1",
+        (order_id,),
+    ).fetchone()
+    if not row:
+        return None
+    return int(row[0]), str(row[1])
+
+
+def _get_last_known_equity(conn: sqlite3.Connection, symbol: str, version: str, fallback_equity: float) -> float:
+    row = conn.execute(
+        """
+        SELECT equity
+        FROM trades
+        WHERE symbol = ? AND version = ? AND mode = 'paper' AND equity IS NOT NULL
+        ORDER BY COALESCE(exit_time, entry_time) DESC, id DESC
+        LIMIT 1
+        """,
+        (symbol, version),
+    ).fetchone()
+    if row and row[0] is not None:
+        return float(row[0])
+    return float(fallback_equity)
+
+
+def _sync_fill_events(
+    conn: sqlite3.Connection,
+    api: AlpacaPaperAPI,
+    symbols: list[str],
+    version: str,
+    account_equity: float,
+) -> int:
     _ensure_fill_table(conn)
     row = conn.execute("SELECT MAX(transaction_time) FROM paper_fill_events").fetchone()
     after = row[0] if row and row[0] else None
@@ -227,6 +374,8 @@ def _sync_fill_events(conn: sqlite3.Connection, api: AlpacaPaperAPI, symbols: li
 
         if not act_id or not db_symbol:
             continue
+        if _fill_exists(conn, act_id):
+            continue
 
         conn.execute(
             """
@@ -236,110 +385,155 @@ def _sync_fill_events(conn: sqlite3.Connection, api: AlpacaPaperAPI, symbols: li
             """,
             (act_id, db_symbol, side, qty, price, ts, order_id, json.dumps(fill)),
         )
-        if conn.total_changes <= 0:
-            continue
         inserted += 1
 
         # Mirror fills into trades table for dashboard visibility.
         # buy can open long or close short; sell can open short or close long.
+        linked = _trade_for_order(conn, order_id)
+
         if side == "buy":
-            open_short = conn.execute(
-                """
-                SELECT id, entry_price
-                FROM trades
-                WHERE symbol = ? AND version = ? AND mode = 'paper' AND direction = 'short' AND exit_time IS NULL
-                ORDER BY entry_time DESC, id DESC
-                LIMIT 1
-                """,
-                (db_symbol, version),
-            ).fetchone()
-            if open_short:
-                trade_id, entry_price = open_short
+            close_row = None
+            if linked and linked[1] == "exit":
+                close_row = conn.execute(
+                    "SELECT id, entry_price, equity FROM trades WHERE id = ? LIMIT 1",
+                    (linked[0],),
+                ).fetchone()
+            if not close_row:
+                close_row = conn.execute(
+                    """
+                    SELECT id, entry_price, equity
+                    FROM trades
+                    WHERE symbol = ? AND version = ? AND mode = 'paper' AND direction = 'short' AND exit_time IS NULL
+                    ORDER BY entry_time DESC, id DESC
+                    LIMIT 1
+                    """,
+                    (db_symbol, version),
+                ).fetchone()
+
+            if close_row:
+                trade_id, entry_price, entry_equity = close_row
                 pnl_pct = ((float(entry_price) - price) / float(entry_price) * 100.0) if entry_price else None
                 dollar_pnl = (float(entry_price) - price) * qty if entry_price else None
                 result = "TP" if (dollar_pnl or 0) > 0 else "SL"
+                base_equity = float(entry_equity) if entry_equity is not None else _get_last_known_equity(conn, db_symbol, version, account_equity)
+                close_equity = base_equity + (float(dollar_pnl) if dollar_pnl is not None else 0.0)
                 conn.execute(
                     """
                     UPDATE trades
-                    SET exit_time = ?, exit_price = ?, result = ?, pnl_pct = ?, dollar_pnl = ?
+                    SET exit_time = ?, exit_price = ?, result = ?, pnl_pct = ?, dollar_pnl = ?, equity = ?
                     WHERE id = ?
                     """,
-                    (ts, price, result, pnl_pct, dollar_pnl, trade_id),
+                    (ts, price, result, pnl_pct, dollar_pnl, close_equity, trade_id),
                 )
-            else:
-                conn.execute(
+                _link_order_to_trade(conn, order_id, db_symbol, version, int(trade_id), "exit")
+            elif not (linked and linked[1] == "entry"):
+                base_equity = _get_last_known_equity(conn, db_symbol, version, account_equity)
+                cur = conn.execute(
                     """
                     INSERT INTO trades (
                         symbol, version, mode, entry_time, exit_time, direction,
                         entry_price, exit_price, result, pnl_pct, dollar_pnl, equity
-                    ) VALUES (?, ?, 'paper', ?, NULL, 'long', ?, NULL, 'OPEN', NULL, NULL, NULL)
+                    ) VALUES (?, ?, 'paper', ?, NULL, 'long', ?, NULL, 'OPEN', NULL, NULL, ?)
                     """,
-                    (db_symbol, version, ts, price),
+                    (db_symbol, version, ts, price, base_equity),
                 )
+                _link_order_to_trade(conn, order_id, db_symbol, version, int(cur.lastrowid), "entry")
         elif side == "sell":
-            open_long = conn.execute(
-                """
-                SELECT id, entry_price
-                FROM trades
-                WHERE symbol = ? AND version = ? AND mode = 'paper' AND direction = 'long' AND exit_time IS NULL
-                ORDER BY entry_time DESC, id DESC
-                LIMIT 1
-                """,
-                (db_symbol, version),
-            ).fetchone()
-            if open_long:
-                trade_id, entry_price = open_long
+            close_row = None
+            if linked and linked[1] == "exit":
+                close_row = conn.execute(
+                    "SELECT id, entry_price, equity FROM trades WHERE id = ? LIMIT 1",
+                    (linked[0],),
+                ).fetchone()
+            if not close_row:
+                close_row = conn.execute(
+                    """
+                    SELECT id, entry_price, equity
+                    FROM trades
+                    WHERE symbol = ? AND version = ? AND mode = 'paper' AND direction = 'long' AND exit_time IS NULL
+                    ORDER BY entry_time DESC, id DESC
+                    LIMIT 1
+                    """,
+                    (db_symbol, version),
+                ).fetchone()
+
+            if close_row:
+                trade_id, entry_price, entry_equity = close_row
                 pnl_pct = ((price - float(entry_price)) / float(entry_price) * 100.0) if entry_price else None
                 dollar_pnl = (price - float(entry_price)) * qty if entry_price else None
                 result = "TP" if (dollar_pnl or 0) > 0 else "SL"
+                base_equity = float(entry_equity) if entry_equity is not None else _get_last_known_equity(conn, db_symbol, version, account_equity)
+                close_equity = base_equity + (float(dollar_pnl) if dollar_pnl is not None else 0.0)
                 conn.execute(
                     """
                     UPDATE trades
-                    SET exit_time = ?, exit_price = ?, result = ?, pnl_pct = ?, dollar_pnl = ?
+                    SET exit_time = ?, exit_price = ?, result = ?, pnl_pct = ?, dollar_pnl = ?, equity = ?
                     WHERE id = ?
                     """,
-                    (ts, price, result, pnl_pct, dollar_pnl, trade_id),
+                    (ts, price, result, pnl_pct, dollar_pnl, close_equity, trade_id),
                 )
-            else:
-                conn.execute(
+                _link_order_to_trade(conn, order_id, db_symbol, version, int(trade_id), "exit")
+            elif not (linked and linked[1] == "entry"):
+                base_equity = _get_last_known_equity(conn, db_symbol, version, account_equity)
+                cur = conn.execute(
                     """
                     INSERT INTO trades (
                         symbol, version, mode, entry_time, exit_time, direction,
                         entry_price, exit_price, result, pnl_pct, dollar_pnl, equity
-                    ) VALUES (?, ?, 'paper', ?, NULL, 'short', ?, NULL, 'OPEN', NULL, NULL, NULL)
+                    ) VALUES (?, ?, 'paper', ?, NULL, 'short', ?, NULL, 'OPEN', NULL, NULL, ?)
                     """,
-                    (db_symbol, version, ts, price),
+                    (db_symbol, version, ts, price, base_equity),
                 )
+                _link_order_to_trade(conn, order_id, db_symbol, version, int(cur.lastrowid), "entry")
     return inserted
 
 
-def _trade_one_symbol(conn: sqlite3.Connection, api: AlpacaPaperAPI, symbol: str, version: str, account_equity: float) -> None:
+def _trade_one_symbol(
+    conn: sqlite3.Connection,
+    api: AlpacaPaperAPI,
+    symbol: str,
+    version: str,
+    account_equity: float,
+    close_on_signal: bool = False,
+) -> bool:
     side = _target_side_for_symbol(symbol)
 
     order_symbol = _order_symbol(symbol)
     position = api.get_position(order_symbol)
     if position and abs(float(position.get("qty", 0.0) or 0.0)) > 0:
+        if close_on_signal:
+            df = fetch_ohlcv(symbol)
+            if _latest_signal_is_entry(df):
+                try:
+                    api.close_position(order_symbol)
+                    _upsert_summary(conn, symbol, version, "closing", "signal-triggered position close", account_equity)
+                    print(f"CLOSE {symbol}: signal-triggered close submitted")
+                    return False
+                except Exception as exc:
+                    _upsert_summary(conn, symbol, version, "error", f"close failed: {exc}", account_equity)
+                    print(f"ERROR {symbol}: close failed: {exc}")
+                    return False
         _upsert_summary(conn, symbol, version, "holding", "existing open position", account_equity)
         print(f"HOLD {symbol}: existing position qty={position.get('qty')}")
-        return
+        return False
 
     open_orders = api.get_open_orders(order_symbol)
     if open_orders:
         _upsert_summary(conn, symbol, version, "waiting", f"{len(open_orders)} open order(s)", account_equity)
         print(f"WAIT {symbol}: open orders present")
-        return
+        return False
 
     df = fetch_ohlcv(symbol)
     if not _latest_signal_is_entry(df):
         _upsert_summary(conn, symbol, version, "idle", f"no fresh {side} entry signal", account_equity)
         print(f"IDLE {symbol}: no entry")
-        return
+        return False
 
     order_params = _compute_order_params(df, account_equity, side=side)
     if not order_params:
         _upsert_summary(conn, symbol, version, "idle", "insufficient data/invalid ATR", account_equity)
         print(f"IDLE {symbol}: invalid order params")
-        return
+        return False
 
     qty, tp, sl = order_params
     try:
@@ -350,9 +544,11 @@ def _trade_one_symbol(conn: sqlite3.Connection, api: AlpacaPaperAPI, symbol: str
         order_id = order.get("id") if isinstance(order, dict) else None
         _upsert_summary(conn, symbol, version, "submitted", f"{side} bracket submitted order_id={order_id}", account_equity)
         print(f"SUBMIT {symbol}: side={side} qty={qty} tp={tp:.4f} sl={sl:.4f}")
+        return True
     except Exception as exc:
         _upsert_summary(conn, symbol, version, "error", str(exc), account_equity)
         print(f"ERROR {symbol}: {exc}")
+        return False
 
 
 def main() -> int:
@@ -363,6 +559,9 @@ def main() -> int:
     parser.add_argument("--version", required=True, help="Strategy version (currently v1)")
     parser.add_argument("--loop-seconds", type=int, default=0, help="If > 0, continuously monitor symbols every N seconds")
     parser.add_argument("--max-loops", type=int, default=0, help="Maximum loop iterations when looping (0 = run indefinitely)")
+    parser.add_argument("--stream-bars", action="store_true", help="Use Alpaca websocket bars to trigger symbol evaluations")
+    parser.add_argument("--max-open-positions", type=int, default=8, help="Portfolio cap for simultaneous open positions")
+    parser.add_argument("--close-on-signal", action="store_true", help="Attempt position close when a fresh signal appears while holding")
     args = parser.parse_args()
 
     version = args.version.strip().lower()
@@ -376,6 +575,12 @@ def main() -> int:
         return 0
 
     api = AlpacaPaperAPI()
+    streamer = AlpacaBarStreamer()
+    stream_enabled = False
+    if args.stream_bars:
+        stream_enabled = streamer.start(symbols)
+        if not stream_enabled:
+            print("WARN: --stream-bars requested but websocket stream unavailable; using polling loop")
 
     conn = sqlite3.connect(str(DB_PATH), timeout=30)
     conn.execute("PRAGMA journal_mode=DELETE")
@@ -393,24 +598,62 @@ def main() -> int:
             account_equity = float(account.get("equity") or account.get("last_equity") or 100000.0)
             print(f"\n[{datetime.now(timezone.utc).isoformat()}] Monitoring pass #{loop_count} (equity={account_equity:.2f})")
 
-            for symbol in symbols:
+            symbols_this_pass = symbols
+            if stream_enabled:
+                # Drain symbols that received a new bar since last pass.
+                ready = streamer.drain_ready_symbols()
+                if ready:
+                    ready_set = set(ready)
+                    symbols_this_pass = [s for s in symbols if s in ready_set or _order_symbol(s) in ready_set]
+                elif loop_count > 1:
+                    # Wait briefly for live bars before doing a no-op cycle.
+                    time.sleep(1)
+                    if args.max_loops > 0 and loop_count >= args.max_loops:
+                        break
+                    continue
+
+            position_rows = api.list_positions()
+            open_symbols = {
+                str(p.get("symbol") or "").strip()
+                for p in position_rows
+                if abs(float(p.get("qty") or 0.0)) > 0
+            }
+
+            for symbol in symbols_this_pass:
                 try:
-                    _trade_one_symbol(conn, api, symbol, version, account_equity)
+                    osym = _order_symbol(symbol)
+                    if osym not in open_symbols and len(open_symbols) >= max(args.max_open_positions, 1):
+                        _upsert_summary(conn, symbol, version, "risk_cap", "max open positions reached", account_equity)
+                        print(f"SKIP {symbol}: max open positions reached")
+                        continue
+
+                    submitted = _trade_one_symbol(
+                        conn,
+                        api,
+                        symbol,
+                        version,
+                        account_equity,
+                        close_on_signal=args.close_on_signal,
+                    )
+                    if submitted:
+                        open_symbols.add(osym)
                 except Exception as exc:
                     failures.append(symbol)
                     _upsert_summary(conn, symbol, version, "error", str(exc), account_equity)
                     print(f"ERROR {symbol}: {exc}")
 
-            fill_count = _sync_fill_events(conn, api, symbols, version)
+            fill_count = _sync_fill_events(conn, api, symbols, version, account_equity)
             print(f"Synced fill activities: {fill_count}")
             conn.commit()
 
-            if args.loop_seconds <= 0:
+            if args.loop_seconds <= 0 and not stream_enabled:
                 break
             if args.max_loops > 0 and loop_count >= args.max_loops:
                 break
-            time.sleep(max(args.loop_seconds, 1))
+            sleep_secs = 1 if stream_enabled else max(args.loop_seconds, 1)
+            time.sleep(sleep_secs)
     finally:
+        streamer.stop()
         conn.close()
 
     if failures:
