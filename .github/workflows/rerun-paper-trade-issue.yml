@@ -5,7 +5,7 @@ on:
     types: [opened]
 
 concurrency:
-  group: db-writer-main
+  group: db-writer-paper-rerun
   cancel-in-progress: false
 
 jobs:
