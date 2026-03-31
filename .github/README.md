@@ -40,3 +40,40 @@ See each script for usage details and arguments.
 - Win Rate = 70% or greater
 - Net Return = 20% or greater
 - Max Drawdown = -4.50 % or less
+
+## Guideline Matrix Report
+
+Use the guideline report script to evaluate pass/fail by symbol and by asset class (crypto vs stocks):
+
+```sh
+python backend/strategy_generator/report_v1_guidelines.py --version v1
+```
+
+Useful options:
+
+- `--asset-class crypto|stocks|all` (default `all`)
+- `--symbols BTC/USD ETH/USD` (explicit symbol list)
+- `--json-out docs/data/v1_guideline_report.json` (save machine-readable output)
+
+## Separate Profile Backtests
+
+You can run versioned profile overrides without editing defaults each time:
+
+```sh
+python backend/backtest_backtrader_alpaca.py --symbol ETH/USD --version v1 --profile eth_focus
+```
+
+Profile definitions live in `backend/strategy_generator/configs/v1_runtime.json` under `profiles`.
+
+## Profile Tuning Utility
+
+Use the profile tuner to search for per-symbol settings that maximize win rate while respecting net return and drawdown constraints:
+
+```sh
+python backend/strategy_generator/tune_v1_profile.py --symbol ETH/USD --profile eth_focus --max-evals 40 --seed 42 --out docs/data/v1_profile_tuning_result_eth.json --apply
+```
+
+Notes:
+
+- `--apply` updates the selected profile in `backend/strategy_generator/configs/v1_runtime.json`.
+- The script writes the best candidate plus metrics to JSON for auditability.

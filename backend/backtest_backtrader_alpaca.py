@@ -160,12 +160,17 @@ def fetch_ohlcv(symbol: str) -> "pd.DataFrame":
 
 # ── Run strategy ───────────────────────────────────────────────────────────────
 
-def run_backtest(df: "pd.DataFrame", version: str) -> "pd.DataFrame":
+def run_backtest(
+    df: "pd.DataFrame",
+    version: str,
+    symbol: str | None = None,
+    profile: str | None = None,
+) -> "pd.DataFrame":
     if version == "v1":
         from apm_v1_backtest import backtest_apm_v1
         from v1_params import get_v1_params
 
-        return backtest_apm_v1(df, params=get_v1_params())
+        return backtest_apm_v1(df, params=get_v1_params(symbol=symbol, profile=profile))
     raise ValueError(f"Unknown version: {version!r}. Valid values: {list(VERSION_MAP)}")
 
 
@@ -253,6 +258,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Run an APM backtest and save results to the DB.")
     parser.add_argument("--symbol",  required=True, help="Trading symbol, e.g. BTC/USD")
     parser.add_argument("--version", required=True, help="Strategy version, e.g. v1")
+    parser.add_argument("--profile", help="Optional runtime profile override, e.g. eth_focus")
     args = parser.parse_args()
 
     symbol  = args.symbol.strip()
@@ -272,8 +278,14 @@ def main() -> int:
     
     print(f"  {len(df):,} bars fetched ({df['timestamp'].iloc[0]} → {df['timestamp'].iloc[-1]})")
 
-    print(f"Running backtest {version}...")
-    trades = run_backtest(df, version)
+    profile = args.profile.strip() if args.profile else None
+
+    if profile:
+        print(f"Running backtest {version} (profile={profile})...")
+    else:
+        print(f"Running backtest {version}...")
+
+    trades = run_backtest(df, version, symbol=symbol, profile=profile)
     print(f"  {len(trades)} trades generated")
 
     save_to_db(symbol, version, trades, df)

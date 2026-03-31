@@ -27,6 +27,8 @@ def backtest_apm_v1(df, params=None):
             continue
         entry_price = df['Close'].iloc[i]
         atr = df['atr'].iloc[i]
+        if pd.isna(atr) or atr <= 0:
+            continue
         sl = entry_price + sl_mult * atr
         tp = entry_price - tp_mult * atr
         trail_active = False
@@ -34,7 +36,8 @@ def backtest_apm_v1(df, params=None):
         qty = equity * risk_pct / 100 / (sl - entry_price) if (sl - entry_price) > 0 else 0
         exit_price = None
         exit_type = None
-        for j in range(i+1, min(i + max_bars, len(df))):
+        trade_end = len(df) if max_bars <= 0 else min(i + max_bars, len(df))
+        for j in range(i+1, trade_end):
             price = df['Close'].iloc[j]
             if not trail_active and price < entry_price - trail_activate_mult * atr:
                 trail_active = True
@@ -55,7 +58,7 @@ def backtest_apm_v1(df, params=None):
                 exit_type = 'take_profit'
                 break
         if exit_price is None:
-            j = min(i + max_bars, len(df) - 1)
+            j = min(trade_end - 1, len(df) - 1)
             exit_price = df['Close'].iloc[j]
             exit_type = 'max_bars_exit'
         open_until = j

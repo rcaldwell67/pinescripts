@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- Closed v1 backtesting guideline gap by promoting tuned ETHUSD overrides into default runtime config (backend/strategy_generator/configs/v1_runtime.json); default v1 now passes all guideline thresholds across BTC/USD, ETH/USD, CLM, and CRF.
+- Added ETH profile tuning utility at backend/strategy_generator/tune_v1_profile.py with optional `--apply` to update profile overrides from reproducible search results.
+- Added CI workflow .github/workflows/v1-guideline-matrix.yml with default matrix reporting plus enforced eth_focus crypto guideline gate.
 - Created SQLite database (docs/data/tradingcopilot.db) with tables for backtest, paper trading, and live trading results per symbol.
 - Initial changelog created.
 - Added v1 parity validator at backend/paper_trading/verify_v1_parity.py to compare backtest vs paper trade rows with CI-friendly failure codes.

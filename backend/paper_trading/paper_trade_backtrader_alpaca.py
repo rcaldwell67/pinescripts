@@ -181,7 +181,7 @@ def run_one(symbol: str, version: str, *, force_reset: bool = False) -> None:
     print(f"  {len(df):,} bars fetched ({df['timestamp'].iloc[0]} -> {df['timestamp'].iloc[-1]})")
 
     print(f"Running paper-trading simulation {version} for {symbol}...")
-    trades = run_backtest(df, version)
+    trades = run_backtest(df, version, symbol=symbol)
     print(f"  {len(trades)} trades generated")
     save_paper_to_db(symbol, version, trades, df, force_reset=force_reset)
 

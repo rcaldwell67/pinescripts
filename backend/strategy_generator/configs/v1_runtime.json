@@ -4,15 +4,25 @@
     "ema_mid": 50,
     "ema_slow": 200,
     "ema_slope_lookback": 3,
+    "adx_threshold": 15,
+    "adx_slope_bars": 0,
+    "di_spread": 0.0,
     "rsi_len": 14,
     "rsi_short_min": 30,
     "rsi_short_max": 58,
     "pullback_tolerance_pct": 0.4,
+    "momentum_bars": 5,
     "volume_sma_len": 20,
     "volume_mult_min": 0.3,
     "min_body_atr_mult": 0.15,
     "atr_len": 14,
-    "atr_floor_pct": 0.1
+    "atr_baseline_len": 60,
+    "atr_floor_pct": 0.1,
+    "panic_suppression_mult": 1.5,
+    "session_filter_enabled": true,
+    "session_start_hour_et": 9,
+    "session_end_hour_et": 14,
+    "macro_ema_period": 0
   },
   "risk": {
     "sl_atr_mult": 4.0,
@@ -22,5 +32,84 @@
     "risk_pct": 2.0,
     "max_bars_in_trade": 100,
     "initial_equity": 1000.0
+  },
+  "symbol_overrides": {
+    "BTCUSD": {
+      "signal": {
+        "pullback_tolerance_pct": 0.25,
+        "rsi_short_max": 54
+      },
+      "risk": {
+        "sl_atr_mult": 3.5,
+        "tp_atr_mult": 10.0,
+        "trail_activate_atr_mult": 2.5,
+        "trail_dist_atr_mult": 0.08,
+        "risk_pct": 1.4
+      }
+    },
+    "ETHUSD": {
+      "signal": {
+        "pullback_tolerance_pct": 0.35,
+        "rsi_short_max": 56,
+        "adx_threshold": 18,
+        "di_spread": 7.5,
+        "session_filter_enabled": false
+      },
+      "risk": {
+        "sl_atr_mult": 4.5,
+        "tp_atr_mult": 10.0,
+        "trail_activate_atr_mult": 2.0,
+        "trail_dist_atr_mult": 0.06,
+        "risk_pct": 0.6
+      }
+    },
+    "CLM": {
+      "signal": {
+        "pullback_tolerance_pct": 0.3,
+        "rsi_short_max": 54
+      },
+      "risk": {
+        "sl_atr_mult": 3.0,
+        "tp_atr_mult": 6.0,
+        "trail_activate_atr_mult": 3.5,
+        "trail_dist_atr_mult": 0.08,
+        "risk_pct": 4.0
+      }
+    },
+    "CRF": {
+      "signal": {
+        "pullback_tolerance_pct": 0.55,
+        "rsi_short_max": 62
+      },
+      "risk": {
+        "sl_atr_mult": 3.0,
+        "tp_atr_mult": 6.0,
+        "trail_activate_atr_mult": 2.5,
+        "trail_dist_atr_mult": 0.08,
+        "risk_pct": 6.0
+      }
+    }
+  },
+  "profiles": {
+    "eth_focus": {
+      "symbol_overrides": {
+        "ETHUSD": {
+          "signal": {
+            "pullback_tolerance_pct": 0.35,
+            "rsi_short_max": 56,
+            "adx_threshold": 18,
+            "di_spread": 7.5,
+            "session_filter_enabled": false
+          },
+          "risk": {
+            "sl_atr_mult": 4.5,
+            "tp_atr_mult": 10.0,
+            "trail_activate_atr_mult": 2.0,
+            "trail_dist_atr_mult": 0.06,
+            "risk_pct": 0.6
+          }
+        }
+      }
+    }
   }
 }

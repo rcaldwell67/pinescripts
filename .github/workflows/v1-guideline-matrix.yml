@@ -1,0 +1,98 @@
+name: V1 Guideline Matrix
+
+on:
+  workflow_dispatch:
+    inputs:
+      enforce:
+        description: "Fail workflow when any symbol fails guideline thresholds"
+        required: false
+        default: "false"
+      asset_class:
+        description: "Asset class to evaluate (all, crypto, stocks)"
+        required: false
+        default: "all"
+  schedule:
+    - cron: "15 */6 * * *"
+
+jobs:
+  guideline-matrix:
+    runs-on: ubuntu-latest
+    env:
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
+      ALPACA_PAPER_API_KEY: ${{ secrets.ALPACA_PAPER_API_KEY }}
+      ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run guideline matrix (report mode)
+        if: ${{ github.event_name == 'schedule' || inputs.enforce != 'true' }}
+        run: |
+          python backend/strategy_generator/report_v1_guidelines.py \
+            --version v1 \
+            --asset-class "${{ inputs.asset_class || 'all' }}" \
+            --json-out docs/data/v1_guideline_report_ci.json
+
+      - name: Run guideline matrix (enforced mode)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.enforce == 'true' }}
+        run: |
+          python backend/strategy_generator/report_v1_guidelines.py \
+            --version v1 \
+            --asset-class "${{ inputs.asset_class || 'all' }}" \
+            --json-out docs/data/v1_guideline_report_ci.json \
+            --enforce
+
+      - name: Upload guideline matrix artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v1-guideline-matrix
+          path: docs/data/v1_guideline_report_ci.json
+
+  guideline-matrix-eth-focus-crypto:
+    runs-on: ubuntu-latest
+    env:
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
+      ALPACA_PAPER_API_KEY: ${{ secrets.ALPACA_PAPER_API_KEY }}
+      ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run eth_focus crypto matrix (enforced)
+        run: |
+          python backend/strategy_generator/report_v1_guidelines.py \
+            --version v1 \
+            --profile eth_focus \
+            --asset-class crypto \
+            --json-out docs/data/v1_guideline_report_eth_focus_ci.json \
+            --enforce
+
+      - name: Upload eth_focus crypto matrix artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v1-guideline-matrix-eth-focus-crypto
+          path: docs/data/v1_guideline_report_eth_focus_ci.json

@@ -19,5 +19,7 @@
 7. Housekeeping, remove all files/folders that are not in use by the project
 
 Note:
+
+- v1 backtesting guideline closure complete: default runtime now passes strategy thresholds for BTC/USD, ETH/USD, CLM, and CRF (validated via report_v1_guidelines.py).
 - Current v1 paper-trading data has been corrected and made incremental (append new trades each run).
 - Current implementation is simulation-based (using strategy backtest logic on fresh OHLCV), not live order placement through Alpaca Paper Trading API yet.

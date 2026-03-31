@@ -6,7 +6,7 @@ from backtest_backtrader_alpaca import fetch_ohlcv, run_backtest
 for sym in ['BTC/USD', 'ETH/USD', 'CLM', 'CRF']:
     print(f"Fetching {sym}...")
     df = fetch_ohlcv(sym)
-    trades = run_backtest(df, 'v1')
+    trades = run_backtest(df, 'v1', symbol=sym)
     total_pnl = trades['pnl'].sum() if len(trades) else 0
     win_rate = (trades['pnl'] > 0).mean() * 100 if len(trades) else 0
     net_ret = (trades['equity'].iloc[-1] / (trades['equity'].iloc[0] - trades['pnl'].iloc[0]) - 1) * 100 if len(trades) else 0

@@ -10,15 +10,25 @@ DEFAULT_V1_PARAMS: dict[str, Any] = {
         "ema_mid": 50,
         "ema_slow": 200,
         "ema_slope_lookback": 3,
+        "adx_threshold": 15,
+        "adx_slope_bars": 0,
+        "di_spread": 0.0,
         "rsi_len": 14,
         "rsi_short_min": 30,
         "rsi_short_max": 58,
         "pullback_tolerance_pct": 0.40,
+        "momentum_bars": 5,
         "volume_sma_len": 20,
         "volume_mult_min": 0.30,
         "min_body_atr_mult": 0.15,
         "atr_len": 14,
+        "atr_baseline_len": 60,
         "atr_floor_pct": 0.10,
+        "panic_suppression_mult": 1.5,
+        "session_filter_enabled": True,
+        "session_start_hour_et": 9,
+        "session_end_hour_et": 14,
+        "macro_ema_period": 0,
     },
     "risk": {
         "sl_atr_mult": 4.0,
@@ -46,7 +56,15 @@ def _default_config_path() -> Path:
     return Path(__file__).resolve().parent / "configs" / "v1_runtime.json"
 
 
-def get_v1_params(config_path: str | Path | None = None) -> dict[str, Any]:
+def _normalize_symbol(symbol: str) -> str:
+    return "".join(ch for ch in symbol.upper() if ch.isalnum())
+
+
+def get_v1_params(
+    config_path: str | Path | None = None,
+    symbol: str | None = None,
+    profile: str | None = None,
+) -> dict[str, Any]:
     path = Path(config_path) if config_path else _default_config_path()
     if not path.exists():
         return DEFAULT_V1_PARAMS
@@ -55,4 +73,23 @@ def get_v1_params(config_path: str | Path | None = None) -> dict[str, Any]:
     if not isinstance(loaded, dict):
         return DEFAULT_V1_PARAMS
 
-    return _deep_merge(DEFAULT_V1_PARAMS, loaded)
+    loaded = dict(loaded)
+    profiles = loaded.get("profiles")
+    if profile and isinstance(profiles, dict):
+        profile_cfg = profiles.get(profile)
+        if isinstance(profile_cfg, dict):
+            loaded = _deep_merge(loaded, profile_cfg)
+
+    symbol_overrides = loaded.get("symbol_overrides")
+    if isinstance(symbol_overrides, dict):
+        loaded.pop("symbol_overrides", None)
+    loaded.pop("profiles", None)
+
+    merged = _deep_merge(DEFAULT_V1_PARAMS, loaded)
+
+    if symbol and isinstance(symbol_overrides, dict):
+        override = symbol_overrides.get(_normalize_symbol(symbol))
+        if isinstance(override, dict):
+            merged = _deep_merge(merged, override)
+
+    return merged

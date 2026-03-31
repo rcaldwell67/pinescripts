@@ -146,7 +146,7 @@ def main() -> int:
             print(f"\n[RUN] {symbol} {VERSION}")
             _clear_existing(conn, symbol)
             df = fetch_ohlcv(symbol)
-            trades = run_backtest(df, VERSION)
+            trades = run_backtest(df, VERSION, symbol=symbol)
             rows = _build_rows(symbol, trades, df)
 
             _insert_trades(conn, "backtest", rows)

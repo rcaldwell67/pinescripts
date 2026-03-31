@@ -9,6 +9,35 @@ This document describes everything that is part of version v1 across backtest, p
 - Primary implementation language: Python (execution) plus Pine Script (strategy template)
 - Current execution support in automation: v1 is the only fully wired end-to-end version for realtime paper and realtime live runners.
 
+## Guideline Compliance Snapshot (2026-03-31)
+
+Reference guideline targets:
+
+- Win Rate >= 70%
+- Net Return >= 20%
+- Max Drawdown <= 4.50%
+
+Latest local matrix run (`python backend/strategy_generator/report_v1_guidelines.py --version v1`):
+
+|Symbol|Class|Trades|Win Rate|Net Return|Max Drawdown|Guideline Status|
+|---|---|---:|---:|---:|---:|---|
+|BTC/USD|crypto|40|70.00%|23.39%|4.38%|PASS|
+|ETH/USD|crypto|101|71.29%|25.93%|1.97%|PASS|
+|CLM|stocks|3|100.00%|20.75%|0.00%|PASS|
+|CRF|stocks|3|100.00%|20.47%|0.00%|PASS|
+
+Current state summary:
+
+- 4 of 4 symbols pass all v1 guideline targets in backtesting.
+- v1 backtesting guideline compliance is now closed for the default runtime profile.
+- A dedicated matrix workflow exists in `.github/workflows/v1-guideline-matrix.yml`, plus an eth_focus crypto enforcement job.
+
+ETH focused-profile progress (`eth_focus`, 2026-03-31):
+
+- ETH/USD improved from 64.00% WR to 71.29% WR while keeping net return and drawdown within guideline limits.
+- Current ETH/USD (`eth_focus`) snapshot: WR=71.29%, Net=25.93%, MaxDD=1.97%.
+- These tuned ETH settings were promoted into the default ETHUSD symbol override for v1.
+
 ## v1 Architecture Diagram
 
 ```mermaid
