@@ -2,7 +2,7 @@
 Real-time Alpaca Paper Trading runner for APM v1.
 
 This script evaluates the latest signal for each symbol and, when eligible,
-submits a paper short bracket order to Alpaca. It also syncs recent fill
+submits a paper bracket order to Alpaca. It also syncs recent fill
 activities back into tradingcopilot.db so the dashboard can show real paper
 trade events.
 
@@ -18,6 +18,7 @@ import json
 import os
 import sqlite3
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -90,6 +91,19 @@ class AlpacaPaperAPI:
         }
         return self._request("POST", "/v2/orders", payload=payload)
 
+    def submit_long_bracket(self, *, symbol: str, qty: float, take_profit: float, stop_loss: float) -> dict[str, Any]:
+        payload = {
+            "symbol": symbol,
+            "side": "buy",
+            "type": "market",
+            "time_in_force": "day",
+            "qty": str(max(qty, 0.0)),
+            "order_class": "bracket",
+            "take_profit": {"limit_price": f"{take_profit:.6f}"},
+            "stop_loss": {"stop_price": f"{stop_loss:.6f}"},
+        }
+        return self._request("POST", "/v2/orders", payload=payload)
+
     def get_fill_activities(self, *, after: str | None = None) -> list[dict[str, Any]]:
         params: dict[str, Any] = {"direction": "asc", "page_size": 100}
         if after:
@@ -117,7 +131,12 @@ def _latest_signal_is_entry(df) -> bool:
     return (len(df) - 1) in entries
 
 
-def _compute_order_params(df, account_equity: float) -> tuple[float, float, float] | None:
+def _target_side_for_symbol(symbol: str) -> str:
+    # Alpaca paper supports long crypto, but spot shorting is not supported.
+    return "long" if "/" in symbol else "short"
+
+
+def _compute_order_params(df, account_equity: float, side: str) -> tuple[float, float, float] | None:
     risk = V1_PARAMS["risk"]
     if len(df) < 210:
         return None
@@ -129,9 +148,14 @@ def _compute_order_params(df, account_equity: float) -> tuple[float, float, floa
     if atr <= 0:
         return None
 
-    sl = price + float(risk["sl_atr_mult"]) * atr
-    tp = price - float(risk["tp_atr_mult"]) * atr
-    risk_per_unit = sl - price
+    if side == "long":
+        sl = price - float(risk["sl_atr_mult"]) * atr
+        tp = price + float(risk["tp_atr_mult"]) * atr
+        risk_per_unit = price - sl
+    else:
+        sl = price + float(risk["sl_atr_mult"]) * atr
+        tp = price - float(risk["tp_atr_mult"]) * atr
+        risk_per_unit = sl - price
     if risk_per_unit <= 0:
         return None
 
@@ -217,18 +241,9 @@ def _sync_fill_events(conn: sqlite3.Connection, api: AlpacaPaperAPI, symbols: li
         inserted += 1
 
         # Mirror fills into trades table for dashboard visibility.
-        if side == "sell":
-            conn.execute(
-                """
-                INSERT INTO trades (
-                    symbol, version, mode, entry_time, exit_time, direction,
-                    entry_price, exit_price, result, pnl_pct, dollar_pnl, equity
-                ) VALUES (?, ?, 'paper', ?, NULL, 'short', ?, NULL, 'OPEN', NULL, NULL, NULL)
-                """,
-                (db_symbol, version, ts, price),
-            )
-        elif side == "buy":
-            open_row = conn.execute(
+        # buy can open long or close short; sell can open short or close long.
+        if side == "buy":
+            open_short = conn.execute(
                 """
                 SELECT id, entry_price
                 FROM trades
@@ -238,8 +253,8 @@ def _sync_fill_events(conn: sqlite3.Connection, api: AlpacaPaperAPI, symbols: li
                 """,
                 (db_symbol, version),
             ).fetchone()
-            if open_row:
-                trade_id, entry_price = open_row
+            if open_short:
+                trade_id, entry_price = open_short
                 pnl_pct = ((float(entry_price) - price) / float(entry_price) * 100.0) if entry_price else None
                 dollar_pnl = (float(entry_price) - price) * qty if entry_price else None
                 result = "TP" if (dollar_pnl or 0) > 0 else "SL"
@@ -251,15 +266,55 @@ def _sync_fill_events(conn: sqlite3.Connection, api: AlpacaPaperAPI, symbols: li
                     """,
                     (ts, price, result, pnl_pct, dollar_pnl, trade_id),
                 )
+            else:
+                conn.execute(
+                    """
+                    INSERT INTO trades (
+                        symbol, version, mode, entry_time, exit_time, direction,
+                        entry_price, exit_price, result, pnl_pct, dollar_pnl, equity
+                    ) VALUES (?, ?, 'paper', ?, NULL, 'long', ?, NULL, 'OPEN', NULL, NULL, NULL)
+                    """,
+                    (db_symbol, version, ts, price),
+                )
+        elif side == "sell":
+            open_long = conn.execute(
+                """
+                SELECT id, entry_price
+                FROM trades
+                WHERE symbol = ? AND version = ? AND mode = 'paper' AND direction = 'long' AND exit_time IS NULL
+                ORDER BY entry_time DESC, id DESC
+                LIMIT 1
+                """,
+                (db_symbol, version),
+            ).fetchone()
+            if open_long:
+                trade_id, entry_price = open_long
+                pnl_pct = ((price - float(entry_price)) / float(entry_price) * 100.0) if entry_price else None
+                dollar_pnl = (price - float(entry_price)) * qty if entry_price else None
+                result = "TP" if (dollar_pnl or 0) > 0 else "SL"
+                conn.execute(
+                    """
+                    UPDATE trades
+                    SET exit_time = ?, exit_price = ?, result = ?, pnl_pct = ?, dollar_pnl = ?
+                    WHERE id = ?
+                    """,
+                    (ts, price, result, pnl_pct, dollar_pnl, trade_id),
+                )
+            else:
+                conn.execute(
+                    """
+                    INSERT INTO trades (
+                        symbol, version, mode, entry_time, exit_time, direction,
+                        entry_price, exit_price, result, pnl_pct, dollar_pnl, equity
+                    ) VALUES (?, ?, 'paper', ?, NULL, 'short', ?, NULL, 'OPEN', NULL, NULL, NULL)
+                    """,
+                    (db_symbol, version, ts, price),
+                )
     return inserted
 
 
 def _trade_one_symbol(conn: sqlite3.Connection, api: AlpacaPaperAPI, symbol: str, version: str, account_equity: float) -> None:
-    # v1 strategy is shorts-only; Alpaca paper does not support shorting spot crypto.
-    if "/" in symbol:
-        _upsert_summary(conn, symbol, version, "skipped", "short-only strategy; crypto short not supported", account_equity)
-        print(f"SKIP {symbol}: short-only strategy; crypto short not supported")
-        return
+    side = _target_side_for_symbol(symbol)
 
     order_symbol = _order_symbol(symbol)
     position = api.get_position(order_symbol)
@@ -276,11 +331,11 @@ def _trade_one_symbol(conn: sqlite3.Connection, api: AlpacaPaperAPI, symbol: str
 
     df = fetch_ohlcv(symbol)
     if not _latest_signal_is_entry(df):
-        _upsert_summary(conn, symbol, version, "idle", "no fresh entry signal", account_equity)
+        _upsert_summary(conn, symbol, version, "idle", f"no fresh {side} entry signal", account_equity)
         print(f"IDLE {symbol}: no entry")
         return
 
-    order_params = _compute_order_params(df, account_equity)
+    order_params = _compute_order_params(df, account_equity, side=side)
     if not order_params:
         _upsert_summary(conn, symbol, version, "idle", "insufficient data/invalid ATR", account_equity)
         print(f"IDLE {symbol}: invalid order params")
@@ -288,10 +343,13 @@ def _trade_one_symbol(conn: sqlite3.Connection, api: AlpacaPaperAPI, symbol: str
 
     qty, tp, sl = order_params
     try:
-        order = api.submit_short_bracket(symbol=order_symbol, qty=qty, take_profit=tp, stop_loss=sl)
+        if side == "long":
+            order = api.submit_long_bracket(symbol=order_symbol, qty=qty, take_profit=tp, stop_loss=sl)
+        else:
+            order = api.submit_short_bracket(symbol=order_symbol, qty=qty, take_profit=tp, stop_loss=sl)
         order_id = order.get("id") if isinstance(order, dict) else None
-        _upsert_summary(conn, symbol, version, "submitted", f"short bracket submitted order_id={order_id}", account_equity)
-        print(f"SUBMIT {symbol}: qty={qty} tp={tp:.4f} sl={sl:.4f}")
+        _upsert_summary(conn, symbol, version, "submitted", f"{side} bracket submitted order_id={order_id}", account_equity)
+        print(f"SUBMIT {symbol}: side={side} qty={qty} tp={tp:.4f} sl={sl:.4f}")
     except Exception as exc:
         _upsert_summary(conn, symbol, version, "error", str(exc), account_equity)
         print(f"ERROR {symbol}: {exc}")
@@ -303,6 +361,8 @@ def main() -> int:
     scope.add_argument("--symbol", help="Trading symbol, e.g. CLM")
     scope.add_argument("--all-symbols", action="store_true", help="Run for every symbol in the DB")
     parser.add_argument("--version", required=True, help="Strategy version (currently v1)")
+    parser.add_argument("--loop-seconds", type=int, default=0, help="If > 0, continuously monitor symbols every N seconds")
+    parser.add_argument("--max-loops", type=int, default=0, help="Maximum loop iterations when looping (0 = run indefinitely)")
     args = parser.parse_args()
 
     version = args.version.strip().lower()
@@ -316,8 +376,6 @@ def main() -> int:
         return 0
 
     api = AlpacaPaperAPI()
-    account = api.get_account()
-    account_equity = float(account.get("equity") or account.get("last_equity") or 100000.0)
 
     conn = sqlite3.connect(str(DB_PATH), timeout=30)
     conn.execute("PRAGMA journal_mode=DELETE")
@@ -326,20 +384,34 @@ def main() -> int:
     except sqlite3.OperationalError:
         pass
 
+    loop_count = 0
     failures: list[str] = []
-    for symbol in symbols:
-        try:
-            _trade_one_symbol(conn, api, symbol, version, account_equity)
-        except Exception as exc:
-            failures.append(symbol)
-            _upsert_summary(conn, symbol, version, "error", str(exc), account_equity)
-            print(f"ERROR {symbol}: {exc}")
+    try:
+        while True:
+            loop_count += 1
+            account = api.get_account()
+            account_equity = float(account.get("equity") or account.get("last_equity") or 100000.0)
+            print(f"\n[{datetime.now(timezone.utc).isoformat()}] Monitoring pass #{loop_count} (equity={account_equity:.2f})")
 
-    fill_count = _sync_fill_events(conn, api, symbols, version)
-    print(f"Synced fill activities: {fill_count}")
+            for symbol in symbols:
+                try:
+                    _trade_one_symbol(conn, api, symbol, version, account_equity)
+                except Exception as exc:
+                    failures.append(symbol)
+                    _upsert_summary(conn, symbol, version, "error", str(exc), account_equity)
+                    print(f"ERROR {symbol}: {exc}")
 
-    conn.commit()
-    conn.close()
+            fill_count = _sync_fill_events(conn, api, symbols, version)
+            print(f"Synced fill activities: {fill_count}")
+            conn.commit()
+
+            if args.loop_seconds <= 0:
+                break
+            if args.max_loops > 0 and loop_count >= args.max_loops:
+                break
+            time.sleep(max(args.loop_seconds, 1))
+    finally:
+        conn.close()
 
     if failures:
         print(f"Realtime paper trading failures: {', '.join(failures)}", file=sys.stderr)
