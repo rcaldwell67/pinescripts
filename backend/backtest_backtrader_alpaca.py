@@ -163,7 +163,9 @@ def fetch_ohlcv(symbol: str) -> "pd.DataFrame":
 def run_backtest(df: "pd.DataFrame", version: str) -> "pd.DataFrame":
     if version == "v1":
         from apm_v1_backtest import backtest_apm_v1
-        return backtest_apm_v1(df)
+        from v1_params import get_v1_params
+
+        return backtest_apm_v1(df, params=get_v1_params())
     raise ValueError(f"Unknown version: {version!r}. Valid values: {list(VERSION_MAP)}")
 
 

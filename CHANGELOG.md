@@ -16,3 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added .env credential loading to the live trading runner for local execution, and fixed live fill synchronization to avoid duplicate trade inserts when fills are already recorded.
 - Added repo safety gate for issue-triggered live reruns: issues now require the `approved-live-trade` label before execution.
 - Added backend/live_trading/verify_live_consistency.py and wired it into live workflows to validate live fill/trade consistency after runs.
+- Added shared v1 runtime parameter source at backend/strategy_generator/configs/v1_runtime.json and backend/strategy_generator/v1_params.py.
+- Refactored v1 signal, backtest, paper realtime, and live realtime paths to consume shared v1 parameters to reduce strategy drift.
+- Added walk-forward optimizer utility at backend/strategy_generator/walkforward_optimize_v1.py with fallback output when no folds produce valid trades.
+- Added config-usage guard at backend/strategy_generator/validate_v1_config_usage.py and CI workflow .github/workflows/validate-v1-config.yml.

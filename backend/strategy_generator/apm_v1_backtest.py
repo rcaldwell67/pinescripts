@@ -5,41 +5,43 @@ Backtesting engine for Adaptive Pullback Momentum v1.0-5m (shorts only)
 """
 import pandas as pd
 from apm_v1 import apm_v1_signals
-
-# Trade management parameters (from Pine Script logic)
-ATR_MULT_SL = 4.0   # Stop loss: entry + ATR * 4.0
-ATR_MULT_TP = 8.0   # Take profit: entry - ATR * 8.0
-ATR_MULT_TRAIL_ACT = 3.5  # Trail activates after price moves ATR*3.5 in favor
-ATR_MULT_TRAIL_DIST = 0.1 # Trail distance from best price
-RISK_PCT = 2.0      # 2% of equity risked per trade
-INITIAL_EQUITY = 10000
+from v1_params import get_v1_params
 
 # Main backtest function
-def backtest_apm_v1(df):
-    entries = apm_v1_signals(df)
-    equity = INITIAL_EQUITY
+def backtest_apm_v1(df, params=None):
+    params = params or get_v1_params()
+    risk = params["risk"]
+    entries = apm_v1_signals(df, params=params)
+    equity = float(risk["initial_equity"])
     trades = []
     open_until = -1   # bar index at which the current trade exits
+    sl_mult = float(risk["sl_atr_mult"])
+    tp_mult = float(risk["tp_atr_mult"])
+    trail_activate_mult = float(risk["trail_activate_atr_mult"])
+    trail_dist_mult = float(risk["trail_dist_atr_mult"])
+    risk_pct = float(risk["risk_pct"])
+    max_bars = int(risk["max_bars_in_trade"])
+
     for i in entries:
         if i <= open_until:   # skip signals while a trade is open
             continue
         entry_price = df['Close'].iloc[i]
         atr = df['atr'].iloc[i]
-        sl = entry_price + ATR_MULT_SL * atr
-        tp = entry_price - ATR_MULT_TP * atr
+        sl = entry_price + sl_mult * atr
+        tp = entry_price - tp_mult * atr
         trail_active = False
         best_price = entry_price
-        qty = equity * RISK_PCT / 100 / (sl - entry_price) if (sl - entry_price) > 0 else 0
+        qty = equity * risk_pct / 100 / (sl - entry_price) if (sl - entry_price) > 0 else 0
         exit_price = None
         exit_type = None
-        for j in range(i+1, min(i+100, len(df))):  # Max 100 bars in trade
+        for j in range(i+1, min(i + max_bars, len(df))):
             price = df['Close'].iloc[j]
-            if not trail_active and price < entry_price - ATR_MULT_TRAIL_ACT * atr:
+            if not trail_active and price < entry_price - trail_activate_mult * atr:
                 trail_active = True
                 best_price = price
             if trail_active:
                 best_price = min(best_price, price)
-                trail_stop = best_price + ATR_MULT_TRAIL_DIST * atr
+                trail_stop = best_price + trail_dist_mult * atr
                 if price > trail_stop:
                     exit_price = trail_stop
                     exit_type = 'trailing_stop'
@@ -53,7 +55,7 @@ def backtest_apm_v1(df):
                 exit_type = 'take_profit'
                 break
         if exit_price is None:
-            j = min(i + 100, len(df) - 1)
+            j = min(i + max_bars, len(df) - 1)
             exit_price = df['Close'].iloc[j]
             exit_type = 'max_bars_exit'
         open_until = j

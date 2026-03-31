@@ -38,8 +38,10 @@ except ImportError:
 
 from apm_v1 import apm_v1_signals
 from backtest_backtrader_alpaca import DB_PATH, VERSION_MAP, fetch_ohlcv
+from v1_params import get_v1_params
 
 ALPACA_LIVE_BASE = os.getenv("ALPACA_LIVE_BASE_URL", "https://api.alpaca.markets")
+V1_PARAMS = get_v1_params()
 
 
 class AlpacaLiveAPI:
@@ -117,13 +119,14 @@ def _load_symbols_from_db() -> list[str]:
 
 
 def _latest_signal_is_entry(df) -> bool:
-    entries = set(apm_v1_signals(df))
+    entries = set(apm_v1_signals(df, params=V1_PARAMS))
     if not entries:
         return False
     return (len(df) - 1) in entries
 
 
 def _compute_order_params(df, account_equity: float) -> tuple[float, float, float] | None:
+    risk = V1_PARAMS["risk"]
     if len(df) < 210:
         return None
     if "atr" not in df.columns:
@@ -134,13 +137,13 @@ def _compute_order_params(df, account_equity: float) -> tuple[float, float, floa
     if atr <= 0:
         return None
 
-    sl = price + 4.0 * atr
-    tp = price - 8.0 * atr
+    sl = price + float(risk["sl_atr_mult"]) * atr
+    tp = price - float(risk["tp_atr_mult"]) * atr
     risk_per_unit = sl - price
     if risk_per_unit <= 0:
         return None
 
-    risk_budget = max(account_equity * 0.02, 1.0)
+    risk_budget = max(account_equity * float(risk["risk_pct"]) / 100.0, 1.0)
     qty = round(risk_budget / risk_per_unit, 6)
     if qty <= 0:
         return None
