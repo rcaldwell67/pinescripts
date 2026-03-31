@@ -803,7 +803,7 @@ function buildTransactions() {
   const symData = INSTRUMENTS[activeSym];
   for (const [ver, cfg] of Object.entries(symData.versions)) {
     const rows = loaded[activeSym][ver] || [];
-    let prevEquity = INITIAL_CAPITAL;
+    let prevEquity = getInitialCapitalFromRows(rows);
     for (const r of rows) {
       const begEquity = prevEquity;
       const isLong = r.direction === 'long';
@@ -1346,7 +1346,7 @@ async function handleSymbolSelect(newSym, dbInstance) {
         if (!byVersion[version]) byVersion[version] = [];
         const startTime = metrics.first_trade_date || r.timestamp || null;
         const endTime = metrics.last_trade_date || metrics.first_trade_date || r.timestamp || null;
-        const beginEq = Number(metrics.beginning_equity || INITIAL_CAPITAL);
+        const beginEq = Number(metrics.beginning_equity || DEFAULT_INITIAL_CAPITAL);
         const finalEq = Number(metrics.final_equity || beginEq);
         const netPnl = Number(metrics.total_pnl || (finalEq - beginEq));
         byVersion[version].push(
