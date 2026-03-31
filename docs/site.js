@@ -282,19 +282,27 @@ function getNormalizedSymbolKey(sym) {
 
   const DEFAULT_INITIAL_CAPITAL = 1000;
 
+  function normalizeBeginningEquity(beginEq) {
+    // Paper rows can contain broker-account-sized equity (e.g. 100000).
+    // Keep dashboard comparisons aligned to strategy baseline.
+    if (!Number.isFinite(beginEq) || beginEq <= 0) return DEFAULT_INITIAL_CAPITAL;
+    if (activeDataset === 'paper' && beginEq >= 10000) return DEFAULT_INITIAL_CAPITAL;
+    return beginEq;
+  }
+
   function getInitialCapitalFromRows(rows) {
     if (!rows || !rows.length) return DEFAULT_INITIAL_CAPITAL;
     if (rows[0]._summary) {
       const s = rows[0]._summary || {};
       const beginEq = Number(s.beginning_equity);
-      return Number.isFinite(beginEq) && beginEq > 0 ? beginEq : DEFAULT_INITIAL_CAPITAL;
+      return normalizeBeginningEquity(beginEq);
     }
     const first = rows[0] || {};
     const eq = Number(first.equity);
     const pnl = Number(first.dollar_pnl);
     if (Number.isFinite(eq) && Number.isFinite(pnl)) {
       const beginEq = eq - pnl;
-      if (Number.isFinite(beginEq) && beginEq > 0) return beginEq;
+      if (Number.isFinite(beginEq) && beginEq > 0) return normalizeBeginningEquity(beginEq);
     }
     return DEFAULT_INITIAL_CAPITAL;
   }
