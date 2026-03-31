@@ -321,6 +321,7 @@ function getNormalizedSymbolKey(sym) {
 const fmt$   = n => (n>=0?'+$':'-$') + Math.abs(n).toFixed(2);
 const fmtPct = n => (n>=0?'+':'') + n.toFixed(2) + '%';
 const clsVal = n => n>0 ? 'positive' : n<0 ? 'negative' : 'neutral';
+const fmtPF  = (pf, digits = 2) => Number.isFinite(pf) ? pf.toFixed(digits) : 'N/A';
 function fmtDate(s) {
   if (!s) return '-';
   const d = new Date(s.replace(' ','T'));
@@ -549,7 +550,7 @@ function renderCards(rows) {
       return `<div class="card" style="border-top:2px solid ${cfg.color}">
         <div class="label">${getVersionLabel(activeSym, v)}</div>
         <div class="value ${clsVal(m.netPnl)}">${fmtPct(m.netPnlPct)}</div>
-        <div class="sub">WR ${m.winRate.toFixed(1)}% - PF ${m.pf===Infinity?'Inf':m.pf.toFixed(2)} - ${m.n} trades</div>
+        <div class="sub">WR ${m.winRate.toFixed(1)}% - PF ${fmtPF(m.pf, 2)} - ${m.n} trades</div>
       </div>`;
     }).join('');
     return;
@@ -560,7 +561,7 @@ function renderCards(rows) {
     <div class="card"><div class="label">Total Trades</div><div class="value neutral">${m.n}</div><div class="sub">${m.longs}L / ${m.shorts}S</div></div>
     <div class="card"><div class="label">Win Rate</div><div class="value ${m.winRate>=60?'positive':m.winRate>=50?'neutral':'negative'}">${m.winRate.toFixed(1)}%</div><div class="sub">${m.tpCount} TP - ${m.slCount} SL - ${m.trailCount} Trail${m.mbCount?' - '+m.mbCount+' MB':''}</div></div>
     <div class="card"><div class="label">Net P&L</div><div class="value ${clsVal(m.netPnl)}">${fmt$(m.netPnl)}</div><div class="sub">${fmtPct(m.netPnlPct)} on $${INITIAL_CAPITAL.toLocaleString()}</div></div>
-    <div class="card"><div class="label">Profit Factor</div><div class="value ${m.pf>=2?'positive':m.pf>=1?'neutral':'negative'}">${m.pf===Infinity?'Inf':m.pf.toFixed(3)}</div><div class="sub">Gross Win / Gross Loss</div></div>
+    <div class="card"><div class="label">Profit Factor</div><div class="value ${m.pf>=2?'positive':m.pf>=1?'neutral':'negative'}">${fmtPF(m.pf, 3)}</div><div class="sub">Gross Win / Gross Loss</div></div>
     <div class="card"><div class="label">Max Drawdown</div><div class="value ${m.maxDD<5?'positive':m.maxDD<15?'neutral':'negative'}">-${m.maxDD.toFixed(2)}%</div><div class="sub">Peak-to-trough</div></div>
     <div class="card"><div class="label">Final Equity</div><div class="value ${clsVal(m.finalEquity-INITIAL_CAPITAL)}">$${m.finalEquity.toFixed(2)}</div><div class="sub">Started $${INITIAL_CAPITAL.toLocaleString()}</div></div>`;
 }
@@ -1122,7 +1123,7 @@ function renderComparisonTable() {
     ['Win Rate',        i=>i.m ? i.m.winRate.toFixed(1)+'%' : nd],
     ['Net P&L',         i=>i.m ? fmt$(i.m.netPnl) : nd],
     ['Net Return',      i=>i.m ? fmtPct(i.m.netPnlPct) : nd],
-    ['Profit Factor',   i=>i.m ? (i.m.pf===Infinity?'INF':i.m.pf.toFixed(3)) : nd],
+    ['Profit Factor',   i=>i.m ? fmtPF(i.m.pf, 3) : nd],
     ['Max Drawdown',    i=>i.m ? '-'+i.m.maxDD.toFixed(2)+'%' : nd],
     ['Avg Win',         i=>i.m ? fmt$(i.m.avgWin) : nd],
     ['Avg Loss',        i=>i.m ? fmt$(i.m.avgLoss) : nd],
