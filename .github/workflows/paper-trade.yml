@@ -83,6 +83,32 @@ jobs:
             python backend/paper_trading/realtime_alpaca_paper_trader.py $TARGET_FLAG --version "$VERSION"
           fi
 
+      - name: Verify parity (v1 simulation)
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ github.event.inputs.version || 'v1' }}"
+          SYMBOL="${{ github.event.inputs.symbol || '' }}"
+          EXECUTION_MODE="${{ github.event.inputs.execution_mode || 'realtime' }}"
+
+          if [[ "$EXECUTION_MODE" != "simulation" ]]; then
+            echo "Skipping parity check: execution_mode=$EXECUTION_MODE"
+            exit 0
+          fi
+
+          if [[ "$VERSION" != "v1" ]]; then
+            echo "Skipping parity check: version=$VERSION (validator currently targets v1)"
+            exit 0
+          fi
+
+          if [[ -n "$SYMBOL" ]]; then
+            echo "Running parity check for symbol=$SYMBOL version=$VERSION"
+            python backend/paper_trading/verify_v1_parity.py --version "$VERSION" --symbol "$SYMBOL"
+          else
+            echo "Running parity check for all symbols version=$VERSION"
+            python backend/paper_trading/verify_v1_parity.py --version "$VERSION"
+          fi
+
       - name: Commit updated DB
         shell: bash
         run: |
