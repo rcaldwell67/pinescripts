@@ -98,4 +98,70 @@
     .dataset-switcher-group { display: flex; align-items: center; gap: 8px; }
     .dataset-switcher label { color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; }
     .dataset-switcher .tx-select { padding: 3px 10px; }
+
+    .account-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 16px;
+    }
+    .account-modal.open { display: flex; }
+    .account-modal-card {
+      width: min(560px, 100%);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+      overflow: hidden;
+    }
+    .account-modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .account-modal-head h2 {
+      font-size: 14px;
+      margin: 0;
+      color: var(--text);
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .account-modal-close {
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      border-radius: 6px;
+      width: 28px;
+      height: 28px;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+    }
+    .account-modal-close:hover {
+      border-color: var(--accent);
+      color: var(--text);
+    }
+    .account-modal-body {
+      padding: 12px 16px 16px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    .account-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 6px 0;
+      border-bottom: 1px solid #21262d;
+    }
+    .account-row:last-child { border-bottom: none; }
+    .account-row span { color: var(--muted); font-size: 12px; }
+    .account-row strong { color: var(--text); font-size: 13px; font-weight: 600; text-align: right; }
   

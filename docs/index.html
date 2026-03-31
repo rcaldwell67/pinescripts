@@ -41,6 +41,7 @@
     <button type="button" class="mode-btn" data-mode="paper">Paper Trading</button>
     <button type="button" class="mode-btn" data-mode="live">Live Trading</button>
   </div>
+  <button id="openAccountInfoBtn" class="mode-btn" type="button" title="View Alpaca account details">Account Info</button>
   <div id="balanceBar">
     <div class="bal-item">
       <span class="bal-label">Beginning Balance</span>
@@ -164,6 +165,28 @@
     <div class="table-wrap"><table class="cmp" id="cmpTable"></table></div>
   </div>
 </main>
+
+<div id="accountInfoModal" class="account-modal" aria-hidden="true">
+  <div class="account-modal-card" role="dialog" aria-modal="true" aria-labelledby="accountInfoModalTitle">
+    <div class="account-modal-head">
+      <h2 id="accountInfoModalTitle">Alpaca Account Info</h2>
+      <button id="closeAccountInfoBtn" class="account-modal-close" type="button" aria-label="Close account info modal">x</button>
+    </div>
+    <div class="account-modal-body">
+      <div class="account-row"><span>Account ID</span><strong id="aiAccountId">-</strong></div>
+      <div class="account-row"><span>Account Number</span><strong id="aiAccountNumber">-</strong></div>
+      <div class="account-row"><span>Status</span><strong id="aiStatus">-</strong></div>
+      <div class="account-row"><span>Currency</span><strong id="aiCurrency">-</strong></div>
+      <div class="account-row"><span>Beginning Balance</span><strong id="aiBeginningBalance">-</strong></div>
+      <div class="account-row"><span>Current Balance</span><strong id="aiCurrentBalance">-</strong></div>
+      <div class="account-row"><span>Buying Power</span><strong id="aiBuyingPower">-</strong></div>
+      <div class="account-row"><span>Cash</span><strong id="aiCash">-</strong></div>
+      <div class="account-row"><span>Last Event</span><strong id="aiLastEvent">-</strong></div>
+      <div class="account-row"><span>Updated At</span><strong id="aiUpdatedAt">-</strong></div>
+    </div>
+  </div>
+</div>
+
 <script src='site.js' defer></script>
 </body>
 </html>

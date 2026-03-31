@@ -319,6 +319,94 @@ function getNormalizedSymbolKey(sym) {
     return getDatasetInitialCapital();
   }
 
+  function formatCurrencySafe(value, fallback = '-') {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return fallback;
+    return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function getLatestAccountInfo() {
+    const db = window._SQL_DB;
+    if (!db) return null;
+    try {
+      const res = db.exec(`
+        SELECT
+          account_id,
+          account_number,
+          currency,
+          status,
+          beginning_balance,
+          current_balance,
+          buying_power,
+          cash,
+          last_event,
+          updated_at
+        FROM Account_Info
+        ORDER BY datetime(updated_at) DESC
+        LIMIT 1
+      `);
+      if (!res.length || !res[0].values.length) return null;
+      const cols = res[0].columns;
+      const row = res[0].values[0];
+      const obj = {};
+      cols.forEach((col, i) => {
+        obj[col] = row[i];
+      });
+      return obj;
+    } catch (err) {
+      console.error('Error querying Account_Info:', err);
+      return null;
+    }
+  }
+
+  function renderAccountInfoModal(data) {
+    const setText = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value ?? '-';
+    };
+
+    if (!data) {
+      setText('aiAccountId', '-');
+      setText('aiAccountNumber', '-');
+      setText('aiStatus', 'No account data found');
+      setText('aiCurrency', '-');
+      setText('aiBeginningBalance', '-');
+      setText('aiCurrentBalance', '-');
+      setText('aiBuyingPower', '-');
+      setText('aiCash', '-');
+      setText('aiLastEvent', '-');
+      setText('aiUpdatedAt', '-');
+      return;
+    }
+
+    setText('aiAccountId', String(data.account_id || '-'));
+    setText('aiAccountNumber', String(data.account_number || '-'));
+    setText('aiStatus', String(data.status || '-'));
+    setText('aiCurrency', String(data.currency || '-'));
+    setText('aiBeginningBalance', formatCurrencySafe(data.beginning_balance));
+    setText('aiCurrentBalance', formatCurrencySafe(data.current_balance));
+    setText('aiBuyingPower', formatCurrencySafe(data.buying_power));
+    setText('aiCash', formatCurrencySafe(data.cash));
+    setText('aiLastEvent', String(data.last_event || '-'));
+    setText('aiUpdatedAt', String(data.updated_at || '-'));
+  }
+
+  function openAccountInfoModal() {
+    const modal = document.getElementById('accountInfoModal');
+    if (!modal) return;
+    const data = getLatestAccountInfo();
+    renderAccountInfoModal(data);
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeAccountInfoModal() {
+    const modal = document.getElementById('accountInfoModal');
+    if (!modal) return;
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+  }
+
   function getActiveRows() {
     return activeTab === 'all'
       ? Object.values(loaded[activeSym] || {}).flat()
@@ -1749,6 +1837,21 @@ document.getElementById('v2DatasetSelect')?.addEventListener('change', event => 
     );
     const url = `https://github.com/rcaldwell67/pinescripts/issues/new?title=${title}&body=${body}&labels=remove-symbol`;
     window.open(url, '_blank');
+  });
+
+  const accountBtn = document.getElementById('openAccountInfoBtn');
+  accountBtn?.addEventListener('click', openAccountInfoModal);
+
+  const closeAccountBtn = document.getElementById('closeAccountInfoBtn');
+  closeAccountBtn?.addEventListener('click', closeAccountInfoModal);
+
+  const accountModal = document.getElementById('accountInfoModal');
+  accountModal?.addEventListener('click', event => {
+    if (event.target === accountModal) closeAccountInfoModal();
+  });
+
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') closeAccountInfoModal();
   });
 })();
 
