@@ -118,6 +118,14 @@ flowchart TD
 - Purpose:
   - Single source for dashboard-backed trading data.
   - Stores symbols, trade rows, and summary rows for backtest/paper/live modes.
+  - Now also stores account metadata and balances in `Account_Info` for Alpaca paper account display/update flows.
+
+### Account info tracking
+
+- Table: `Account_Info`
+- Purpose:
+  - Stores Alpaca account id, account number, status, beginning balance, current balance, buying power, cash, last event, and update timestamp.
+  - Used by realtime paper trading to keep dashboard-visible account balance state in sync with Alpaca account activity.
 
 ### Shared fetch/backtest utilities
 
@@ -169,10 +177,15 @@ flowchart TD
   - `python backend/paper_trading/realtime_alpaca_paper_trader.py --all-symbols --version v1`
 - Behavior:
   - Reads v1 signal from latest bars.
-  - Submits Alpaca paper short bracket orders for eligible symbols.
+  - Submits Alpaca paper bracket orders.
+  - Uses long-side paper execution for crypto symbols and short-side execution for supported non-crypto symbols.
   - Syncs fill activities into `paper_fill_events`.
+  - Syncs canceled/rejected/expired order events into `paper_order_events`.
+  - Tracks order-to-trade links in `paper_order_trade_links`.
   - Mirrors fills into `trades` rows with `mode='paper'`.
+  - Updates `Account_Info` on heartbeat, fill, and cancel events.
   - Writes status summaries to `paper_trading_results`.
+  - Supports optional loop monitoring, websocket bar triggers, open-position caps, and signal-driven close behavior.
 
 ### Simulation paper runner (non-realtime)
 
@@ -198,6 +211,7 @@ flowchart TD
 - v1 behavior:
   - Defaults to version v1.
   - Supports `execution_mode` realtime or simulation.
+  - Realtime path now supports `max_open_positions`, `close_on_signal`, and manual-only `stream_bars` options.
   - Includes optional v1 parity check in simulation flow.
 
 ### Paper rerun workflow trigger
@@ -206,7 +220,8 @@ flowchart TD
 - Trigger format:
   - GitHub issue title starts with `Rerun Paper Trading:`
 - v1 behavior:
-  - Uses `reset_v1_aligned_backtest_paper.py` when version is v1.
+  - Runs realtime Alpaca paper trading for v1.
+  - Uses a dedicated concurrency lane so dashboard-triggered paper reruns are not blocked behind unrelated DB-writer jobs.
 
 ## v1 Live Trading Components
 
@@ -267,6 +282,8 @@ flowchart TD
   - `LIVE_TRADING_SUPPORTED_VERSIONS` includes `v1`.
   - Shows rerun buttons by dataset mode for selected version.
   - Opens issue-based rerun requests for backtest, paper, and live.
+  - Supports dynamic account display via `Account_Info`.
+  - Includes paper/live/backtest mode-aware balance handling.
 
 ### Frontend shell
 
@@ -275,6 +292,15 @@ flowchart TD
   - Backtest
   - Paper Trading
   - Live Trading
+  - Includes an `Account Info` modal to display Alpaca account balances and metadata from the database.
+
+### Chart data refresh path
+
+- File: `docs/fetch_chart_data.py`
+- Current behavior:
+  - Uses Alpaca crypto bars for BTC/USD and ETH/USD.
+  - Uses Alpaca stock bars via IEX feed for stocks where available.
+  - Falls back to Yahoo Finance hourly bars for stock symbols when Alpaca subscription/feed access is unavailable.
 
 ## Environment Variables Used by v1
 
@@ -302,8 +328,20 @@ flowchart TD
 ## Known v1 Constraints
 
 - Realtime paper/live scripts currently allow only `--version v1`.
-- v1 strategy is short-biased in current execution paths.
-- Crypto symbols are skipped in realtime short paths due to shorting constraints.
+- Realtime paper/live wiring is still version-gated to v1 even though template/config scaffolding exists for later versions.
+- Paper execution uses symbol-aware side targeting rather than a uniform long/short implementation across all asset classes.
+- Stock chart refresh quality can vary by available feed; unsupported recent Alpaca stock requests fall back to Yahoo Finance hourly data.
+
+## Paper Trading Reset State (2026-03-31)
+
+- Historical paper-trading rows were archived and active paper rows were reset to start realtime paper from a clean slate.
+- Archive tables now hold prior paper history:
+  - `paper_trades_archive`
+  - `paper_trading_results_archive`
+  - `paper_fill_events_archive`
+  - `paper_order_trade_links_archive`
+  - `paper_order_events_archive`
+- `Account_Info.last_event` was updated to `paper_reset` during reset.
 - Non-v1 versions may exist as templates/configs, but v1 has the most complete operational wiring across backtest/paper/live.
 
 ## Operational Runbook (v1)
@@ -318,8 +356,19 @@ flowchart TD
 ### Paper realtime cycle (single symbol)
 
 1. Run:
+
    - `python backend/paper_trading/realtime_alpaca_paper_trader.py --symbol CLM --version v1`
-2. Validate parity if using simulation reset path:
+
+   - Optional monitored loop:
+
+     - `python backend/paper_trading/realtime_alpaca_paper_trader.py --symbol CLM --version v1 --loop-seconds 60 --max-open-positions 8`
+
+   - Optional event-driven manual mode:
+
+     - `python backend/paper_trading/realtime_alpaca_paper_trader.py --symbol BTC/USD --version v1 --stream-bars`
+
+1. Validate parity if using simulation reset path:
+
    - `python backend/paper_trading/verify_v1_parity.py --version v1 --symbol CLM`
 
 ### Live realtime cycle (single symbol, guarded)
@@ -342,13 +391,17 @@ flowchart TD
 - `backend/paper_trading/realtime_alpaca_paper_trader.py`
 - `backend/paper_trading/paper_trade_backtrader_alpaca.py`
 - `backend/paper_trading/verify_v1_parity.py`
+- `backend/data/create_tradingcopilot_db.py`
 - `backend/live_trading/realtime_alpaca_live_trader.py`
 - `backend/live_trading/verify_live_consistency.py`
 - `.github/workflows/rerun-backtest-issue.yml`
 - `.github/workflows/rerun-paper-trade-issue.yml`
 - `.github/workflows/paper-trade.yml`
+- `.github/workflows/alpaca-paper-sync.yml`
 - `.github/workflows/live-trade.yml`
 - `.github/workflows/rerun-live-trade-issue.yml`
 - `docs/index.html`
 - `docs/site.js`
+- `docs/site.css`
+- `docs/fetch_chart_data.py`
 - `docs/data/tradingcopilot.db`
