@@ -34,11 +34,34 @@ sys.path.insert(0, str(BACKEND_DIR))
 sys.path.insert(0, str(SG_DIR))
 
 from apm_v1 import apm_v1_latest_bar_analysis, apm_v1_latest_bar_exit_analysis
+from apm_v2 import apm_v2_latest_bar_analysis, apm_v2_latest_bar_exit_analysis
 from backtest_backtrader_alpaca import DB_PATH, VERSION_MAP, fetch_ohlcv
 from v1_params import get_v1_params
+from v2_params import get_v2_params
 
 ALPACA_BASE = "https://paper-api.alpaca.markets"
-V1_PARAMS = get_v1_params()
+STRATEGY_PARAMS: dict[str, dict[str, Any]] = {
+    "v1": get_v1_params(),
+    "v2": get_v2_params(),
+}
+
+
+def _strategy_params(version: str) -> dict[str, Any]:
+    return STRATEGY_PARAMS.get(version, STRATEGY_PARAMS["v1"])
+
+
+def _entry_analysis(df, side: str, version: str) -> dict[str, Any]:
+    params = _strategy_params(version)
+    if version == "v2":
+        return apm_v2_latest_bar_analysis(df, side=side, params=params)
+    return apm_v1_latest_bar_analysis(df, side=side, params=params)
+
+
+def _exit_analysis(df, side: str, version: str) -> dict[str, Any]:
+    params = _strategy_params(version)
+    if version == "v2":
+        return apm_v2_latest_bar_exit_analysis(df, side=side, params=params)
+    return apm_v1_latest_bar_exit_analysis(df, side=side, params=params)
 
 
 class AlpacaBarStreamer:
@@ -215,8 +238,8 @@ def _load_symbols_from_db() -> list[str]:
     return [row[0] for row in rows]
 
 
-def _latest_signal_is_entry(df, side: str = "short") -> bool:
-    return bool(apm_v1_latest_bar_analysis(df, side=side, params=V1_PARAMS).get("is_entry"))
+def _latest_signal_is_entry(df, side: str = "short", version: str = "v1") -> bool:
+    return bool(_entry_analysis(df, side=side, version=version).get("is_entry"))
 
 
 def _target_side_for_symbol(symbol: str) -> str:
@@ -224,8 +247,8 @@ def _target_side_for_symbol(symbol: str) -> str:
     return "long" if "/" in symbol else "short"
 
 
-def _compute_order_params(df, account_equity: float, side: str) -> tuple[float, float, float] | None:
-    risk = V1_PARAMS["risk"]
+def _compute_order_params(df, account_equity: float, side: str, version: str) -> tuple[float, float, float] | None:
+    risk = _strategy_params(version)["risk"]
     if len(df) < 210:
         return None
     if "atr" not in df.columns:
@@ -393,8 +416,8 @@ def _missed_window_opportunity_scan(
         return
 
     df_slice = df.iloc[: candidate_idx + 1].copy()
-    long_analysis = apm_v1_latest_bar_analysis(df_slice, side="long", params=V1_PARAMS)
-    short_analysis = apm_v1_latest_bar_analysis(df_slice, side="short", params=V1_PARAMS)
+    long_analysis = _entry_analysis(df_slice, side="long", version=version)
+    short_analysis = _entry_analysis(df_slice, side="short", version=version)
 
     long_ok = bool(long_analysis.get("is_entry"))
     short_ok = bool(short_analysis.get("is_entry"))
@@ -892,7 +915,7 @@ def _trade_one_symbol(
             # Use the actual position side reported by the broker to pick the correct exit evaluator.
             position_side = str(position.get("side") or "").lower()
             exit_side = "long" if position_side == "long" else "short"
-            exit_analysis = apm_v1_latest_bar_exit_analysis(df, side=exit_side, params=V1_PARAMS)
+            exit_analysis = _exit_analysis(df, side=exit_side, version=version)
             diag["latest_bar_ts"] = exit_analysis.get("latest_bar_ts") or _latest_bar_timestamp(df)
             diag["latest_exit_signal"] = bool(exit_analysis.get("is_exit"))
             diag["exit_failed_stage"] = exit_analysis.get("failed_stage")
@@ -940,8 +963,8 @@ def _trade_one_symbol(
     df = fetch_ohlcv(symbol)
 
     # Evaluate both directions; match Pine's evaluation order (long first).
-    long_analysis = apm_v1_latest_bar_analysis(df, side="long", params=V1_PARAMS)
-    short_analysis = apm_v1_latest_bar_analysis(df, side="short", params=V1_PARAMS)
+    long_analysis = _entry_analysis(df, side="long", version=version)
+    short_analysis = _entry_analysis(df, side="short", version=version)
     diag["long_analysis"] = {k: str(v) for k, v in long_analysis.items() if k != "latest_bar_ts"}
     diag["short_analysis"] = {k: str(v) for k, v in short_analysis.items() if k != "latest_bar_ts"}
 
@@ -986,7 +1009,7 @@ def _trade_one_symbol(
         diag["detail"] = detail
         return False, diag
 
-    order_params = _compute_order_params(df, account_equity, side=side)
+    order_params = _compute_order_params(df, account_equity, side=side, version=version)
     if not order_params:
         _upsert_summary(conn, symbol, version, "idle", "insufficient data/invalid ATR", account_equity)
         print(f"IDLE {symbol}: invalid order params")
@@ -1020,11 +1043,11 @@ def _trade_one_symbol(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Run realtime Alpaca paper trading for APM v1.")
+    parser = argparse.ArgumentParser(description="Run realtime Alpaca paper trading for APM versions.")
     scope = parser.add_mutually_exclusive_group(required=True)
     scope.add_argument("--symbol", help="Trading symbol, e.g. CLM")
     scope.add_argument("--all-symbols", action="store_true", help="Run for every symbol in the DB")
-    parser.add_argument("--version", required=True, help="Strategy version (currently v1)")
+    parser.add_argument("--version", required=True, help="Strategy version (v1 or v2)")
     parser.add_argument("--loop-seconds", type=int, default=0, help="If > 0, continuously monitor symbols every N seconds")
     parser.add_argument("--max-loops", type=int, default=0, help="Maximum loop iterations when looping (0 = run indefinitely)")
     parser.add_argument("--stream-bars", action="store_true", help="Use Alpaca websocket bars to trigger symbol evaluations")
@@ -1056,8 +1079,8 @@ def main() -> int:
     args = parser.parse_args()
 
     version = args.version.strip().lower()
-    if version != "v1":
-        print("Only v1 realtime paper trading is currently supported.", file=sys.stderr)
+    if version not in {"v1", "v2"}:
+        print("Only v1 and v2 realtime paper trading are currently supported.", file=sys.stderr)
         return 1
 
     symbols = [args.symbol.strip()] if args.symbol else _load_symbols_from_db()

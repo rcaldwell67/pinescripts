@@ -6,10 +6,10 @@ This document describes what is currently implemented for APM v2 in this reposit
 
 - Strategy family: Adaptive Pullback Momentum v2
 - Primary timeframe: 10m
-- Primary implementation language: Pine Script
+- Primary implementation language: Pine Script + Python execution adapters
 - Current support state:
   - Pine/template and dashboard dataset support: available
-  - Python backtest/paper/live execution support under `--version v2`: not currently wired
+  - Python backtest/paper/live execution support under `--version v2`: wired
 
 ## Canonical v2 Pine Strategy
 
@@ -69,18 +69,40 @@ This document describes what is currently implemented for APM v2 in this reposit
   - README documents v2 as a dashboard backtest dataset source
   - 12-month export is documented as separate from the main dashboard file
 
-## Execution Support Status (Important)
+## Python Runtime Support
 
-Current Python automation is v1-centric.
+### New v2 strategy modules
 
-- There is no active backend execution path in this repo that dispatches strategy logic for `version == "v2"` in the current Python trading/backtest runners.
-- Realtime paper and live runners currently operate on v1 signal-engine wiring.
-- v2 is therefore documented and represented primarily through Pine/template + dashboard dataset flows at this time.
+- `backend/strategy_generator/v2_params.py`
+  - Adds v2 defaults mapped from `APM v2.0-10m.pine` inputs.
+- `backend/strategy_generator/apm_v2.py`
+  - Adds v2 latest-bar entry/exit analysis adapters.
+  - Uses v2 defaults and supports side-aware analysis.
+- `backend/strategy_generator/apm_v2_backtest.py`
+  - Adds v2 backtest simulation with long/short handling, ATR stops/targets, trailing logic, and max-bars exit.
 
-## Recommended Next Steps To Fully Wire v2
+### Backtest runner support
 
-1. Add a Python v2 signal/backtest engine module and parameter source (mirroring v1 architecture).
-2. Extend runtime dispatch in shared backtest/paper/live runners to accept `--version v2`.
-3. Add parity validation for v2 (backtest vs paper dataset consistency checks).
-4. Add workflow support for v2 reruns and CI checks similar to v1.
-5. Update changelog/release notes when v2 execution support becomes end-to-end.
+- `backend/backtest_backtrader_alpaca.py`
+  - `VERSION_MAP` now includes `v2` (`APM v2.0-10m`).
+  - `run_backtest(...)` now dispatches `version == "v2"` to `backtest_apm_v2(...)`.
+
+### Realtime paper support
+
+- `backend/paper_trading/realtime_alpaca_paper_trader.py`
+  - `--version v2` is accepted.
+  - Entry/exit analysis and risk sizing are routed through version-specific strategy params/functions.
+  - Existing scheduling, logging, fill sync, and order handling paths are reused for v2.
+
+### Realtime live support
+
+- `backend/live_trading/realtime_alpaca_live_trader.py`
+  - `--version v2` is accepted.
+  - Entry analysis and risk sizing are routed through version-specific strategy params/functions.
+  - Existing live guardrails (`ALLOW_ALPACA_LIVE_TRADING`) and fill sync continue to apply.
+
+## Remaining Enhancements
+
+1. Add a dedicated v2 parity validator (backtest vs paper trade-row consistency).
+2. Add v2-specific rerun/reset automation equivalent to v1 aligned reset workflow.
+3. Extend CI/workflow coverage so v2 paths are validated continuously.

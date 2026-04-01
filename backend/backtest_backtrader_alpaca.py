@@ -39,7 +39,7 @@ DB_PATH = REPO_ROOT / "docs" / "data" / "tradingcopilot.db"
 
 VERSION_MAP: dict[str, str] = {
     "v1": "APM v1.0-5m",
-    # extend here as new versions are added
+    "v2": "APM v2.0-10m",
 }
 
 
@@ -171,6 +171,11 @@ def run_backtest(
         from v1_params import get_v1_params
 
         return backtest_apm_v1(df, params=get_v1_params(symbol=symbol, profile=profile))
+    if version == "v2":
+        from apm_v2_backtest import backtest_apm_v2
+        from v2_params import get_v2_params
+
+        return backtest_apm_v2(df, params=get_v2_params(symbol=symbol, profile=profile))
     raise ValueError(f"Unknown version: {version!r}. Valid values: {list(VERSION_MAP)}")
 
 

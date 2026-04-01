@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- Added v2 runtime parameter source at `backend/strategy_generator/v2_params.py` based on `APM v2.0-10m` defaults.
+- Added v2 strategy adapter at `backend/strategy_generator/apm_v2.py` with side-aware latest-bar entry/exit analysis wiring.
+- Added v2 backtest engine at `backend/strategy_generator/apm_v2_backtest.py` with long/short simulation, ATR-based SL/TP, trailing stop, and max-bars exit handling.
+- Extended `backend/backtest_backtrader_alpaca.py` to support `--version v2` dispatch and `VERSION_MAP` registration.
+- Extended realtime paper runner `backend/paper_trading/realtime_alpaca_paper_trader.py` to support `--version v2` through version-aware analysis and risk-parameter routing.
+- Extended realtime live runner `backend/live_trading/realtime_alpaca_live_trader.py` to support `--version v2` through version-aware analysis and risk-parameter routing.
+
 - Added side-aware v1 long-entry evaluator in `backend/strategy_generator/apm_v1.py` and wired side dispatch in `apm_v1_latest_bar_analysis(...)` and `apm_v1_signals(...)` so runtime evaluation supports both long and short gate stacks.
 - Added v1 long RSI defaults (`rsi_long_min`, `rsi_long_max`) to shared runtime params in `backend/strategy_generator/v1_params.py`.
 - Updated realtime paper runner (`backend/paper_trading/realtime_alpaca_paper_trader.py`) to evaluate every symbol for both long and short opportunities each pass, with long-first selection and broker-capability enforcement at order submission.

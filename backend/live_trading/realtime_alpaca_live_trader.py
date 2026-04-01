@@ -36,12 +36,28 @@ try:
 except ImportError:
     pass
 
-from apm_v1 import apm_v1_latest_bar_analysis, apm_v1_signals
+from apm_v1 import apm_v1_latest_bar_analysis
+from apm_v2 import apm_v2_latest_bar_analysis
 from backtest_backtrader_alpaca import DB_PATH, VERSION_MAP, fetch_ohlcv
 from v1_params import get_v1_params
+from v2_params import get_v2_params
 
 ALPACA_LIVE_BASE = os.getenv("ALPACA_LIVE_BASE_URL", "https://api.alpaca.markets")
-V1_PARAMS = get_v1_params()
+STRATEGY_PARAMS: dict[str, dict[str, Any]] = {
+    "v1": get_v1_params(),
+    "v2": get_v2_params(),
+}
+
+
+def _strategy_params(version: str) -> dict[str, Any]:
+    return STRATEGY_PARAMS.get(version, STRATEGY_PARAMS["v1"])
+
+
+def _entry_analysis(df, side: str, version: str) -> dict[str, Any]:
+    params = _strategy_params(version)
+    if version == "v2":
+        return apm_v2_latest_bar_analysis(df, side=side, params=params)
+    return apm_v1_latest_bar_analysis(df, side=side, params=params)
 
 
 class AlpacaLiveAPI:
@@ -131,11 +147,8 @@ def _load_symbols_from_db() -> list[str]:
     return [row[0] for row in rows]
 
 
-def _latest_signal_is_entry(df, side: str = "short") -> bool:
-    entries = set(apm_v1_signals(df, side=side, params=V1_PARAMS))
-    if not entries:
-        return False
-    return (len(df) - 1) in entries
+def _latest_signal_is_entry(df, side: str = "short", version: str = "v1") -> bool:
+    return bool(_entry_analysis(df, side=side, version=version).get("is_entry"))
 
 
 def _can_short_symbol(symbol: str) -> bool:
@@ -144,8 +157,8 @@ def _can_short_symbol(symbol: str) -> bool:
     return "/" not in symbol
 
 
-def _compute_order_params(df, account_equity: float, side: str = "short") -> tuple[float, float, float] | None:
-    risk = V1_PARAMS["risk"]
+def _compute_order_params(df, account_equity: float, side: str = "short", version: str = "v1") -> tuple[float, float, float] | None:
+    risk = _strategy_params(version)["risk"]
     if len(df) < 210:
         return None
     if "atr" not in df.columns:
@@ -302,8 +315,8 @@ def _trade_one_symbol(conn: sqlite3.Connection, api: AlpacaLiveAPI, symbol: str,
         return
 
     df = fetch_ohlcv(symbol)
-    long_analysis = apm_v1_latest_bar_analysis(df, side="long", params=V1_PARAMS)
-    short_analysis = apm_v1_latest_bar_analysis(df, side="short", params=V1_PARAMS)
+    long_analysis = _entry_analysis(df, side="long", version=version)
+    short_analysis = _entry_analysis(df, side="short", version=version)
 
     if long_analysis.get("is_entry"):
         side = "long"
@@ -323,7 +336,7 @@ def _trade_one_symbol(conn: sqlite3.Connection, api: AlpacaLiveAPI, symbol: str,
         print(f"IDLE {symbol}: {detail}")
         return
 
-    order_params = _compute_order_params(df, account_equity, side=side)
+    order_params = _compute_order_params(df, account_equity, side=side, version=version)
     if not order_params:
         _upsert_summary(conn, symbol, version, "idle", "insufficient data/invalid ATR", account_equity)
         print(f"IDLE {symbol}: invalid order params")
@@ -344,11 +357,11 @@ def _trade_one_symbol(conn: sqlite3.Connection, api: AlpacaLiveAPI, symbol: str,
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Run realtime Alpaca LIVE trading for APM v1.")
+    parser = argparse.ArgumentParser(description="Run realtime Alpaca LIVE trading for APM versions.")
     scope = parser.add_mutually_exclusive_group(required=True)
     scope.add_argument("--symbol", help="Trading symbol, e.g. CLM")
     scope.add_argument("--all-symbols", action="store_true", help="Run for every symbol in the DB")
-    parser.add_argument("--version", required=True, help="Strategy version (currently v1)")
+    parser.add_argument("--version", required=True, help="Strategy version (v1 or v2)")
     args = parser.parse_args()
 
     if os.getenv("ALLOW_ALPACA_LIVE_TRADING", "false").strip().lower() not in {"1", "true", "yes"}:
@@ -359,8 +372,8 @@ def main() -> int:
         return 2
 
     version = args.version.strip().lower()
-    if version != "v1":
-        print("Only v1 realtime live trading is currently supported.", file=sys.stderr)
+    if version not in {"v1", "v2"}:
+        print("Only v1 and v2 realtime live trading are currently supported.", file=sys.stderr)
         return 1
 
     symbols = [args.symbol.strip()] if args.symbol else _load_symbols_from_db()
