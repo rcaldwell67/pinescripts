@@ -17,6 +17,23 @@
         "first_trade_date": "2026-01-07 14:00:00+00:00",
         "last_trade_date": "2026-03-29 15:25:00+00:00"
       }
+    ],
+    "v2": [
+      {
+        "version": "v2",
+        "beginning_equity": 1000.0,
+        "final_equity": 1498.8000333565174,
+        "total_trades": 31,
+        "winning_trades": 18,
+        "losing_trades": 13,
+        "win_rate": 58.06451612903226,
+        "average_pnl": 16.090323656661866,
+        "total_pnl": 498.8000333565179,
+        "max_drawdown": 102.49210625646379,
+        "net_return_pct": 49.880003335651736,
+        "first_trade_date": "2026-01-08 14:25:00+00:00",
+        "last_trade_date": "2026-03-29 17:15:00+00:00"
+      }
     ]
   },
   "CLM": {
@@ -76,6 +93,23 @@
         "net_return_pct": 25.931015005967062,
         "first_trade_date": "2026-01-06 19:50:00+00:00",
         "last_trade_date": "2026-03-31 10:30:00+00:00"
+      }
+    ],
+    "v2": [
+      {
+        "version": "v2",
+        "beginning_equity": 1000.0,
+        "final_equity": 1737.439536995003,
+        "total_trades": 33,
+        "winning_trades": 19,
+        "losing_trades": 14,
+        "win_rate": 57.57575757575758,
+        "average_pnl": 22.346652636212198,
+        "total_pnl": 737.4395369950025,
+        "max_drawdown": 252.1134019420697,
+        "net_return_pct": 73.7439536995003,
+        "first_trade_date": "2026-01-07 14:00:00+00:00",
+        "last_trade_date": "2026-03-29 13:25:00+00:00"
       }
     ]
   }
