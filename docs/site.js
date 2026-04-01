@@ -107,8 +107,8 @@ const logsDataCache = {
   diagnosticRows: null,
   diagnosticPath: null,
 };
-const PAPER_TRADING_SUPPORTED_VERSIONS = new Set(['v1']);
-const LIVE_TRADING_SUPPORTED_VERSIONS = new Set(['v1']);
+const PAPER_TRADING_SUPPORTED_VERSIONS = new Set(['v1', 'v2']);
+const LIVE_TRADING_SUPPORTED_VERSIONS = new Set(['v1', 'v2']);
 let pendingDatasetSymbol = '';
 let dashboardRefreshInFlight = false;
 let dashboardAutoRefreshTimer = null;
