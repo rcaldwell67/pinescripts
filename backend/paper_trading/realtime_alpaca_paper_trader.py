@@ -20,7 +20,7 @@ import sqlite3
 import sys
 import time
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from threading import Event, Lock, Thread
 from typing import Any
@@ -294,32 +294,152 @@ def _ensure_realtime_paper_log_table(conn: sqlite3.Connection) -> None:
     )
 
 
-def _check_schedule_health(conn: sqlite3.Connection, interval_seconds: int) -> None:
-    """Insert a schedule_miss entry when the gap since the last run exceeds 1.5x the expected interval."""
+def _insert_realtime_log(
+    conn: sqlite3.Connection,
+    symbol: str,
+    version: str,
+    status: str,
+    detail: str,
+    equity: float | None,
+    logged_at: str | None = None,
+) -> None:
+    _ensure_realtime_paper_log_table(conn)
+    ts = logged_at or datetime.now(timezone.utc).isoformat()
+    conn.execute(
+        "INSERT INTO realtime_paper_log (symbol, version, status, detail, equity, logged_at) VALUES (?, ?, ?, ?, ?, ?)",
+        (symbol, version, status, detail, equity, ts),
+    )
+
+
+def _parse_iso_ts(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    if text.endswith("Z"):
+        text = text[:-1] + "+00:00"
+    text = text.replace(" ", "T")
+    try:
+        dt = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
+def _latest_logged_non_scheduler_time(conn: sqlite3.Connection) -> datetime | None:
+    row = conn.execute(
+        "SELECT MAX(logged_at) FROM realtime_paper_log WHERE symbol != '__scheduler__'"
+    ).fetchone()
+    return _parse_iso_ts(row[0] if row else None)
+
+
+def _build_missed_windows(last_dt: datetime, now: datetime, interval_seconds: int) -> list[datetime]:
+    if interval_seconds <= 0:
+        return []
+    first = last_dt + timedelta(seconds=interval_seconds)
+    windows: list[datetime] = []
+    cursor = first
+    while cursor <= now:
+        windows.append(cursor)
+        cursor += timedelta(seconds=interval_seconds)
+    return windows
+
+
+def _realtime_log_exists(conn: sqlite3.Connection, symbol: str, status: str, window_iso: str) -> bool:
+    marker = f"window={window_iso}"
+    row = conn.execute(
+        """
+        SELECT 1
+        FROM realtime_paper_log
+        WHERE symbol = ? AND status = ? AND detail LIKE ?
+        LIMIT 1
+        """,
+        (symbol, status, f"%{marker}%"),
+    ).fetchone()
+    return bool(row)
+
+
+def _missed_window_opportunity_scan(
+    conn: sqlite3.Connection,
+    symbol: str,
+    version: str,
+    window_dt: datetime,
+    account_equity: float,
+) -> None:
+    # Analyze missed windows for observability only; no late orders are submitted.
+    df = fetch_ohlcv(symbol)
+    if len(df) < 210:
+        return
+
+    if "timestamp" in df.columns:
+        source_times = [str(v) for v in df["timestamp"].tolist()]
+    elif "Datetime" in df.columns:
+        source_times = [str(v) for v in df["Datetime"].tolist()]
+    else:
+        source_times = [str(v) for v in df.index.tolist()]
+
+    candidate_idx = -1
+    for idx, ts_raw in enumerate(source_times):
+        ts = _parse_iso_ts(ts_raw)
+        if ts is None:
+            continue
+        if ts <= window_dt:
+            candidate_idx = idx
+
+    if candidate_idx < 210:
+        return
+
+    df_slice = df.iloc[: candidate_idx + 1].copy()
+    long_analysis = apm_v1_latest_bar_analysis(df_slice, side="long", params=V1_PARAMS)
+    short_analysis = apm_v1_latest_bar_analysis(df_slice, side="short", params=V1_PARAMS)
+
+    long_ok = bool(long_analysis.get("is_entry"))
+    short_ok = bool(short_analysis.get("is_entry"))
+    if not long_ok and not short_ok:
+        return
+
+    window_iso = window_dt.isoformat()
+    if long_ok:
+        status = "missed_opportunity"
+        detail = (
+            f"window={window_iso} side=long detail={long_analysis.get('detail') or 'long entry'}"
+        )
+        if not _realtime_log_exists(conn, symbol, status, window_iso):
+            _insert_realtime_log(conn, symbol, version, status, detail, account_equity)
+        return
+
+    if short_ok and _can_short_symbol(symbol):
+        status = "missed_opportunity"
+        detail = (
+            f"window={window_iso} side=short detail={short_analysis.get('detail') or 'short entry'}"
+        )
+        if not _realtime_log_exists(conn, symbol, status, window_iso):
+            _insert_realtime_log(conn, symbol, version, status, detail, account_equity)
+        return
+
+    status = "missed_opportunity_blocked"
+    detail = (
+        f"window={window_iso} side=short blocked=crypto_short_not_supported detail={short_analysis.get('detail') or 'short entry'}"
+    )
+    if not _realtime_log_exists(conn, symbol, status, window_iso):
+        _insert_realtime_log(conn, symbol, version, status, detail, account_equity)
+
+
+def _check_schedule_health(conn: sqlite3.Connection, interval_seconds: int) -> list[datetime]:
+    """Insert schedule_miss on large gaps and return expected windows that were skipped."""
     _ensure_realtime_paper_log_table(conn)
     threshold = interval_seconds * 1.5
-    try:
-        row = conn.execute(
-            "SELECT MAX(logged_at) FROM realtime_paper_log WHERE symbol != '__scheduler__'"
-        ).fetchone()
-        last_logged_at_str = row[0] if row else None
-    except Exception:
-        last_logged_at_str = None
-
-    if not last_logged_at_str:
-        return  # No prior run to compare against
-
-    try:
-        last_dt = datetime.fromisoformat(last_logged_at_str.replace(" ", "T"))
-        if last_dt.tzinfo is None:
-            last_dt = last_dt.replace(tzinfo=timezone.utc)
-    except ValueError:
-        return
+    last_dt = _latest_logged_non_scheduler_time(conn)
+    if not last_dt:
+        return []
 
     now = datetime.now(timezone.utc)
     gap_seconds = (now - last_dt).total_seconds()
     if gap_seconds <= threshold:
-        return
+        return []
 
     gap_min = gap_seconds / 60
     expected_min = interval_seconds / 60
@@ -330,6 +450,7 @@ def _check_schedule_health(conn: sqlite3.Connection, interval_seconds: int) -> N
         ("__scheduler__", "system", "schedule_miss", detail, None, now.isoformat()),
     )
     conn.commit()
+    return _build_missed_windows(last_dt, now, interval_seconds)
 
 
 def _upsert_summary(conn: sqlite3.Connection, symbol: str, version: str, status: str, detail: str, equity: float | None) -> None:
@@ -921,6 +1042,17 @@ def main() -> int:
         default=300,
         help="Expected seconds between scheduled runs; logs schedule_miss if gap exceeds 1.5x (0 = disabled)",
     )
+    parser.add_argument(
+        "--catchup-missed-windows",
+        action="store_true",
+        help="When schedule gaps are detected, scan missed windows and log missed opportunities (no late orders)",
+    )
+    parser.add_argument(
+        "--catchup-max-windows",
+        type=int,
+        default=12,
+        help="Maximum number of missed windows to scan per startup",
+    )
     args = parser.parse_args()
 
     version = args.version.strip().lower()
@@ -948,8 +1080,30 @@ def main() -> int:
     except sqlite3.OperationalError:
         pass
 
+    missed_windows: list[datetime] = []
     if args.schedule_interval_seconds > 0:
-        _check_schedule_health(conn, args.schedule_interval_seconds)
+        missed_windows = _check_schedule_health(conn, args.schedule_interval_seconds)
+
+    if args.catchup_missed_windows and missed_windows:
+        account = api.get_account()
+        account_equity = float(account.get("equity") or account.get("last_equity") or 100000.0)
+        windows_to_scan = missed_windows[-max(args.catchup_max_windows, 1) :]
+        print(
+            f"Catch-up scan: {len(windows_to_scan)} missed windows (log-only, no late order submission)"
+        )
+        for window_dt in windows_to_scan:
+            for symbol in symbols:
+                try:
+                    _missed_window_opportunity_scan(
+                        conn,
+                        symbol,
+                        version,
+                        window_dt,
+                        account_equity,
+                    )
+                except Exception as exc:
+                    print(f"WARN catch-up {symbol} @ {window_dt.isoformat()}: {exc}")
+        conn.commit()
 
     loop_count = 0
     failures: list[str] = []
