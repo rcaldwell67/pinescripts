@@ -278,15 +278,35 @@ def _append_diagnostic_line(path: Path, event: dict[str, Any]) -> None:
         handle.write("\n")
 
 
+def _ensure_realtime_paper_log_table(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS realtime_paper_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            symbol TEXT NOT NULL,
+            version TEXT NOT NULL,
+            status TEXT NOT NULL,
+            detail TEXT,
+            equity REAL,
+            logged_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_rpl_symbol_logged ON realtime_paper_log (symbol, logged_at DESC)"
+    )
+
+
 def _upsert_summary(conn: sqlite3.Connection, symbol: str, version: str, status: str, detail: str, equity: float | None) -> None:
     notes = f"{VERSION_MAP.get(version, version)} realtime alpaca summary"
+    ts = datetime.now(timezone.utc).isoformat()
     metrics = {
         "symbol": symbol,
         "version": version,
         "status": status,
         "detail": detail,
         "equity": equity,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": ts,
     }
     conn.execute(
         "DELETE FROM paper_trading_results WHERE symbol = ? AND notes LIKE ?",
@@ -295,6 +315,22 @@ def _upsert_summary(conn: sqlite3.Connection, symbol: str, version: str, status:
     conn.execute(
         "INSERT INTO paper_trading_results (symbol, metrics, notes) VALUES (?, ?, ?)",
         (symbol, json.dumps(metrics), notes),
+    )
+    # Append to cumulative run log
+    _ensure_realtime_paper_log_table(conn)
+    conn.execute(
+        "INSERT INTO realtime_paper_log (symbol, version, status, detail, equity, logged_at) VALUES (?, ?, ?, ?, ?, ?)",
+        (symbol, version, status, detail, equity, ts),
+    )
+    # Trim to last 500 rows per symbol to keep the table bounded
+    conn.execute(
+        """
+        DELETE FROM realtime_paper_log
+        WHERE symbol = ? AND id NOT IN (
+            SELECT id FROM realtime_paper_log WHERE symbol = ? ORDER BY id DESC LIMIT 500
+        )
+        """,
+        (symbol, symbol),
     )
 
 

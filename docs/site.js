@@ -1135,6 +1135,7 @@ function getActiveSymbolKeys() {
 
 function decodeLogSourceLabel(source) {
   if (source === 'diagnostic') return 'Diagnostic JSONL';
+  if (source === 'runhistory') return 'Run History';
   if (source === 'summary') return 'Realtime Summary';
   if (source === 'fills') return 'Paper Fill Event';
   if (source === 'orders') return 'Paper Order Event';
@@ -1311,10 +1312,44 @@ function queryOrderLogsFromDb(db) {
   return out;
 }
 
+function queryRunHistoryFromDb(db) {
+  const out = [];
+  if (!db) return out;
+  // Table may not exist in older DB snapshots
+  const tableExists = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='realtime_paper_log'").length > 0;
+  if (!tableExists) return out;
+  try {
+    const stmt = db.prepare(`
+      SELECT id, symbol, version, status, detail, equity, logged_at
+      FROM realtime_paper_log
+      ORDER BY id DESC
+    `);
+    while (stmt.step()) {
+      const row = stmt.getAsObject();
+      const ts = row.logged_at || null;
+      out.push({
+        timestamp: ts,
+        sortMs: toEpochMs(ts),
+        symbol: String(row.symbol || ''),
+        source: 'runhistory',
+        event: String(row.status || 'run'),
+        status: String(row.status || '-'),
+        detail: String(row.detail || ''),
+        raw: row,
+      });
+    }
+    stmt.free();
+  } catch (err) {
+    console.error('Error querying realtime_paper_log:', err);
+  }
+  return out;
+}
+
 async function getLogRowsBySource(source) {
   if (source === 'diagnostic') return loadDiagnosticRows();
   const db = window._SQL_DB;
   if (!db) return [];
+  if (source === 'runhistory') return queryRunHistoryFromDb(db);
   if (source === 'summary') return querySummaryLogsFromDb(db);
   if (source === 'fills') return queryFillLogsFromDb(db);
   if (source === 'orders') return queryOrderLogsFromDb(db);
