@@ -1319,6 +1319,14 @@ function queryRunHistoryFromDb(db) {
   // Table may not exist in older DB snapshots
   const tableExists = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='realtime_paper_log'").length > 0;
   if (!tableExists) return out;
+  const deriveLogEvent = (status, detail) => {
+    const text = String(detail || '');
+    const failed = text.match(/^failed\s+([a-z0-9_]+):/i);
+    if (failed && failed[1]) return failed[1].toLowerCase();
+    const latest = text.match(/^latest bar qualifies as an?\s+(.+?)$/i);
+    if (latest && latest[1]) return latest[1].toLowerCase().replace(/\s+/g, '_');
+    return String(status || 'run');
+  };
   try {
     const stmt = db.prepare(`
       SELECT id, symbol, version, status, detail, equity, logged_at
@@ -1333,7 +1341,7 @@ function queryRunHistoryFromDb(db) {
         sortMs: toEpochMs(ts),
         symbol: String(row.symbol || ''),
         source: 'runhistory',
-        event: String(row.status || 'run'),
+        event: deriveLogEvent(row.status, row.detail),
         status: String(row.status || '-'),
         detail: String(row.detail || ''),
         raw: row,
@@ -1351,6 +1359,12 @@ function queryNearMissRowsFromDb(db) {
   if (!db) return out;
   const tableExists = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='realtime_paper_log'").length > 0;
   if (!tableExists) return out;
+  const deriveLogEvent = (status, detail) => {
+    const text = String(detail || '');
+    const failed = text.match(/^failed\s+([a-z0-9_]+):/i);
+    if (failed && failed[1]) return failed[1].toLowerCase();
+    return String(status || 'near_miss');
+  };
   try {
     const stmt = db.prepare(`
       SELECT id, symbol, version, status, detail, equity, logged_at
@@ -1366,7 +1380,7 @@ function queryNearMissRowsFromDb(db) {
         sortMs: toEpochMs(ts),
         symbol: String(row.symbol || ''),
         source: 'nearmiss',
-        event: String(row.status || 'near_miss'),
+        event: deriveLogEvent(row.status, row.detail),
         status: String(row.status || '-'),
         detail: String(row.detail || ''),
         raw: row,

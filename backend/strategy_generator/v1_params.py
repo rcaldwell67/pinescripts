@@ -14,6 +14,8 @@ DEFAULT_V1_PARAMS: dict[str, Any] = {
         "adx_slope_bars": 0,
         "di_spread": 0.0,
         "rsi_len": 14,
+        "rsi_long_min": 42,
+        "rsi_long_max": 68,
         "rsi_short_min": 30,
         "rsi_short_max": 58,
         "pullback_tolerance_pct": 0.40,

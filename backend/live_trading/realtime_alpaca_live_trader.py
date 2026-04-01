@@ -118,8 +118,8 @@ def _load_symbols_from_db() -> list[str]:
     return [row[0] for row in rows]
 
 
-def _latest_signal_is_entry(df) -> bool:
-    entries = set(apm_v1_signals(df, params=V1_PARAMS))
+def _latest_signal_is_entry(df, side: str = "short") -> bool:
+    entries = set(apm_v1_signals(df, side=side, params=V1_PARAMS))
     if not entries:
         return False
     return (len(df) - 1) in entries

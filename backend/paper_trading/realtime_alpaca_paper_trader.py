@@ -215,8 +215,8 @@ def _load_symbols_from_db() -> list[str]:
     return [row[0] for row in rows]
 
 
-def _latest_signal_is_entry(df) -> bool:
-    return bool(apm_v1_latest_bar_analysis(df, params=V1_PARAMS).get("is_entry"))
+def _latest_signal_is_entry(df, side: str = "short") -> bool:
+    return bool(apm_v1_latest_bar_analysis(df, side=side, params=V1_PARAMS).get("is_entry"))
 
 
 def _target_side_for_symbol(symbol: str) -> str:
@@ -806,7 +806,7 @@ def _trade_one_symbol(
         return False, diag
 
     df = fetch_ohlcv(symbol)
-    analysis = apm_v1_latest_bar_analysis(df, params=V1_PARAMS)
+    analysis = apm_v1_latest_bar_analysis(df, side=side, params=V1_PARAMS)
     latest_ts = analysis.get("latest_bar_ts") or _latest_bar_timestamp(df)
     is_entry = bool(analysis.get("is_entry"))
     diag["latest_bar_ts"] = latest_ts

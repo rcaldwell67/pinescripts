@@ -180,7 +180,86 @@ def _evaluate_short_entry_at(df, i, signal, et_hours):
     return {"is_entry": True, "passed_stage": "macro", "failed_stage": None, "detail": "latest bar qualifies as an entry"}
 
 
-def apm_v1_latest_bar_analysis(df, params=None):
+def _evaluate_long_entry_at(df, i, signal, et_hours):
+    slope_lookback = int(signal["ema_slope_lookback"])
+    adx_threshold = float(signal.get("adx_threshold", 15))
+    adx_slope_bars = int(signal.get("adx_slope_bars", 0))
+    di_spread = float(signal.get("di_spread", 0.0))
+    rsi_long_min = float(signal.get("rsi_long_min", 42))
+    rsi_long_max = float(signal.get("rsi_long_max", 68))
+    pb_tol_pct = float(signal["pullback_tolerance_pct"])
+    momentum_bars = int(signal.get("momentum_bars", 5))
+    volume_mult_min = float(signal["volume_mult_min"])
+    min_body_atr_mult = float(signal["min_body_atr_mult"])
+    atr_floor_pct = float(signal["atr_floor_pct"])
+    panic_suppression_mult = float(signal.get("panic_suppression_mult", 1.5))
+    session_filter_enabled = bool(signal.get("session_filter_enabled", True))
+    session_start_hour_et = int(signal.get("session_start_hour_et", 9))
+    session_end_hour_et = int(signal.get("session_end_hour_et", 14))
+
+    passed_stage = "start"
+    if not (df['ema21'].iloc[i] > df['ema50'].iloc[i] > df['ema200'].iloc[i]):
+        return {"is_entry": False, "passed_stage": passed_stage, "failed_stage": "bullish_stack", "detail": "failed bullish_stack: ema21 > ema50 > ema200 required"}
+    passed_stage = "bullish_stack"
+
+    if not (df['ema21'].iloc[i] > df['ema21'].iloc[i - slope_lookback]):
+        return {"is_entry": False, "passed_stage": passed_stage, "failed_stage": "ema_slope", "detail": "failed ema_slope: ema21 must be rising over lookback"}
+    passed_stage = "ema_slope"
+
+    if not pd.notna(df['adx'].iloc[i]) or df['adx'].iloc[i] <= adx_threshold:
+        return {"is_entry": False, "passed_stage": passed_stage, "failed_stage": "adx", "detail": f"failed adx: adx must exceed {adx_threshold:g}"}
+    if adx_slope_bars > 0 and not (df['adx'].iloc[i] > df['adx'].iloc[i - adx_slope_bars]):
+        return {"is_entry": False, "passed_stage": passed_stage, "failed_stage": "adx_slope", "detail": "failed adx_slope: adx must be rising"}
+    passed_stage = "adx"
+
+    if di_spread > 0 and not ((df['plus_di'].iloc[i] - df['minus_di'].iloc[i]) >= di_spread):
+        return {"is_entry": False, "passed_stage": passed_stage, "failed_stage": "di_spread", "detail": f"failed di_spread: plus_di - minus_di must be >= {di_spread:g}"}
+    passed_stage = "di_spread"
+
+    if not (df['rsi'].iloc[i] > df['rsi'].iloc[i - 1]):
+        return {"is_entry": False, "passed_stage": passed_stage, "failed_stage": "rsi_rising", "detail": "failed rsi_rising: rsi must be higher than prior bar"}
+    passed_stage = "rsi_rising"
+
+    if momentum_bars > 0 and not (df['Close'].iloc[i] > df['Close'].iloc[i - momentum_bars]):
+        return {"is_entry": False, "passed_stage": passed_stage, "failed_stage": "momentum", "detail": f"failed momentum: close must be above close {momentum_bars} bars ago"}
+    passed_stage = "momentum"
+
+    pb_tol = df['ema21'].iloc[i - 1] * (1 + (pb_tol_pct / 100.0))
+    body = abs(df['Close'].iloc[i] - df['Open'].iloc[i])
+    if not (
+        df['Low'].iloc[i - 1] <= pb_tol
+        and df['Close'].iloc[i] > df['ema21'].iloc[i]
+        and df['Close'].iloc[i] > df['Open'].iloc[i]
+        and body >= min_body_atr_mult * df['atr'].iloc[i]
+    ):
+        return {"is_entry": False, "passed_stage": passed_stage, "failed_stage": "pullback_break", "detail": "failed pullback_break: pullback touch and bullish break conditions not met"}
+    passed_stage = "pullback_break"
+
+    if not (rsi_long_min <= df['rsi'].iloc[i] <= rsi_long_max):
+        return {"is_entry": False, "passed_stage": passed_stage, "failed_stage": "rsi_range", "detail": f"failed rsi_range: rsi must be between {rsi_long_min:g} and {rsi_long_max:g}"}
+    passed_stage = "rsi_range"
+
+    if not (df['Volume'].iloc[i] >= volume_mult_min * df['vol_sma'].iloc[i]):
+        return {"is_entry": False, "passed_stage": passed_stage, "failed_stage": "volume", "detail": f"failed volume: volume must be >= {volume_mult_min:g}x vol_sma"}
+    passed_stage = "volume"
+
+    if not (df['atr'].iloc[i] / df['Close'].iloc[i] * 100 >= atr_floor_pct):
+        return {"is_entry": False, "passed_stage": passed_stage, "failed_stage": "atr_floor", "detail": f"failed atr_floor: atr% must be >= {atr_floor_pct:g}"}
+    passed_stage = "atr_floor"
+
+    if pd.notna(df['atr_baseline'].iloc[i]) and df['atr'].iloc[i] > df['atr_baseline'].iloc[i] * panic_suppression_mult:
+        return {"is_entry": False, "passed_stage": passed_stage, "failed_stage": "panic", "detail": "failed panic: atr exceeds panic suppression threshold"}
+    passed_stage = "panic"
+
+    if session_filter_enabled:
+        hour = et_hours.iloc[i]
+        if not pd.notna(hour) or not (session_start_hour_et <= hour < session_end_hour_et):
+            return {"is_entry": False, "passed_stage": passed_stage, "failed_stage": "session", "detail": f"failed session: ET hour must be in [{session_start_hour_et}, {session_end_hour_et})"}
+
+    return {"is_entry": True, "passed_stage": "session", "failed_stage": None, "detail": "latest bar qualifies as a long entry"}
+
+
+def apm_v1_latest_bar_analysis(df, side="short", params=None):
     params = params or get_v1_params()
     signal, timestamps, et_hours = _prepare_signal_frame(df, params)
     slope_lookback = int(signal["ema_slope_lookback"])
@@ -204,7 +283,8 @@ def apm_v1_latest_bar_analysis(df, params=None):
             "latest_bar_ts": latest_ts,
         }
 
-    result = _evaluate_short_entry_at(df, len(df) - 1, signal, et_hours)
+    evaluator = _evaluate_long_entry_at if side == "long" else _evaluate_short_entry_at
+    result = evaluator(df, len(df) - 1, signal, et_hours)
     result["latest_bar_ts"] = latest_ts
     result["is_near_miss"] = bool(not result["is_entry"] and result["passed_stage"] != "start")
     return result
@@ -298,7 +378,7 @@ def apm_v1_latest_bar_exit_analysis(df, side="short", params=None):
     }
 
 # Main strategy logic
-def apm_v1_signals(df, params=None):
+def apm_v1_signals(df, side="short", params=None):
     params = params or get_v1_params()
     signal, _timestamps, et_hours = _prepare_signal_frame(df, params)
     ema_slow = int(signal["ema_slow"])
@@ -306,11 +386,11 @@ def apm_v1_signals(df, params=None):
     momentum_bars = int(signal.get("momentum_bars", 5))
     adx_slope_bars = int(signal.get("adx_slope_bars", 0))
 
-    # Entry logic (shorts only)
+    evaluator = _evaluate_long_entry_at if side == "long" else _evaluate_short_entry_at
     entries = []
     start_idx = max(ema_slow, slope_lookback + 1, momentum_bars, adx_slope_bars)
     for i in range(start_idx, len(df)):
-        if _evaluate_short_entry_at(df, i, signal, et_hours)["is_entry"]:
+        if evaluator(df, i, signal, et_hours)["is_entry"]:
             entries.append(i)
     return entries
 
