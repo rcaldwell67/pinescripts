@@ -297,6 +297,44 @@ def _ensure_realtime_paper_log_table(conn: sqlite3.Connection) -> None:
     )
 
 
+def _check_schedule_health(conn: sqlite3.Connection, interval_seconds: int) -> None:
+    """Insert a schedule_miss entry when the gap since the last run exceeds 1.5x the expected interval."""
+    _ensure_realtime_paper_log_table(conn)
+    threshold = interval_seconds * 1.5
+    try:
+        row = conn.execute(
+            "SELECT MAX(logged_at) FROM realtime_paper_log WHERE symbol != '__scheduler__'"
+        ).fetchone()
+        last_logged_at_str = row[0] if row else None
+    except Exception:
+        last_logged_at_str = None
+
+    if not last_logged_at_str:
+        return  # No prior run to compare against
+
+    try:
+        last_dt = datetime.fromisoformat(last_logged_at_str.replace(" ", "T"))
+        if last_dt.tzinfo is None:
+            last_dt = last_dt.replace(tzinfo=timezone.utc)
+    except ValueError:
+        return
+
+    now = datetime.now(timezone.utc)
+    gap_seconds = (now - last_dt).total_seconds()
+    if gap_seconds <= threshold:
+        return
+
+    gap_min = gap_seconds / 60
+    expected_min = interval_seconds / 60
+    detail = f"last run was {gap_min:.1f}m ago (expected <= {expected_min:.1f}m)"
+    print(f"WARN [schedule_miss] {detail}")
+    conn.execute(
+        "INSERT INTO realtime_paper_log (symbol, version, status, detail, equity, logged_at) VALUES (?,?,?,?,?,?)",
+        ("__scheduler__", "system", "schedule_miss", detail, None, now.isoformat()),
+    )
+    conn.commit()
+
+
 def _upsert_summary(conn: sqlite3.Connection, symbol: str, version: str, status: str, detail: str, equity: float | None) -> None:
     notes = f"{VERSION_MAP.get(version, version)} realtime alpaca summary"
     ts = datetime.now(timezone.utc).isoformat()
@@ -824,6 +862,12 @@ def main() -> int:
         default="docs/data/realtime_paper_diagnostic.jsonl",
         help="JSONL path for --diagnostic output",
     )
+    parser.add_argument(
+        "--schedule-interval-seconds",
+        type=int,
+        default=300,
+        help="Expected seconds between scheduled runs; logs schedule_miss if gap exceeds 1.5x (0 = disabled)",
+    )
     args = parser.parse_args()
 
     version = args.version.strip().lower()
@@ -850,6 +894,9 @@ def main() -> int:
         conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
     except sqlite3.OperationalError:
         pass
+
+    if args.schedule_interval_seconds > 0:
+        _check_schedule_health(conn, args.schedule_interval_seconds)
 
     loop_count = 0
     failures: list[str] = []

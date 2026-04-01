@@ -1389,9 +1389,10 @@ async function renderLogsPanel() {
   let rows = await getLogRowsBySource(source);
   if (renderSeq !== logsRenderSeq) return;
 
+// Also include __scheduler__ rows when scopeEl is 'all'
   if (scope === 'active' && activeSym) {
     const symbolKeys = getActiveSymbolKeys();
-    rows = rows.filter(row => symbolKeys.has(getNormalizedSymbolKey(row.symbol || '')));
+    rows = rows.filter(row => row.symbol === '__scheduler__' ? false : symbolKeys.has(getNormalizedSymbolKey(row.symbol || '')));
   }
 
   if (query) {
@@ -1443,11 +1444,14 @@ async function renderLogsPanel() {
       ? `<span class="tag tag-sl">${statusText}</span>`
       : (statusClass === 'submitted' || statusClass === 'fill' || statusClass === 'buy' || statusClass === 'sell'
         ? `<span class="tag tag-tp">${statusText}</span>`
-        : `<span class="tag tag-other">${statusText}</span>`);
-    return `<tr>
+        : (statusClass === 'schedule_miss'
+          ? `<span class="tag tag-trail">${statusText}</span>`
+          : `<span class="tag tag-other">${statusText}</span>`));
+    const symbolLabel = row.symbol === '__scheduler__' ? 'Scheduler' : escapeHtml(getTickerSymbolLabel(row.symbol || '-'));
+    return `<tr${statusClass === 'schedule_miss' ? ' style="opacity:0.8"' : ''}>
       <td>${escapeHtml(formatLogTimestamp(row.timestamp))}</td>
       <td>${escapeHtml(decodeLogSourceLabel(row.source || source))}</td>
-      <td>${escapeHtml(getTickerSymbolLabel(row.symbol || '-'))}</td>
+      <td>${symbolLabel}</td>
       <td>${escapeHtml(row.event || '-')}</td>
       <td>${statusTag}</td>
       <td>${escapeHtml(row.detail || '-')}</td>
