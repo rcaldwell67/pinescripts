@@ -4,8 +4,9 @@
 //@version=6
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Adaptive Pullback Momentum v1 — 5m
-// Timeframe : 5-minute  ·  Instrument : <SYMBOL_PLACEHOLDER>
+// Adaptive Pullback Momentum v1.1 — 5m
+// Timeframe : 5-minute  ·  Instrument : <SYMBOL>
+// Exchange   : <EXCHANGE>  ·  Type: <TYPE>
 //
 // THESIS
 //   Enter short during brief intraday pullbacks to EMA21 while the macro trend
@@ -41,7 +42,7 @@
 //   Key changes : ADX 18→15, PB 0.25%→0.40%, TP ×6→×8, Trail_act 2.5→3.5, Risk 1%→2%, Macro OFF
 // ─────────────────────────────────────────────────────────────────────────────
 
-strategy("Adaptive Pullback Momentum v1.1 · 5m", shorttitle="APM v1.1 5m", overlay=true, pyramiding=0, initial_capital=1000, default_qty_type=strategy.cash, default_qty_value=1000, commission_type=strategy.commission.percent, commission_value=0.06, slippage=1, margin_long=20, margin_short=20)
+strategy("Adaptive Pullback Momentum v1.1 · 5m", shorttitle="APM v1.1 5m", overlay=true, pyramiding=0, initial_capital=10000, default_qty_type=strategy.cash, default_qty_value=10000, commission_type=strategy.commission.percent, commission_value=0.06, slippage=1, margin_long=20, margin_short=20)
 
 // ── Inputs ────────────────────────────────────────────────────────────────────
 var G_TREND = "Trend Filters"
