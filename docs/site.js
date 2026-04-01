@@ -1483,7 +1483,7 @@ async function renderLogsPanel() {
           ? `<span class="tag tag-mb">${statusText}</span>`
         : (statusClass === 'schedule_miss'
           ? `<span class="tag tag-trail">${statusText}</span>`
-          : `<span class="tag tag-other">${statusText}</span>`));
+          : `<span class="tag tag-other">${statusText}</span>`)));
     const symbolLabel = row.symbol === '__scheduler__' ? 'Scheduler' : escapeHtml(getTickerSymbolLabel(row.symbol || '-'));
     return `<tr${statusClass === 'schedule_miss' ? ' style="opacity:0.8"' : ''}>
       <td>${escapeHtml(formatLogTimestamp(row.timestamp))}</td>
