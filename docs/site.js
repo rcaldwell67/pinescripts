@@ -1135,6 +1135,7 @@ function getActiveSymbolKeys() {
 
 function decodeLogSourceLabel(source) {
   if (source === 'diagnostic') return 'Diagnostic JSONL';
+  if (source === 'nearmiss') return 'Near Misses';
   if (source === 'runhistory') return 'Run History';
   if (source === 'summary') return 'Realtime Summary';
   if (source === 'fills') return 'Paper Fill Event';
@@ -1345,10 +1346,44 @@ function queryRunHistoryFromDb(db) {
   return out;
 }
 
+function queryNearMissRowsFromDb(db) {
+  const out = [];
+  if (!db) return out;
+  const tableExists = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='realtime_paper_log'").length > 0;
+  if (!tableExists) return out;
+  try {
+    const stmt = db.prepare(`
+      SELECT id, symbol, version, status, detail, equity, logged_at
+      FROM realtime_paper_log
+      WHERE LOWER(status) IN ('near_miss', 'holding_near_exit')
+      ORDER BY id DESC
+    `);
+    while (stmt.step()) {
+      const row = stmt.getAsObject();
+      const ts = row.logged_at || null;
+      out.push({
+        timestamp: ts,
+        sortMs: toEpochMs(ts),
+        symbol: String(row.symbol || ''),
+        source: 'nearmiss',
+        event: String(row.status || 'near_miss'),
+        status: String(row.status || '-'),
+        detail: String(row.detail || ''),
+        raw: row,
+      });
+    }
+    stmt.free();
+  } catch (err) {
+    console.error('Error querying realtime_paper_log near misses:', err);
+  }
+  return out;
+}
+
 async function getLogRowsBySource(source) {
   if (source === 'diagnostic') return loadDiagnosticRows();
   const db = window._SQL_DB;
   if (!db) return [];
+  if (source === 'nearmiss') return queryNearMissRowsFromDb(db);
   if (source === 'runhistory') return queryRunHistoryFromDb(db);
   if (source === 'summary') return querySummaryLogsFromDb(db);
   if (source === 'fills') return queryFillLogsFromDb(db);
@@ -1444,6 +1479,8 @@ async function renderLogsPanel() {
       ? `<span class="tag tag-sl">${statusText}</span>`
       : (statusClass === 'submitted' || statusClass === 'fill' || statusClass === 'buy' || statusClass === 'sell'
         ? `<span class="tag tag-tp">${statusText}</span>`
+        : (statusClass === 'near_miss' || statusClass === 'holding_near_exit'
+          ? `<span class="tag tag-mb">${statusText}</span>`
         : (statusClass === 'schedule_miss'
           ? `<span class="tag tag-trail">${statusText}</span>`
           : `<span class="tag tag-other">${statusText}</span>`));

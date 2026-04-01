@@ -33,7 +33,7 @@ SG_DIR = BACKEND_DIR / "strategy_generator"
 sys.path.insert(0, str(BACKEND_DIR))
 sys.path.insert(0, str(SG_DIR))
 
-from apm_v1 import apm_v1_signals
+from apm_v1 import apm_v1_latest_bar_analysis, apm_v1_latest_bar_exit_analysis
 from backtest_backtrader_alpaca import DB_PATH, VERSION_MAP, fetch_ohlcv
 from v1_params import get_v1_params
 
@@ -216,10 +216,7 @@ def _load_symbols_from_db() -> list[str]:
 
 
 def _latest_signal_is_entry(df) -> bool:
-    entries = set(apm_v1_signals(df, params=V1_PARAMS))
-    if not entries:
-        return False
-    return (len(df) - 1) in entries
+    return bool(apm_v1_latest_bar_analysis(df, params=V1_PARAMS).get("is_entry"))
 
 
 def _target_side_for_symbol(symbol: str) -> str:
@@ -763,15 +760,16 @@ def _trade_one_symbol(
     if position and abs(float(position.get("qty", 0.0) or 0.0)) > 0:
         if close_on_signal:
             df = fetch_ohlcv(symbol)
-            latest_ts = _latest_bar_timestamp(df)
-            is_entry = _latest_signal_is_entry(df)
-            diag["latest_bar_ts"] = latest_ts
-            diag["latest_entry_signal"] = is_entry
-            if is_entry:
+            exit_analysis = apm_v1_latest_bar_exit_analysis(df, side=side, params=V1_PARAMS)
+            diag["latest_bar_ts"] = exit_analysis.get("latest_bar_ts") or _latest_bar_timestamp(df)
+            diag["latest_exit_signal"] = bool(exit_analysis.get("is_exit"))
+            diag["exit_failed_stage"] = exit_analysis.get("failed_stage")
+            diag["exit_passed_stage"] = exit_analysis.get("passed_stage")
+            if exit_analysis.get("is_exit"):
                 try:
                     api.close_position(order_symbol)
-                    _upsert_summary(conn, symbol, version, "closing", "signal-triggered position close", account_equity)
-                    print(f"CLOSE {symbol}: signal-triggered close submitted")
+                    _upsert_summary(conn, symbol, version, "closing", str(exit_analysis.get("detail") or "exit-signal position close"), account_equity)
+                    print(f"CLOSE {symbol}: exit signal close submitted")
                     diag["decision"] = "position_close_submitted"
                     diag["status"] = "closing"
                     return False, diag
@@ -782,6 +780,14 @@ def _trade_one_symbol(
                     diag["status"] = "error"
                     diag["detail"] = f"close failed: {exc}"
                     return False, diag
+            if exit_analysis.get("is_near_miss"):
+                detail = str(exit_analysis.get("detail") or "near exit bar")
+                _upsert_summary(conn, symbol, version, "holding_near_exit", detail, account_equity)
+                print(f"HOLD {symbol}: near exit ({detail})")
+                diag["decision"] = "skip_exit_near_miss"
+                diag["status"] = "holding_near_exit"
+                diag["detail"] = detail
+                return False, diag
         _upsert_summary(conn, symbol, version, "holding", "existing open position", account_equity)
         print(f"HOLD {symbol}: existing position qty={position.get('qty')}")
         diag["decision"] = "skip_existing_position"
@@ -800,16 +806,21 @@ def _trade_one_symbol(
         return False, diag
 
     df = fetch_ohlcv(symbol)
-    latest_ts = _latest_bar_timestamp(df)
-    is_entry = _latest_signal_is_entry(df)
+    analysis = apm_v1_latest_bar_analysis(df, params=V1_PARAMS)
+    latest_ts = analysis.get("latest_bar_ts") or _latest_bar_timestamp(df)
+    is_entry = bool(analysis.get("is_entry"))
     diag["latest_bar_ts"] = latest_ts
     diag["latest_entry_signal"] = is_entry
+    diag["failed_stage"] = analysis.get("failed_stage")
+    diag["passed_stage"] = analysis.get("passed_stage")
     if not is_entry:
-        _upsert_summary(conn, symbol, version, "idle", f"no fresh {side} entry signal", account_equity)
-        print(f"IDLE {symbol}: no entry")
+        status = "near_miss" if analysis.get("is_near_miss") else "idle"
+        detail = str(analysis.get("detail") or f"no fresh {side} entry signal")
+        _upsert_summary(conn, symbol, version, status, detail, account_equity)
+        print(f"{status.upper()} {symbol}: {detail}")
         diag["decision"] = "skip_no_fresh_signal"
-        diag["status"] = "idle"
-        diag["detail"] = f"no fresh {side} entry signal"
+        diag["status"] = status
+        diag["detail"] = detail
         return False, diag
 
     order_params = _compute_order_params(df, account_equity, side=side)
