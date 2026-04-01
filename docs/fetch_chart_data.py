@@ -95,27 +95,48 @@ def fetch_crypto(symbol: str, start: datetime, end: datetime) -> list[tuple]:
 
 
 def fetch_stock(symbol: str, start: datetime, end: datetime) -> list[tuple]:
+    import pandas as pd
+    import yfinance as yf
+    from alpaca.common.exceptions import APIError
     from alpaca.data.historical import StockHistoricalDataClient
+    from alpaca.data.enums import DataFeed
     from alpaca.data.requests import StockBarsRequest
     from alpaca.data.timeframe import TimeFrame, TimeFrameUnit  # type: ignore[attr-defined]
 
     client = StockHistoricalDataClient(ALPACA_API_KEY, ALPACA_API_SECRET)
-    req = StockBarsRequest(
-        symbol_or_symbols=symbol,
-        timeframe=TimeFrame(5, TimeFrameUnit.Minute),
-        start=start,
-        end=end,
-    )
-    df = client.get_stock_bars(req).df
+    try:
+        req = StockBarsRequest(
+            symbol_or_symbols=symbol,
+            timeframe=TimeFrame(5, TimeFrameUnit.Minute),
+            start=start,
+            end=end,
+            feed=DataFeed.IEX,
+        )
+        df = client.get_stock_bars(req).df
+        if not df.empty:
+            df = df.reset_index()
+            ts_col = _detect_ts_col(df)
+            if "symbol" in df.columns:
+                df = df[df["symbol"] == symbol]
+            df = df.sort_values(ts_col)
+            return [_row_to_bar(row, ts_col) for _, row in df.iterrows()]
+    except APIError as exc:
+        print(f"  Alpaca stock fetch fallback for {symbol}: {exc}", file=sys.stderr)
+
+    # Fallback for symbols/feed combinations not available from Alpaca.
+    ticker = yf.Ticker(symbol)
+    df = ticker.history(start=start, end=end, interval="1h", auto_adjust=False)
     if df.empty:
         return []
 
     df = df.reset_index()
-    ts_col = _detect_ts_col(df)
-    if "symbol" in df.columns:
-        df = df[df["symbol"] == symbol]
-    df = df.sort_values(ts_col)
-    return [_row_to_bar(row, ts_col) for _, row in df.iterrows()]
+    ts_col = next((c for c in ("Datetime", "Date", "datetime", "date") if c in df.columns), None)
+    if ts_col is None:
+        ts_col = df.columns[0]
+    df = df.rename(columns={ts_col: "timestamp", "Open": "open", "High": "high", "Low": "low", "Close": "close", "Volume": "volume"})
+    df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
+    df = df.sort_values("timestamp")
+    return [_row_to_bar(row, "timestamp") for _, row in df.iterrows()]
 
 
 # ── DB helpers ────────────────────────────────────────────────────────────────
