@@ -20,6 +20,7 @@
     ],
     "v2": [
       {
+        "symbol": "BTC/USD",
         "version": "v2",
         "beginning_equity": 1000.0,
         "final_equity": 1498.8000333565174,
