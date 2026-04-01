@@ -269,6 +269,7 @@ function getNormalizedSymbolKey(sym) {
     buildSymbolSwitcher(symbols);
     // Save db instance for later use
     window._SQL_DB = db;
+    renderTransactionTicker();
     // Reset active selection so re-selecting the same symbol after a dataset
     // switch doesn't hit the early-exit guard in handleSymbolSelect.
     activeSym = '';
@@ -323,6 +324,206 @@ function getNormalizedSymbolKey(sym) {
     const n = Number(value);
     if (!Number.isFinite(n)) return fallback;
     return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function formatTickerPrice(value) {
+    const price = Number(value);
+    if (!Number.isFinite(price)) return '-';
+    if (Math.abs(price) < 100) return '$' + price.toFixed(4);
+    return '$' + price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function formatTickerQuantity(value) {
+    const qty = Number(value);
+    if (!Number.isFinite(qty)) return null;
+    return qty.toLocaleString('en-US', { maximumFractionDigits: 6 });
+  }
+
+  function formatTickerTimestamp(value) {
+    if (!value) return '-';
+    const date = new Date(String(value).replace(' ', 'T'));
+    if (!Number.isFinite(date.getTime())) return String(value);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  }
+
+  function formatTickerRelativeTime(value) {
+    const date = new Date(String(value || '').replace(' ', 'T'));
+    if (!Number.isFinite(date.getTime())) return { label: 'unknown', state: '' };
+    const diffMs = Date.now() - date.getTime();
+    const diffMin = Math.max(0, Math.round(diffMs / 60000));
+    if (diffMin < 60) {
+      return { label: `${diffMin}m ago`, state: diffMin <= 15 ? 'is-fresh' : '' };
+    }
+    if (diffMin < 1440) {
+      const hours = Math.round(diffMin / 60);
+      return { label: `${hours}h ago`, state: hours >= 24 ? 'is-stale' : '' };
+    }
+    const days = Math.round(diffMin / 1440);
+    return { label: `${days}d ago`, state: 'is-stale' };
+  }
+
+  function formatTickerResultBadge(result, type) {
+    if (type !== 'Close' || !result) return '';
+    const resultUpper = String(result).toUpperCase().trim();
+    if (resultUpper === 'TP') return `<span class="ticker-badge ticker-badge-tp" title="Target Profit">✓TP</span>`;
+    if (resultUpper === 'SL') return `<span class="ticker-badge ticker-badge-sl" title="Stop Loss">✕SL</span>`;
+    if (resultUpper === 'TRAIL' || resultUpper === 'TRAILING') return `<span class="ticker-badge ticker-badge-trail" title="Trailing Stop">⇄ TRAIL</span>`;
+    return `<span class="ticker-badge ticker-badge-other" title="${escapeHtml(resultUpper)}">◆ ${escapeHtml(resultUpper.slice(0, 3))}</span>`;
+  }
+
+  function getTickerSymbolLabel(symbol) {
+    const normalized = getNormalizedSymbolKey(symbol);
+    const exact = INSTRUMENTS?.[symbol]?.label;
+    if (exact) return exact;
+    for (const [knownSymbol, info] of Object.entries(INSTRUMENTS || {})) {
+      if (getNormalizedSymbolKey(knownSymbol) === normalized) return info.label || knownSymbol;
+    }
+    return String(symbol || '').replace(/_/g, '/');
+  }
+
+  function buildLatestTransactionsBySymbol() {
+    const db = window._SQL_DB;
+    if (!db) return [];
+    const latestBySymbol = new Map();
+    const modeFilter = activeDataset === 'backtest' ? 'backtest' : (activeDataset === 'paper' ? 'paper' : 'live');
+
+    try {
+      const stmt = db.prepare(`
+        SELECT *
+        FROM trades
+        WHERE mode = ?
+        ORDER BY datetime(COALESCE(exit_time, entry_time)) DESC, datetime(entry_time) DESC, id DESC
+      `);
+      stmt.bind([modeFilter]);
+      while (stmt.step()) {
+        const row = stmt.getAsObject();
+        const symbolKey = getNormalizedSymbolKey(row.symbol || '');
+        if (!symbolKey) continue;
+
+        const qty = row.qty ?? row.quantity ?? row.shares ?? row.size ?? null;
+        const events = [];
+        const entryTime = parseDashboardTimeValue(row.entry_time);
+        const exitTime = parseDashboardTimeValue(row.exit_time);
+        const isLong = String(row.direction || '').toLowerCase() !== 'short';
+
+        if (entryTime > 0) {
+          events.push({
+            symbol: row.symbol,
+            version: String(row.version || 'v1').toLowerCase(),
+            action: isLong ? 'BUY' : 'SELL',
+            type: 'Open',
+            direction: String(row.direction || '-'),
+            price: row.entry_price,
+            qty,
+            notional: Number.isFinite(Number(qty)) && Number.isFinite(Number(row.entry_price)) ? Number(qty) * Number(row.entry_price) : null,
+            pnl: null,
+            result: null,
+            equity: null,
+            timestamp: row.entry_time,
+            sortTime: entryTime,
+          });
+        }
+        if (exitTime > 0) {
+          events.push({
+            symbol: row.symbol,
+            version: String(row.version || 'v1').toLowerCase(),
+            action: isLong ? 'SELL' : 'BUY',
+            type: 'Close',
+            direction: String(row.direction || '-'),
+            price: row.exit_price,
+            qty,
+            notional: Number.isFinite(Number(qty)) && Number.isFinite(Number(row.exit_price)) ? Number(qty) * Number(row.exit_price) : null,
+            pnl: row.dollar_pnl,
+            result: row.result,
+            equity: row.equity,
+            timestamp: row.exit_time,
+            sortTime: exitTime,
+          });
+        }
+
+        if (!events.length) continue;
+        const latestEvent = events.sort((a, b) => b.sortTime - a.sortTime)[0];
+        const current = latestBySymbol.get(symbolKey);
+        if (!current || latestEvent.sortTime > current.sortTime) {
+          latestBySymbol.set(symbolKey, latestEvent);
+        }
+      }
+      stmt.free();
+    } catch (err) {
+      console.error('Error building transaction ticker items:', err);
+      return [];
+    }
+
+    return [...latestBySymbol.values()].sort((a, b) => b.sortTime - a.sortTime);
+  }
+
+  function renderTransactionTicker() {
+    const shell = document.getElementById('transactionTicker');
+    const track = document.getElementById('transactionTickerTrack');
+    if (!shell || !track) return;
+
+    const items = buildLatestTransactionsBySymbol();
+    shell.classList.remove('is-animated');
+
+    if (!items.length) {
+      track.innerHTML = `<div class="ticker-empty">No recent ${escapeHtml(activeDataset)} transactions found.</div>`;
+      return;
+    }
+
+    const html = items.map(item => {
+      const qtyText = formatTickerQuantity(item.qty);
+      const amountText = Number.isFinite(Number(item.notional)) ? formatCurrencySafe(item.notional) : null;
+      const pnlValue = Number(item.pnl);
+      const pnlClass = Number.isFinite(pnlValue) ? (pnlValue >= 0 ? 'positive' : 'negative') : '';
+      const resultText = item.result ? String(item.result).toUpperCase() : null;
+      const equityText = Number.isFinite(Number(item.equity)) ? formatCurrencySafe(item.equity) : null;
+      const direction = String(item.direction || '-').toLowerCase();
+      const age = formatTickerRelativeTime(item.timestamp);
+      const normalizedSymbol = getNormalizedSymbolKey(item.symbol);
+      const resultBadge = formatTickerResultBadge(item.result, item.type);
+      const main = [
+        `<span class="ticker-symbol">${escapeHtml(getTickerSymbolLabel(item.symbol))}</span>`,
+        `<span class="pill" style="background:${item.type === 'Open' ? '#58a6ff11' : '#21262d'};color:${item.type === 'Open' ? 'var(--muted)' : 'var(--text)'};border-color:${item.type === 'Open' ? '#58a6ff33' : 'var(--border)'}">${escapeHtml(item.type)}</span>`,
+        `<span class="tag ${item.action === 'BUY' ? 'tag-buy' : 'tag-sell'}">${escapeHtml(item.action)}</span>`,
+        `<span class="tag ${direction === 'short' ? 'tag-short' : 'tag-long'}">${escapeHtml(direction)}</span>`,
+        resultBadge,
+        `<span class="ticker-age ${escapeHtml(age.state)}">${escapeHtml(age.label)}</span>`,
+      ].filter(Boolean);
+      const meta = [
+        `<span class="ticker-segment">ver <strong>${escapeHtml(item.version.toUpperCase())}</strong></span>`,
+        `<span class="ticker-segment">px <strong>${escapeHtml(formatTickerPrice(item.price))}</strong></span>`,
+      ];
+      if (qtyText) meta.push(`<span class="ticker-segment">qty <strong>${escapeHtml(qtyText)}</strong></span>`);
+      if (amountText) meta.push(`<span class="ticker-segment">amt <strong>${escapeHtml(amountText)}</strong></span>`);
+      if (Number.isFinite(pnlValue)) meta.push(`<span class="ticker-segment ${pnlClass}">pnl <strong>${escapeHtml(formatCurrencySafe(pnlValue))}</strong></span>`);
+      if (resultText) meta.push(`<span class="ticker-segment">res <strong>${escapeHtml(resultText)}</strong></span>`);
+      if (equityText) meta.push(`<span class="ticker-segment">eq <strong>${escapeHtml(equityText)}</strong></span>`);
+      meta.push(`<span class="ticker-segment">at <strong>${escapeHtml(formatTickerTimestamp(item.timestamp))}</strong></span>`);
+      const isActive = normalizedSymbol && normalizedSymbol === getNormalizedSymbolKey(activeSym);
+      return `<button type="button" class="ticker-item${isActive ? ' is-active' : ''}" data-symbol="${escapeHtml(item.symbol)}" title="Open ${escapeHtml(getTickerSymbolLabel(item.symbol))} in the dashboard"><span class="ticker-main">${main.join('')}</span><span class="ticker-meta">${meta.join('')}</span></button>`;
+    }).join('');
+
+    track.innerHTML = `<div class="ticker-group">${html}</div><div class="ticker-group" aria-hidden="true">${html}</div>`;
+    track.style.setProperty('--ticker-duration', `${Math.max(24, items.length * 9)}s`);
+    if (items.length > 1) shell.classList.add('is-animated');
+    const activeButton = track.querySelector('.ticker-item.is-active');
+    if (activeButton) {
+      setTimeout(() => activeButton.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' }), 50);
+    }
   }
 
   function getLatestAccountInfo() {
@@ -1391,6 +1592,7 @@ function render() {
   const vers=INSTRUMENTS[activeSym].versions;
   const rows=activeTab==='all'?Object.values(loaded[activeSym]).flat():(loaded[activeSym][activeTab]||[]);
   updateDatasetSwitcher();
+  renderTransactionTicker();
   updateBalanceBar(activeTab === 'all' ? null : rows);
   renderCards(rows);
   renderEquityChart(rows);
@@ -1872,6 +2074,20 @@ function bindStaticControlHandlers() {
     tradePageSize = parseInt(e.target.value, 10);
     tradeTablePage = 1;
     renderTradeTable(getActiveRows());
+  });
+  document.getElementById('transactionTickerTrack')?.addEventListener('click', event => {
+    const button = event.target.closest('.ticker-item[data-symbol]');
+    if (!button) return;
+    const rawSymbol = button.dataset.symbol || '';
+    const normalized = getNormalizedSymbolKey(rawSymbol);
+    const select = document.getElementById('symbolSelect');
+    const db = window._SQL_DB;
+    if (!normalized || !select || !db) return;
+    const matchedOption = [...select.options].find(option => getNormalizedSymbolKey(option.value) === normalized);
+    const symbol = matchedOption?.value || rawSymbol;
+    select.value = symbol;
+    handleSymbolSelect(symbol, db);
+    setTimeout(() => button.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }), 100);
   });
 }
 
