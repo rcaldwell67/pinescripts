@@ -44,16 +44,16 @@
       {
         "symbol": "CRF",
         "version": "v1",
-        "beginning_equity": 999.9999999999999,
-        "final_equity": 1204.6871821067516,
+        "beginning_equity": 1000.0,
+        "final_equity": 1203.9818469949744,
         "total_trades": 3,
         "winning_trades": 3,
         "losing_trades": 0,
         "win_rate": 100.0,
-        "average_pnl": 68.22906070225055,
-        "total_pnl": 204.68718210675164,
+        "average_pnl": 67.99394899832475,
+        "total_pnl": 203.98184699497426,
         "max_drawdown": 0.0,
-        "net_return_pct": 20.468718210675174,
+        "net_return_pct": 20.39818469949744,
         "first_trade_date": "2026-03-05 14:30:00+00:00",
         "last_trade_date": "2026-03-20 14:30:00+00:00"
       }
