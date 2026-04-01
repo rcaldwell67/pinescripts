@@ -103,6 +103,21 @@ This document describes what is currently implemented for APM v2 in this reposit
 
 ## Remaining Enhancements
 
-1. Add a dedicated v2 parity validator (backtest vs paper trade-row consistency).
-2. Add v2-specific rerun/reset automation equivalent to v1 aligned reset workflow.
-3. Extend CI/workflow coverage so v2 paths are validated continuously.
+1. Extend CI/workflow coverage for v2 guideline matrix and optimization reporting.
+2. Add v2-specific walk-forward/parameter-tuning automation equivalent to v1 tooling.
+
+## Added v2 Operational Parity Tooling
+
+- `reset_v2_aligned_backtest_paper.py`
+  - Regenerates aligned `mode='backtest'` and `mode='paper'` trade rows for v2.
+  - Creates a timestamped DB backup before rewrite.
+- `backend/paper_trading/verify_v2_parity.py`
+  - CI-friendly parity checker for v2 backtest vs paper rows.
+- `backend/strategy_generator/validate_v2_config_usage.py`
+  - Verifies required v2 param keys and confirms v2 runtime wiring snippets in target files.
+- `.github/workflows/validate-v2-config.yml`
+  - Adds CI gate for v2 config/runtime usage validation.
+- Workflow updates:
+  - `.github/workflows/paper-trade.yml` now supports v2 aligned simulation reset and v2 parity checks.
+  - `.github/workflows/rerun-backtest-issue.yml` now uses `reset_v2_aligned_backtest_paper.py` for v2 rerun issues.
+  - `.github/workflows/rerun-paper-trade-issue.yml` now accepts v2 issue reruns.

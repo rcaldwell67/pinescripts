@@ -101,6 +101,13 @@ jobs:
               else
                 python reset_v1_aligned_backtest_paper.py
               fi
+            elif [[ "$VERSION" == "v2" ]]; then
+              echo "Running aligned v2 backtest/paper regeneration ($TARGET_FLAG)"
+              if [[ -n "$SYMBOL" ]]; then
+                python reset_v2_aligned_backtest_paper.py --symbol "$SYMBOL"
+              else
+                python reset_v2_aligned_backtest_paper.py
+              fi
             else
               echo "Running simulation paper trading ($TARGET_FLAG) for version $VERSION"
               python backend/paper_trading/paper_trade_backtrader_alpaca.py $TARGET_FLAG --version "$VERSION" $FORCE_RESET_FLAG
@@ -133,17 +140,24 @@ jobs:
             exit 0
           fi
 
-          if [[ "$VERSION" != "v1" ]]; then
-            echo "Skipping parity check: version=$VERSION (validator currently targets v1)"
-            exit 0
-          fi
-
-          if [[ -n "$SYMBOL" ]]; then
-            echo "Running parity check for symbol=$SYMBOL version=$VERSION"
-            python backend/paper_trading/verify_v1_parity.py --version "$VERSION" --symbol "$SYMBOL"
+          if [[ "$VERSION" == "v1" ]]; then
+            if [[ -n "$SYMBOL" ]]; then
+              echo "Running v1 parity check for symbol=$SYMBOL version=$VERSION"
+              python backend/paper_trading/verify_v1_parity.py --version "$VERSION" --symbol "$SYMBOL"
+            else
+              echo "Running v1 parity check for all symbols version=$VERSION"
+              python backend/paper_trading/verify_v1_parity.py --version "$VERSION"
+            fi
+          elif [[ "$VERSION" == "v2" ]]; then
+            if [[ -n "$SYMBOL" ]]; then
+              echo "Running v2 parity check for symbol=$SYMBOL version=$VERSION"
+              python backend/paper_trading/verify_v2_parity.py --version "$VERSION" --symbol "$SYMBOL"
+            else
+              echo "Running v2 parity check for all symbols version=$VERSION"
+              python backend/paper_trading/verify_v2_parity.py --version "$VERSION"
+            fi
           else
-            echo "Running parity check for all symbols version=$VERSION"
-            python backend/paper_trading/verify_v1_parity.py --version "$VERSION"
+            echo "Skipping parity check: unsupported version=$VERSION for parity validators"
           fi
 
       - name: Commit updated DB

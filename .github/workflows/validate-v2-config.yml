@@ -1,0 +1,22 @@
+name: Validate V2 Config Usage
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  validate-v2-config:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate shared v2 parameter usage
+        run: |
+          python backend/strategy_generator/validate_v2_config_usage.py

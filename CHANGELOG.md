@@ -12,6 +12,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Extended `backend/backtest_backtrader_alpaca.py` to support `--version v2` dispatch and `VERSION_MAP` registration.
 - Extended realtime paper runner `backend/paper_trading/realtime_alpaca_paper_trader.py` to support `--version v2` through version-aware analysis and risk-parameter routing.
 - Extended realtime live runner `backend/live_trading/realtime_alpaca_live_trader.py` to support `--version v2` through version-aware analysis and risk-parameter routing.
+- Added aligned v2 reset utility `reset_v2_aligned_backtest_paper.py` for deterministic backtest/paper dataset regeneration.
+- Added v2 paper parity validator `backend/paper_trading/verify_v2_parity.py`.
+- Added v2 config/runtime usage guard `backend/strategy_generator/validate_v2_config_usage.py` and CI workflow `.github/workflows/validate-v2-config.yml`.
+- Updated `.github/workflows/paper-trade.yml` to run aligned v2 simulation reset and v2 parity checks.
+- Updated `.github/workflows/rerun-backtest-issue.yml` and `.github/workflows/rerun-paper-trade-issue.yml` for v2 rerun support.
 
 - Added side-aware v1 long-entry evaluator in `backend/strategy_generator/apm_v1.py` and wired side dispatch in `apm_v1_latest_bar_analysis(...)` and `apm_v1_signals(...)` so runtime evaluation supports both long and short gate stacks.
 - Added v1 long RSI defaults (`rsi_long_min`, `rsi_long_max`) to shared runtime params in `backend/strategy_generator/v1_params.py`.
