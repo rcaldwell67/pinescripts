@@ -284,6 +284,10 @@ flowchart TD
   - Opens issue-based rerun requests for backtest, paper, and live.
   - Supports dynamic account display via `Account_Info`.
   - Includes paper/live/backtest mode-aware balance handling.
+- Ticker enhancements (2026-03-31):
+  - Result Badge component displays risk management type indicators (Take Profit, Stop Loss, Trailing Stop).
+  - Color-coded badges: green for TP, red for SL, orange for Trail.
+  - Badges render inline below ticker symbol for compact at-a-glance risk visibility.
 
 ### Frontend shell
 
@@ -293,6 +297,11 @@ flowchart TD
   - Paper Trading
   - Live Trading
   - Includes an `Account Info` modal to display Alpaca account balances and metadata from the database.
+- Stylesheet: `docs/site.css`
+  - Ticker badge styling added (2026-03-31):
+    - `.ticker-badge-tp`: Green badge for Take Profit targets
+    - `.ticker-badge-sl`: Red badge for Stop Loss levels
+    - `.ticker-badge-trail`: Orange badge for Trailing Stop indicators
 
 ### Chart data refresh path
 
