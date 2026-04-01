@@ -103,6 +103,8 @@ let txPageSize = 25;
 const PAPER_TRADING_SUPPORTED_VERSIONS = new Set(['v1']);
 const LIVE_TRADING_SUPPORTED_VERSIONS = new Set(['v1']);
 let pendingDatasetSymbol = '';
+let dashboardRefreshInFlight = false;
+let dashboardAutoRefreshTimer = null;
 
 function getSymbolAliases(sym) {
   const raw = String(sym || '').trim();
@@ -1611,6 +1613,84 @@ function render() {
   renderPriceChart();
 }
 
+function updateAutoRefreshStatus({ enabled = false, timestamp = null, intervalSeconds = 0, failed = false } = {}) {
+  const statusEl = document.getElementById('autoRefreshStatus');
+  const statusTextEl = document.getElementById('autoRefreshStatusText');
+  const statusDotEl = document.getElementById('autoRefreshStatusDot');
+  if (!statusEl) return;
+  const setState = (state, text) => {
+    if (statusTextEl) statusTextEl.textContent = text;
+    else statusEl.textContent = text;
+    if (statusDotEl) statusDotEl.dataset.state = state;
+  };
+  if (!enabled) {
+    setState('off', 'Last auto refresh: Off');
+    return;
+  }
+  if (failed) {
+    setState('failed', 'Last auto refresh: Failed');
+    return;
+  }
+  if (!timestamp || !Number.isFinite(timestamp.getTime())) {
+    setState('enabled', `Last auto refresh: Enabled (${intervalSeconds}s)`);
+    return;
+  }
+  const timeStr = timestamp.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  setState('success', `Last auto refresh: ${timeStr}`);
+}
+
+async function refreshDashboardData(reason = 'manual') {
+  if (dashboardRefreshInFlight) return;
+  dashboardRefreshInFlight = true;
+  const reloadBtn = document.getElementById('reloadDashboardBtn');
+  const autoSelect = document.getElementById('autoRefreshSelect');
+  const previousLabel = reloadBtn ? reloadBtn.textContent : '';
+  if (reloadBtn) {
+    reloadBtn.disabled = true;
+    reloadBtn.textContent = reason === 'auto' ? 'Auto Refreshing...' : 'Refreshing...';
+  }
+  if (autoSelect) autoSelect.disabled = true;
+
+  try {
+    const currentSelect = document.getElementById('symbolSelect');
+    pendingDatasetSymbol = (currentSelect && currentSelect.value) || activeSym || '';
+    Object.keys(chartDataCache).forEach(key => { delete chartDataCache[key]; });
+    await loadSymbolsAndInit();
+    if (reason === 'auto') {
+      const autoValue = Number(document.getElementById('autoRefreshSelect')?.value || 0);
+      updateAutoRefreshStatus({ enabled: autoValue > 0, timestamp: new Date(), intervalSeconds: autoValue });
+    }
+  } catch (err) {
+    console.error('Dashboard refresh failed:', err);
+    if (reason === 'auto') {
+      const autoValue = Number(document.getElementById('autoRefreshSelect')?.value || 0);
+      updateAutoRefreshStatus({ enabled: autoValue > 0, failed: true, intervalSeconds: autoValue });
+    }
+  } finally {
+    if (reloadBtn) {
+      reloadBtn.disabled = false;
+      reloadBtn.textContent = previousLabel || 'Reload Data';
+    }
+    if (autoSelect) autoSelect.disabled = false;
+    dashboardRefreshInFlight = false;
+  }
+}
+
+function setDashboardAutoRefresh(seconds) {
+  if (dashboardAutoRefreshTimer) {
+    clearInterval(dashboardAutoRefreshTimer);
+    dashboardAutoRefreshTimer = null;
+  }
+  if (!Number.isFinite(seconds) || seconds <= 0) {
+    updateAutoRefreshStatus({ enabled: false });
+    return;
+  }
+  updateAutoRefreshStatus({ enabled: true, intervalSeconds: seconds });
+  dashboardAutoRefreshTimer = setInterval(() => {
+    refreshDashboardData('auto');
+  }, seconds * 1000);
+}
+
 
 
 
@@ -2088,6 +2168,24 @@ function bindStaticControlHandlers() {
     select.value = symbol;
     handleSymbolSelect(symbol, db);
     setTimeout(() => button.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }), 100);
+  });
+
+  const reloadDashboardBtn = document.getElementById('reloadDashboardBtn');
+  reloadDashboardBtn?.addEventListener('click', () => {
+    refreshDashboardData('manual');
+  });
+
+  const autoRefreshSelect = document.getElementById('autoRefreshSelect');
+  autoRefreshSelect?.addEventListener('change', event => {
+    const value = Number(event.target.value);
+    setDashboardAutoRefresh(value);
+  });
+
+  window.addEventListener('beforeunload', () => {
+    if (dashboardAutoRefreshTimer) {
+      clearInterval(dashboardAutoRefreshTimer);
+      dashboardAutoRefreshTimer = null;
+    }
   });
 }
 

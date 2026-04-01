@@ -252,6 +252,46 @@
     .mode-btn.active[data-mode="backtest"] { background: #58a6ff22; border-color: var(--accent); color: var(--accent); }
     .mode-btn.active[data-mode="paper"]    { background: #ffa65722; border-color: var(--orange); color: var(--orange); }
     .mode-btn.active[data-mode="live"]     { background: #3fb95022; border-color: var(--green);  color: var(--green); }
+    .refresh-controls {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: 4px;
+    }
+    .refresh-controls label {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .4px;
+      text-transform: uppercase;
+    }
+    #autoRefreshSelect {
+      min-width: 84px;
+    }
+    #reloadDashboardBtn[disabled] {
+      opacity: 0.7;
+      cursor: wait;
+    }
+    .auto-refresh-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    .auto-refresh-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      background: var(--muted);
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+    }
+    .auto-refresh-dot[data-state="off"] { background: var(--muted); }
+    .auto-refresh-dot[data-state="enabled"] { background: var(--accent); }
+    .auto-refresh-dot[data-state="success"] { background: var(--green); }
+    .auto-refresh-dot[data-state="failed"] { background: var(--red); }
     .dataset-switcher { display: none; align-items: center; gap: 12px; padding: 5px 10px; border: 1px solid var(--border); border-radius: 6px; flex-wrap: wrap; }
     .dataset-switcher-group { display: flex; align-items: center; gap: 8px; }
     .dataset-switcher label { color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; }
@@ -323,6 +363,15 @@
     .account-row span { color: var(--muted); font-size: 12px; }
     .account-row strong { color: var(--text); font-size: 13px; font-weight: 600; text-align: right; }
     @media (max-width: 900px) {
+      .refresh-controls {
+        width: 100%;
+        justify-content: flex-start;
+        margin-left: 0;
+        flex-wrap: wrap;
+      }
+      .auto-refresh-status {
+        width: 100%;
+      }
       .ticker-shell {
         align-items: flex-start;
         flex-direction: column;

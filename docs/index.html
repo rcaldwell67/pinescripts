@@ -42,6 +42,21 @@
     <button type="button" class="mode-btn" data-mode="live">Live Trading</button>
   </div>
   <button id="openAccountInfoBtn" class="mode-btn" type="button" title="View Alpaca account details">Account Info</button>
+  <div id="refreshControls" class="refresh-controls" aria-label="Dashboard refresh controls">
+    <button id="reloadDashboardBtn" class="mode-btn" type="button" title="Reload dashboard data without refreshing the page">Reload Data</button>
+    <label for="autoRefreshSelect">Auto-refresh</label>
+    <select id="autoRefreshSelect" class="tx-select" title="Automatically reload dashboard data at a fixed interval">
+      <option value="0" selected>Off</option>
+      <option value="15">15s</option>
+      <option value="30">30s</option>
+      <option value="60">1m</option>
+      <option value="300">5m</option>
+    </select>
+    <span id="autoRefreshStatus" class="auto-refresh-status" aria-live="polite">
+      <span id="autoRefreshStatusDot" class="auto-refresh-dot" data-state="off" aria-hidden="true"></span>
+      <span id="autoRefreshStatusText">Last auto refresh: Off</span>
+    </span>
+  </div>
   <div id="balanceBar">
     <div class="bal-item">
       <span class="bal-label">Beginning Balance</span>
