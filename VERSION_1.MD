@@ -9,6 +9,74 @@ This document describes everything that is part of version v1 across backtest, p
 - Primary implementation language: Python (execution) plus Pine Script (strategy template)
 - Current execution support in automation: v1 is the only fully wired end-to-end version for realtime paper and realtime live runners.
 
+## Recent v1 Runtime Changes (2026-04-01)
+
+### Signal engine parity with Pine long and short gates
+
+- File: `backend/strategy_generator/apm_v1.py`
+- Updates:
+  - Added side-aware long evaluator (`_evaluate_long_entry_at(...)`) to mirror Pine `long_ok` gating.
+  - `apm_v1_latest_bar_analysis(...)` now dispatches by side (`long` or `short`).
+  - `apm_v1_signals(...)` now dispatches by side (`long` or `short`).
+- Impact:
+  - Python v1 now evaluates both directional entry stacks with the same structure as Pine logic instead of short-only behavior.
+
+### Long RSI defaults promoted to shared v1 parameters
+
+- File: `backend/strategy_generator/v1_params.py`
+- Updates:
+  - Added `signal.rsi_long_min` and `signal.rsi_long_max` defaults.
+- Impact:
+  - Long-side runtime checks consume explicit shared defaults rather than implicit or missing config values.
+
+### Realtime paper trader now vets all symbols for both directions
+
+- File: `backend/paper_trading/realtime_alpaca_paper_trader.py`
+- Updates:
+  - Direction selection changed from static symbol mapping to per-pass dual evaluation (`long` first, then `short`) for every symbol.
+  - Exit-side evaluation now derives side from broker position state (no static side assumption during close-on-signal checks).
+  - Added broker capability guard helper for shortability checks.
+  - Idle and near-miss diagnostics now include both directional outcomes in one detail payload.
+- Impact:
+  - v1 paper runner behavior now matches Pine-style directional vetting and avoids missing valid opportunities due to single-side filtering.
+
+### Realtime live trader now vets all symbols for both directions
+
+- File: `backend/live_trading/realtime_alpaca_live_trader.py`
+- Updates:
+  - Added side-aware long order path (`submit_long_bracket(...)`).
+  - Added side-aware risk/order parameter computation for long and short.
+  - Removed pre-check skip that forced crypto symbols out before directional analysis.
+  - Added dual-direction entry analysis per symbol with broker-capability guard for unsupported shorts.
+- Impact:
+  - v1 live runner can evaluate both directional opportunities consistently with paper/runtime logic, while still enforcing broker constraints at order placement.
+
+### Dashboard logs now show gate-level event names
+
+- File: `docs/site.js`
+- Updates:
+  - Added event derivation for run-history and near-miss rows.
+  - Gate names are extracted from detail text (for example `failed bullish_stack: ...` => `bullish_stack`).
+  - Entry-detail text maps to normalized event labels (for example `long_entry`).
+- Impact:
+  - Logs panel now surfaces the actual failing/passing gate event instead of generic status-only labels.
+
+### Scheduler observability and missed-window catch-up
+
+- File: `backend/paper_trading/realtime_alpaca_paper_trader.py`
+- Updates:
+  - Startup scheduler health check logs `schedule_miss` when runtime gap exceeds threshold.
+  - Added missed-window reconstruction and catch-up scan mode for skipped intervals.
+  - New CLI options:
+    - `--catchup-missed-windows`
+    - `--catchup-max-windows`
+  - Catch-up scans historical bars per missed window and logs:
+    - `missed_opportunity`
+    - `missed_opportunity_blocked` (for broker-blocked short paths)
+  - Catch-up mode is log-only and does not place retroactive orders.
+- Impact:
+  - Missed schedule windows are now auditable and can be analyzed for lost setup visibility without introducing late-execution risk.
+
 ## Guideline Compliance Snapshot (2026-03-31)
 
 Reference guideline targets:

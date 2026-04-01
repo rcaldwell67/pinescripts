@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- Added side-aware v1 long-entry evaluator in `backend/strategy_generator/apm_v1.py` and wired side dispatch in `apm_v1_latest_bar_analysis(...)` and `apm_v1_signals(...)` so runtime evaluation supports both long and short gate stacks.
+- Added v1 long RSI defaults (`rsi_long_min`, `rsi_long_max`) to shared runtime params in `backend/strategy_generator/v1_params.py`.
+- Updated realtime paper runner (`backend/paper_trading/realtime_alpaca_paper_trader.py`) to evaluate every symbol for both long and short opportunities each pass, with long-first selection and broker-capability enforcement at order submission.
+- Updated realtime live runner (`backend/live_trading/realtime_alpaca_live_trader.py`) to evaluate both directions for every symbol, add long bracket submission support, and use side-aware risk/order parameter calculation.
+- Updated paper runner exit analysis to derive side from actual broker position state for close-on-signal behavior.
+- Improved dashboard log event labeling in `docs/site.js` by deriving gate/event names from detail text (for example `failed bullish_stack: ...` now surfaces `bullish_stack`).
+- Added scheduler gap observability in realtime paper trading via `schedule_miss` records in `realtime_paper_log` when run cadence exceeds threshold.
+- Added optional missed-window catch-up scanner in `backend/paper_trading/realtime_alpaca_paper_trader.py` (`--catchup-missed-windows`, `--catchup-max-windows`) that logs `missed_opportunity` and `missed_opportunity_blocked` entries without placing retroactive orders.
+
 - Closed v1 backtesting guideline gap by promoting tuned ETHUSD overrides into default runtime config (backend/strategy_generator/configs/v1_runtime.json); default v1 now passes all guideline thresholds across BTC/USD, ETH/USD, CLM, and CRF.
 - Added ETH profile tuning utility at backend/strategy_generator/tune_v1_profile.py with optional `--apply` to update profile overrides from reproducible search results.
 - Added CI workflow .github/workflows/v1-guideline-matrix.yml with default matrix reporting plus enforced eth_focus crypto guideline gate.
