@@ -183,6 +183,30 @@
     </div>
     <div class="table-wrap" id="tradeTableWrap"><div class="empty">Loading...</div></div>
   </div>
+  <div class="panel" style="margin-bottom:16px;" id="logsPanel">
+    <div class="tx-controls">
+      <div style="display:flex;align-items:baseline;gap:10px;">
+        <h2 style="margin-bottom:0;">Logs</h2>
+        <span class="tx-count" id="logsCount"></span>
+      </div>
+      <div class="tx-filters">
+        <select id="logSourceSelect" class="tx-select">
+          <option value="diagnostic">Diagnostic (JSONL)</option>
+          <option value="summary">Realtime Decision Summary</option>
+          <option value="fills">Paper Fill Events</option>
+          <option value="orders">Paper Order Events</option>
+        </select>
+        <select id="logSymbolScope" class="tx-select">
+          <option value="active" selected>Active Symbol</option>
+          <option value="all">All Symbols</option>
+        </select>
+        <input id="logSearchInput" class="tx-select log-search" type="text" placeholder="Search logs..." aria-label="Search logs" />
+        <div class="pg-size"><label>Rows</label><select id="logPageSizeSelect" class="tx-select"><option value="10">10</option><option value="25" selected>25</option><option value="50">50</option><option value="100">100</option></select></div>
+      </div>
+    </div>
+    <div class="tx-count" id="logsMeta" style="margin-bottom:10px;"></div>
+    <div class="table-wrap" id="logsTableWrap"><div class="empty">Loading logs...</div></div>
+  </div>
   <div class="panel">
     <h2>Version Comparison</h2>
     <div class="table-wrap"><table class="cmp" id="cmpTable"></table></div>

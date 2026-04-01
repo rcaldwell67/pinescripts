@@ -100,6 +100,13 @@ let tradeTablePage = 1;
 let tradePageSize = 25;
 let txPage = 1;
 let txPageSize = 25;
+let logsPage = 1;
+let logsPageSize = 25;
+let logsRenderSeq = 0;
+const logsDataCache = {
+  diagnosticRows: null,
+  diagnosticPath: null,
+};
 const PAPER_TRADING_SUPPORTED_VERSIONS = new Set(['v1']);
 const LIVE_TRADING_SUPPORTED_VERSIONS = new Set(['v1']);
 let pendingDatasetSymbol = '';
@@ -1107,6 +1114,312 @@ function parseDashboardTimeValue(value) {
   return Number.isFinite(ms) ? ms : 0;
 }
 
+function toEpochMs(value) {
+  if (!value) return 0;
+  const t = new Date(String(value).replace(' ', 'T')).getTime();
+  return Number.isFinite(t) ? t : 0;
+}
+
+function getActiveSymbolKeys() {
+  const keys = new Set();
+  if (!activeSym) return keys;
+  const aliases = getSymbolAliases(activeSym);
+  aliases.forEach(alias => {
+    const normalized = getNormalizedSymbolKey(alias);
+    if (normalized) keys.add(normalized);
+  });
+  const activeKey = getNormalizedSymbolKey(activeSym);
+  if (activeKey) keys.add(activeKey);
+  return keys;
+}
+
+function decodeLogSourceLabel(source) {
+  if (source === 'diagnostic') return 'Diagnostic JSONL';
+  if (source === 'summary') return 'Realtime Summary';
+  if (source === 'fills') return 'Paper Fill Event';
+  if (source === 'orders') return 'Paper Order Event';
+  return source;
+}
+
+async function loadDiagnosticRows() {
+  if (Array.isArray(logsDataCache.diagnosticRows)) return logsDataCache.diagnosticRows;
+
+  const candidates = [
+    'data/realtime_paper_diagnostic.jsonl',
+    'data/realtime_paper_diagnostic_test.jsonl',
+    'docs/data/realtime_paper_diagnostic.jsonl',
+    'docs/data/realtime_paper_diagnostic_test.jsonl',
+  ];
+
+  let text = '';
+  let sourcePath = '';
+  for (const candidate of candidates) {
+    try {
+      const res = await fetch(`${candidate}?v=${Date.now()}`, { cache: 'no-store' });
+      if (!res.ok) continue;
+      text = await res.text();
+      if (text && text.trim()) {
+        sourcePath = candidate;
+        break;
+      }
+    } catch (err) {
+      // Continue to next candidate path.
+    }
+  }
+
+  if (!text || !text.trim()) {
+    logsDataCache.diagnosticRows = [];
+    logsDataCache.diagnosticPath = '';
+    return [];
+  }
+
+  const rows = [];
+  const lines = text.split(/\r?\n/).filter(line => line.trim());
+  for (const line of lines) {
+    try {
+      const obj = JSON.parse(line);
+      const symbol = String(obj.symbol || '');
+      const detail = String(obj.detail || '');
+      const decision = String(obj.decision || '');
+      const status = String(obj.status || '');
+      const eventTime = obj.event_time || obj.pass_started_at || obj.latest_bar_ts || null;
+      rows.push({
+        timestamp: eventTime,
+        sortMs: toEpochMs(eventTime),
+        symbol,
+        source: 'diagnostic',
+        event: decision || 'event',
+        status: status || '-',
+        detail,
+        raw: obj,
+      });
+    } catch (err) {
+      // Skip malformed lines.
+    }
+  }
+
+  logsDataCache.diagnosticRows = rows;
+  logsDataCache.diagnosticPath = sourcePath;
+  return rows;
+}
+
+function querySummaryLogsFromDb(db) {
+  const out = [];
+  if (!db) return out;
+  try {
+    const stmt = db.prepare(`
+      SELECT symbol, metrics, notes
+      FROM paper_trading_results
+      WHERE notes LIKE '%realtime alpaca%'
+      ORDER BY id DESC
+    `);
+    while (stmt.step()) {
+      const row = stmt.getAsObject();
+      let metrics = {};
+      try {
+        metrics = JSON.parse(String(row.metrics || '{}'));
+      } catch (err) {
+        metrics = {};
+      }
+      const ts = metrics.timestamp || null;
+      out.push({
+        timestamp: ts,
+        sortMs: toEpochMs(ts),
+        symbol: String(row.symbol || metrics.symbol || ''),
+        source: 'summary',
+        event: String(metrics.status || 'status'),
+        status: String(metrics.status || '-'),
+        detail: String(metrics.detail || row.notes || ''),
+        raw: metrics,
+      });
+    }
+    stmt.free();
+  } catch (err) {
+    console.error('Error querying paper_trading_results logs:', err);
+  }
+  return out;
+}
+
+function queryFillLogsFromDb(db) {
+  const out = [];
+  if (!db) return out;
+  try {
+    const stmt = db.prepare(`
+      SELECT symbol, side, qty, price, transaction_time, order_id
+      FROM paper_fill_events
+      ORDER BY datetime(transaction_time) DESC
+    `);
+    while (stmt.step()) {
+      const row = stmt.getAsObject();
+      const ts = row.transaction_time || null;
+      const side = String(row.side || '').toLowerCase();
+      const qty = Number(row.qty);
+      const price = Number(row.price);
+      const detailParts = [
+        side ? `side=${side}` : '',
+        Number.isFinite(qty) ? `qty=${qty}` : '',
+        Number.isFinite(price) ? `price=${price}` : '',
+      ].filter(Boolean);
+      out.push({
+        timestamp: ts,
+        sortMs: toEpochMs(ts),
+        symbol: String(row.symbol || ''),
+        source: 'fills',
+        event: 'fill',
+        status: side || '-',
+        detail: detailParts.join(' '),
+        raw: row,
+      });
+    }
+    stmt.free();
+  } catch (err) {
+    console.error('Error querying paper_fill_events logs:', err);
+  }
+  return out;
+}
+
+function queryOrderLogsFromDb(db) {
+  const out = [];
+  if (!db) return out;
+  try {
+    const stmt = db.prepare(`
+      SELECT symbol, status, event_type, event_time, order_id
+      FROM paper_order_events
+      ORDER BY datetime(event_time) DESC
+    `);
+    while (stmt.step()) {
+      const row = stmt.getAsObject();
+      const ts = row.event_time || null;
+      const status = String(row.status || '-');
+      const eventType = String(row.event_type || 'order_event');
+      const orderId = String(row.order_id || '').trim();
+      out.push({
+        timestamp: ts,
+        sortMs: toEpochMs(ts),
+        symbol: String(row.symbol || ''),
+        source: 'orders',
+        event: eventType,
+        status,
+        detail: orderId ? `order_id=${orderId}` : '',
+        raw: row,
+      });
+    }
+    stmt.free();
+  } catch (err) {
+    console.error('Error querying paper_order_events logs:', err);
+  }
+  return out;
+}
+
+async function getLogRowsBySource(source) {
+  if (source === 'diagnostic') return loadDiagnosticRows();
+  const db = window._SQL_DB;
+  if (!db) return [];
+  if (source === 'summary') return querySummaryLogsFromDb(db);
+  if (source === 'fills') return queryFillLogsFromDb(db);
+  if (source === 'orders') return queryOrderLogsFromDb(db);
+  return [];
+}
+
+function formatLogTimestamp(value) {
+  if (!value) return '-';
+  const date = new Date(String(value).replace(' ', 'T'));
+  if (!Number.isFinite(date.getTime())) return String(value);
+  return date.toLocaleString('en-US', {
+    year: '2-digit',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+}
+
+async function renderLogsPanel() {
+  const sourceEl = document.getElementById('logSourceSelect');
+  const scopeEl = document.getElementById('logSymbolScope');
+  const searchEl = document.getElementById('logSearchInput');
+  const wrap = document.getElementById('logsTableWrap');
+  const countEl = document.getElementById('logsCount');
+  const metaEl = document.getElementById('logsMeta');
+  if (!sourceEl || !scopeEl || !searchEl || !wrap || !countEl || !metaEl) return;
+
+  const source = sourceEl.value || 'diagnostic';
+  const scope = scopeEl.value || 'active';
+  const query = String(searchEl.value || '').trim().toLowerCase();
+  const renderSeq = ++logsRenderSeq;
+
+  wrap.innerHTML = '<div class="empty">Loading logs...</div>';
+
+  let rows = await getLogRowsBySource(source);
+  if (renderSeq !== logsRenderSeq) return;
+
+  if (scope === 'active' && activeSym) {
+    const symbolKeys = getActiveSymbolKeys();
+    rows = rows.filter(row => symbolKeys.has(getNormalizedSymbolKey(row.symbol || '')));
+  }
+
+  if (query) {
+    rows = rows.filter(row => {
+      const blob = `${row.timestamp || ''} ${row.symbol || ''} ${row.event || ''} ${row.status || ''} ${row.detail || ''}`.toLowerCase();
+      return blob.includes(query);
+    });
+  }
+
+  rows = rows.slice().sort((a, b) => (b.sortMs || 0) - (a.sortMs || 0));
+
+  countEl.textContent = rows.length ? `${rows.length} logs` : '';
+  if (source === 'diagnostic') {
+    const src = logsDataCache.diagnosticPath || 'not found';
+    metaEl.textContent = `Source: ${src}`;
+  } else {
+    metaEl.textContent = `Source: ${decodeLogSourceLabel(source)} (from tradingcopilot.db)`;
+  }
+
+  if (!rows.length) {
+    wrap.innerHTML = '<div class="empty">No logs match current filters</div>';
+    return;
+  }
+
+  const total = rows.length;
+  const totalPages = Math.max(1, Math.ceil(total / logsPageSize));
+  if (logsPage > totalPages) logsPage = totalPages;
+  const start = (logsPage - 1) * logsPageSize;
+  const paged = rows.slice(start, start + logsPageSize);
+  const end = start + paged.length;
+
+  const pagCtrl = total > logsPageSize ? `<div class="pagination">
+    <span class="pg-info">${start + 1}-${end} of ${total} logs</span>
+    <div class="pg-btns">
+      <button class="pg-btn" ${logsPage <= 1 ? 'disabled' : ''} onclick="logsPage=1;renderLogsPanel()"><<</button>
+      <button class="pg-btn" ${logsPage <= 1 ? 'disabled' : ''} onclick="logsPage--;renderLogsPanel()"><</button>
+      <span class="pg-info" style="padding:0 8px">Page ${logsPage} / ${totalPages}</span>
+      <button class="pg-btn" ${logsPage >= totalPages ? 'disabled' : ''} onclick="logsPage++;renderLogsPanel()">></button>
+      <button class="pg-btn" ${logsPage >= totalPages ? 'disabled' : ''} onclick="logsPage=${totalPages};renderLogsPanel()">>></button>
+    </div>
+  </div>` : '';
+
+  wrap.innerHTML = `<table><thead><tr>
+    <th scope="col">Time</th><th scope="col">Source</th><th scope="col">Symbol</th><th scope="col">Event</th><th scope="col">Status</th><th scope="col">Detail</th>
+  </tr></thead><tbody>${paged.map(row => {
+    const statusText = escapeHtml(row.status || '-');
+    const statusClass = String(row.status || '').toLowerCase();
+    const statusTag = statusClass === 'error'
+      ? `<span class="tag tag-sl">${statusText}</span>`
+      : (statusClass === 'submitted' || statusClass === 'fill' || statusClass === 'buy' || statusClass === 'sell'
+        ? `<span class="tag tag-tp">${statusText}</span>`
+        : `<span class="tag tag-other">${statusText}</span>`);
+    return `<tr>
+      <td>${escapeHtml(formatLogTimestamp(row.timestamp))}</td>
+      <td>${escapeHtml(decodeLogSourceLabel(row.source || source))}</td>
+      <td>${escapeHtml(getTickerSymbolLabel(row.symbol || '-'))}</td>
+      <td>${escapeHtml(row.event || '-')}</td>
+      <td>${statusTag}</td>
+      <td>${escapeHtml(row.detail || '-')}</td>
+    </tr>`;
+  }).join('')}</tbody></table>${pagCtrl}`;
+}
+
 function getAllSymbolsCumulativeEquity() {
   const db = window._SQL_DB;
   if (!db) return null;
@@ -1610,6 +1923,7 @@ function render() {
   renderTradeTable(rows);
   renderComparisonTable();
   renderTransactionsTable();
+  renderLogsPanel();
   renderPriceChart();
 }
 
@@ -1740,6 +2054,7 @@ async function handleSymbolSelect(newSym, dbInstance) {
   activeSym = newSym;
   resetTransactionFilters();
   activeTab = 'all'; tradeTablePage = 1; txPage = 1;
+  logsPage = 1;
   const removeBtn = document.getElementById('removeSymbolBtn');
   if (removeBtn) { removeBtn.disabled = false; removeBtn.style.opacity = '1'; }
   if (!loaded[activeSym]) loaded[activeSym] = {};
@@ -2155,6 +2470,19 @@ function bindStaticControlHandlers() {
     tradeTablePage = 1;
     renderTradeTable(getActiveRows());
   });
+  const logsRerender = () => { logsPage = 1; renderLogsPanel(); };
+  document.getElementById('logSourceSelect')?.addEventListener('change', () => {
+    logsDataCache.diagnosticRows = null;
+    logsDataCache.diagnosticPath = null;
+    logsRerender();
+  });
+  document.getElementById('logSymbolScope')?.addEventListener('change', logsRerender);
+  document.getElementById('logSearchInput')?.addEventListener('input', logsRerender);
+  document.getElementById('logPageSizeSelect')?.addEventListener('change', e => {
+    logsPageSize = parseInt(e.target.value, 10);
+    logsPage = 1;
+    renderLogsPanel();
+  });
   document.getElementById('transactionTickerTrack')?.addEventListener('click', event => {
     const button = event.target.closest('.ticker-item[data-symbol]');
     if (!button) return;
@@ -2172,6 +2500,8 @@ function bindStaticControlHandlers() {
 
   const reloadDashboardBtn = document.getElementById('reloadDashboardBtn');
   reloadDashboardBtn?.addEventListener('click', () => {
+    logsDataCache.diagnosticRows = null;
+    logsDataCache.diagnosticPath = null;
     refreshDashboardData('manual');
   });
 

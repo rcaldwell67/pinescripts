@@ -258,6 +258,26 @@ def _compute_order_params(df, account_equity: float, side: str) -> tuple[float, 
     return qty, tp, sl
 
 
+def _latest_bar_timestamp(df: Any) -> str | None:
+    if len(df) <= 0:
+        return None
+    if "timestamp" in df.columns:
+        return str(df["timestamp"].iloc[-1])
+    if "Datetime" in df.columns:
+        return str(df["Datetime"].iloc[-1])
+    try:
+        return str(df.index[-1])
+    except Exception:
+        return None
+
+
+def _append_diagnostic_line(path: Path, event: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(event, sort_keys=True))
+        handle.write("\n")
+
+
 def _upsert_summary(conn: sqlite3.Connection, symbol: str, version: str, status: str, detail: str, equity: float | None) -> None:
     notes = f"{VERSION_MAP.get(version, version)} realtime alpaca summary"
     metrics = {
@@ -653,47 +673,82 @@ def _trade_one_symbol(
     version: str,
     account_equity: float,
     close_on_signal: bool = False,
-) -> bool:
+) -> tuple[bool, dict[str, Any]]:
     side = _target_side_for_symbol(symbol)
+    diag: dict[str, Any] = {
+        "symbol": symbol,
+        "version": version,
+        "target_side": side,
+    }
 
     order_symbol = _order_symbol(symbol)
+    diag["order_symbol"] = order_symbol
     position = api.get_position(order_symbol)
+    position_qty = abs(float(position.get("qty", 0.0) or 0.0)) if position else 0.0
+    diag["position_qty"] = position_qty
     if position and abs(float(position.get("qty", 0.0) or 0.0)) > 0:
         if close_on_signal:
             df = fetch_ohlcv(symbol)
-            if _latest_signal_is_entry(df):
+            latest_ts = _latest_bar_timestamp(df)
+            is_entry = _latest_signal_is_entry(df)
+            diag["latest_bar_ts"] = latest_ts
+            diag["latest_entry_signal"] = is_entry
+            if is_entry:
                 try:
                     api.close_position(order_symbol)
                     _upsert_summary(conn, symbol, version, "closing", "signal-triggered position close", account_equity)
                     print(f"CLOSE {symbol}: signal-triggered close submitted")
-                    return False
+                    diag["decision"] = "position_close_submitted"
+                    diag["status"] = "closing"
+                    return False, diag
                 except Exception as exc:
                     _upsert_summary(conn, symbol, version, "error", f"close failed: {exc}", account_equity)
                     print(f"ERROR {symbol}: close failed: {exc}")
-                    return False
+                    diag["decision"] = "error"
+                    diag["status"] = "error"
+                    diag["detail"] = f"close failed: {exc}"
+                    return False, diag
         _upsert_summary(conn, symbol, version, "holding", "existing open position", account_equity)
         print(f"HOLD {symbol}: existing position qty={position.get('qty')}")
-        return False
+        diag["decision"] = "skip_existing_position"
+        diag["status"] = "holding"
+        diag["detail"] = "existing open position"
+        return False, diag
 
     open_orders = api.get_open_orders(order_symbol)
+    diag["open_order_count"] = len(open_orders)
     if open_orders:
         _upsert_summary(conn, symbol, version, "waiting", f"{len(open_orders)} open order(s)", account_equity)
         print(f"WAIT {symbol}: open orders present")
-        return False
+        diag["decision"] = "skip_open_orders"
+        diag["status"] = "waiting"
+        diag["detail"] = f"{len(open_orders)} open order(s)"
+        return False, diag
 
     df = fetch_ohlcv(symbol)
-    if not _latest_signal_is_entry(df):
+    latest_ts = _latest_bar_timestamp(df)
+    is_entry = _latest_signal_is_entry(df)
+    diag["latest_bar_ts"] = latest_ts
+    diag["latest_entry_signal"] = is_entry
+    if not is_entry:
         _upsert_summary(conn, symbol, version, "idle", f"no fresh {side} entry signal", account_equity)
         print(f"IDLE {symbol}: no entry")
-        return False
+        diag["decision"] = "skip_no_fresh_signal"
+        diag["status"] = "idle"
+        diag["detail"] = f"no fresh {side} entry signal"
+        return False, diag
 
     order_params = _compute_order_params(df, account_equity, side=side)
     if not order_params:
         _upsert_summary(conn, symbol, version, "idle", "insufficient data/invalid ATR", account_equity)
         print(f"IDLE {symbol}: invalid order params")
-        return False
+        diag["decision"] = "skip_invalid_order_params"
+        diag["status"] = "idle"
+        diag["detail"] = "insufficient data/invalid ATR"
+        return False, diag
 
     qty, tp, sl = order_params
+    diag["planned_order"] = {"qty": qty, "take_profit": tp, "stop_loss": sl}
     try:
         if side == "long":
             order = api.submit_long_bracket(symbol=order_symbol, qty=qty, take_profit=tp, stop_loss=sl)
@@ -702,11 +757,18 @@ def _trade_one_symbol(
         order_id = order.get("id") if isinstance(order, dict) else None
         _upsert_summary(conn, symbol, version, "submitted", f"{side} bracket submitted order_id={order_id}", account_equity)
         print(f"SUBMIT {symbol}: side={side} qty={qty} tp={tp:.4f} sl={sl:.4f}")
-        return True
+        diag["decision"] = "submitted"
+        diag["status"] = "submitted"
+        diag["detail"] = f"{side} bracket submitted order_id={order_id}"
+        diag["order_id"] = order_id
+        return True, diag
     except Exception as exc:
         _upsert_summary(conn, symbol, version, "error", str(exc), account_equity)
         print(f"ERROR {symbol}: {exc}")
-        return False
+        diag["decision"] = "error"
+        diag["status"] = "error"
+        diag["detail"] = str(exc)
+        return False, diag
 
 
 def main() -> int:
@@ -720,6 +782,12 @@ def main() -> int:
     parser.add_argument("--stream-bars", action="store_true", help="Use Alpaca websocket bars to trigger symbol evaluations")
     parser.add_argument("--max-open-positions", type=int, default=8, help="Portfolio cap for simultaneous open positions")
     parser.add_argument("--close-on-signal", action="store_true", help="Attempt position close when a fresh signal appears while holding")
+    parser.add_argument("--diagnostic", action="store_true", help="Write per-symbol decision diagnostics to a JSONL file")
+    parser.add_argument(
+        "--diagnostic-file",
+        default="docs/data/realtime_paper_diagnostic.jsonl",
+        help="JSONL path for --diagnostic output",
+    )
     args = parser.parse_args()
 
     version = args.version.strip().lower()
@@ -749,11 +817,15 @@ def main() -> int:
 
     loop_count = 0
     failures: list[str] = []
+    diagnostic_file = (REPO_ROOT / args.diagnostic_file).resolve()
+    if args.diagnostic:
+        print(f"Diagnostic logging enabled: {diagnostic_file}")
     try:
         while True:
             loop_count += 1
             account = api.get_account()
             account_equity = float(account.get("equity") or account.get("last_equity") or 100000.0)
+            pass_started_at = datetime.now(timezone.utc).isoformat()
             _upsert_account_info(conn, account, event_type="heartbeat")
             print(f"\n[{datetime.now(timezone.utc).isoformat()}] Monitoring pass #{loop_count} (equity={account_equity:.2f})")
 
@@ -784,9 +856,26 @@ def main() -> int:
                     if osym not in open_symbols and len(open_symbols) >= max(args.max_open_positions, 1):
                         _upsert_summary(conn, symbol, version, "risk_cap", "max open positions reached", account_equity)
                         print(f"SKIP {symbol}: max open positions reached")
+                        if args.diagnostic:
+                            _append_diagnostic_line(
+                                diagnostic_file,
+                                {
+                                    "event_time": datetime.now(timezone.utc).isoformat(),
+                                    "pass_started_at": pass_started_at,
+                                    "loop": loop_count,
+                                    "symbol": symbol,
+                                    "version": version,
+                                    "decision": "skip_risk_cap",
+                                    "status": "risk_cap",
+                                    "detail": "max open positions reached",
+                                    "open_positions": len(open_symbols),
+                                    "max_open_positions": max(args.max_open_positions, 1),
+                                    "account_equity": account_equity,
+                                },
+                            )
                         continue
 
-                    submitted = _trade_one_symbol(
+                    submitted, diag = _trade_one_symbol(
                         conn,
                         api,
                         symbol,
@@ -794,12 +883,36 @@ def main() -> int:
                         account_equity,
                         close_on_signal=args.close_on_signal,
                     )
+                    if args.diagnostic:
+                        diag_record = {
+                            "event_time": datetime.now(timezone.utc).isoformat(),
+                            "pass_started_at": pass_started_at,
+                            "loop": loop_count,
+                            "account_equity": account_equity,
+                            **diag,
+                        }
+                        _append_diagnostic_line(diagnostic_file, diag_record)
                     if submitted:
                         open_symbols.add(osym)
                 except Exception as exc:
                     failures.append(symbol)
                     _upsert_summary(conn, symbol, version, "error", str(exc), account_equity)
                     print(f"ERROR {symbol}: {exc}")
+                    if args.diagnostic:
+                        _append_diagnostic_line(
+                            diagnostic_file,
+                            {
+                                "event_time": datetime.now(timezone.utc).isoformat(),
+                                "pass_started_at": pass_started_at,
+                                "loop": loop_count,
+                                "symbol": symbol,
+                                "version": version,
+                                "decision": "error",
+                                "status": "error",
+                                "detail": str(exc),
+                                "account_equity": account_equity,
+                            },
+                        )
 
             fill_count = _sync_fill_events(conn, api, symbols, version, account_equity)
             cancel_count = _sync_canceled_orders(conn, api, symbols)
