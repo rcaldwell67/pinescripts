@@ -737,6 +737,12 @@ def _sync_canceled_orders(conn: sqlite3.Connection, api: AlpacaPaperAPI, symbols
     return inserted
 
 
+def _can_short_symbol(symbol: str) -> bool:
+    """Return True if the broker supports shorting this symbol on the paper account."""
+    # Alpaca paper does not support spot short-selling of crypto pairs.
+    return "/" not in symbol
+
+
 def _trade_one_symbol(
     conn: sqlite3.Connection,
     api: AlpacaPaperAPI,
@@ -745,11 +751,13 @@ def _trade_one_symbol(
     account_equity: float,
     close_on_signal: bool = False,
 ) -> tuple[bool, dict[str, Any]]:
-    side = _target_side_for_symbol(symbol)
+    # Evaluate both long and short for every symbol; pick whichever qualifies.
+    # Long is preferred when both fire simultaneously (matches Pine evaluation order).
+    # Alpaca paper does not support short-selling of crypto spot pairs.
     diag: dict[str, Any] = {
         "symbol": symbol,
         "version": version,
-        "target_side": side,
+        "target_side": "both",
     }
 
     order_symbol = _order_symbol(symbol)
@@ -760,7 +768,10 @@ def _trade_one_symbol(
     if position and abs(float(position.get("qty", 0.0) or 0.0)) > 0:
         if close_on_signal:
             df = fetch_ohlcv(symbol)
-            exit_analysis = apm_v1_latest_bar_exit_analysis(df, side=side, params=V1_PARAMS)
+            # Use the actual position side reported by the broker to pick the correct exit evaluator.
+            position_side = str(position.get("side") or "").lower()
+            exit_side = "long" if position_side == "long" else "short"
+            exit_analysis = apm_v1_latest_bar_exit_analysis(df, side=exit_side, params=V1_PARAMS)
             diag["latest_bar_ts"] = exit_analysis.get("latest_bar_ts") or _latest_bar_timestamp(df)
             diag["latest_exit_signal"] = bool(exit_analysis.get("is_exit"))
             diag["exit_failed_stage"] = exit_analysis.get("failed_stage")
@@ -806,20 +817,51 @@ def _trade_one_symbol(
         return False, diag
 
     df = fetch_ohlcv(symbol)
-    analysis = apm_v1_latest_bar_analysis(df, side=side, params=V1_PARAMS)
-    latest_ts = analysis.get("latest_bar_ts") or _latest_bar_timestamp(df)
-    is_entry = bool(analysis.get("is_entry"))
-    diag["latest_bar_ts"] = latest_ts
-    diag["latest_entry_signal"] = is_entry
-    diag["failed_stage"] = analysis.get("failed_stage")
-    diag["passed_stage"] = analysis.get("passed_stage")
-    if not is_entry:
-        status = "near_miss" if analysis.get("is_near_miss") else "idle"
-        detail = str(analysis.get("detail") or f"no fresh {side} entry signal")
-        _upsert_summary(conn, symbol, version, status, detail, account_equity)
-        print(f"{status.upper()} {symbol}: {detail}")
+
+    # Evaluate both directions; match Pine's evaluation order (long first).
+    long_analysis = apm_v1_latest_bar_analysis(df, side="long", params=V1_PARAMS)
+    short_analysis = apm_v1_latest_bar_analysis(df, side="short", params=V1_PARAMS)
+    diag["long_analysis"] = {k: str(v) for k, v in long_analysis.items() if k != "latest_bar_ts"}
+    diag["short_analysis"] = {k: str(v) for k, v in short_analysis.items() if k != "latest_bar_ts"}
+
+    # Pick qualifying side: long preferred when both fire.
+    if long_analysis.get("is_entry") and (_can_short_symbol(symbol) or True):
+        side = "long"
+        analysis = long_analysis
+    elif short_analysis.get("is_entry") and _can_short_symbol(symbol):
+        side = "short"
+        analysis = short_analysis
+    else:
+        # Neither fires — report the long analysis for near-miss detection; also log short if near miss.
+        analysis = long_analysis if long_analysis.get("is_near_miss") else short_analysis
+        side = "long" if "long" in str(analysis.get("detail", "")) or long_analysis.get("is_near_miss") else "short"
+        # Report the most informative failure.
+        long_detail = str(long_analysis.get("detail") or "no long signal")
+        short_detail = str(short_analysis.get("detail") or "no short signal")
+        is_near = long_analysis.get("is_near_miss") or short_analysis.get("is_near_miss")
+        status = "near_miss" if is_near else "idle"
+        combo_detail = f"long: {long_detail} | short: {short_detail}"
+        _upsert_summary(conn, symbol, version, status, combo_detail, account_equity)
+        print(f"{status.upper()} {symbol}: {combo_detail}")
         diag["decision"] = "skip_no_fresh_signal"
         diag["status"] = status
+        diag["detail"] = combo_detail
+        diag["latest_bar_ts"] = long_analysis.get("latest_bar_ts") or _latest_bar_timestamp(df)
+        return False, diag
+
+    latest_ts = analysis.get("latest_bar_ts") or _latest_bar_timestamp(df)
+    diag["latest_bar_ts"] = latest_ts
+    diag["selected_side"] = side
+    diag["latest_entry_signal"] = True
+    diag["passed_stage"] = analysis.get("passed_stage")
+
+    # Broker constraint: Alpaca paper does not support crypto spot shorts.
+    if side == "short" and not _can_short_symbol(symbol):
+        detail = f"short signal detected but crypto short not supported on Alpaca paper"
+        _upsert_summary(conn, symbol, version, "idle", detail, account_equity)
+        print(f"IDLE {symbol}: {detail}")
+        diag["decision"] = "skip_crypto_short_unsupported"
+        diag["status"] = "idle"
         diag["detail"] = detail
         return False, diag
 

@@ -36,7 +36,7 @@ try:
 except ImportError:
     pass
 
-from apm_v1 import apm_v1_signals
+from apm_v1 import apm_v1_latest_bar_analysis, apm_v1_signals
 from backtest_backtrader_alpaca import DB_PATH, VERSION_MAP, fetch_ohlcv
 from v1_params import get_v1_params
 
@@ -99,6 +99,19 @@ class AlpacaLiveAPI:
         }
         return self._request("POST", "/v2/orders", payload=payload)
 
+    def submit_long_bracket(self, *, symbol: str, qty: float, take_profit: float, stop_loss: float) -> dict[str, Any]:
+        payload = {
+            "symbol": symbol,
+            "side": "buy",
+            "type": "market",
+            "time_in_force": "day",
+            "qty": str(max(qty, 0.0)),
+            "order_class": "bracket",
+            "take_profit": {"limit_price": f"{take_profit:.6f}"},
+            "stop_loss": {"stop_price": f"{stop_loss:.6f}"},
+        }
+        return self._request("POST", "/v2/orders", payload=payload)
+
     def get_fill_activities(self, *, after: str | None = None) -> list[dict[str, Any]]:
         params: dict[str, Any] = {"direction": "asc", "page_size": 100}
         if after:
@@ -125,7 +138,13 @@ def _latest_signal_is_entry(df, side: str = "short") -> bool:
     return (len(df) - 1) in entries
 
 
-def _compute_order_params(df, account_equity: float) -> tuple[float, float, float] | None:
+def _can_short_symbol(symbol: str) -> bool:
+    """Return True if the broker supports shorting this symbol on the live account."""
+    # Alpaca live does not support short-selling of crypto spot pairs.
+    return "/" not in symbol
+
+
+def _compute_order_params(df, account_equity: float, side: str = "short") -> tuple[float, float, float] | None:
     risk = V1_PARAMS["risk"]
     if len(df) < 210:
         return None
@@ -137,9 +156,15 @@ def _compute_order_params(df, account_equity: float) -> tuple[float, float, floa
     if atr <= 0:
         return None
 
-    sl = price + float(risk["sl_atr_mult"]) * atr
-    tp = price - float(risk["tp_atr_mult"]) * atr
-    risk_per_unit = sl - price
+    if side == "long":
+        sl = price - float(risk["sl_atr_mult"]) * atr
+        tp = price + float(risk["tp_atr_mult"]) * atr
+        risk_per_unit = price - sl
+    else:
+        sl = price + float(risk["sl_atr_mult"]) * atr
+        tp = price - float(risk["tp_atr_mult"]) * atr
+        risk_per_unit = sl - price
+
     if risk_per_unit <= 0:
         return None
 
@@ -262,11 +287,7 @@ def _sync_fill_events(conn: sqlite3.Connection, api: AlpacaLiveAPI, symbols: lis
 
 
 def _trade_one_symbol(conn: sqlite3.Connection, api: AlpacaLiveAPI, symbol: str, version: str, account_equity: float) -> None:
-    if "/" in symbol:
-        _upsert_summary(conn, symbol, version, "skipped", "short-only strategy; crypto short not supported", account_equity)
-        print(f"SKIP {symbol}: short-only strategy; crypto short not supported")
-        return
-
+    # Evaluate both long and short for every symbol; match Pine's evaluation order (long first).
     order_symbol = _order_symbol(symbol)
     position = api.get_position(order_symbol)
     if position and abs(float(position.get("qty", 0.0) or 0.0)) > 0:
@@ -281,12 +302,28 @@ def _trade_one_symbol(conn: sqlite3.Connection, api: AlpacaLiveAPI, symbol: str,
         return
 
     df = fetch_ohlcv(symbol)
-    if not _latest_signal_is_entry(df):
-        _upsert_summary(conn, symbol, version, "idle", "no fresh entry signal", account_equity)
-        print(f"IDLE {symbol}: no entry")
+    long_analysis = apm_v1_latest_bar_analysis(df, side="long", params=V1_PARAMS)
+    short_analysis = apm_v1_latest_bar_analysis(df, side="short", params=V1_PARAMS)
+
+    if long_analysis.get("is_entry"):
+        side = "long"
+    elif short_analysis.get("is_entry") and _can_short_symbol(symbol):
+        side = "short"
+    else:
+        long_detail = str(long_analysis.get("detail") or "no long signal")
+        short_detail = str(short_analysis.get("detail") or "no short signal")
+        _upsert_summary(conn, symbol, version, "idle", f"long: {long_detail} | short: {short_detail}", account_equity)
+        print(f"IDLE {symbol}: long: {long_detail} | short: {short_detail}")
         return
 
-    order_params = _compute_order_params(df, account_equity)
+    # Broker constraint: Alpaca live does not support crypto spot shorts.
+    if side == "short" and not _can_short_symbol(symbol):
+        detail = "short signal detected but crypto short not supported on Alpaca live"
+        _upsert_summary(conn, symbol, version, "idle", detail, account_equity)
+        print(f"IDLE {symbol}: {detail}")
+        return
+
+    order_params = _compute_order_params(df, account_equity, side=side)
     if not order_params:
         _upsert_summary(conn, symbol, version, "idle", "insufficient data/invalid ATR", account_equity)
         print(f"IDLE {symbol}: invalid order params")
@@ -294,10 +331,13 @@ def _trade_one_symbol(conn: sqlite3.Connection, api: AlpacaLiveAPI, symbol: str,
 
     qty, tp, sl = order_params
     try:
-        order = api.submit_short_bracket(symbol=order_symbol, qty=qty, take_profit=tp, stop_loss=sl)
+        if side == "long":
+            order = api.submit_long_bracket(symbol=order_symbol, qty=qty, take_profit=tp, stop_loss=sl)
+        else:
+            order = api.submit_short_bracket(symbol=order_symbol, qty=qty, take_profit=tp, stop_loss=sl)
         order_id = order.get("id") if isinstance(order, dict) else None
-        _upsert_summary(conn, symbol, version, "submitted", f"short bracket submitted order_id={order_id}", account_equity)
-        print(f"SUBMIT {symbol}: qty={qty} tp={tp:.4f} sl={sl:.4f}")
+        _upsert_summary(conn, symbol, version, "submitted", f"{side} bracket submitted order_id={order_id}", account_equity)
+        print(f"SUBMIT {symbol}: side={side} qty={qty} tp={tp:.4f} sl={sl:.4f}")
     except Exception as exc:
         _upsert_summary(conn, symbol, version, "error", str(exc), account_equity)
         print(f"ERROR {symbol}: {exc}")
