@@ -63,7 +63,8 @@ def create_database(db_path):
             result TEXT,
             pnl_pct REAL,
             dollar_pnl REAL,
-            equity REAL
+            equity REAL,
+            source TEXT
         )
     ''')
     # Chart OHLCV bars — one row per (symbol, unix-second timestamp)

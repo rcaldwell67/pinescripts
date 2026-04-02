@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- Added `source` column to the `trades` table (values: `'simulation'`, `'realtime'`, or NULL for backtest rows).
+  - `reset_v1_aligned_backtest_paper.py` and `reset_v2_aligned_backtest_paper.py` now tag paper-mode rows with `source='simulation'`.
+  - `realtime_alpaca_paper_trader.py` now tags broker-filled paper-mode rows with `source='realtime'` and ensures the column exists via `_ensure_source_column()` on startup.
+  - Migration: existing 31 paper rows in `tradingcopilot.db` backfilled to `source='simulation'`.
+  - Dashboard: transactions table now shows an amber warning banner when all paper trades are simulation-sourced; shows a `sim` badge per row when simulation and realtime rows are mixed.
 - Closed v2 backtesting guideline gap by promoting validated BTCUSD and ETHUSD overrides into `backend/strategy_generator/configs/v2_runtime.json`; default v2 now passes all guideline thresholds across BTC/USD, ETH/USD, CLM, and CRF.
 - Added standalone v2 guideline matrix report at `backend/strategy_generator/report_v2_guidelines.py` with JSON output and enforced failure mode.
 - Expanded `backend/strategy_generator/tune_v2_profile.py` with broader search coverage, stronger win-rate-first ranking, and profile-scoped apply support.

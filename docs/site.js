@@ -1579,12 +1579,13 @@ function buildTransactions() {
     for (const r of rows) {
       const begEquity = prevEquity;
       const isLong = r.direction === 'long';
+      const src = r.source || null;
       txns.push({ time:r.entry_time, sym:activeSym, ver, cfg, symLabel:symData.label,
         action: isLong?'BUY':'SELL', price:r.entry_price, type:'Open',
-        direction:r.direction, pnl:null, result:null, begEquity, endEquity:null });
+        direction:r.direction, pnl:null, result:null, begEquity, endEquity:null, source:src });
       txns.push({ time:r.exit_time, sym:activeSym, ver, cfg, symLabel:symData.label,
         action: isLong?'SELL':'BUY', price:r.exit_price, type:'Close',
-        direction:r.direction, pnl:r.dollar_pnl, result:r.result, begEquity, endEquity:r.equity });
+        direction:r.direction, pnl:r.dollar_pnl, result:r.result, begEquity, endEquity:r.equity, source:src });
       prevEquity = r.equity;
     }
   }
@@ -1662,16 +1663,34 @@ function renderTransactionsTable() {
     </div>
   </div>` : '';
   const fmtEq = e => e==null||isNaN(e) ? '-' : '$'+e.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-  wrap.innerHTML = `<table><thead><tr>
+  // Show a source notice when in paper mode and rows are simulation-only or mixed.
+  const isPaperMode = activeDataset === 'paper';
+  const simCount = isPaperMode ? txns.filter(t => t.source === 'simulation').length : 0;
+  const realtimeCount = isPaperMode ? txns.filter(t => t.source === 'realtime').length : 0;
+  const hasSimOnly = isPaperMode && simCount > 0 && realtimeCount === 0;
+  const hasMixed = isPaperMode && simCount > 0 && realtimeCount > 0;
+  const sourceNotice = hasSimOnly
+    ? `<div style="margin-bottom:10px;padding:8px 12px;border-radius:6px;background:#d2950022;border:1px solid #d29500;color:#d29500;font-size:12px;font-weight:500;">
+        ⚠ Paper trading data is backtest simulation — no live Alpaca broker orders have been placed for this symbol.
+       </div>`
+    : hasMixed
+    ? `<div style="margin-bottom:10px;padding:8px 12px;border-radius:6px;background:#58a6ff22;border:1px solid #58a6ff;color:#58a6ff;font-size:12px;font-weight:500;">
+        ℹ Mix of simulation and live broker trades. Simulation rows are marked <span style="font-variant:small-caps">sim</span>.
+       </div>`
+    : '';
+  wrap.innerHTML = `${sourceNotice}<table><thead><tr>
     <th scope="col">Date / Time</th><th scope="col">Version</th><th scope="col">Action</th><th scope="col">Type</th><th scope="col">Direction</th><th scope="col">Price</th><th scope="col">P&L</th><th scope="col">Beg. Bal</th><th scope="col">End Bal</th><th scope="col">Result</th>
   </tr></thead><tbody>${paged.map(t => {
     const fmtP = p => isNaN(p)?'-' : p<100?'$'+p.toFixed(4):'$'+p.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
     const actionTag = t.action==='BUY'
       ? `<span class="tag tag-buy">BUY</span>`
       : `<span class="tag tag-sell">SELL</span>`;
+    const simBadge = (isPaperMode && t.source === 'simulation' && !hasSimOnly)
+      ? `<span style="display:inline-block;margin-left:4px;font-size:10px;padding:1px 4px;border-radius:3px;background:#d2950022;color:#d29500;border:1px solid #d29500;font-variant:small-caps">sim</span>`
+      : '';
     const typeTag = t.type==='Open'
-      ? `<span class="tag tag-open">Open</span>`
-      : `<span class="tag tag-close">Close</span>`;
+      ? `<span class="tag tag-open">Open</span>${simBadge}`
+      : `<span class="tag tag-close">Close</span>${simBadge}`;
     const dirTag = t.direction==='long'
       ? `<span class="tag tag-long">long</span>`
       : `<span class="tag tag-short">short</span>`;

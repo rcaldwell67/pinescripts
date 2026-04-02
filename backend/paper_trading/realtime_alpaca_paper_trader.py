@@ -317,6 +317,15 @@ def _ensure_realtime_paper_log_table(conn: sqlite3.Connection) -> None:
     )
 
 
+def _ensure_source_column(conn: sqlite3.Connection) -> None:
+    """Add `source` column to the trades table if it was created before this column existed."""
+    try:
+        conn.execute("ALTER TABLE trades ADD COLUMN source TEXT")
+    except Exception:
+        # Column already exists — ignore.
+        pass
+
+
 def _insert_realtime_log(
     conn: sqlite3.Connection,
     symbol: str,
@@ -764,8 +773,8 @@ def _sync_fill_events(
                     """
                     INSERT INTO trades (
                         symbol, version, mode, entry_time, exit_time, direction,
-                        entry_price, exit_price, result, pnl_pct, dollar_pnl, equity
-                    ) VALUES (?, ?, 'paper', ?, NULL, 'long', ?, NULL, 'OPEN', NULL, NULL, ?)
+                        entry_price, exit_price, result, pnl_pct, dollar_pnl, equity, source
+                    ) VALUES (?, ?, 'paper', ?, NULL, 'long', ?, NULL, 'OPEN', NULL, NULL, ?, 'realtime')
                     """,
                     (db_symbol, version, ts, price, base_equity),
                 )
@@ -811,8 +820,8 @@ def _sync_fill_events(
                     """
                     INSERT INTO trades (
                         symbol, version, mode, entry_time, exit_time, direction,
-                        entry_price, exit_price, result, pnl_pct, dollar_pnl, equity
-                    ) VALUES (?, ?, 'paper', ?, NULL, 'short', ?, NULL, 'OPEN', NULL, NULL, ?)
+                        entry_price, exit_price, result, pnl_pct, dollar_pnl, equity, source
+                    ) VALUES (?, ?, 'paper', ?, NULL, 'short', ?, NULL, 'OPEN', NULL, NULL, ?, 'realtime')
                     """,
                     (db_symbol, version, ts, price, base_equity),
                 )
@@ -1102,6 +1111,7 @@ def main() -> int:
         conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
     except sqlite3.OperationalError:
         pass
+    _ensure_source_column(conn)
 
     missed_windows: list[datetime] = []
     if args.schedule_interval_seconds > 0:

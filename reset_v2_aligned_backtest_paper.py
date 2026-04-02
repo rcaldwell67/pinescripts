@@ -104,14 +104,15 @@ def _build_rows(symbol: str, trades, df) -> list[tuple]:
 def _insert_trades(conn: sqlite3.Connection, mode: str, rows: list[tuple]) -> None:
     if not rows:
         return
+    source = 'simulation' if mode == 'paper' else None
     conn.executemany(
         """
         INSERT INTO trades (
             symbol, version, mode, entry_time, exit_time, direction,
-            entry_price, exit_price, result, pnl_pct, dollar_pnl, equity
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            entry_price, exit_price, result, pnl_pct, dollar_pnl, equity, source
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
-        [(r[0], r[1], mode, r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9], r[10]) for r in rows],
+        [(r[0], r[1], mode, r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9], r[10], source) for r in rows],
     )
 
 
