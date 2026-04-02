@@ -2251,6 +2251,7 @@ async function handleSymbolSelect(newSym, dbInstance) {
     const symbolAliases = getSymbolAliases(activeSym);
     const normalizedSymbol = getNormalizedSymbolKey(activeSym);
     const modeFilter = activeDataset === 'backtest' ? 'backtest' : (activeDataset === 'paper' ? 'paper' : 'live');
+    const requireBrokerRows = activeDataset === 'paper' || activeDataset === 'live';
     let rows = [];
     try {
       const stmt = db.prepare(
@@ -2265,6 +2266,9 @@ async function handleSymbolSelect(newSym, dbInstance) {
         rows.push(stmt.getAsObject());
       }
       stmt.free();
+      if (requireBrokerRows) {
+        rows = rows.filter(r => String(r.source || '').toLowerCase() === 'realtime');
+      }
     } catch (e) {
       console.error('Error querying trades table:', e);
     }
