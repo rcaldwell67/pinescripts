@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Updated `.github/workflows/v2-guideline-matrix.yml` to default scheduled and manual runs to the promoted `guideline_closed` profile.
 - Added `.github/workflows/close-v2-guidelines.yml` for manual execution of the full v2 closure loop in GitHub Actions.
 - Added promoted v1 `guideline_closed` profile plus `backend/strategy_generator/close_v1_guidelines.py` and `.github/workflows/close-v1-guidelines.yml` so v1 and v2 now share the same closure workflow pattern.
+- Updated `.github/workflows/v1-guideline-matrix.yml` to default scheduled and manual matrix runs to v1 profile `guideline_closed`, with custom profile override support.
 - Added v2 runtime parameter source at `backend/strategy_generator/v2_params.py` based on `APM v2.0-10m` defaults.
 - Added v2 strategy adapter at `backend/strategy_generator/apm_v2.py` with side-aware latest-bar entry/exit analysis wiring.
 - Added v2 backtest engine at `backend/strategy_generator/apm_v2_backtest.py` with long/short simulation, ATR-based SL/TP, trailing stop, and max-bars exit handling.

@@ -55,6 +55,8 @@ Promoted v1 closure profile:
 python backend/strategy_generator/report_v1_guidelines.py --version v1 --profile guideline_closed --enforce
 ```
 
+The scheduled and default manual v1 guideline workflow now uses `guideline_closed` unless you explicitly choose another profile.
+
 Equivalent v2 run:
 
 ```sh

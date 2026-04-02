@@ -11,6 +11,10 @@ on:
         description: "Asset class to evaluate (all, crypto, stocks)"
         required: false
         default: "all"
+      profile:
+        description: "Runtime profile override; defaults to guideline_closed"
+        required: false
+        default: "guideline_closed"
   schedule:
     - cron: "15 */6 * * *"
 
@@ -36,19 +40,40 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run guideline matrix (report mode)
-        if: ${{ github.event_name == 'schedule' || inputs.enforce != 'true' }}
+      - name: Run guideline matrix (report mode, scheduled/default profile)
+        if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.enforce != 'true' && inputs.profile == 'guideline_closed') }}
         run: |
           python backend/strategy_generator/report_v1_guidelines.py \
             --version v1 \
+            --profile guideline_closed \
             --asset-class "${{ inputs.asset_class || 'all' }}" \
             --json-out docs/data/v1_guideline_report_ci.json
 
-      - name: Run guideline matrix (enforced mode)
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.enforce == 'true' }}
+      - name: Run guideline matrix (report mode, custom profile)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.enforce != 'true' && inputs.profile != 'guideline_closed' }}
         run: |
           python backend/strategy_generator/report_v1_guidelines.py \
             --version v1 \
+            --profile "${{ inputs.profile }}" \
+            --asset-class "${{ inputs.asset_class || 'all' }}" \
+            --json-out docs/data/v1_guideline_report_ci.json
+
+      - name: Run guideline matrix (enforced mode, default profile)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.enforce == 'true' && inputs.profile == 'guideline_closed' }}
+        run: |
+          python backend/strategy_generator/report_v1_guidelines.py \
+            --version v1 \
+            --profile guideline_closed \
+            --asset-class "${{ inputs.asset_class || 'all' }}" \
+            --json-out docs/data/v1_guideline_report_ci.json \
+            --enforce
+
+      - name: Run guideline matrix (enforced mode, custom profile)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.enforce == 'true' && inputs.profile != 'guideline_closed' }}
+        run: |
+          python backend/strategy_generator/report_v1_guidelines.py \
+            --version v1 \
+            --profile "${{ inputs.profile }}" \
             --asset-class "${{ inputs.asset_class || 'all' }}" \
             --json-out docs/data/v1_guideline_report_ci.json \
             --enforce
