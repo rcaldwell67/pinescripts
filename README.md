@@ -86,6 +86,8 @@ This repository implements an Adaptive Pullback Momentum (APM) trading system wi
   - Trade records: trades table in docs/data/tradingcopilot.db.
   - Realtime decision log: realtime_paper_log table.
   - Broker fill and order events: paper_fill_events and paper_order_events tables.
+  - Missed-window audit: backend/paper_trading/validate_missed_opportunities.py.
+  - Scheduler-health audit: backend/paper_trading/validate_scheduler_health.py.
   - Dashboard rendering: docs/index.html + docs/site.js.
 
 ### Entry model (v1/v2 shared evaluator)

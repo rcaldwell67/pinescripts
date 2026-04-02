@@ -112,6 +112,7 @@ const LIVE_TRADING_SUPPORTED_VERSIONS = new Set(['v1', 'v2', 'v3', 'v4', 'v5', '
 let pendingDatasetSymbol = '';
 let dashboardRefreshInFlight = false;
 let dashboardAutoRefreshTimer = null;
+let dailyValidationClipboardText = '';
 
 function getSymbolAliases(sym) {
   const raw = String(sym || '').trim();
@@ -278,6 +279,7 @@ function getNormalizedSymbolKey(sym) {
     buildSymbolSwitcher(symbols);
     // Save db instance for later use
     window._SQL_DB = db;
+    renderDailyValidationBadge();
     renderTransactionTicker();
     // Reset active selection so re-selecting the same symbol after a dataset
     // switch doesn't hit the early-exit guard in handleSymbolSelect.
@@ -619,6 +621,242 @@ function getNormalizedSymbolKey(sym) {
     modal.setAttribute('aria-hidden', 'true');
   }
 
+  function getTodayUtcDateKey() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  function getTodayValidationSummary() {
+    const db = window._SQL_DB;
+    if (!db) {
+      return {
+        dateKey: getTodayUtcDateKey(),
+        scheduleMiss: 0,
+        missedOpportunity: 0,
+        missedBlocked: 0,
+        byVersion: {},
+        latestScheduleMiss: null,
+      };
+    }
+
+    const dateKey = getTodayUtcDateKey();
+    const out = {
+      dateKey,
+      scheduleMiss: 0,
+      missedOpportunity: 0,
+      missedBlocked: 0,
+      byVersion: {},
+      latestScheduleMiss: null,
+    };
+
+    try {
+      const stmt = db.prepare(`
+        SELECT version, status, logged_at, detail
+        FROM realtime_paper_log
+        WHERE substr(logged_at, 1, 10) = ?
+        ORDER BY datetime(logged_at) DESC
+      `);
+      stmt.bind([dateKey]);
+      while (stmt.step()) {
+        const row = stmt.getAsObject();
+        const version = String(row.version || 'unknown').toLowerCase();
+        const status = String(row.status || '').toLowerCase();
+        if (!out.byVersion[version]) {
+          out.byVersion[version] = {
+            scheduleMiss: 0,
+            missedOpportunity: 0,
+            missedBlocked: 0,
+          };
+        }
+
+        if (status === 'schedule_miss') {
+          out.scheduleMiss += 1;
+          out.byVersion[version].scheduleMiss += 1;
+          if (!out.latestScheduleMiss) {
+            out.latestScheduleMiss = {
+              loggedAt: String(row.logged_at || ''),
+              detail: String(row.detail || ''),
+            };
+          }
+        } else if (status === 'missed_opportunity') {
+          out.missedOpportunity += 1;
+          out.byVersion[version].missedOpportunity += 1;
+        } else if (status === 'missed_opportunity_blocked') {
+          out.missedBlocked += 1;
+          out.byVersion[version].missedBlocked += 1;
+        }
+      }
+      stmt.free();
+    } catch (err) {
+      console.error('Error querying realtime_paper_log validation summary:', err);
+    }
+
+    return out;
+  }
+
+  let dailyValidationPopoverHideTimer = null;
+
+  function clearDailyValidationPopoverHideTimer() {
+    if (dailyValidationPopoverHideTimer) {
+      clearTimeout(dailyValidationPopoverHideTimer);
+      dailyValidationPopoverHideTimer = null;
+    }
+  }
+
+  function queueHideDailyValidationPopover(delayMs = 160) {
+    clearDailyValidationPopoverHideTimer();
+    dailyValidationPopoverHideTimer = setTimeout(() => {
+      hideDailyValidationPopover();
+    }, Math.max(0, delayMs));
+  }
+
+  function hideDailyValidationPopover() {
+    clearDailyValidationPopoverHideTimer();
+    const pop = document.getElementById('dailyValidationPopover');
+    if (!pop) return;
+    pop.classList.remove('open');
+    pop.setAttribute('aria-hidden', 'true');
+  }
+
+  function showDailyValidationPopover() {
+    clearDailyValidationPopoverHideTimer();
+    const badge = document.getElementById('dailyValidationBadge');
+    const pop = document.getElementById('dailyValidationPopover');
+    if (!badge || !pop || pop.innerHTML.trim() === '') return;
+
+    const rect = badge.getBoundingClientRect();
+    const gap = 8;
+    const maxLeft = Math.max(8, window.innerWidth - pop.offsetWidth - 8);
+    const left = Math.max(8, Math.min(rect.left, maxLeft));
+    const top = rect.bottom + gap;
+
+    pop.style.left = `${left}px`;
+    pop.style.top = `${top}px`;
+    pop.classList.add('open');
+    pop.setAttribute('aria-hidden', 'false');
+  }
+
+  async function copyDailyValidationSummary() {
+    const text = String(dailyValidationClipboardText || '').trim();
+    if (!text) return false;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', 'true');
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      return true;
+    } catch (err) {
+      console.warn('Copy daily validation summary failed:', err);
+      return false;
+    }
+  }
+
+  function setDailyValidationCopyStatus(message, isError = false) {
+    const el = document.getElementById('dailyValidationCopyStatus');
+    if (!el) return;
+    el.textContent = message;
+    el.style.color = isError ? '#f85149' : '#8b949e';
+    if (message) {
+      setTimeout(() => {
+        const current = document.getElementById('dailyValidationCopyStatus');
+        if (current && current.textContent === message) current.textContent = '';
+      }, 1800);
+    }
+  }
+
+  function renderDailyValidationBadge() {
+    const badge = document.getElementById('dailyValidationBadge');
+    const pop = document.getElementById('dailyValidationPopover');
+    if (!badge) return;
+
+    const summary = getTodayValidationSummary();
+    const scheduleMiss = Number(summary.scheduleMiss || 0);
+    const missed = Number(summary.missedOpportunity || 0);
+    const blocked = Number(summary.missedBlocked || 0);
+    const versionLines = Object.keys(summary.byVersion || {})
+      .sort()
+      .filter(version => version && version !== 'system')
+      .map(version => {
+        const row = summary.byVersion[version] || {};
+        return `${version}: gaps=${Number(row.scheduleMiss || 0)}, missed=${Number(row.missedOpportunity || 0)}, blocked=${Number(row.missedBlocked || 0)}`;
+      });
+
+    if (pop) {
+      const versionHtml = versionLines.length
+        ? versionLines.map(line => `<div class="vp-version">${escapeHtml(line)}</div>`).join('')
+        : '<div class="vp-detail">No version-specific rows for today.</div>';
+      const latestDetail = summary.latestScheduleMiss && summary.latestScheduleMiss.detail
+        ? escapeHtml(String(summary.latestScheduleMiss.detail))
+        : '';
+      const latestAt = summary.latestScheduleMiss && summary.latestScheduleMiss.loggedAt
+        ? escapeHtml(String(summary.latestScheduleMiss.loggedAt))
+        : '';
+
+      const clipLines = [
+        `UTC ${summary.dateKey || ''}`,
+        `schedule_miss=${scheduleMiss}`,
+        `missed_opportunity=${missed}`,
+        `missed_opportunity_blocked=${blocked}`,
+      ];
+      if (versionLines.length) {
+        clipLines.push('', 'By version:', ...versionLines);
+      }
+      if (summary.latestScheduleMiss && summary.latestScheduleMiss.loggedAt) {
+        clipLines.push('', `Latest Scheduler Gap: ${String(summary.latestScheduleMiss.loggedAt)}`);
+        if (summary.latestScheduleMiss.detail) {
+          clipLines.push(String(summary.latestScheduleMiss.detail));
+        }
+      }
+      dailyValidationClipboardText = clipLines.join('\n');
+
+      pop.innerHTML = `
+        <div class="vp-title">UTC ${escapeHtml(summary.dateKey || '')}</div>
+        <div class="vp-row"><span class="k">schedule_miss</span><strong>${scheduleMiss}</strong></div>
+        <div class="vp-row"><span class="k">missed_opportunity</span><strong>${missed}</strong></div>
+        <div class="vp-row"><span class="k">missed_opportunity_blocked</span><strong>${blocked}</strong></div>
+        <div class="vp-copy-row">
+          <button id="copyDailyValidationBtn" type="button" class="vp-copy-btn">Copy Summary</button>
+          <span id="dailyValidationCopyStatus" class="vp-copy-status" aria-live="polite"></span>
+        </div>
+        <div class="vp-sep"></div>
+        <div class="vp-title">By Version</div>
+        ${versionHtml}
+        ${latestAt ? `<div class="vp-sep"></div><div class="vp-title">Latest Scheduler Gap</div><div class="vp-detail">${latestAt}</div>` : ''}
+        ${latestDetail ? `<div class="vp-detail">${latestDetail}</div>` : ''}
+      `;
+    }
+
+    badge.style.display = '';
+    if (missed > 0) {
+      badge.textContent = `Validation: FAIL (missed=${missed})`;
+      badge.style.borderColor = '#f85149';
+      badge.style.color = '#f85149';
+      badge.style.background = 'rgba(248,81,73,0.08)';
+      return;
+    }
+
+    if (scheduleMiss > 0 || blocked > 0) {
+      badge.textContent = `Validation: WARN (gaps=${scheduleMiss}, blocked=${blocked})`;
+      badge.style.borderColor = '#ffa657';
+      badge.style.color = '#ffa657';
+      badge.style.background = 'rgba(255,166,87,0.08)';
+      return;
+    }
+
+    badge.textContent = 'Validation: PASS';
+    badge.style.borderColor = '#3fb950';
+    badge.style.color = '#3fb950';
+    badge.style.background = 'rgba(63,185,80,0.08)';
+  }
+
   function getTodayTransactions() {
     const db = window._SQL_DB;
     if (!db) return { fills: [], orders: [] };
@@ -725,14 +963,68 @@ function getNormalizedSymbolKey(sym) {
     if (!modal || !contentDiv) return;
 
     const { fills, orders } = getTodayTransactions();
+    const validation = getTodayValidationSummary();
     const totalTransactions = fills.length + orders.length;
+    const executableMisses = validation.missedOpportunity;
+    const blockedMisses = validation.missedBlocked;
+    const scheduleMisses = validation.scheduleMiss;
 
-    if (totalTransactions === 0) {
-      contentDiv.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No transactions today</p>';
-      return;
+    const summaryTone = executableMisses > 0
+      ? '#f85149'
+      : (scheduleMisses > 0 ? '#ffa657' : '#3fb950');
+    const summaryLabel = executableMisses > 0
+      ? 'Attention: executable missed opportunities found today'
+      : (scheduleMisses > 0
+        ? 'No executable missed opportunities, but scheduler gaps detected'
+        : 'Validation looks healthy for today');
+
+    let html = `<div style="padding: 10px 0;">
+      <div style="border:1px solid var(--border); border-left:4px solid ${summaryTone}; border-radius:8px; padding:10px 12px; margin-bottom:14px; background:rgba(255,255,255,0.02);">
+        <div style="font-size:12px; color:var(--muted); margin-bottom:6px;">UTC ${validation.dateKey}</div>
+        <div style="font-size:13px; font-weight:600; color:${summaryTone}; margin-bottom:8px;">${summaryLabel}</div>
+        <div style="display:flex; flex-wrap:wrap; gap:8px;">
+          <span style="font-size:12px; padding:4px 8px; border-radius:999px; background:#2f81f71a; color:#58a6ff; border:1px solid #2f81f733;">schedule_miss: ${scheduleMisses}</span>
+          <span style="font-size:12px; padding:4px 8px; border-radius:999px; background:${executableMisses > 0 ? '#f851491a' : '#3fb9501a'}; color:${executableMisses > 0 ? '#f85149' : '#3fb950'}; border:1px solid ${executableMisses > 0 ? '#f8514933' : '#3fb95033'};">missed_opportunity: ${executableMisses}</span>
+          <span style="font-size:12px; padding:4px 8px; border-radius:999px; background:#ffa6571a; color:#ffa657; border:1px solid #ffa65733;">missed_opportunity_blocked: ${blockedMisses}</span>
+        </div>
+      </div>`;
+
+    const versionRows = Object.keys(validation.byVersion)
+      .sort()
+      .filter(version => version && version !== 'system')
+      .map(version => {
+        const row = validation.byVersion[version];
+        return `<tr style="border-bottom:1px solid #eee;">
+          <td style="padding:6px; font-weight:600;">${version}</td>
+          <td style="padding:6px; text-align:right;">${row.scheduleMiss}</td>
+          <td style="padding:6px; text-align:right;">${row.missedOpportunity}</td>
+          <td style="padding:6px; text-align:right;">${row.missedBlocked}</td>
+        </tr>`;
+      })
+      .join('');
+
+    if (versionRows) {
+      html += `<div style="margin-bottom:16px;">
+        <h3 style="margin:0 0 8px 0; font-size:14px; text-transform:uppercase; color:#666;">Validation By Version</h3>
+        <table style="width:100%; border-collapse:collapse; font-size:12px;">
+          <thead>
+            <tr style="border-bottom:1px solid #ddd;">
+              <th style="padding:6px; text-align:left; color:#666;">Version</th>
+              <th style="padding:6px; text-align:right; color:#666;">Schedule Miss</th>
+              <th style="padding:6px; text-align:right; color:#666;">Missed Opp</th>
+              <th style="padding:6px; text-align:right; color:#666;">Blocked</th>
+            </tr>
+          </thead>
+          <tbody>${versionRows}</tbody>
+        </table>
+      </div>`;
     }
 
-    let html = `<div style="padding: 10px 0;">`;
+    if (totalTransactions === 0) {
+      html += '<p style="color: #999; text-align: center; padding: 20px;">No transactions today</p></div>';
+      contentDiv.innerHTML = html;
+      return;
+    }
 
     if (orders.length > 0) {
       html += `<div style="margin-bottom: 20px;">
@@ -814,6 +1106,7 @@ function getNormalizedSymbolKey(sym) {
 
     html += `</div>`;
     contentDiv.innerHTML = html;
+    renderDailyValidationBadge();
   }
 
   function openDailyTransactionsModal() {
@@ -2950,8 +3243,40 @@ document.getElementById('v2DatasetSelect')?.addEventListener('change', event => 
   const dailyTransactionsBtn = document.getElementById('openDailyTransactionsBtn');
   dailyTransactionsBtn?.addEventListener('click', openDailyTransactionsModal);
 
+  const dailyValidationBadge = document.getElementById('dailyValidationBadge');
+  dailyValidationBadge?.addEventListener('click', openDailyTransactionsModal);
+  dailyValidationBadge?.addEventListener('mouseenter', showDailyValidationPopover);
+  dailyValidationBadge?.addEventListener('focus', showDailyValidationPopover);
+  dailyValidationBadge?.addEventListener('mouseleave', () => queueHideDailyValidationPopover());
+  dailyValidationBadge?.addEventListener('blur', () => queueHideDailyValidationPopover());
+
+  const dailyValidationPopover = document.getElementById('dailyValidationPopover');
+  dailyValidationPopover?.addEventListener('mouseenter', () => clearDailyValidationPopoverHideTimer());
+  dailyValidationPopover?.addEventListener('mouseleave', () => queueHideDailyValidationPopover());
+  dailyValidationPopover?.addEventListener('click', async event => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+    if (target.id !== 'copyDailyValidationBtn') return;
+    event.preventDefault();
+    const ok = await copyDailyValidationSummary();
+    setDailyValidationCopyStatus(ok ? 'Copied' : 'Copy failed', !ok);
+  });
+
+  document.addEventListener('scroll', hideDailyValidationPopover, true);
+  document.addEventListener('resize', hideDailyValidationPopover);
+  document.addEventListener('click', event => {
+    const pop = document.getElementById('dailyValidationPopover');
+    if (!pop || !pop.classList.contains('open')) return;
+    if (event.target === pop || pop.contains(event.target)) return;
+    if (dailyValidationBadge && (event.target === dailyValidationBadge || dailyValidationBadge.contains(event.target))) return;
+    hideDailyValidationPopover();
+  });
+
   const closeDailyTransactionsBtn = document.getElementById('closeDailyTransactionsBtn');
   closeDailyTransactionsBtn?.addEventListener('click', closeDailyTransactionsModal);
+
+  const refreshDailyTransactionsBtn = document.getElementById('refreshDailyTransactionsBtn');
+  refreshDailyTransactionsBtn?.addEventListener('click', renderDailyTransactionsModal);
 
   const dailyTransactionsModal = document.getElementById('dailyTransactionsModal');
   dailyTransactionsModal?.addEventListener('click', event => {

@@ -258,6 +258,78 @@
     .mode-switcher { display: flex; gap: 6px; }
     .mode-btn { padding: 5px 16px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; font-weight: 600; transition: all .15s; }
     .mode-btn:hover { border-color: var(--accent); color: var(--text); }
+    .validation-popover {
+      position: fixed;
+      display: none;
+      min-width: 320px;
+      max-width: 460px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #111826;
+      color: var(--text);
+      font-size: 12px;
+      line-height: 1.4;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+      z-index: 1000;
+      white-space: normal;
+      user-select: text;
+    }
+    .validation-popover.open { display: block; }
+    .validation-popover .vp-title {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      margin-bottom: 6px;
+    }
+    .validation-popover .vp-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+    .validation-popover .vp-copy-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .validation-popover .vp-copy-btn {
+      border: 1px solid var(--border);
+      background: #1a2233;
+      color: var(--text);
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: border-color .15s ease, color .15s ease;
+    }
+    .validation-popover .vp-copy-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .validation-popover .vp-copy-status {
+      font-size: 11px;
+      color: var(--muted);
+      min-height: 14px;
+    }
+    .validation-popover .vp-row .k { color: var(--muted); }
+    .validation-popover .vp-sep {
+      height: 1px;
+      background: rgba(139, 148, 158, 0.22);
+      margin: 8px 0;
+    }
+    .validation-popover .vp-version {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      margin-bottom: 3px;
+    }
+    .validation-popover .vp-detail {
+      color: var(--muted);
+      margin-top: 6px;
+      font-size: 11px;
+      word-break: break-word;
+    }
     .mode-btn.active[data-mode="backtest"] { background: #58a6ff22; border-color: var(--accent); color: var(--accent); }
     .mode-btn.active[data-mode="paper"]    { background: #ffa65722; border-color: var(--orange); color: var(--orange); }
     .mode-btn.active[data-mode="live"]     { background: #3fb95022; border-color: var(--green);  color: var(--green); }

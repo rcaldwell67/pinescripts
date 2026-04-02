@@ -93,6 +93,8 @@
     </div>
   </div>
   <span id="lastUpdated"></span>
+  <button id="dailyValidationBadge" class="mode-btn" type="button" style="display:none; margin-left:12px; padding:4px 10px;" title="Open today's validation summary">Validation: -</button>
+  <div id="dailyValidationPopover" class="validation-popover" aria-hidden="true" role="status"></div>
   <span id="workflowStatus" style="margin-left:24px;color:#58a6ff;font-size:13px;font-weight:600;"></span>
   <!-- Add a notice element to the header for no data -->
   <div id="noDataNotice" style="display:none;margin-left:24px;color:#ffa657;font-size:13px;font-weight:600;">
@@ -241,6 +243,7 @@
   <div class="account-modal-card" role="dialog" aria-modal="true" aria-labelledby="dailyTransactionsModalTitle">
     <div class="account-modal-head">
       <h2 id="dailyTransactionsModalTitle">Today's Transactions</h2>
+      <button id="refreshDailyTransactionsBtn" class="mode-btn" type="button" style="margin-left:auto; margin-right:8px; padding:4px 10px;" title="Refresh today's transaction and validation summary">Refresh</button>
       <button id="closeDailyTransactionsBtn" class="account-modal-close" type="button" aria-label="Close daily transactions modal">x</button>
     </div>
     <div class="account-modal-body">
