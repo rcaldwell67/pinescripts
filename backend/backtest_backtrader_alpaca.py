@@ -5,6 +5,7 @@ and writes a summary row to docs/data/tradingcopilot.db.
 
 Usage:
     python backend/backtest_backtrader_alpaca.py --symbol "BTC/USD" --version v1
+    python backend/backtest_backtrader_alpaca.py --symbol "BTC/USD" --version v6
 
 Requires env vars (or a .env file):
     ALPACA_API_KEY / ALPACA_PAPER_API_KEY
@@ -286,7 +287,7 @@ def save_to_db(symbol: str, version: str,
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run an APM backtest and save results to the DB.")
     parser.add_argument("--symbol",  required=True, help="Trading symbol, e.g. BTC/USD")
-    parser.add_argument("--version", required=True, help="Strategy version, e.g. v1")
+    parser.add_argument("--version", required=True, help="Strategy version (v1-v6)")
     parser.add_argument("--profile", help="Optional runtime profile override, e.g. eth_focus")
     args = parser.parse_args()
 

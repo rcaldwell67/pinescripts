@@ -43,6 +43,13 @@ jobs:
           PARTS=($TITLE)
           SYMBOL=${PARTS[2]}
           VERSION=$(echo "${PARTS[3]}" | tr '[:upper:]' '[:lower:]')
+          case "$VERSION" in
+            v1|v2|v3|v4|v5|v6) ;;
+            *)
+              echo "Unsupported version in issue title: $VERSION (expected v1-v6)" >&2
+              exit 1
+              ;;
+          esac
           echo "symbol=$SYMBOL" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 

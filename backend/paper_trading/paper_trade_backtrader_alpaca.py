@@ -7,7 +7,7 @@ trade rows and summary metrics in tradingcopilot.db.
 
 Usage:
     python backend/paper_trading/paper_trade_backtrader_alpaca.py --symbol "BTC/USD" --version v1
-    python backend/paper_trading/paper_trade_backtrader_alpaca.py --all-symbols --version v1
+    python backend/paper_trading/paper_trade_backtrader_alpaca.py --all-symbols --version v6
 """
 
 from __future__ import annotations
@@ -124,12 +124,16 @@ def save_paper_to_db(symbol: str, version: str, trades, df, *, force_reset: bool
             equity = float(trade.get("equity", 0.0) or 0.0)
             beginning_equity = equity - dollar_pnl
             pnl_pct = (dollar_pnl / beginning_equity * 100.0) if beginning_equity else None
+            direction = str(trade.get("side", "short") or "short").strip().lower()
+            if direction not in {"long", "short"}:
+                direction = "short"
+
             new_rows.append((
                 symbol,
                 version,
                 entry_time,
                 exit_time,
-                "short",  # v1 strategy is shorts-only
+                direction,
                 float(trade.get("entry", 0.0) or 0.0),
                 float(trade.get("exit", 0.0) or 0.0),
                 _result_label(trade.get("exit_type")),
@@ -191,7 +195,7 @@ def main() -> int:
     scope = parser.add_mutually_exclusive_group(required=True)
     scope.add_argument("--symbol", help="Trading symbol, e.g. BTC/USD")
     scope.add_argument("--all-symbols", action="store_true", help="Run for every symbol in the DB")
-    parser.add_argument("--version", required=True, help="Strategy version, e.g. v1")
+    parser.add_argument("--version", required=True, help="Strategy version (v1-v6)")
     parser.add_argument(
         "--force-reset",
         action="store_true",

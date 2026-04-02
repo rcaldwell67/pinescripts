@@ -8,7 +8,7 @@ Checks per symbol:
 
 Usage:
     python backend/live_trading/verify_live_consistency.py --version v1
-    python backend/live_trading/verify_live_consistency.py --version v1 --symbol CLM
+    python backend/live_trading/verify_live_consistency.py --version v6 --symbol CLM
 """
 
 from __future__ import annotations
@@ -144,7 +144,7 @@ def _print_report(results: list[SymbolConsistencyResult]) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate live fill/trade consistency.")
     parser.add_argument("--db", default=str(DEFAULT_DB), help="Path to tradingcopilot.db")
-    parser.add_argument("--version", default="v1", help="Version to validate against live trades")
+    parser.add_argument("--version", default="v1", help="Version to validate against live trades (v1-v6)")
     parser.add_argument("--symbol", action="append", help="Optional symbol filter; can be passed multiple times")
     args = parser.parse_args()
 

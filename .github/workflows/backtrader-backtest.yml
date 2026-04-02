@@ -32,12 +32,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run Backtrader Backtests
+      - name: Run v1-v6 local smoke validation
         run: |
-          # Run all backtest scripts in backend/ and (optionally) scripts/ recursively
-          DIRS="backend/"
-          if [ -d "scripts" ]; then DIRS="$DIRS scripts/"; fi
-          find $DIRS -type f -name 'backtest_*.py' -exec python {} \;
+          python backend/strategy_generator/validate_all_versions_smoke.py
         env:
           ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
           ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}

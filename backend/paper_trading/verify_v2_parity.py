@@ -1,5 +1,5 @@
 """
-Validate v2 trade-level parity between backtest and paper modes in tradingcopilot.db.
+Validate trade-level parity between backtest and paper modes in tradingcopilot.db.
 
 This script compares rows in the `trades` table for mode='backtest' and mode='paper'
 for the same symbol/version. It is designed as a CI gate and returns non-zero when
@@ -7,8 +7,8 @@ material mismatches are found.
 
 Usage:
     python backend/paper_trading/verify_v2_parity.py --version v2
-    python backend/paper_trading/verify_v2_parity.py --version v2 --symbol BTC/USD
-    python backend/paper_trading/verify_v2_parity.py --version v2 --max-row-diffs 20
+    python backend/paper_trading/verify_v2_parity.py --version v6 --symbol BTC/USD
+    python backend/paper_trading/verify_v2_parity.py --version v4 --max-row-diffs 20
 """
 
 from __future__ import annotations
@@ -193,7 +193,7 @@ def _compare_symbol(
 
 
 def _print_report(results: Iterable[SymbolParityResult]) -> None:
-    print("\n=== v2 Backtest vs Paper Parity Report ===")
+    print("\n=== Backtest vs Paper Parity Report ===")
     for res in results:
         status = "PASS" if not res.mismatches else "FAIL"
         print(
@@ -206,7 +206,7 @@ def _print_report(results: Iterable[SymbolParityResult]) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Validate v2 parity between backtest and paper trade rows.")
+    parser = argparse.ArgumentParser(description="Validate parity between backtest and paper trade rows for a version.")
     parser.add_argument("--db", default=str(DEFAULT_DB), help="Path to tradingcopilot.db")
     parser.add_argument("--version", default="v2", help="Strategy version to compare (default: v2)")
     parser.add_argument("--symbol", action="append", help="Optional symbol filter; can be passed multiple times")

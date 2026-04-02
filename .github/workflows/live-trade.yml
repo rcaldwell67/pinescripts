@@ -10,7 +10,7 @@ on:
         required: false
         type: string
       version:
-        description: "Strategy version to run"
+        description: "Strategy version to run (v1-v6 or all)"
         required: false
         default: "v1"
         type: string
@@ -55,37 +55,69 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          VERSION="${{ github.event.inputs.version || 'v1' }}"
+          VERSION_INPUT="${{ github.event.inputs.version || 'v1' }}"
           SYMBOL="${{ github.event.inputs.symbol || '' }}"
+
+          if [[ "${VERSION_INPUT,,}" == "all" ]]; then
+            VERSIONS=(v1 v2 v3 v4 v5 v6)
+          else
+            VERSIONS=("${VERSION_INPUT,,}")
+          fi
 
           if [[ "${ALLOW_ALPACA_LIVE_TRADING,,}" != "true" && "${ALLOW_ALPACA_LIVE_TRADING}" != "1" && "${ALLOW_ALPACA_LIVE_TRADING,,}" != "yes" ]]; then
             echo "Skipping live trading: ALLOW_ALPACA_LIVE_TRADING is not enabled."
             exit 0
           fi
 
-          if [[ -n "$SYMBOL" ]]; then
-            python backend/live_trading/realtime_alpaca_live_trader.py --symbol "$SYMBOL" --version "$VERSION"
-          else
-            python backend/live_trading/realtime_alpaca_live_trader.py --all-symbols --version "$VERSION"
-          fi
+          for VERSION in "${VERSIONS[@]}"; do
+            case "$VERSION" in
+              v1|v2|v3|v4|v5|v6) ;;
+              *)
+                echo "Unsupported version: $VERSION (expected v1-v6 or all)" >&2
+                exit 1
+                ;;
+            esac
+
+            if [[ -n "$SYMBOL" ]]; then
+              python backend/live_trading/realtime_alpaca_live_trader.py --symbol "$SYMBOL" --version "$VERSION"
+            else
+              python backend/live_trading/realtime_alpaca_live_trader.py --all-symbols --version "$VERSION"
+            fi
+          done
 
       - name: Validate live fill/trade consistency
         shell: bash
         run: |
           set -euo pipefail
-          VERSION="${{ github.event.inputs.version || 'v1' }}"
+          VERSION_INPUT="${{ github.event.inputs.version || 'v1' }}"
           SYMBOL="${{ github.event.inputs.symbol || '' }}"
+
+          if [[ "${VERSION_INPUT,,}" == "all" ]]; then
+            VERSIONS=(v1 v2 v3 v4 v5 v6)
+          else
+            VERSIONS=("${VERSION_INPUT,,}")
+          fi
 
           if [[ "${ALLOW_ALPACA_LIVE_TRADING,,}" != "true" && "${ALLOW_ALPACA_LIVE_TRADING}" != "1" && "${ALLOW_ALPACA_LIVE_TRADING,,}" != "yes" ]]; then
             echo "Skipping live consistency check: ALLOW_ALPACA_LIVE_TRADING is not enabled."
             exit 0
           fi
 
-          if [[ -n "$SYMBOL" ]]; then
-            python backend/live_trading/verify_live_consistency.py --symbol "$SYMBOL" --version "$VERSION"
-          else
-            python backend/live_trading/verify_live_consistency.py --version "$VERSION"
-          fi
+          for VERSION in "${VERSIONS[@]}"; do
+            case "$VERSION" in
+              v1|v2|v3|v4|v5|v6) ;;
+              *)
+                echo "Unsupported version: $VERSION (expected v1-v6 or all)" >&2
+                exit 1
+                ;;
+            esac
+
+            if [[ -n "$SYMBOL" ]]; then
+              python backend/live_trading/verify_live_consistency.py --symbol "$SYMBOL" --version "$VERSION"
+            else
+              python backend/live_trading/verify_live_consistency.py --version "$VERSION"
+            fi
+          done
 
       - name: Commit updated DB
         shell: bash

@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- Extended strategy version support to v3-v6 across backtest and realtime execution paths.
+  - Added version adapters `backend/strategy_generator/apm_v3.py` through `backend/strategy_generator/apm_v6.py`.
+  - Added parameter loaders `backend/strategy_generator/v3_params.py` through `backend/strategy_generator/v6_params.py` with runtime/profile/symbol override merge behavior.
+  - Added runtime config stubs `backend/strategy_generator/configs/v3_runtime.json` through `backend/strategy_generator/configs/v6_runtime.json`.
+  - Extended `backend/backtest_backtrader_alpaca.py` `VERSION_MAP` and dispatch to run v3-v6.
+  - Extended realtime paper/live runners to accept v3-v6 and route entry/exit analysis via version-aware dispatch.
+  - Updated dashboard filters in `docs/site.js` so backtest equity and transaction rollups include v1-v6 (replacing previous v1/v2-only filters).
+- Extended operational GitHub workflows to process v1-v6 consistently.
+  - `paper-trade.yml`, `alpaca-paper-sync.yml`, and `live-trade.yml` now accept `version=all` and validate/loop versions across v1-v6.
+  - `add-symbol.yml` and `add-symbol-from-issue.yml` now run backtest and paper simulation for all versions v1-v6 when onboarding a symbol.
+  - Issue-triggered rerun workflows now validate parsed versions against v1-v6 before execution.
+  - `backtrader-backtest.yml` now runs a deterministic local-data smoke validator across v1-v6 instead of scanning arbitrary `backtest_*.py` files.
+  - Added `validate-paper-versions.yml` to verify v1-v6 paper simulation writes against a temporary SQLite copy during CI.
+  - Added `validate-live-versions.yml` to verify v1-v6 live-side analysis and dry order generation without broker submission during CI.
+- Added `backend/strategy_generator/validate_all_versions_smoke.py` to validate v1-v6 backtest plus realtime paper/live analysis dispatch on local sample market data.
+- Added `backend/paper_trading/validate_paper_versions_db.py` to validate v1-v6 paper summary writes, trade counts, and persisted directions on a temporary DB copy.
+- Added `backend/live_trading/validate_live_versions_dry.py` to validate v1-v6 live analysis, portfolio gating, and bracket order parameter generation on local sample data.
+- Fixed paper simulation trade-direction persistence for multi-direction versions.
+  - `backend/paper_trading/paper_trade_backtrader_alpaca.py` now stores `direction` from each trade row (`side`) instead of hardcoding `short`, enabling correct v4-v6 long/both-mode paper rows.
 - Implemented a portfolio-level trade gate and risk scaler in `backend/strategy_generator/portfolio_system.py` and wired it into both realtime runners.
   - New `evaluate_trade(...)` regime check enforces stack alignment quality, ADX floor, ATR floor, and liquidity ratio before order submission.
   - Portfolio thresholds are now config-driven through `portfolio` settings in v1/v2 params (supports profile and symbol overrides via existing runtime merge flow).

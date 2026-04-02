@@ -1,5 +1,5 @@
 """
-Real-time Alpaca Paper Trading runner for APM v1.
+Real-time Alpaca Paper Trading runner for APM versions.
 
 This script evaluates the latest signal for each symbol and, when eligible,
 submits a paper bracket order to Alpaca. It also syncs recent fill

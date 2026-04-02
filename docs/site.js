@@ -107,8 +107,8 @@ const logsDataCache = {
   diagnosticRows: null,
   diagnosticPath: null,
 };
-const PAPER_TRADING_SUPPORTED_VERSIONS = new Set(['v1', 'v2']);
-const LIVE_TRADING_SUPPORTED_VERSIONS = new Set(['v1', 'v2']);
+const PAPER_TRADING_SUPPORTED_VERSIONS = new Set(['v1', 'v2', 'v3', 'v4', 'v5', 'v6']);
+const LIVE_TRADING_SUPPORTED_VERSIONS = new Set(['v1', 'v2', 'v3', 'v4', 'v5', 'v6']);
 let pendingDatasetSymbol = '';
 let dashboardRefreshInFlight = false;
 let dashboardAutoRefreshTimer = null;
@@ -902,7 +902,7 @@ function getTotalEquityAllVersionsAllSymbols() {
             ORDER BY datetime(COALESCE(exit_time, entry_time)) DESC, id DESC
           ) AS rn
         FROM trades
-        WHERE mode = 'backtest' AND equity IS NOT NULL AND LOWER(version) IN ('v1', 'v2')
+        WHERE mode = 'backtest' AND equity IS NOT NULL AND LOWER(version) IN ('v1', 'v2', 'v3', 'v4', 'v5', 'v6')
       )
       SELECT COALESCE(SUM(equity), 0) AS total_equity, COUNT(*) AS buckets
       FROM latest
@@ -931,7 +931,7 @@ function renderCards(rows) {
     ? `<div class="card">
         <div class="label">Total Equity (All Versions, All Symbols)</div>
         <div class="value neutral">${fmt$(totalEq.total)}</div>
-        <div class="sub">${activeDataset === 'backtest' ? `Latest equity snapshot across ${totalEq.buckets} v1/v2 symbol-version buckets` : 'Baseline starting equity for this dataset'}</div>
+        <div class="sub">${activeDataset === 'backtest' ? `Latest equity snapshot across ${totalEq.buckets} v1-v6 symbol-version buckets` : 'Baseline starting equity for this dataset'}</div>
       </div>`
     : '';
   if (activeTab === 'all') {
@@ -1570,7 +1570,7 @@ function getAllSymbolsCumulativeEquity() {
   const modeFilter = activeDataset === 'backtest' ? 'backtest' : (activeDataset === 'paper' ? 'paper' : 'live');
   const rowsBySymbolVersion = new Map();
   try {
-    const stmt = db.prepare("SELECT symbol, version, equity, dollar_pnl, direction, result, entry_time, exit_time FROM trades WHERE mode = ? AND LOWER(version) IN ('v1', 'v2')");
+    const stmt = db.prepare("SELECT symbol, version, equity, dollar_pnl, direction, result, entry_time, exit_time FROM trades WHERE mode = ? AND LOWER(version) IN ('v1', 'v2', 'v3', 'v4', 'v5', 'v6')");
     stmt.bind([modeFilter]);
     while (stmt.step()) {
       const r = stmt.getAsObject();

@@ -1,5 +1,5 @@
 """
-Real-time Alpaca LIVE Trading runner for APM v1.
+Real-time Alpaca LIVE Trading runner for APM versions.
 
 Safety model:
 - This script will not place live orders unless ALLOW_ALPACA_LIVE_TRADING=true.

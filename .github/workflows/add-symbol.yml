@@ -101,8 +101,10 @@ jobs:
           ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
         run: |
           SYMBOL="${{ steps.extract.outputs.symbol }}"
-          echo "Running backtest for symbol: $SYMBOL (version: v1)"
-          python backend/backtest_backtrader_alpaca.py --symbol "$SYMBOL" --version "v1"
+          for VERSION in v1 v2 v3 v4 v5 v6; do
+            echo "Running backtest for symbol: $SYMBOL (version: $VERSION)"
+            python backend/backtest_backtrader_alpaca.py --symbol "$SYMBOL" --version "$VERSION"
+          done
 
       - name: Run paper trading for new symbol
         env:
@@ -112,8 +114,10 @@ jobs:
           ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
         run: |
           SYMBOL="${{ steps.extract.outputs.symbol }}"
-          echo "Running paper trading for symbol: $SYMBOL (version: v1)"
-          python backend/paper_trading/paper_trade_backtrader_alpaca.py --symbol "$SYMBOL" --version "v1"
+          for VERSION in v1 v2 v3 v4 v5 v6; do
+            echo "Running paper trading for symbol: $SYMBOL (version: $VERSION)"
+            python backend/paper_trading/paper_trade_backtrader_alpaca.py --symbol "$SYMBOL" --version "$VERSION"
+          done
 
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
