@@ -1,5 +1,11 @@
 {
   "signal": {
+    "bb_filter_enabled": true,
+    "bb_len": 20,
+    "bb_std_mult": 2.0,
+    "bb_width_pct_min": 1.0,
+    "donchian_filter_enabled": true,
+    "donchian_len": 20,
     "enable_longs": true,
     "enable_shorts": true
   },
