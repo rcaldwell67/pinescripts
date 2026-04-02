@@ -407,6 +407,7 @@ function getNormalizedSymbolKey(sym) {
   function buildLatestTransactionsBySymbol() {
     const db = window._SQL_DB;
     if (!db) return [];
+    if (activeDataset !== 'backtest') return [];
     const latestBySymbol = new Map();
     const modeFilter = activeDataset === 'backtest' ? 'backtest' : (activeDataset === 'paper' ? 'paper' : 'live');
 
@@ -882,11 +883,58 @@ function calcMetrics(rows) {
 // No mode-toggle buttons exist in the current UI; this is a no-op placeholder.
 function updateModeButtonStates() {}
 
+function getTotalEquityAllVersionsAllSymbols() {
+  const db = window._SQL_DB;
+  if (!db) return null;
+  if (activeDataset !== 'backtest') {
+    return { total: getDatasetInitialCapital(), buckets: 0 };
+  }
+  try {
+    const stmt = db.prepare(`
+      WITH latest AS (
+        SELECT
+          symbol,
+          version,
+          equity,
+          ROW_NUMBER() OVER (
+            PARTITION BY REPLACE(REPLACE(REPLACE(REPLACE(UPPER(symbol), '/', ''), '_', ''), '-', ''), ' ', ''), LOWER(version)
+            ORDER BY datetime(COALESCE(exit_time, entry_time)) DESC, id DESC
+          ) AS rn
+        FROM trades
+        WHERE mode = 'backtest' AND equity IS NOT NULL AND LOWER(version) IN ('v1', 'v2')
+      )
+      SELECT COALESCE(SUM(equity), 0) AS total_equity, COUNT(*) AS buckets
+      FROM latest
+      WHERE rn = 1
+    `);
+    let total = 0;
+    let buckets = 0;
+    if (stmt.step()) {
+      const row = stmt.getAsObject();
+      total = Number(row.total_equity || 0);
+      buckets = Number(row.buckets || 0);
+    }
+    stmt.free();
+    return { total, buckets };
+  } catch (err) {
+    console.error('Error querying total equity across all symbols/versions:', err);
+    return null;
+  }
+}
+
 function renderCards(rows) {
   const cardEl = document.getElementById('cards');
   const vers = INSTRUMENTS[activeSym].versions;
+  const totalEq = getTotalEquityAllVersionsAllSymbols();
+  const totalEqCard = totalEq
+    ? `<div class="card">
+        <div class="label">Total Equity (All Versions, All Symbols)</div>
+        <div class="value neutral">${fmt$(totalEq.total)}</div>
+        <div class="sub">${activeDataset === 'backtest' ? `Latest equity snapshot across ${totalEq.buckets} v1/v2 symbol-version buckets` : 'Baseline starting equity for this dataset'}</div>
+      </div>`
+    : '';
   if (activeTab === 'all') {
-    cardEl.innerHTML = Object.entries(vers).map(([v,cfg])=>{
+    cardEl.innerHTML = totalEqCard + Object.entries(vers).map(([v,cfg])=>{
       const r = loaded[activeSym][v];
       if (!r?.length) return `<div class="card" style="border-top:2px solid ${cfg.color};opacity:0.5">
         <div class="label">${getVersionLabel(activeSym, v)}</div>
@@ -905,6 +953,7 @@ function renderCards(rows) {
   const m = calcMetrics(rows);
   if (!m) { cardEl.innerHTML=''; return; }
   cardEl.innerHTML = `
+    ${totalEqCard}
     <div class="card"><div class="label">Total Trades</div><div class="value neutral">${m.n}</div><div class="sub">${m.longs}L / ${m.shorts}S</div></div>
     <div class="card"><div class="label">Win Rate</div><div class="value ${m.winRate>=60?'positive':m.winRate>=50?'neutral':'negative'}">${m.winRate.toFixed(1)}%</div><div class="sub">${m.tpCount} TP - ${m.slCount} SL - ${m.trailCount} Trail${m.mbCount?' - '+m.mbCount+' MB':''}</div></div>
     <div class="card"><div class="label">Net P&L</div><div class="value ${clsVal(m.netPnl)}">${fmt$(m.netPnl)}</div><div class="sub">${fmtPct(m.netPnlPct)} on $${m.beginEq.toLocaleString()}</div></div>
@@ -1513,10 +1562,14 @@ async function renderLogsPanel() {
 function getAllSymbolsCumulativeEquity() {
   const db = window._SQL_DB;
   if (!db) return null;
+  if (activeDataset !== 'backtest') {
+    const baseline = getDatasetInitialCapital();
+    return { equity: baseline, baseline };
+  }
   const modeFilter = activeDataset === 'backtest' ? 'backtest' : (activeDataset === 'paper' ? 'paper' : 'live');
   const rowsBySymbolVersion = new Map();
   try {
-    const stmt = db.prepare('SELECT symbol, version, equity, dollar_pnl, direction, result, entry_time, exit_time FROM trades WHERE mode = ?');
+    const stmt = db.prepare("SELECT symbol, version, equity, dollar_pnl, direction, result, entry_time, exit_time FROM trades WHERE mode = ? AND LOWER(version) IN ('v1', 'v2')");
     stmt.bind([modeFilter]);
     while (stmt.step()) {
       const r = stmt.getAsObject();
@@ -1571,6 +1624,7 @@ function getAllSymbolsCumulativeEquity() {
 }
 
 function buildTransactions() {
+  if (activeDataset !== 'backtest') return [];
   const txns = [];
   const symData = INSTRUMENTS[activeSym];
   for (const [ver, cfg] of Object.entries(symData.versions)) {
@@ -1978,6 +2032,17 @@ function updateBalanceBar(rows) {
   };
 
   fmtBal(startCapital, beginEl, startCapital);
+
+  if (activeDataset !== 'backtest') {
+    if (endEl) {
+      endEl.textContent = '-';
+      endEl.className = 'bal-value neutral';
+    }
+    fmtBal(startCapital, totalEl, startCapital);
+    if (totalAllEl) fmtBal(startCapital, totalAllEl, startCapital);
+    if (totalAllSymbolsEl) fmtBal(startCapital, totalAllSymbolsEl, startCapital);
+    return;
+  }
 
   // Ending balance: only meaningful when a single version is selected
   if (!rows || !rows.length) {
