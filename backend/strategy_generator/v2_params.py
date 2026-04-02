@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Any
 
 
@@ -55,8 +57,44 @@ def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any
     return out
 
 
-def get_v2_params(symbol: str | None = None, profile: str | None = None) -> dict[str, Any]:
-    # Hook kept for parity with v1; symbol/profile overrides can be added later.
-    _ = symbol
-    _ = profile
-    return _deep_merge(DEFAULT_V2_PARAMS, {})
+def _default_config_path() -> Path:
+    return Path(__file__).resolve().parent / "configs" / "v2_runtime.json"
+
+
+def _normalize_symbol(symbol: str) -> str:
+    return "".join(ch for ch in symbol.upper() if ch.isalnum())
+
+
+def get_v2_params(
+    config_path: str | Path | None = None,
+    symbol: str | None = None,
+    profile: str | None = None,
+) -> dict[str, Any]:
+    path = Path(config_path) if config_path else _default_config_path()
+    if not path.exists():
+        return DEFAULT_V2_PARAMS
+
+    loaded = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(loaded, dict):
+        return DEFAULT_V2_PARAMS
+
+    loaded = dict(loaded)
+    profiles = loaded.get("profiles")
+    if profile and isinstance(profiles, dict):
+        profile_cfg = profiles.get(profile)
+        if isinstance(profile_cfg, dict):
+            loaded = _deep_merge(loaded, profile_cfg)
+
+    symbol_overrides = loaded.get("symbol_overrides")
+    if isinstance(symbol_overrides, dict):
+        loaded.pop("symbol_overrides", None)
+    loaded.pop("profiles", None)
+
+    merged = _deep_merge(DEFAULT_V2_PARAMS, loaded)
+
+    if symbol and isinstance(symbol_overrides, dict):
+        override = symbol_overrides.get(_normalize_symbol(symbol))
+        if isinstance(override, dict):
+            merged = _deep_merge(merged, override)
+
+    return merged

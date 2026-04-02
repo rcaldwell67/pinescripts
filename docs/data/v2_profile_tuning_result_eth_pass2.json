@@ -1,0 +1,44 @@
+{
+  "symbol": "ETH/USD",
+  "targets": {
+    "win_rate_min": 70.0,
+    "net_return_min": 20.0,
+    "max_drawdown_max": 4.5
+  },
+  "base": {
+    "trades": 61,
+    "win_rate": 54.09836065573771,
+    "net_return_pct": 7.31114735555578,
+    "max_drawdown_pct": 1.2317751599056792,
+    "pass_all": false
+  },
+  "best_candidate": {
+    "enable_longs": false,
+    "enable_shorts": true,
+    "pullback_tolerance_pct": 0.25,
+    "rsi_long_min": 42,
+    "rsi_long_max": 58,
+    "rsi_short_min": 28,
+    "rsi_short_max": 58,
+    "adx_threshold": 16,
+    "di_spread": 0.0,
+    "session_filter_enabled": true,
+    "volume_mult_min": 0.9,
+    "sl_atr_mult": 3.5,
+    "tp_atr_mult": 6.0,
+    "trail_activate_atr_mult": 1.5,
+    "trail_dist_atr_mult": 0.1,
+    "risk_pct": 0.8,
+    "max_bars_in_trade": 30,
+    "trades": 30,
+    "win_rate": 70.0,
+    "net_return_pct": 11.313082593149627,
+    "max_drawdown_pct": 1.3653766036286212,
+    "pass_win_rate": true,
+    "pass_net_return": false,
+    "pass_drawdown": true,
+    "pass_all": false
+  },
+  "evaluations": 120,
+  "seed": 303
+}

@@ -21,5 +21,7 @@
 Note:
 
 - v1 backtesting guideline closure complete: default runtime now passes strategy thresholds for BTC/USD, ETH/USD, CLM, and CRF (validated via report_v1_guidelines.py).
+- v1 promoted profile `guideline_closed` now preserves the validated closure state and can be enforced through close_v1_guidelines.py or the matching GitHub Actions workflow.
+- v2 backtesting guideline closure complete: default runtime and `guideline_closed` profile now pass strategy thresholds for BTC/USD, ETH/USD, CLM, and CRF (validated via report_v2_guidelines.py --enforce).
 - Current v1 paper-trading data has been corrected and made incremental (append new trades each run).
 - Current implementation is simulation-based (using strategy backtest logic on fresh OHLCV), not live order placement through Alpaca Paper Trading API yet.

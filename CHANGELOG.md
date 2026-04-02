@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- Closed v2 backtesting guideline gap by promoting validated BTCUSD and ETHUSD overrides into `backend/strategy_generator/configs/v2_runtime.json`; default v2 now passes all guideline thresholds across BTC/USD, ETH/USD, CLM, and CRF.
+- Added standalone v2 guideline matrix report at `backend/strategy_generator/report_v2_guidelines.py` with JSON output and enforced failure mode.
+- Expanded `backend/strategy_generator/tune_v2_profile.py` with broader search coverage, stronger win-rate-first ranking, and profile-scoped apply support.
+- Added `backend/strategy_generator/close_v2_guidelines.py` to run the full v2 closure loop: retune, validate, and enforce.
+- Updated `.github/workflows/v2-guideline-matrix.yml` to default scheduled and manual runs to the promoted `guideline_closed` profile.
+- Added `.github/workflows/close-v2-guidelines.yml` for manual execution of the full v2 closure loop in GitHub Actions.
+- Added promoted v1 `guideline_closed` profile plus `backend/strategy_generator/close_v1_guidelines.py` and `.github/workflows/close-v1-guidelines.yml` so v1 and v2 now share the same closure workflow pattern.
 - Added v2 runtime parameter source at `backend/strategy_generator/v2_params.py` based on `APM v2.0-10m` defaults.
 - Added v2 strategy adapter at `backend/strategy_generator/apm_v2.py` with side-aware latest-bar entry/exit analysis wiring.
 - Added v2 backtest engine at `backend/strategy_generator/apm_v2_backtest.py` with long/short simulation, ATR-based SL/TP, trailing stop, and max-bars exit handling.
