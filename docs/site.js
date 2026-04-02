@@ -1296,13 +1296,14 @@ function queryFillLogsFromDb(db) {
   const out = [];
   if (!db) return out;
   try {
-    const stmt = db.prepare(`
+    // Query paper fills
+    const paperStmt = db.prepare(`
       SELECT symbol, side, qty, price, transaction_time, order_id
       FROM paper_fill_events
       ORDER BY datetime(transaction_time) DESC
     `);
-    while (stmt.step()) {
-      const row = stmt.getAsObject();
+    while (paperStmt.step()) {
+      const row = paperStmt.getAsObject();
       const ts = row.transaction_time || null;
       const side = String(row.side || '').toLowerCase();
       const qty = Number(row.qty);
@@ -1311,21 +1312,66 @@ function queryFillLogsFromDb(db) {
         side ? `side=${side}` : '',
         Number.isFinite(qty) ? `qty=${qty}` : '',
         Number.isFinite(price) ? `price=${price}` : '',
+        row.order_id ? `order_id=${row.order_id}` : '',
       ].filter(Boolean);
       out.push({
         timestamp: ts,
         sortMs: toEpochMs(ts),
         symbol: String(row.symbol || ''),
         source: 'fills',
+        mode: 'paper',
         event: 'fill',
         status: side || '-',
-        detail: detailParts.join(' '),
+        detail: detailParts.join(' • '),
         raw: row,
       });
     }
-    stmt.free();
+    paperStmt.free();
+    
+    // Query live fills if table exists
+    try {
+      const tableExists = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='live_fill_events'").length > 0;
+      if (tableExists) {
+        const liveStmt = db.prepare(`
+          SELECT symbol, side, qty, price, transaction_time, order_id
+          FROM live_fill_events
+          ORDER BY datetime(transaction_time) DESC
+        `);
+        while (liveStmt.step()) {
+          const row = liveStmt.getAsObject();
+          const ts = row.transaction_time || null;
+          const side = String(row.side || '').toLowerCase();
+          const qty = Number(row.qty);
+          const price = Number(row.price);
+          const detailParts = [
+            side ? `side=${side}` : '',
+            Number.isFinite(qty) ? `qty=${qty}` : '',
+            Number.isFinite(price) ? `price=${price}` : '',
+            row.order_id ? `order_id=${row.order_id}` : '',
+          ].filter(Boolean);
+          out.push({
+            timestamp: ts,
+            sortMs: toEpochMs(ts),
+            symbol: String(row.symbol || ''),
+            source: 'fills',
+            mode: 'live',
+            event: 'fill',
+            status: side || '-',
+            detail: detailParts.join(' • '),
+            raw: row,
+          });
+        }
+        liveStmt.free();
+      }
+    } catch (err) {
+      // live_fill_events table may not exist, silently continue
+    }
+    
+    // Sort combined results by timestamp descending
+    out.sort((a, b) => (b.sortMs || 0) - (a.sortMs || 0));
+    
   } catch (err) {
-    console.error('Error querying paper_fill_events logs:', err);
+    console.error('Error querying fill events logs:', err);
   }
   return out;
 }
@@ -1334,31 +1380,90 @@ function queryOrderLogsFromDb(db) {
   const out = [];
   if (!db) return out;
   try {
-    const stmt = db.prepare(`
-      SELECT symbol, status, event_type, event_time, order_id
+    // Query paper orders
+    const paperStmt = db.prepare(`
+      SELECT symbol, status, event_type, event_time, order_id, qty, notional, filled_qty, submitted_at
       FROM paper_order_events
       ORDER BY datetime(event_time) DESC
     `);
-    while (stmt.step()) {
-      const row = stmt.getAsObject();
+    while (paperStmt.step()) {
+      const row = paperStmt.getAsObject();
       const ts = row.event_time || null;
       const status = String(row.status || '-');
       const eventType = String(row.event_type || 'order_event');
       const orderId = String(row.order_id || '').trim();
+      
+      // Build detail string with order quantity/notional information
+      const detailParts = [];
+      if (orderId) detailParts.push(`order_id=${orderId}`);
+      if (row.qty) detailParts.push(`qty=${Number(row.qty).toFixed(4)}`);
+      if (row.notional) detailParts.push(`notional=$${Number(row.notional).toFixed(2)}`);
+      if (row.filled_qty && Number(row.filled_qty) !== Number(row.qty || 0)) {
+        detailParts.push(`filled=${Number(row.filled_qty).toFixed(4)}`);
+      }
+      
       out.push({
         timestamp: ts,
         sortMs: toEpochMs(ts),
         symbol: String(row.symbol || ''),
         source: 'orders',
+        mode: 'paper',
         event: eventType,
         status,
-        detail: orderId ? `order_id=${orderId}` : '',
+        detail: detailParts.length > 0 ? detailParts.join(' • ') : '',
         raw: row,
       });
     }
-    stmt.free();
+    paperStmt.free();
+    
+    // Query live orders if table exists
+    try {
+      const tableExists = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='live_order_events'").length > 0;
+      if (tableExists) {
+        const liveStmt = db.prepare(`
+          SELECT symbol, status, event_type, event_time, order_id, qty, notional, filled_qty, submitted_at
+          FROM live_order_events
+          ORDER BY datetime(event_time) DESC
+        `);
+        while (liveStmt.step()) {
+          const row = liveStmt.getAsObject();
+          const ts = row.event_time || null;
+          const status = String(row.status || '-');
+          const eventType = String(row.event_type || 'order_event');
+          const orderId = String(row.order_id || '').trim();
+          
+          // Build detail string with order quantity/notional information
+          const detailParts = [];
+          if (orderId) detailParts.push(`order_id=${orderId}`);
+          if (row.qty) detailParts.push(`qty=${Number(row.qty).toFixed(4)}`);
+          if (row.notional) detailParts.push(`notional=$${Number(row.notional).toFixed(2)}`);
+          if (row.filled_qty && Number(row.filled_qty) !== Number(row.qty || 0)) {
+            detailParts.push(`filled=${Number(row.filled_qty).toFixed(4)}`);
+          }
+          
+          out.push({
+            timestamp: ts,
+            sortMs: toEpochMs(ts),
+            symbol: String(row.symbol || ''),
+            source: 'orders',
+            mode: 'live',
+            event: eventType,
+            status,
+            detail: detailParts.length > 0 ? detailParts.join(' • ') : '',
+            raw: row,
+          });
+        }
+        liveStmt.free();
+      }
+    } catch (err) {
+      // live_order_events table may not exist, silently continue
+    }
+    
+    // Sort combined results by timestamp descending
+    out.sort((a, b) => (b.sortMs || 0) - (a.sortMs || 0));
+    
   } catch (err) {
-    console.error('Error querying paper_order_events logs:', err);
+    console.error('Error querying order events logs:', err);
   }
   return out;
 }

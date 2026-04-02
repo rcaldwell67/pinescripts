@@ -253,6 +253,68 @@ def _ensure_fill_table(conn: sqlite3.Connection) -> None:
         )
         """
     )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS live_order_trade_links (
+            order_id TEXT PRIMARY KEY,
+            symbol TEXT NOT NULL,
+            version TEXT NOT NULL,
+            trade_id INTEGER NOT NULL,
+            role TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS live_order_events (
+            event_id TEXT PRIMARY KEY,
+            order_id TEXT NOT NULL,
+            symbol TEXT,
+            status TEXT,
+            event_type TEXT,
+            event_time TEXT,
+            qty REAL,
+            notional REAL,
+            filled_qty REAL,
+            submitted_at TEXT,
+            raw_json TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+
+
+def _fill_exists(conn: sqlite3.Connection, activity_id: str) -> bool:
+    """Check if a fill event already exists in the database."""
+    row = conn.execute("SELECT 1 FROM live_fill_events WHERE activity_id = ? LIMIT 1", (activity_id,)).fetchone()
+    return bool(row)
+
+
+def _link_order_to_trade(conn: sqlite3.Connection, order_id: str, symbol: str, version: str, trade_id: int, role: str) -> None:
+    """Link an order to a trade (entry or exit role)."""
+    if not order_id:
+        return
+    conn.execute(
+        """
+        INSERT OR IGNORE INTO live_order_trade_links (order_id, symbol, version, trade_id, role)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (order_id, symbol, version, trade_id, role),
+    )
+
+
+def _trade_for_order(conn: sqlite3.Connection, order_id: str) -> tuple[int, str] | None:
+    """Retrieve the trade linked to an order."""
+    if not order_id:
+        return None
+    row = conn.execute(
+        "SELECT trade_id, role FROM live_order_trade_links WHERE order_id = ? LIMIT 1",
+        (order_id,),
+    ).fetchone()
+    if not row:
+        return None
+    return int(row[0]), str(row[1])
 
 
 def _sync_fill_events(conn: sqlite3.Connection, api: AlpacaLiveAPI, symbols: list[str], version: str) -> int:

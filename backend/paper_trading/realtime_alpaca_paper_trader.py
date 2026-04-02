@@ -671,6 +671,10 @@ def _ensure_fill_table(conn: sqlite3.Connection) -> None:
             status TEXT,
             event_type TEXT,
             event_time TEXT,
+            qty REAL,
+            notional REAL,
+            filled_qty REAL,
+            submitted_at TEXT,
             raw_json TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )

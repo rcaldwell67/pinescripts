@@ -103,6 +103,92 @@ def create_database(db_path):
         )
     ''')
     conn.commit()
+    
+    # Paper Trading Order/Fill Tracking Tables
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS paper_fill_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            activity_id TEXT UNIQUE NOT NULL,
+            symbol TEXT NOT NULL,
+            side TEXT,
+            qty REAL,
+            price REAL,
+            transaction_time TEXT,
+            order_id TEXT,
+            raw_json TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS paper_order_trade_links (
+            order_id TEXT PRIMARY KEY,
+            symbol TEXT NOT NULL,
+            version TEXT NOT NULL,
+            trade_id INTEGER NOT NULL,
+            role TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS paper_order_events (
+            event_id TEXT PRIMARY KEY,
+            order_id TEXT NOT NULL,
+            symbol TEXT,
+            status TEXT,
+            event_type TEXT,
+            event_time TEXT,
+            qty REAL,
+            notional REAL,
+            filled_qty REAL,
+            submitted_at TEXT,
+            raw_json TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    conn.commit()
+    
+    # Live Trading Order/Fill Tracking Tables
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS live_fill_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            activity_id TEXT UNIQUE NOT NULL,
+            symbol TEXT NOT NULL,
+            side TEXT,
+            qty REAL,
+            price REAL,
+            transaction_time TEXT,
+            order_id TEXT,
+            raw_json TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS live_order_trade_links (
+            order_id TEXT PRIMARY KEY,
+            symbol TEXT NOT NULL,
+            version TEXT NOT NULL,
+            trade_id INTEGER NOT NULL,
+            role TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS live_order_events (
+            event_id TEXT PRIMARY KEY,
+            order_id TEXT NOT NULL,
+            symbol TEXT,
+            status TEXT,
+            event_type TEXT,
+            event_time TEXT,
+            qty REAL,
+            notional REAL,
+            filled_qty REAL,
+            submitted_at TEXT,
+            raw_json TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    conn.commit()
     conn.close()
 
 if __name__ == "__main__":
