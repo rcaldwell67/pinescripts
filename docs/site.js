@@ -628,13 +628,16 @@ function getNormalizedSymbolKey(sym) {
 
   function getTodayValidationSummary() {
     const db = window._SQL_DB;
+    const seedByVersion = Object.fromEntries(
+      VERSION_KEYS.map(version => [version, { scheduleMiss: 0, missedOpportunity: 0, missedBlocked: 0 }])
+    );
     if (!db) {
       return {
         dateKey: getTodayUtcDateKey(),
         scheduleMiss: 0,
         missedOpportunity: 0,
         missedBlocked: 0,
-        byVersion: {},
+        byVersion: seedByVersion,
         latestScheduleMiss: null,
       };
     }
@@ -645,7 +648,7 @@ function getNormalizedSymbolKey(sym) {
       scheduleMiss: 0,
       missedOpportunity: 0,
       missedBlocked: 0,
-      byVersion: {},
+      byVersion: { ...seedByVersion },
       latestScheduleMiss: null,
     };
 
