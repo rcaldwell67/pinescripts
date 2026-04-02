@@ -619,6 +619,218 @@ function getNormalizedSymbolKey(sym) {
     modal.setAttribute('aria-hidden', 'true');
   }
 
+  function getTodayTransactions() {
+    const db = window._SQL_DB;
+    if (!db) return { fills: [], orders: [] };
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStart = today.toISOString();
+    const tomorrowStart = new Date(today);
+    tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+    const tomorrowStr = tomorrowStart.toISOString();
+
+    const fills = [];
+    const orders = [];
+
+    try {
+      // Query paper fills
+      try {
+        const fillStmt = db.prepare(`
+          SELECT symbol, side, qty, price, transaction_time, order_id
+          FROM paper_fill_events
+          WHERE transaction_time >= ? AND transaction_time < ?
+          ORDER BY datetime(transaction_time) DESC
+        `);
+        fillStmt.bind([todayStart, tomorrowStr]);
+        while (fillStmt.step()) {
+          const row = fillStmt.getAsObject();
+          fills.push({ ...row, mode: 'paper' });
+        }
+        fillStmt.free();
+      } catch (err) {
+        console.debug('Paper fills query error:', err);
+      }
+
+      // Query live fills if table exists
+      try {
+        const liveTableExists = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='live_fill_events'").length > 0;
+        if (liveTableExists) {
+          const liveFillStmt = db.prepare(`
+            SELECT symbol, side, qty, price, transaction_time, order_id
+            FROM live_fill_events
+            WHERE transaction_time >= ? AND transaction_time < ?
+            ORDER BY datetime(transaction_time) DESC
+          `);
+          liveFillStmt.bind([todayStart, tomorrowStr]);
+          while (liveFillStmt.step()) {
+            const row = liveFillStmt.getAsObject();
+            fills.push({ ...row, mode: 'live' });
+          }
+          liveFillStmt.free();
+        }
+      } catch (err) {
+        console.debug('Live fills query error:', err);
+      }
+
+      // Query paper orders
+      try {
+        const orderStmt = db.prepare(`
+          SELECT symbol, status, event_type, event_time, order_id, qty, notional, filled_qty
+          FROM paper_order_events
+          WHERE event_time >= ? AND event_time < ?
+          ORDER BY datetime(event_time) DESC
+        `);
+        orderStmt.bind([todayStart, tomorrowStr]);
+        while (orderStmt.step()) {
+          const row = orderStmt.getAsObject();
+          orders.push({ ...row, mode: 'paper' });
+        }
+        orderStmt.free();
+      } catch (err) {
+        console.debug('Paper orders query error:', err);
+      }
+
+      // Query live orders if table exists
+      try {
+        const liveTableExists = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='live_order_events'").length > 0;
+        if (liveTableExists) {
+          const liveOrderStmt = db.prepare(`
+            SELECT symbol, status, event_type, event_time, order_id, qty, notional, filled_qty
+            FROM live_order_events
+            WHERE event_time >= ? AND event_time < ?
+            ORDER BY datetime(event_time) DESC
+          `);
+          liveOrderStmt.bind([todayStart, tomorrowStr]);
+          while (liveOrderStmt.step()) {
+            const row = liveOrderStmt.getAsObject();
+            orders.push({ ...row, mode: 'live' });
+          }
+          liveOrderStmt.free();
+        }
+      } catch (err) {
+        console.debug('Live orders query error:', err);
+      }
+
+    } catch (err) {
+      console.error('Error reading transactions:', err);
+    }
+
+    return { fills, orders };
+  }
+
+  function renderDailyTransactionsModal() {
+    const modal = document.getElementById('dailyTransactionsModal');
+    const contentDiv = document.getElementById('dailyTransactionsContent');
+    if (!modal || !contentDiv) return;
+
+    const { fills, orders } = getTodayTransactions();
+    const totalTransactions = fills.length + orders.length;
+
+    if (totalTransactions === 0) {
+      contentDiv.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No transactions today</p>';
+      return;
+    }
+
+    let html = `<div style="padding: 10px 0;">`;
+
+    if (orders.length > 0) {
+      html += `<div style="margin-bottom: 20px;">
+        <h3 style="margin: 0 0 10px 0; font-size: 14px; text-transform: uppercase; color: #666;">Orders (${orders.length})</h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+          <thead>
+            <tr style="border-bottom: 1px solid #ddd;">
+              <th style="padding: 6px; text-align: left; color: #666;">Time</th>
+              <th style="padding: 6px; text-align: left; color: #666;">Symbol</th>
+              <th style="padding: 6px; text-align: left; color: #666;">Type</th>
+              <th style="padding: 6px; text-align: left; color: #666;">Status</th>
+              <th style="padding: 6px; text-align: right; color: #666;">Qty</th>
+              <th style="padding: 6px; text-align: right; color: #666;">Notional</th>
+              <th style="padding: 6px; text-align: left; color: #666;">Mode</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+      for (const order of orders) {
+        const time = order.event_time ? new Date(order.event_time.replace(' ', 'T')).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-';
+        const symbol = order.symbol || '-';
+        const eventType = order.event_type || '-';
+        const status = order.status || '-';
+        const qty = order.qty ? Number(order.qty).toFixed(4) : '-';
+        const notional = order.notional ? '$' + Number(order.notional).toFixed(2) : '-';
+        const mode = order.mode ? `<span style="background: ${order.mode === 'live' ? '#ffcccc' : '#ccf'}; padding: 2px 6px; border-radius: 3px; font-size: 11px;">${order.mode}</span>` : '-';
+
+        html += `<tr style="border-bottom: 1px solid #eee;">
+          <td style="padding: 6px;">${time}</td>
+          <td style="padding: 6px; font-weight: bold;">${symbol}</td>
+          <td style="padding: 6px;">${eventType}</td>
+          <td style="padding: 6px;"><span style="background: ${status === 'submitted' || status === 'filled' ? '#90EE90' : status === 'rejected' ? '#FFB6C6' : '#F0F0F0'}; padding: 2px 6px; border-radius: 3px; font-size: 11px;">${status}</span></td>
+          <td style="padding: 6px; text-align: right;">${qty}</td>
+          <td style="padding: 6px; text-align: right;">${notional}</td>
+          <td style="padding: 6px;">${mode}</td>
+        </tr>`;
+      }
+      html += `</tbody></table></div>`;
+    }
+
+    if (fills.length > 0) {
+      html += `<div style="margin-bottom: 20px;">
+        <h3 style="margin: 0 0 10px 0; font-size: 14px; text-transform: uppercase; color: #666;">Fills (${fills.length})</h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+          <thead>
+            <tr style="border-bottom: 1px solid #ddd;">
+              <th style="padding: 6px; text-align: left; color: #666;">Time</th>
+              <th style="padding: 6px; text-align: left; color: #666;">Symbol</th>
+              <th style="padding: 6px; text-align: left; color: #666;">Side</th>
+              <th style="padding: 6px; text-align: right; color: #666;">Qty</th>
+              <th style="padding: 6px; text-align: right; color: #666;">Price</th>
+              <th style="padding: 6px; text-align: right; color: #666;">Total</th>
+              <th style="padding: 6px; text-align: left; color: #666;">Mode</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+      for (const fill of fills) {
+        const time = fill.transaction_time ? new Date(fill.transaction_time.replace(' ', 'T')).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-';
+        const symbol = fill.symbol || '-';
+        const side = fill.side || '-';
+        const qty = fill.qty ? Number(fill.qty).toFixed(4) : '-';
+        const price = fill.price ? '$' + Number(fill.price).toFixed(2) : '-';
+        const total = (fill.qty && fill.price) ? '$' + (Number(fill.qty) * Number(fill.price)).toFixed(2) : '-';
+        const mode = fill.mode ? `<span style="background: ${fill.mode === 'live' ? '#ffcccc' : '#ccf'}; padding: 2px 6px; border-radius: 3px; font-size: 11px;">${fill.mode}</span>` : '-';
+
+        html += `<tr style="border-bottom: 1px solid #eee; background: ${side === 'buy' ? 'rgba(144, 238, 144, 0.1)' : 'rgba(255, 182, 193, 0.1)'};">
+          <td style="padding: 6px;">${time}</td>
+          <td style="padding: 6px; font-weight: bold;">${symbol}</td>
+          <td style="padding: 6px; text-transform: uppercase; font-weight: bold; color: ${side === 'buy' ? '#008000' : '#CC0000'}">${side}</td>
+          <td style="padding: 6px; text-align: right;">${qty}</td>
+          <td style="padding: 6px; text-align: right;">${price}</td>
+          <td style="padding: 6px; text-align: right; font-weight: bold;">${total}</td>
+          <td style="padding: 6px;">${mode}</td>
+        </tr>`;
+      }
+      html += `</tbody></table></div>`;
+    }
+
+    html += `</div>`;
+    contentDiv.innerHTML = html;
+  }
+
+  function openDailyTransactionsModal() {
+    const modal = document.getElementById('dailyTransactionsModal');
+    if (!modal) return;
+    renderDailyTransactionsModal();
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeDailyTransactionsModal() {
+    const modal = document.getElementById('dailyTransactionsModal');
+    if (!modal) return;
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+  }
+
   function getActiveRows() {
     return activeTab === 'all'
       ? Object.values(loaded[activeSym] || {}).flat()
@@ -2735,8 +2947,22 @@ document.getElementById('v2DatasetSelect')?.addEventListener('change', event => 
     if (event.target === accountModal) closeAccountInfoModal();
   });
 
+  const dailyTransactionsBtn = document.getElementById('openDailyTransactionsBtn');
+  dailyTransactionsBtn?.addEventListener('click', openDailyTransactionsModal);
+
+  const closeDailyTransactionsBtn = document.getElementById('closeDailyTransactionsBtn');
+  closeDailyTransactionsBtn?.addEventListener('click', closeDailyTransactionsModal);
+
+  const dailyTransactionsModal = document.getElementById('dailyTransactionsModal');
+  dailyTransactionsModal?.addEventListener('click', event => {
+    if (event.target === dailyTransactionsModal) closeDailyTransactionsModal();
+  });
+
   document.addEventListener('keydown', event => {
-    if (event.key === 'Escape') closeAccountInfoModal();
+    if (event.key === 'Escape') {
+      closeAccountInfoModal();
+      closeDailyTransactionsModal();
+    }
   });
 })();
 

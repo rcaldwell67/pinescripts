@@ -42,6 +42,7 @@
     <button type="button" class="mode-btn" data-mode="live">Live Trading</button>
   </div>
   <button id="openAccountInfoBtn" class="mode-btn" type="button" title="View Alpaca account details">Account Info</button>
+  <button id="openDailyTransactionsBtn" class="mode-btn" type="button" title="View today's trades and fills">Daily Transactions</button>
   <div id="refreshControls" class="refresh-controls" aria-label="Dashboard refresh controls">
     <button id="reloadDashboardBtn" class="mode-btn" type="button" title="Reload dashboard data without refreshing the page">Reload Data</button>
     <label for="autoRefreshSelect">Auto-refresh</label>
@@ -232,6 +233,20 @@
       <div class="account-row"><span>Cash</span><strong id="aiCash">-</strong></div>
       <div class="account-row"><span>Last Event</span><strong id="aiLastEvent">-</strong></div>
       <div class="account-row"><span>Updated At</span><strong id="aiUpdatedAt">-</strong></div>
+    </div>
+  </div>
+</div>
+
+<div id="dailyTransactionsModal" class="account-modal" aria-hidden="true">
+  <div class="account-modal-card" role="dialog" aria-modal="true" aria-labelledby="dailyTransactionsModalTitle">
+    <div class="account-modal-head">
+      <h2 id="dailyTransactionsModalTitle">Today's Transactions</h2>
+      <button id="closeDailyTransactionsBtn" class="account-modal-close" type="button" aria-label="Close daily transactions modal">x</button>
+    </div>
+    <div class="account-modal-body">
+      <div id="dailyTransactionsContent" style="max-height: 600px; overflow-y: auto;">
+        <p>Loading transactions...</p>
+      </div>
     </div>
   </div>
 </div>
