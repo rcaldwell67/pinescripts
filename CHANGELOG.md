@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- Generalized remaining v1/v2 utility workflows to v1-v6 coverage.
+  - Updated `export_trades_to_json.py` and `backend/data/import_trades_to_db.py` default trade-file mappings to iterate versions `v1` through `v6`.
+  - Updated `reset_paper_data.py` and `reset_paper_tmp.py` force-reset loops to execute all supported versions (`v1`-`v6`) per symbol.
+  - Updated `verify_fix.py` to run backtest verification across `v1`-`v6` instead of only `v1`.
+  - Updated dashboard dataset-switcher version wiring in `docs/site.js` to use shared version keys (`v1`-`v6`) instead of v1/v2-only hardcoded listeners/checks.
+- Added unified aligned reset utility `reset_aligned_backtest_paper.py`.
+  - New script supports `--version` (repeatable), `--all-versions`, and `--symbol` for deterministic aligned backtest/paper regeneration across `v1`-`v6`.
+  - Converted `reset_v1_aligned_backtest_paper.py` and `reset_v2_aligned_backtest_paper.py` into compatibility wrappers that forward to the new unified entrypoint.
+  - Documented unified usage in `README.md` under an "Aligned reset workflow" section.
+
 - Extended strategy version support to v3-v6 across backtest and realtime execution paths.
   - Added version adapters `backend/strategy_generator/apm_v3.py` through `backend/strategy_generator/apm_v6.py`.
   - Added parameter loaders `backend/strategy_generator/v3_params.py` through `backend/strategy_generator/v6_params.py` with runtime/profile/symbol override merge behavior.
