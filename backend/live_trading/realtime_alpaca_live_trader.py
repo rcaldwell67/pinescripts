@@ -38,15 +38,27 @@ except ImportError:
 
 from apm_v1 import apm_v1_latest_bar_analysis
 from apm_v2 import apm_v2_latest_bar_analysis
+from apm_v3 import apm_v3_latest_bar_analysis
+from apm_v4 import apm_v4_latest_bar_analysis
+from apm_v5 import apm_v5_latest_bar_analysis
+from apm_v6 import apm_v6_latest_bar_analysis
 from backtest_backtrader_alpaca import DB_PATH, VERSION_MAP, fetch_ohlcv
 from portfolio_system import evaluate_trade
 from v1_params import get_v1_params
 from v2_params import get_v2_params
+from v3_params import get_v3_params
+from v4_params import get_v4_params
+from v5_params import get_v5_params
+from v6_params import get_v6_params
 
 ALPACA_LIVE_BASE = os.getenv("ALPACA_LIVE_BASE_URL", "https://api.alpaca.markets")
 STRATEGY_PARAMS: dict[str, dict[str, Any]] = {
     "v1": get_v1_params(),
     "v2": get_v2_params(),
+    "v3": get_v3_params(),
+    "v4": get_v4_params(),
+    "v5": get_v5_params(),
+    "v6": get_v6_params(),
 }
 
 
@@ -58,6 +70,14 @@ def _entry_analysis(df, side: str, version: str) -> dict[str, Any]:
     params = _strategy_params(version)
     if version == "v2":
         return apm_v2_latest_bar_analysis(df, side=side, params=params)
+    if version == "v3":
+        return apm_v3_latest_bar_analysis(df, side=side, params=params)
+    if version == "v4":
+        return apm_v4_latest_bar_analysis(df, side=side, params=params)
+    if version == "v5":
+        return apm_v5_latest_bar_analysis(df, side=side, params=params)
+    if version == "v6":
+        return apm_v6_latest_bar_analysis(df, side=side, params=params)
     return apm_v1_latest_bar_analysis(df, side=side, params=params)
 
 
@@ -386,7 +406,7 @@ def main() -> int:
     scope = parser.add_mutually_exclusive_group(required=True)
     scope.add_argument("--symbol", help="Trading symbol, e.g. CLM")
     scope.add_argument("--all-symbols", action="store_true", help="Run for every symbol in the DB")
-    parser.add_argument("--version", required=True, help="Strategy version (v1 or v2)")
+    parser.add_argument("--version", required=True, help="Strategy version (v1-v6)")
     args = parser.parse_args()
 
     if os.getenv("ALLOW_ALPACA_LIVE_TRADING", "false").strip().lower() not in {"1", "true", "yes"}:
@@ -397,8 +417,8 @@ def main() -> int:
         return 2
 
     version = args.version.strip().lower()
-    if version not in {"v1", "v2"}:
-        print("Only v1 and v2 realtime live trading are currently supported.", file=sys.stderr)
+    if version not in VERSION_MAP:
+        print(f"Unsupported version {version!r}. Valid: {list(VERSION_MAP)}", file=sys.stderr)
         return 1
 
     symbols = [args.symbol.strip()] if args.symbol else _load_symbols_from_db()

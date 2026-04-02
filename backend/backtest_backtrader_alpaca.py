@@ -40,6 +40,10 @@ DB_PATH = REPO_ROOT / "docs" / "data" / "tradingcopilot.db"
 VERSION_MAP: dict[str, str] = {
     "v1": "APM v1.0-5m",
     "v2": "APM v2.0-10m",
+    "v3": "APM v3.0",
+    "v4": "APM v4.0",
+    "v5": "APM v5.0",
+    "v6": "APM v6.0",
 }
 
 
@@ -176,6 +180,26 @@ def run_backtest(
         from v2_params import get_v2_params
 
         return backtest_apm_v2(df, params=get_v2_params(symbol=symbol, profile=profile))
+    if version == "v3":
+        from apm_v2_backtest import backtest_apm_v2
+        from v3_params import get_v3_params
+
+        return backtest_apm_v2(df, params=get_v3_params(symbol=symbol, profile=profile))
+    if version == "v4":
+        from apm_v2_backtest import backtest_apm_v2
+        from v4_params import get_v4_params
+
+        return backtest_apm_v2(df, params=get_v4_params(symbol=symbol, profile=profile))
+    if version == "v5":
+        from apm_v2_backtest import backtest_apm_v2
+        from v5_params import get_v5_params
+
+        return backtest_apm_v2(df, params=get_v5_params(symbol=symbol, profile=profile))
+    if version == "v6":
+        from apm_v2_backtest import backtest_apm_v2
+        from v6_params import get_v6_params
+
+        return backtest_apm_v2(df, params=get_v6_params(symbol=symbol, profile=profile))
     raise ValueError(f"Unknown version: {version!r}. Valid values: {list(VERSION_MAP)}")
 
 

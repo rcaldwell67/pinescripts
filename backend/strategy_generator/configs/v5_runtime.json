@@ -1,0 +1,10 @@
+{
+  "signal": {
+    "enable_longs": true,
+    "enable_shorts": false
+  },
+  "risk": {},
+  "portfolio": {},
+  "symbol_overrides": {},
+  "profiles": {}
+}
