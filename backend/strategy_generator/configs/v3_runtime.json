@@ -1,5 +1,11 @@
 {
   "signal": {
+    "rvol_filter_enabled": true,
+    "rvol_min": 1.05,
+    "atr_percentile_filter_enabled": true,
+    "atr_percentile_window": 120,
+    "atr_percentile_min": 25.0,
+    "atr_percentile_max": 95.0,
     "enable_longs": false,
     "enable_shorts": true
   },

@@ -79,6 +79,17 @@ def _prepare_signal_frame(df, params):
     df['plus_di'], df['minus_di'], df['adx'], df['atr'] = dmi(df, atr_len)
     df['atr_baseline'] = df['atr'].rolling(atr_baseline_len).mean()
     df['vol_sma'] = df['Volume'].rolling(volume_sma_len).mean()
+    df['rvol'] = np.where(df['vol_sma'] > 0, df['Volume'] / df['vol_sma'], np.nan)
+    atr_pct_window = int(signal.get("atr_percentile_window", 120))
+    if atr_pct_window > 1:
+        # Rolling percentile rank of current ATR within recent ATR history.
+        df['atr_pctile'] = (
+            df['atr']
+            .rolling(atr_pct_window)
+            .apply(lambda s: float((s <= s.iloc[-1]).sum()) / float(len(s)) * 100.0, raw=False)
+        )
+    else:
+        df['atr_pctile'] = np.nan
     if macro_ema_period > 0:
         df['macro_ema'] = ema(df['Close'], macro_ema_period)
     else:
@@ -106,8 +117,13 @@ def _evaluate_short_entry_at(df, i, signal, et_hours):
     pb_tol_pct = float(signal["pullback_tolerance_pct"])
     momentum_bars = int(signal.get("momentum_bars", 5))
     volume_mult_min = float(signal["volume_mult_min"])
+    rvol_filter_enabled = bool(signal.get("rvol_filter_enabled", False))
+    rvol_min = float(signal.get("rvol_min", 1.0))
     min_body_atr_mult = float(signal["min_body_atr_mult"])
     atr_floor_pct = float(signal["atr_floor_pct"])
+    atr_percentile_filter_enabled = bool(signal.get("atr_percentile_filter_enabled", False))
+    atr_percentile_min = float(signal.get("atr_percentile_min", 0.0))
+    atr_percentile_max = float(signal.get("atr_percentile_max", 100.0))
     panic_suppression_mult = float(signal.get("panic_suppression_mult", 1.5))
     session_filter_enabled = bool(signal.get("session_filter_enabled", True))
     session_start_hour_et = int(signal.get("session_start_hour_et", 9))
@@ -160,6 +176,21 @@ def _evaluate_short_entry_at(df, i, signal, et_hours):
         return {"is_entry": False, "passed_stage": passed_stage, "failed_stage": "volume", "detail": f"failed volume: volume must be >= {volume_mult_min:g}x vol_sma"}
     passed_stage = "volume"
 
+    if rvol_filter_enabled and not (pd.notna(df['rvol'].iloc[i]) and df['rvol'].iloc[i] >= rvol_min):
+        return {"is_entry": False, "passed_stage": passed_stage, "failed_stage": "rvol", "detail": f"failed rvol: rvol must be >= {rvol_min:g}"}
+    passed_stage = "rvol"
+
+    if atr_percentile_filter_enabled:
+        atr_pctile = df['atr_pctile'].iloc[i]
+        if not (pd.notna(atr_pctile) and atr_percentile_min <= atr_pctile <= atr_percentile_max):
+            return {
+                "is_entry": False,
+                "passed_stage": passed_stage,
+                "failed_stage": "atr_percentile",
+                "detail": f"failed atr_percentile: atr percentile must be in [{atr_percentile_min:g}, {atr_percentile_max:g}]",
+            }
+    passed_stage = "atr_percentile"
+
     if not (df['atr'].iloc[i] / df['Close'].iloc[i] * 100 >= atr_floor_pct):
         return {"is_entry": False, "passed_stage": passed_stage, "failed_stage": "atr_floor", "detail": f"failed atr_floor: atr% must be >= {atr_floor_pct:g}"}
     passed_stage = "atr_floor"
@@ -190,8 +221,13 @@ def _evaluate_long_entry_at(df, i, signal, et_hours):
     pb_tol_pct = float(signal["pullback_tolerance_pct"])
     momentum_bars = int(signal.get("momentum_bars", 5))
     volume_mult_min = float(signal["volume_mult_min"])
+    rvol_filter_enabled = bool(signal.get("rvol_filter_enabled", False))
+    rvol_min = float(signal.get("rvol_min", 1.0))
     min_body_atr_mult = float(signal["min_body_atr_mult"])
     atr_floor_pct = float(signal["atr_floor_pct"])
+    atr_percentile_filter_enabled = bool(signal.get("atr_percentile_filter_enabled", False))
+    atr_percentile_min = float(signal.get("atr_percentile_min", 0.0))
+    atr_percentile_max = float(signal.get("atr_percentile_max", 100.0))
     panic_suppression_mult = float(signal.get("panic_suppression_mult", 1.5))
     session_filter_enabled = bool(signal.get("session_filter_enabled", True))
     session_start_hour_et = int(signal.get("session_start_hour_et", 9))
@@ -243,6 +279,21 @@ def _evaluate_long_entry_at(df, i, signal, et_hours):
         return {"is_entry": False, "passed_stage": passed_stage, "failed_stage": "volume", "detail": f"failed volume: volume must be >= {volume_mult_min:g}x vol_sma"}
     passed_stage = "volume"
 
+    if rvol_filter_enabled and not (pd.notna(df['rvol'].iloc[i]) and df['rvol'].iloc[i] >= rvol_min):
+        return {"is_entry": False, "passed_stage": passed_stage, "failed_stage": "rvol", "detail": f"failed rvol: rvol must be >= {rvol_min:g}"}
+    passed_stage = "rvol"
+
+    if atr_percentile_filter_enabled:
+        atr_pctile = df['atr_pctile'].iloc[i]
+        if not (pd.notna(atr_pctile) and atr_percentile_min <= atr_pctile <= atr_percentile_max):
+            return {
+                "is_entry": False,
+                "passed_stage": passed_stage,
+                "failed_stage": "atr_percentile",
+                "detail": f"failed atr_percentile: atr percentile must be in [{atr_percentile_min:g}, {atr_percentile_max:g}]",
+            }
+    passed_stage = "atr_percentile"
+
     if not (df['atr'].iloc[i] / df['Close'].iloc[i] * 100 >= atr_floor_pct):
         return {"is_entry": False, "passed_stage": passed_stage, "failed_stage": "atr_floor", "detail": f"failed atr_floor: atr% must be >= {atr_floor_pct:g}"}
     passed_stage = "atr_floor"
@@ -265,8 +316,9 @@ def apm_v1_latest_bar_analysis(df, side="short", params=None):
     slope_lookback = int(signal["ema_slope_lookback"])
     momentum_bars = int(signal.get("momentum_bars", 5))
     adx_slope_bars = int(signal.get("adx_slope_bars", 0))
+    atr_pct_window = int(signal.get("atr_percentile_window", 120)) if bool(signal.get("atr_percentile_filter_enabled", False)) else 0
     ema_slow = int(signal["ema_slow"])
-    start_idx = max(ema_slow, slope_lookback + 1, momentum_bars, adx_slope_bars)
+    start_idx = max(ema_slow, slope_lookback + 1, momentum_bars, adx_slope_bars, atr_pct_window)
 
     latest_ts = None
     if len(df) > 0 and timestamps is not None and len(timestamps) == len(df):
@@ -296,8 +348,9 @@ def apm_v1_latest_bar_exit_analysis(df, side="short", params=None):
     slope_lookback = int(signal["ema_slope_lookback"])
     momentum_bars = int(signal.get("momentum_bars", 5))
     adx_slope_bars = int(signal.get("adx_slope_bars", 0))
+    atr_pct_window = int(signal.get("atr_percentile_window", 120)) if bool(signal.get("atr_percentile_filter_enabled", False)) else 0
     ema_slow = int(signal["ema_slow"])
-    start_idx = max(ema_slow, slope_lookback + 1, momentum_bars, adx_slope_bars)
+    start_idx = max(ema_slow, slope_lookback + 1, momentum_bars, adx_slope_bars, atr_pct_window)
 
     latest_ts = None
     if len(df) > 0 and timestamps is not None and len(timestamps) == len(df):
@@ -385,10 +438,11 @@ def apm_v1_signals(df, side="short", params=None):
     slope_lookback = int(signal["ema_slope_lookback"])
     momentum_bars = int(signal.get("momentum_bars", 5))
     adx_slope_bars = int(signal.get("adx_slope_bars", 0))
+    atr_pct_window = int(signal.get("atr_percentile_window", 120)) if bool(signal.get("atr_percentile_filter_enabled", False)) else 0
 
     evaluator = _evaluate_long_entry_at if side == "long" else _evaluate_short_entry_at
     entries = []
-    start_idx = max(ema_slow, slope_lookback + 1, momentum_bars, adx_slope_bars)
+    start_idx = max(ema_slow, slope_lookback + 1, momentum_bars, adx_slope_bars, atr_pct_window)
     for i in range(start_idx, len(df)):
         if evaluator(df, i, signal, et_hours)["is_entry"]:
             entries.append(i)
