@@ -18,6 +18,7 @@ import os
 import sqlite3
 import sys
 from datetime import datetime, timezone
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -52,22 +53,24 @@ from v5_params import get_v5_params
 from v6_params import get_v6_params
 
 ALPACA_LIVE_BASE = os.getenv("ALPACA_LIVE_BASE_URL", "https://api.alpaca.markets")
-STRATEGY_PARAMS: dict[str, dict[str, Any]] = {
-    "v1": get_v1_params(),
-    "v2": get_v2_params(),
-    "v3": get_v3_params(),
-    "v4": get_v4_params(),
-    "v5": get_v5_params(),
-    "v6": get_v6_params(),
+PARAM_LOADERS: dict[str, Any] = {
+    "v1": get_v1_params,
+    "v2": get_v2_params,
+    "v3": get_v3_params,
+    "v4": get_v4_params,
+    "v5": get_v5_params,
+    "v6": get_v6_params,
 }
 
 
-def _strategy_params(version: str) -> dict[str, Any]:
-    return STRATEGY_PARAMS.get(version, STRATEGY_PARAMS["v1"])
+@lru_cache(maxsize=256)
+def _strategy_params(version: str, symbol: str | None = None) -> dict[str, Any]:
+    loader = PARAM_LOADERS.get(version, PARAM_LOADERS["v1"])
+    return loader(symbol=symbol)
 
 
-def _entry_analysis(df, side: str, version: str) -> dict[str, Any]:
-    params = _strategy_params(version)
+def _entry_analysis(df, side: str, version: str, symbol: str | None = None) -> dict[str, Any]:
+    params = _strategy_params(version, symbol)
     if version == "v2":
         return apm_v2_latest_bar_analysis(df, side=side, params=params)
     if version == "v3":
@@ -168,8 +171,8 @@ def _load_symbols_from_db() -> list[str]:
     return [row[0] for row in rows]
 
 
-def _latest_signal_is_entry(df, side: str = "short", version: str = "v1") -> bool:
-    return bool(_entry_analysis(df, side=side, version=version).get("is_entry"))
+def _latest_signal_is_entry(df, side: str = "short", version: str = "v1", symbol: str | None = None) -> bool:
+    return bool(_entry_analysis(df, side=side, version=version, symbol=symbol).get("is_entry"))
 
 
 def _can_short_symbol(symbol: str) -> bool:
@@ -183,9 +186,10 @@ def _compute_order_params(
     account_equity: float,
     side: str = "short",
     version: str = "v1",
+    symbol: str | None = None,
     risk_multiplier: float = 1.0,
 ) -> tuple[float, float, float] | None:
-    risk = _strategy_params(version)["risk"]
+    risk = _strategy_params(version, symbol)["risk"]
     if len(df) < 210:
         return None
     if "atr" not in df.columns:
@@ -404,8 +408,8 @@ def _trade_one_symbol(conn: sqlite3.Connection, api: AlpacaLiveAPI, symbol: str,
         return
 
     df = fetch_ohlcv(symbol)
-    long_analysis = _entry_analysis(df, side="long", version=version)
-    short_analysis = _entry_analysis(df, side="short", version=version)
+    long_analysis = _entry_analysis(df, side="long", version=version, symbol=symbol)
+    short_analysis = _entry_analysis(df, side="short", version=version, symbol=symbol)
 
     if long_analysis.get("is_entry"):
         side = "long"
@@ -429,7 +433,7 @@ def _trade_one_symbol(conn: sqlite3.Connection, api: AlpacaLiveAPI, symbol: str,
         symbol,
         side,
         df,
-        portfolio_cfg=_strategy_params(version).get("portfolio", {}),
+        portfolio_cfg=_strategy_params(version, symbol).get("portfolio", {}),
     )
     if not portfolio_decision.allow_trade:
         detail = f"portfolio_filter: {portfolio_decision.reason}"
@@ -442,6 +446,7 @@ def _trade_one_symbol(conn: sqlite3.Connection, api: AlpacaLiveAPI, symbol: str,
         account_equity,
         side=side,
         version=version,
+        symbol=symbol,
         risk_multiplier=portfolio_decision.risk_multiplier,
     )
     if not order_params:

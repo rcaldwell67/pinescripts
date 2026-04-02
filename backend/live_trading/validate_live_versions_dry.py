@@ -49,15 +49,19 @@ def _load_sample() -> pd.DataFrame:
 
 
 def _validation_target(version: str) -> tuple[str, str]:
-    params = live._strategy_params(version)
-    signal = params.get("signal", {})
-    enable_longs = bool(signal.get("enable_longs", False))
-    enable_shorts = bool(signal.get("enable_shorts", True))
+    for symbol in ("BTC/USD", "CLM"):
+        params = live._strategy_params(version, symbol)
+        signal = params.get("signal", {})
+        enable_longs = bool(signal.get("enable_longs", False))
+        enable_shorts = bool(signal.get("enable_shorts", True))
 
-    if enable_longs and not enable_shorts:
-        return "BTC/USD", "long"
-    if enable_longs and enable_shorts:
-        return "BTC/USD", "long"
+        if enable_longs and not enable_shorts:
+            return symbol, "long"
+        if enable_longs and enable_shorts:
+            return symbol, "long"
+        if enable_shorts:
+            return symbol, "short"
+
     return "CLM", "short"
 
 
@@ -72,7 +76,7 @@ def main() -> int:
         enriched_df = base_df.copy()
 
         try:
-            entry = live._entry_analysis(enriched_df, side=side, version=version)
+            entry = live._entry_analysis(enriched_df, side=side, version=version, symbol=symbol)
         except Exception as exc:
             return fail(f"entry analysis failed for {version}: {exc}")
 
@@ -81,7 +85,7 @@ def main() -> int:
         if "atr" not in enriched_df.columns:
             return fail(f"entry analysis did not populate atr for {version}")
 
-        portfolio_cfg = live._strategy_params(version).get("portfolio", {})
+        portfolio_cfg = live._strategy_params(version, symbol).get("portfolio", {})
         try:
             decision = evaluate_trade(symbol, side, enriched_df, portfolio_cfg=portfolio_cfg)
         except Exception as exc:
@@ -94,6 +98,7 @@ def main() -> int:
                 ACCOUNT_EQUITY,
                 side=side,
                 version=version,
+                symbol=symbol,
                 risk_multiplier=risk_multiplier,
             )
         except Exception as exc:

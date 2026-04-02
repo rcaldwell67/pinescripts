@@ -121,6 +121,39 @@ def update_runtime_profile(
     config_path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
 
 
+def update_runtime_config(
+    config_path: Path,
+    symbol: str,
+    candidate: dict[str, Any],
+    profile: str | None = None,
+) -> None:
+    data = json.loads(config_path.read_text(encoding="utf-8"))
+    container = data
+    if profile:
+        profiles = data.setdefault("profiles", {})
+        container = profiles.setdefault(profile, {})
+
+    symbol_overrides = container.setdefault("symbol_overrides", {})
+    sym_key = normalize_symbol(symbol)
+    symbol_overrides[sym_key] = {
+        "signal": {
+            "pullback_tolerance_pct": candidate["pullback_tolerance_pct"],
+            "rsi_short_max": candidate["rsi_short_max"],
+            "adx_threshold": candidate["adx_threshold"],
+            "di_spread": candidate["di_spread"],
+            "session_filter_enabled": candidate["session_filter_enabled"],
+        },
+        "risk": {
+            "sl_atr_mult": candidate["sl_atr_mult"],
+            "tp_atr_mult": candidate["tp_atr_mult"],
+            "trail_activate_atr_mult": candidate["trail_activate_atr_mult"],
+            "trail_dist_atr_mult": candidate["trail_dist_atr_mult"],
+            "risk_pct": candidate["risk_pct"],
+        },
+    }
+    config_path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+
+
 def run() -> int:
     parser = argparse.ArgumentParser(description="Tune v1 per-symbol profile settings under guideline constraints.")
     parser.add_argument("--symbol", default="ETH/USD", help="Symbol to tune, e.g. ETH/USD")
@@ -138,6 +171,11 @@ def run() -> int:
         "--apply",
         action="store_true",
         help="Apply best candidate to backend/strategy_generator/configs/v1_runtime.json",
+    )
+    parser.add_argument(
+        "--apply-top-level",
+        action="store_true",
+        help="Apply best candidate to the top-level symbol_overrides instead of a named profile",
     )
     args = parser.parse_args()
 
@@ -198,8 +236,12 @@ def run() -> int:
 
     if args.apply:
         config_path = REPO_ROOT / "backend" / "strategy_generator" / "configs" / "v1_runtime.json"
-        update_runtime_profile(config_path, args.profile, args.symbol, best_candidate)
-        print(f"Applied best candidate to {config_path} profile={args.profile} symbol={args.symbol}")
+        if args.apply_top_level:
+            update_runtime_config(config_path, args.symbol, best_candidate)
+            print(f"Applied best candidate to {config_path} symbol={args.symbol}")
+        else:
+            update_runtime_profile(config_path, args.profile, args.symbol, best_candidate)
+            print(f"Applied best candidate to {config_path} profile={args.profile} symbol={args.symbol}")
 
     return 0
 

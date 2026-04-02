@@ -209,8 +209,8 @@ def _audit_version(
             if df_slice is None:
                 continue
 
-            long_analysis = paper_runner._entry_analysis(df_slice, side="long", version=version)
-            short_analysis = paper_runner._entry_analysis(df_slice, side="short", version=version)
+            long_analysis = paper_runner._entry_analysis(df_slice, side="long", version=version, symbol=symbol)
+            short_analysis = paper_runner._entry_analysis(df_slice, side="short", version=version, symbol=symbol)
             long_ok = bool(long_analysis.get("is_entry"))
             short_ok = bool(short_analysis.get("is_entry"))
             if not long_ok and not short_ok:

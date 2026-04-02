@@ -21,6 +21,7 @@ import sys
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
+from functools import lru_cache
 from pathlib import Path
 from threading import Event, Lock, Thread
 from typing import Any
@@ -49,22 +50,24 @@ from v5_params import get_v5_params
 from v6_params import get_v6_params
 
 ALPACA_BASE = "https://paper-api.alpaca.markets"
-STRATEGY_PARAMS: dict[str, dict[str, Any]] = {
-    "v1": get_v1_params(),
-    "v2": get_v2_params(),
-    "v3": get_v3_params(),
-    "v4": get_v4_params(),
-    "v5": get_v5_params(),
-    "v6": get_v6_params(),
+PARAM_LOADERS: dict[str, Any] = {
+    "v1": get_v1_params,
+    "v2": get_v2_params,
+    "v3": get_v3_params,
+    "v4": get_v4_params,
+    "v5": get_v5_params,
+    "v6": get_v6_params,
 }
 
 
-def _strategy_params(version: str) -> dict[str, Any]:
-    return STRATEGY_PARAMS.get(version, STRATEGY_PARAMS["v1"])
+@lru_cache(maxsize=256)
+def _strategy_params(version: str, symbol: str | None = None) -> dict[str, Any]:
+    loader = PARAM_LOADERS.get(version, PARAM_LOADERS["v1"])
+    return loader(symbol=symbol)
 
 
-def _entry_analysis(df, side: str, version: str) -> dict[str, Any]:
-    params = _strategy_params(version)
+def _entry_analysis(df, side: str, version: str, symbol: str | None = None) -> dict[str, Any]:
+    params = _strategy_params(version, symbol)
     if version == "v2":
         return apm_v2_latest_bar_analysis(df, side=side, params=params)
     if version == "v3":
@@ -78,8 +81,8 @@ def _entry_analysis(df, side: str, version: str) -> dict[str, Any]:
     return apm_v1_latest_bar_analysis(df, side=side, params=params)
 
 
-def _exit_analysis(df, side: str, version: str) -> dict[str, Any]:
-    params = _strategy_params(version)
+def _exit_analysis(df, side: str, version: str, symbol: str | None = None) -> dict[str, Any]:
+    params = _strategy_params(version, symbol)
     if version == "v2":
         return apm_v2_latest_bar_exit_analysis(df, side=side, params=params)
     if version == "v3":
@@ -267,8 +270,8 @@ def _load_symbols_from_db() -> list[str]:
     return [row[0] for row in rows]
 
 
-def _latest_signal_is_entry(df, side: str = "short", version: str = "v1") -> bool:
-    return bool(_entry_analysis(df, side=side, version=version).get("is_entry"))
+def _latest_signal_is_entry(df, side: str = "short", version: str = "v1", symbol: str | None = None) -> bool:
+    return bool(_entry_analysis(df, side=side, version=version, symbol=symbol).get("is_entry"))
 
 
 def _target_side_for_symbol(symbol: str) -> str:
@@ -281,9 +284,10 @@ def _compute_order_params(
     account_equity: float,
     side: str,
     version: str,
+    symbol: str | None = None,
     risk_multiplier: float = 1.0,
 ) -> tuple[float, float, float] | None:
-    risk = _strategy_params(version)["risk"]
+    risk = _strategy_params(version, symbol)["risk"]
     if len(df) < 210:
         return None
     if "atr" not in df.columns:
@@ -460,8 +464,8 @@ def _missed_window_opportunity_scan(
         return
 
     df_slice = df.iloc[: candidate_idx + 1].copy()
-    long_analysis = _entry_analysis(df_slice, side="long", version=version)
-    short_analysis = _entry_analysis(df_slice, side="short", version=version)
+    long_analysis = _entry_analysis(df_slice, side="long", version=version, symbol=symbol)
+    short_analysis = _entry_analysis(df_slice, side="short", version=version, symbol=symbol)
 
     long_ok = bool(long_analysis.get("is_entry"))
     short_ok = bool(short_analysis.get("is_entry"))
@@ -963,7 +967,7 @@ def _trade_one_symbol(
             # Use the actual position side reported by the broker to pick the correct exit evaluator.
             position_side = str(position.get("side") or "").lower()
             exit_side = "long" if position_side == "long" else "short"
-            exit_analysis = _exit_analysis(df, side=exit_side, version=version)
+            exit_analysis = _exit_analysis(df, side=exit_side, version=version, symbol=symbol)
             diag["latest_bar_ts"] = exit_analysis.get("latest_bar_ts") or _latest_bar_timestamp(df)
             diag["latest_exit_signal"] = bool(exit_analysis.get("is_exit"))
             diag["exit_failed_stage"] = exit_analysis.get("failed_stage")
@@ -1011,8 +1015,8 @@ def _trade_one_symbol(
     df = fetch_ohlcv(symbol)
 
     # Evaluate both directions; match Pine's evaluation order (long first).
-    long_analysis = _entry_analysis(df, side="long", version=version)
-    short_analysis = _entry_analysis(df, side="short", version=version)
+    long_analysis = _entry_analysis(df, side="long", version=version, symbol=symbol)
+    short_analysis = _entry_analysis(df, side="short", version=version, symbol=symbol)
     diag["long_analysis"] = {k: str(v) for k, v in long_analysis.items() if k != "latest_bar_ts"}
     diag["short_analysis"] = {k: str(v) for k, v in short_analysis.items() if k != "latest_bar_ts"}
 
@@ -1051,7 +1055,7 @@ def _trade_one_symbol(
         symbol,
         side,
         df,
-        portfolio_cfg=_strategy_params(version).get("portfolio", {}),
+        portfolio_cfg=_strategy_params(version, symbol).get("portfolio", {}),
     )
     diag["portfolio_gate"] = {
         "allow_trade": portfolio_decision.allow_trade,
@@ -1083,6 +1087,7 @@ def _trade_one_symbol(
         account_equity,
         side=side,
         version=version,
+        symbol=symbol,
         risk_multiplier=portfolio_decision.risk_multiplier,
     )
     if not order_params:

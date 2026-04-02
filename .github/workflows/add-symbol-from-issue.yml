@@ -95,6 +95,23 @@ jobs:
           ALPACA_PAPER_API_KEY: ${{ secrets.ALPACA_PAPER_API_KEY }}
           ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
 
+      - name: Tune symbol-specific runtime overrides (v1/v2)
+        env:
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
+          ALPACA_PAPER_API_KEY: ${{ secrets.ALPACA_PAPER_API_KEY }}
+          ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
+        run: |
+          SYMBOL="${{ steps.parse.outputs.symbol }}"
+          echo "Tuning v1 runtime override for $SYMBOL"
+          python backend/strategy_generator/tune_v1_profile.py --symbol "$SYMBOL" --max-evals 24 --out /tmp/v1_symbol_tuning.json --apply --apply-top-level
+          echo "Tuning v2 runtime override for $SYMBOL"
+          python backend/strategy_generator/tune_v2_profile.py --symbol "$SYMBOL" --max-evals 48 --out /tmp/v2_symbol_tuning.json --apply
+          for VERSION in v3 v4 v5 v6; do
+            echo "Tuning $VERSION runtime override for $SYMBOL"
+            python backend/strategy_generator/tune_v3_v6_profile.py --version "$VERSION" --symbol "$SYMBOL" --max-evals 40 --out "/tmp/${VERSION}_symbol_tuning.json" --apply
+          done
+
       - name: Run backtest for new symbol
         env:
           ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
@@ -124,10 +141,10 @@ jobs:
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
-          git add docs/data/tradingcopilot.db
+          git add docs/data/tradingcopilot.db backend/strategy_generator/configs/v1_runtime.json backend/strategy_generator/configs/v2_runtime.json backend/strategy_generator/configs/v3_runtime.json backend/strategy_generator/configs/v4_runtime.json backend/strategy_generator/configs/v5_runtime.json backend/strategy_generator/configs/v6_runtime.json
           git commit -m "Add symbol ${{ steps.parse.outputs.symbol }} via issue #${{ github.event.issue.number }}" || echo 'No changes'
           git push
       - name: Comment and close issue
         uses: peter-evans/close-issue@v3
         with:
-          comment: "Symbol ${{ steps.parse.outputs.symbol }} passed Alpaca Paper validation, was added to docs/data/tradingcopilot.db, and both backtest and paper-trading runs completed successfully."
+          comment: "Symbol ${{ steps.parse.outputs.symbol }} passed Alpaca Paper validation, was added to docs/data/tradingcopilot.db, received v1-v6 symbol-specific runtime tuning, and both backtest and paper-trading runs completed successfully."
