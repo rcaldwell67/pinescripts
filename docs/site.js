@@ -700,6 +700,17 @@ function getNormalizedSymbolKey(sym) {
       console.error('Error querying realtime_paper_log validation summary:', err);
     }
 
+    const accountedScheduleMiss = VERSION_KEYS.reduce(
+      (sum, version) => sum + Number(out.byVersion[version]?.scheduleMiss || 0),
+      0,
+    );
+    if (out.scheduleMiss > accountedScheduleMiss) {
+      out.unscopedScheduleMiss = Math.max(
+        Number(out.unscopedScheduleMiss || 0),
+        out.scheduleMiss - accountedScheduleMiss,
+      );
+    }
+
     return out;
   }
 
@@ -1040,11 +1051,9 @@ function getNormalizedSymbolKey(sym) {
         </div>
       </div>`;
 
-    const versionRows = Object.keys(validation.byVersion)
-      .sort()
-      .filter(version => version && version !== 'system')
+    const versionRows = VERSION_KEYS
       .map(version => {
-        const row = validation.byVersion[version];
+        const row = validation.byVersion[version] || { scheduleMiss: 0, missedOpportunity: 0, missedBlocked: 0 };
         return `<tr style="border-bottom:1px solid #eee;">
           <td style="padding:6px; font-weight:600;">${version}</td>
           <td style="padding:6px; text-align:right;">${row.scheduleMiss}</td>
