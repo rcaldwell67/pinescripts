@@ -1,4 +1,4 @@
-"""Analyze v4/v6 entry opportunities filtered by Bollinger/Donchian gates.
+"""Analyze v1-v6 entry opportunities filtered by Bollinger/Donchian gates.
 
 This script compares entry eligibility with current params vs a counterfactual
 where the new gates are disabled:
@@ -12,6 +12,7 @@ It reports how many opportunities were filtered specifically by:
 Usage:
     python backend/strategy_generator/analyze_filter_impact_v4_v6.py
     python backend/strategy_generator/analyze_filter_impact_v4_v6.py --version v4
+    python backend/strategy_generator/analyze_filter_impact_v4_v6.py --version v1 --version v2 --version v3
     python backend/strategy_generator/analyze_filter_impact_v4_v6.py --symbol BTC/USD
 """
 
@@ -32,17 +33,34 @@ sys.path.insert(0, str(SG_DIR))
 
 from apm_v1 import _evaluate_long_entry_at, _evaluate_short_entry_at, _prepare_signal_frame  # noqa: E402
 from backtest_backtrader_alpaca import DB_PATH, fetch_ohlcv  # noqa: E402
+from v1_params import get_v1_params  # noqa: E402
+from v2_params import get_v2_params  # noqa: E402
+from v3_params import get_v3_params  # noqa: E402
 from v4_params import get_v4_params  # noqa: E402
+from v5_params import get_v5_params  # noqa: E402
 from v6_params import get_v6_params  # noqa: E402
 
 TARGET_FAILED_STAGES = {"bb_width", "donchian_break"}
+ALL_VERSIONS = ["v1", "v2", "v3", "v4", "v5", "v6"]
 
 
 def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Analyze v4/v6 filter impact by failed stage.")
-    parser.add_argument("--version", action="append", choices=["v4", "v6"], help="Version to analyze (repeatable).")
+    parser = argparse.ArgumentParser(description="Analyze v1-v6 filter impact by failed stage.")
+    parser.add_argument("--version", action="append", choices=ALL_VERSIONS, help="Version to analyze (repeatable).")
     parser.add_argument("--symbol", action="append", help="Optional symbol filter (repeatable).")
     parser.add_argument("--max-examples", type=int, default=8, help="Max examples per failed stage (default: 8).")
+    parser.add_argument(
+        "--recommend-threshold",
+        type=float,
+        default=0.20,
+        help="Max blocked ratio to recommend enablement (default: 0.20)",
+    )
+    parser.add_argument(
+        "--min-opportunities",
+        type=int,
+        default=5,
+        help="Min opportunities with filters to recommend enablement (default: 5)",
+    )
     return parser.parse_args()
 
 
@@ -58,11 +76,31 @@ def _load_symbols(symbol_args: list[str] | None) -> list[str]:
 
 
 def _params_for_version(version: str, symbol: str) -> dict:
+    if version == "v1":
+        return get_v1_params(symbol=symbol)
+    if version == "v2":
+        return get_v2_params(symbol=symbol)
+    if version == "v3":
+        return get_v3_params(symbol=symbol)
     if version == "v4":
         return get_v4_params(symbol=symbol)
+    if version == "v5":
+        return get_v5_params(symbol=symbol)
     if version == "v6":
         return get_v6_params(symbol=symbol)
     raise ValueError(f"Unsupported version: {version}")
+
+
+def _recommend(total_full: int, total_no: int, threshold: float, min_opportunities: int) -> str:
+    blocked = max(0, total_no - total_full)
+    blocked_ratio = (blocked / total_no) if total_no > 0 else 0.0
+    if total_no == 0:
+        return "HOLD (no baseline opportunities)"
+    if total_full < min_opportunities:
+        return f"HOLD (too few remaining opportunities: {total_full} < {min_opportunities})"
+    if blocked_ratio > threshold:
+        return f"HOLD (blocked_ratio={blocked_ratio:.2%} > {threshold:.2%})"
+    return f"ENABLE (blocked_ratio={blocked_ratio:.2%}, remaining={total_full})"
 
 
 def _calc_start_idx(signal: dict) -> int:
@@ -154,6 +192,8 @@ def main() -> int:
         print("No symbols found.")
         return 0
 
+    recommendation_rows: list[tuple[str, int, int, int, int, str]] = []
+
     for version in versions:
         print(f"\n=== Filter Impact: {version.upper()} ===")
         total_full = 0
@@ -193,6 +233,28 @@ def main() -> int:
             f"blocked_bb_width={total_stage.get('bb_width', 0)} "
             f"blocked_donchian_break={total_stage.get('donchian_break', 0)}"
         )
+
+        blocked_total = max(0, total_no - total_full)
+        recommendation = _recommend(total_full, total_no, args.recommend_threshold, args.min_opportunities)
+        recommendation_rows.append(
+            (
+                version,
+                total_full,
+                total_no,
+                blocked_total,
+                total_stage.get("bb_width", 0) + total_stage.get("donchian_break", 0),
+                recommendation,
+            )
+        )
+
+    if recommendation_rows:
+        print("\n=== Recommendation Matrix ===")
+        for row in recommendation_rows:
+            version, with_filters, without_filters, blocked_total, staged_blocked, recommendation = row
+            print(
+                f"{version.upper()}: with_filters={with_filters} without_filters={without_filters} "
+                f"blocked_total={blocked_total} stage_blocked={staged_blocked} -> {recommendation}"
+            )
 
     return 0
 
