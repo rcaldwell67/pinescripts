@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- Implemented a portfolio-level trade gate and risk scaler in `backend/strategy_generator/portfolio_system.py` and wired it into both realtime runners.
+  - New `evaluate_trade(...)` regime check enforces stack alignment quality, ADX floor, ATR floor, and liquidity ratio before order submission.
+  - Portfolio thresholds are now config-driven through `portfolio` settings in v1/v2 params (supports profile and symbol overrides via existing runtime merge flow).
+  - Paper runner (`backend/paper_trading/realtime_alpaca_paper_trader.py`) now logs `portfolio_filter` when a strategy signal is blocked by portfolio rules.
+  - Live runner (`backend/live_trading/realtime_alpaca_live_trader.py`) now applies the same portfolio filter path for consistency.
+  - Order sizing in both runners now supports portfolio risk scaling via `risk_multiplier`.
 - Added `source` column to the `trades` table (values: `'simulation'`, `'realtime'`, or NULL for backtest rows).
   - `reset_v1_aligned_backtest_paper.py` and `reset_v2_aligned_backtest_paper.py` now tag paper-mode rows with `source='simulation'`.
   - `realtime_alpaca_paper_trader.py` now tags broker-filled paper-mode rows with `source='realtime'` and ensures the column exists via `_ensure_source_column()` on startup.

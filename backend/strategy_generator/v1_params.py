@@ -41,6 +41,15 @@ DEFAULT_V1_PARAMS: dict[str, Any] = {
         "max_bars_in_trade": 100,
         "initial_equity": 1000.0,
     },
+    "portfolio": {
+        "min_adx": 14.0,
+        "min_volume_ratio": 0.35,
+        "min_atr_pct": 0.08,
+        "weak_regime_min_score": 3,
+        "weak_regime_risk_multiplier": 0.75,
+        "strong_regime_risk_multiplier": 1.0,
+        "crypto_risk_multiplier": 0.9,
+    },
 }
 
 

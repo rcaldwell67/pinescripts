@@ -39,6 +39,7 @@ except ImportError:
 from apm_v1 import apm_v1_latest_bar_analysis
 from apm_v2 import apm_v2_latest_bar_analysis
 from backtest_backtrader_alpaca import DB_PATH, VERSION_MAP, fetch_ohlcv
+from portfolio_system import evaluate_trade
 from v1_params import get_v1_params
 from v2_params import get_v2_params
 
@@ -157,7 +158,13 @@ def _can_short_symbol(symbol: str) -> bool:
     return "/" not in symbol
 
 
-def _compute_order_params(df, account_equity: float, side: str = "short", version: str = "v1") -> tuple[float, float, float] | None:
+def _compute_order_params(
+    df,
+    account_equity: float,
+    side: str = "short",
+    version: str = "v1",
+    risk_multiplier: float = 1.0,
+) -> tuple[float, float, float] | None:
     risk = _strategy_params(version)["risk"]
     if len(df) < 210:
         return None
@@ -181,7 +188,7 @@ def _compute_order_params(df, account_equity: float, side: str = "short", versio
     if risk_per_unit <= 0:
         return None
 
-    risk_budget = max(account_equity * float(risk["risk_pct"]) / 100.0, 1.0)
+    risk_budget = max(account_equity * float(risk["risk_pct"]) / 100.0 * max(risk_multiplier, 0.0), 1.0)
     qty = round(risk_budget / risk_per_unit, 6)
     if qty <= 0:
         return None
@@ -336,7 +343,25 @@ def _trade_one_symbol(conn: sqlite3.Connection, api: AlpacaLiveAPI, symbol: str,
         print(f"IDLE {symbol}: {detail}")
         return
 
-    order_params = _compute_order_params(df, account_equity, side=side, version=version)
+    portfolio_decision = evaluate_trade(
+        symbol,
+        side,
+        df,
+        portfolio_cfg=_strategy_params(version).get("portfolio", {}),
+    )
+    if not portfolio_decision.allow_trade:
+        detail = f"portfolio_filter: {portfolio_decision.reason}"
+        _upsert_summary(conn, symbol, version, "portfolio_filter", detail, account_equity)
+        print(f"SKIP {symbol}: {detail}")
+        return
+
+    order_params = _compute_order_params(
+        df,
+        account_equity,
+        side=side,
+        version=version,
+        risk_multiplier=portfolio_decision.risk_multiplier,
+    )
     if not order_params:
         _upsert_summary(conn, symbol, version, "idle", "insufficient data/invalid ATR", account_equity)
         print(f"IDLE {symbol}: invalid order params")
