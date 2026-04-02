@@ -637,6 +637,7 @@ function getNormalizedSymbolKey(sym) {
         scheduleMiss: 0,
         missedOpportunity: 0,
         missedBlocked: 0,
+        unscopedScheduleMiss: 0,
         byVersion: seedByVersion,
         latestScheduleMiss: null,
       };
@@ -648,6 +649,7 @@ function getNormalizedSymbolKey(sym) {
       scheduleMiss: 0,
       missedOpportunity: 0,
       missedBlocked: 0,
+      unscopedScheduleMiss: 0,
       byVersion: { ...seedByVersion },
       latestScheduleMiss: null,
     };
@@ -674,7 +676,11 @@ function getNormalizedSymbolKey(sym) {
 
         if (status === 'schedule_miss') {
           out.scheduleMiss += 1;
-          out.byVersion[version].scheduleMiss += 1;
+          if (version === 'system' || version === 'unknown' || !out.byVersion[version]) {
+            out.unscopedScheduleMiss += 1;
+          } else {
+            out.byVersion[version].scheduleMiss += 1;
+          }
           if (!out.latestScheduleMiss) {
             out.latestScheduleMiss = {
               loggedAt: String(row.logged_at || ''),
@@ -783,6 +789,7 @@ function getNormalizedSymbolKey(sym) {
 
     const summary = getTodayValidationSummary();
     const scheduleMiss = Number(summary.scheduleMiss || 0);
+    const unscopedScheduleMiss = Number(summary.unscopedScheduleMiss || 0);
     const missed = Number(summary.missedOpportunity || 0);
     const blocked = Number(summary.missedBlocked || 0);
     const versionLines = Object.keys(summary.byVersion || {})
@@ -807,6 +814,7 @@ function getNormalizedSymbolKey(sym) {
       const clipLines = [
         `UTC ${summary.dateKey || ''}`,
         `schedule_miss=${scheduleMiss}`,
+        `schedule_miss_unscoped=${unscopedScheduleMiss}`,
         `missed_opportunity=${missed}`,
         `missed_opportunity_blocked=${blocked}`,
       ];
@@ -824,6 +832,7 @@ function getNormalizedSymbolKey(sym) {
       pop.innerHTML = `
         <div class="vp-title">UTC ${escapeHtml(summary.dateKey || '')}</div>
         <div class="vp-row"><span class="k">schedule_miss</span><strong>${scheduleMiss}</strong></div>
+        <div class="vp-row"><span class="k">schedule_miss_unscoped</span><strong>${unscopedScheduleMiss}</strong></div>
         <div class="vp-row"><span class="k">missed_opportunity</span><strong>${missed}</strong></div>
         <div class="vp-row"><span class="k">missed_opportunity_blocked</span><strong>${blocked}</strong></div>
         <div class="vp-copy-row">
@@ -1008,6 +1017,7 @@ function getNormalizedSymbolKey(sym) {
     const executableMisses = validation.missedOpportunity;
     const blockedMisses = validation.missedBlocked;
     const scheduleMisses = validation.scheduleMiss;
+    const unscopedScheduleMisses = validation.unscopedScheduleMiss || 0;
 
     const summaryTone = executableMisses > 0
       ? '#f85149'
@@ -1024,6 +1034,7 @@ function getNormalizedSymbolKey(sym) {
         <div style="font-size:13px; font-weight:600; color:${summaryTone}; margin-bottom:8px;">${summaryLabel}</div>
         <div style="display:flex; flex-wrap:wrap; gap:8px;">
           <span style="font-size:12px; padding:4px 8px; border-radius:999px; background:#2f81f71a; color:#58a6ff; border:1px solid #2f81f733;">schedule_miss: ${scheduleMisses}</span>
+          <span style="font-size:12px; padding:4px 8px; border-radius:999px; background:#f2cc601a; color:#f2cc60; border:1px solid #f2cc6033;">schedule_miss_unscoped: ${unscopedScheduleMisses}</span>
           <span style="font-size:12px; padding:4px 8px; border-radius:999px; background:${executableMisses > 0 ? '#f851491a' : '#3fb9501a'}; color:${executableMisses > 0 ? '#f85149' : '#3fb950'}; border:1px solid ${executableMisses > 0 ? '#f8514933' : '#3fb95033'};">missed_opportunity: ${executableMisses}</span>
           <span style="font-size:12px; padding:4px 8px; border-radius:999px; background:#ffa6571a; color:#ffa657; border:1px solid #ffa65733;">missed_opportunity_blocked: ${blockedMisses}</span>
         </div>
@@ -1043,7 +1054,16 @@ function getNormalizedSymbolKey(sym) {
       })
       .join('');
 
-    if (versionRows) {
+    const unscopedRow = unscopedScheduleMisses > 0
+      ? `<tr style="border-bottom:1px solid #eee;">
+          <td style="padding:6px; font-weight:600;">system (unscoped)</td>
+          <td style="padding:6px; text-align:right;">${unscopedScheduleMisses}</td>
+          <td style="padding:6px; text-align:right;">0</td>
+          <td style="padding:6px; text-align:right;">0</td>
+        </tr>`
+      : '';
+
+    if (versionRows || unscopedRow) {
       html += `<div style="margin-bottom:16px;">
         <h3 style="margin:0 0 8px 0; font-size:14px; text-transform:uppercase; color:#666;">Validation By Version</h3>
         <table style="width:100%; border-collapse:collapse; font-size:12px;">
@@ -1055,7 +1075,7 @@ function getNormalizedSymbolKey(sym) {
               <th style="padding:6px; text-align:right; color:#666;">Blocked</th>
             </tr>
           </thead>
-          <tbody>${versionRows}</tbody>
+          <tbody>${versionRows}${unscopedRow}</tbody>
         </table>
       </div>`;
     }
