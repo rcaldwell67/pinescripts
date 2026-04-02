@@ -242,8 +242,11 @@
 <div id="dailyTransactionsModal" class="account-modal" aria-hidden="true">
   <div class="account-modal-card" role="dialog" aria-modal="true" aria-labelledby="dailyTransactionsModalTitle">
     <div class="account-modal-head">
-      <h2 id="dailyTransactionsModalTitle">Today's Transactions</h2>
-      <button id="refreshDailyTransactionsBtn" class="mode-btn" type="button" style="margin-left:auto; margin-right:8px; padding:4px 10px;" title="Refresh today's transaction and validation summary">Refresh</button>
+      <h2 id="dailyTransactionsModalTitle">Daily Transactions</h2>
+      <span id="dailyTransactionsDateLabel" style="margin-left:10px; color:var(--muted); font-size:12px;">UTC -</span>
+      <button id="dailyTransactionsTodayBtn" class="mode-btn" type="button" style="margin-left:auto; margin-right:6px; padding:4px 10px;" title="Show current UTC date">Today</button>
+      <button id="dailyTransactionsYesterdayBtn" class="mode-btn" type="button" style="margin-right:6px; padding:4px 10px;" title="Show previous UTC date">Yesterday</button>
+      <button id="refreshDailyTransactionsBtn" class="mode-btn" type="button" style="margin-right:8px; padding:4px 10px;" title="Refresh selected date transaction and validation summary">Refresh</button>
       <button id="closeDailyTransactionsBtn" class="account-modal-close" type="button" aria-label="Close daily transactions modal">x</button>
     </div>
     <div class="account-modal-body">

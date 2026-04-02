@@ -114,6 +114,7 @@ let pendingDatasetSymbol = '';
 let dashboardRefreshInFlight = false;
 let dashboardAutoRefreshTimer = null;
 let dailyValidationClipboardText = '';
+let dailyTransactionsDateOffsetDays = 0;
 
 function getSymbolAliases(sym) {
   const raw = String(sym || '').trim();
@@ -622,18 +623,43 @@ function getNormalizedSymbolKey(sym) {
     modal.setAttribute('aria-hidden', 'true');
   }
 
-  function getTodayUtcDateKey() {
-    return new Date().toISOString().slice(0, 10);
+  function getUtcDateKey(offsetDays = 0) {
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() + Number(offsetDays || 0));
+    return d.toISOString().slice(0, 10);
   }
 
-  function getTodayValidationSummary() {
+  function getSelectedDailyTransactionsDateKey() {
+    return getUtcDateKey(dailyTransactionsDateOffsetDays);
+  }
+
+  function updateDailyTransactionsDateControls() {
+    const todayBtn = document.getElementById('dailyTransactionsTodayBtn');
+    const yesterdayBtn = document.getElementById('dailyTransactionsYesterdayBtn');
+    const label = document.getElementById('dailyTransactionsDateLabel');
+    const dateKey = getSelectedDailyTransactionsDateKey();
+    if (label) label.textContent = `UTC ${dateKey}`;
+    if (todayBtn) {
+      const isActive = dailyTransactionsDateOffsetDays === 0;
+      todayBtn.classList.toggle('active', isActive);
+      todayBtn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    }
+    if (yesterdayBtn) {
+      const isActive = dailyTransactionsDateOffsetDays === -1;
+      yesterdayBtn.classList.toggle('active', isActive);
+      yesterdayBtn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    }
+  }
+
+  function getTodayValidationSummary(dateKeyArg = null) {
     const db = window._SQL_DB;
+    const dateKey = String(dateKeyArg || getUtcDateKey(0));
     const seedByVersion = Object.fromEntries(
       VERSION_KEYS.map(version => [version, { scheduleMiss: 0, missedOpportunity: 0, missedBlocked: 0 }])
     );
     if (!db) {
       return {
-        dateKey: getTodayUtcDateKey(),
+        dateKey,
         scheduleMiss: 0,
         missedOpportunity: 0,
         missedBlocked: 0,
@@ -643,7 +669,6 @@ function getNormalizedSymbolKey(sym) {
       };
     }
 
-    const dateKey = getTodayUtcDateKey();
     const out = {
       dateKey,
       scheduleMiss: 0,
@@ -881,16 +906,15 @@ function getNormalizedSymbolKey(sym) {
     badge.style.background = 'rgba(63,185,80,0.08)';
   }
 
-  function getTodayTransactions() {
+  function getTodayTransactions(dateKeyArg = null) {
     const db = window._SQL_DB;
     if (!db) return { fills: [], orders: [] };
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayStart = today.toISOString();
-    const tomorrowStart = new Date(today);
-    tomorrowStart.setDate(tomorrowStart.getDate() + 1);
-    const tomorrowStr = tomorrowStart.toISOString();
+    const dateKey = String(dateKeyArg || getUtcDateKey(0));
+    const todayStart = `${dateKey}T00:00:00.000Z`;
+    const nextDay = new Date(`${dateKey}T00:00:00.000Z`);
+    nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+    const tomorrowStr = nextDay.toISOString();
 
     const fills = [];
     const orders = [];
@@ -1021,9 +1045,11 @@ function getNormalizedSymbolKey(sym) {
     const modal = document.getElementById('dailyTransactionsModal');
     const contentDiv = document.getElementById('dailyTransactionsContent');
     if (!modal || !contentDiv) return;
+    updateDailyTransactionsDateControls();
 
-    const { fills, orders } = getTodayTransactions();
-    const validation = getTodayValidationSummary();
+    const dateKey = getSelectedDailyTransactionsDateKey();
+    const { fills, orders } = getTodayTransactions(dateKey);
+    const validation = getTodayValidationSummary(dateKey);
     const totalTransactions = fills.length + orders.length;
     const executableMisses = validation.missedOpportunity;
     const blockedMisses = validation.missedBlocked;
@@ -1187,6 +1213,7 @@ function getNormalizedSymbolKey(sym) {
   function openDailyTransactionsModal() {
     const modal = document.getElementById('dailyTransactionsModal');
     if (!modal) return;
+    updateDailyTransactionsDateControls();
     renderDailyTransactionsModal();
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
@@ -3345,7 +3372,24 @@ for (const version of VERSION_KEYS) {
   closeDailyTransactionsBtn?.addEventListener('click', closeDailyTransactionsModal);
 
   const refreshDailyTransactionsBtn = document.getElementById('refreshDailyTransactionsBtn');
-  refreshDailyTransactionsBtn?.addEventListener('click', renderDailyTransactionsModal);
+  refreshDailyTransactionsBtn?.addEventListener('click', () => {
+    updateDailyTransactionsDateControls();
+    renderDailyTransactionsModal();
+  });
+
+  const dailyTransactionsTodayBtn = document.getElementById('dailyTransactionsTodayBtn');
+  dailyTransactionsTodayBtn?.addEventListener('click', () => {
+    dailyTransactionsDateOffsetDays = 0;
+    updateDailyTransactionsDateControls();
+    renderDailyTransactionsModal();
+  });
+
+  const dailyTransactionsYesterdayBtn = document.getElementById('dailyTransactionsYesterdayBtn');
+  dailyTransactionsYesterdayBtn?.addEventListener('click', () => {
+    dailyTransactionsDateOffsetDays = -1;
+    updateDailyTransactionsDateControls();
+    renderDailyTransactionsModal();
+  });
 
   const dailyTransactionsModal = document.getElementById('dailyTransactionsModal');
   dailyTransactionsModal?.addEventListener('click', event => {
