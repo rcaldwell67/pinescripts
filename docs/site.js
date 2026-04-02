@@ -876,9 +876,17 @@ function getNormalizedSymbolKey(sym) {
       // Query paper fills
       try {
         const fillStmt = db.prepare(`
-          SELECT symbol, side, qty, price, transaction_time, order_id
-          FROM paper_fill_events
-          WHERE transaction_time >= ? AND transaction_time < ?
+          SELECT
+            f.symbol,
+            f.side,
+            f.qty,
+            f.price,
+            f.transaction_time,
+            f.order_id,
+            COALESCE(LOWER(l.version), 'unknown') AS version
+          FROM paper_fill_events f
+          LEFT JOIN paper_order_trade_links l ON l.order_id = f.order_id
+          WHERE f.transaction_time >= ? AND f.transaction_time < ?
           ORDER BY datetime(transaction_time) DESC
         `);
         fillStmt.bind([todayStart, tomorrowStr]);
@@ -896,9 +904,17 @@ function getNormalizedSymbolKey(sym) {
         const liveTableExists = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='live_fill_events'").length > 0;
         if (liveTableExists) {
           const liveFillStmt = db.prepare(`
-            SELECT symbol, side, qty, price, transaction_time, order_id
-            FROM live_fill_events
-            WHERE transaction_time >= ? AND transaction_time < ?
+            SELECT
+              f.symbol,
+              f.side,
+              f.qty,
+              f.price,
+              f.transaction_time,
+              f.order_id,
+              COALESCE(LOWER(l.version), 'unknown') AS version
+            FROM live_fill_events f
+            LEFT JOIN live_order_trade_links l ON l.order_id = f.order_id
+            WHERE f.transaction_time >= ? AND f.transaction_time < ?
             ORDER BY datetime(transaction_time) DESC
           `);
           liveFillStmt.bind([todayStart, tomorrowStr]);
@@ -915,9 +931,19 @@ function getNormalizedSymbolKey(sym) {
       // Query paper orders
       try {
         const orderStmt = db.prepare(`
-          SELECT symbol, status, event_type, event_time, order_id, qty, notional, filled_qty
-          FROM paper_order_events
-          WHERE event_time >= ? AND event_time < ?
+          SELECT
+            o.symbol,
+            o.status,
+            o.event_type,
+            o.event_time,
+            o.order_id,
+            o.qty,
+            o.notional,
+            o.filled_qty,
+            COALESCE(LOWER(l.version), 'unknown') AS version
+          FROM paper_order_events o
+          LEFT JOIN paper_order_trade_links l ON l.order_id = o.order_id
+          WHERE o.event_time >= ? AND o.event_time < ?
           ORDER BY datetime(event_time) DESC
         `);
         orderStmt.bind([todayStart, tomorrowStr]);
@@ -935,9 +961,19 @@ function getNormalizedSymbolKey(sym) {
         const liveTableExists = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='live_order_events'").length > 0;
         if (liveTableExists) {
           const liveOrderStmt = db.prepare(`
-            SELECT symbol, status, event_type, event_time, order_id, qty, notional, filled_qty
-            FROM live_order_events
-            WHERE event_time >= ? AND event_time < ?
+            SELECT
+              o.symbol,
+              o.status,
+              o.event_type,
+              o.event_time,
+              o.order_id,
+              o.qty,
+              o.notional,
+              o.filled_qty,
+              COALESCE(LOWER(l.version), 'unknown') AS version
+            FROM live_order_events o
+            LEFT JOIN live_order_trade_links l ON l.order_id = o.order_id
+            WHERE o.event_time >= ? AND o.event_time < ?
             ORDER BY datetime(event_time) DESC
           `);
           liveOrderStmt.bind([todayStart, tomorrowStr]);
@@ -1037,6 +1073,7 @@ function getNormalizedSymbolKey(sym) {
               <th style="padding: 6px; text-align: left; color: #666;">Symbol</th>
               <th style="padding: 6px; text-align: left; color: #666;">Type</th>
               <th style="padding: 6px; text-align: left; color: #666;">Status</th>
+              <th style="padding: 6px; text-align: left; color: #666;">Version</th>
               <th style="padding: 6px; text-align: right; color: #666;">Qty</th>
               <th style="padding: 6px; text-align: right; color: #666;">Notional</th>
               <th style="padding: 6px; text-align: left; color: #666;">Mode</th>
@@ -1049,6 +1086,7 @@ function getNormalizedSymbolKey(sym) {
         const symbol = order.symbol || '-';
         const eventType = order.event_type || '-';
         const status = order.status || '-';
+        const version = order.version ? String(order.version).toUpperCase() : 'UNKNOWN';
         const qty = order.qty ? Number(order.qty).toFixed(4) : '-';
         const notional = order.notional ? '$' + Number(order.notional).toFixed(2) : '-';
         const mode = order.mode ? `<span style="background: ${order.mode === 'live' ? '#ffcccc' : '#ccf'}; padding: 2px 6px; border-radius: 3px; font-size: 11px;">${order.mode}</span>` : '-';
@@ -1058,6 +1096,7 @@ function getNormalizedSymbolKey(sym) {
           <td style="padding: 6px; font-weight: bold;">${symbol}</td>
           <td style="padding: 6px;">${eventType}</td>
           <td style="padding: 6px;"><span style="background: ${status === 'submitted' || status === 'filled' ? '#90EE90' : status === 'rejected' ? '#FFB6C6' : '#F0F0F0'}; padding: 2px 6px; border-radius: 3px; font-size: 11px;">${status}</span></td>
+          <td style="padding: 6px; font-weight: 600;">${version}</td>
           <td style="padding: 6px; text-align: right;">${qty}</td>
           <td style="padding: 6px; text-align: right;">${notional}</td>
           <td style="padding: 6px;">${mode}</td>
@@ -1075,6 +1114,7 @@ function getNormalizedSymbolKey(sym) {
               <th style="padding: 6px; text-align: left; color: #666;">Time</th>
               <th style="padding: 6px; text-align: left; color: #666;">Symbol</th>
               <th style="padding: 6px; text-align: left; color: #666;">Side</th>
+              <th style="padding: 6px; text-align: left; color: #666;">Version</th>
               <th style="padding: 6px; text-align: right; color: #666;">Qty</th>
               <th style="padding: 6px; text-align: right; color: #666;">Price</th>
               <th style="padding: 6px; text-align: right; color: #666;">Total</th>
@@ -1087,6 +1127,7 @@ function getNormalizedSymbolKey(sym) {
         const time = fill.transaction_time ? new Date(fill.transaction_time.replace(' ', 'T')).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-';
         const symbol = fill.symbol || '-';
         const side = fill.side || '-';
+        const version = fill.version ? String(fill.version).toUpperCase() : 'UNKNOWN';
         const qty = fill.qty ? Number(fill.qty).toFixed(4) : '-';
         const price = fill.price ? '$' + Number(fill.price).toFixed(2) : '-';
         const total = (fill.qty && fill.price) ? '$' + (Number(fill.qty) * Number(fill.price)).toFixed(2) : '-';
@@ -1096,6 +1137,7 @@ function getNormalizedSymbolKey(sym) {
           <td style="padding: 6px;">${time}</td>
           <td style="padding: 6px; font-weight: bold;">${symbol}</td>
           <td style="padding: 6px; text-transform: uppercase; font-weight: bold; color: ${side === 'buy' ? '#008000' : '#CC0000'}">${side}</td>
+          <td style="padding: 6px; font-weight: 600;">${version}</td>
           <td style="padding: 6px; text-align: right;">${qty}</td>
           <td style="padding: 6px; text-align: right;">${price}</td>
           <td style="padding: 6px; text-align: right; font-weight: bold;">${total}</td>
