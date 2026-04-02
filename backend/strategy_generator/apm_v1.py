@@ -89,7 +89,7 @@ def _prepare_signal_frame(df, params):
         df['atr_pctile'] = (
             df['atr']
             .rolling(atr_pct_window)
-            .apply(lambda s: float((s <= s.iloc[-1]).sum()) / float(len(s)) * 100.0, raw=False)
+            .apply(lambda arr: float((arr <= arr[-1]).sum()) / float(len(arr)) * 100.0, raw=True)
         )
     else:
         df['atr_pctile'] = np.nan
