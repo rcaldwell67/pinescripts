@@ -107,8 +107,9 @@ const logsDataCache = {
   diagnosticRows: null,
   diagnosticPath: null,
 };
-const PAPER_TRADING_SUPPORTED_VERSIONS = new Set(['v1', 'v2', 'v3', 'v4', 'v5', 'v6']);
-const LIVE_TRADING_SUPPORTED_VERSIONS = new Set(['v1', 'v2', 'v3', 'v4', 'v5', 'v6']);
+const VERSION_KEYS = ['v1', 'v2', 'v3', 'v4', 'v5', 'v6'];
+const PAPER_TRADING_SUPPORTED_VERSIONS = new Set(VERSION_KEYS);
+const LIVE_TRADING_SUPPORTED_VERSIONS = new Set(VERSION_KEYS);
 let pendingDatasetSymbol = '';
 let dashboardRefreshInFlight = false;
 let dashboardAutoRefreshTimer = null;
@@ -1143,21 +1144,17 @@ function getNormalizedSymbolKey(sym) {
 
   function updateDatasetSwitcher() {
     const wrap = document.getElementById('datasetSwitcher');
-    const v1Select = document.getElementById('v1DatasetSelect');
-    const v2Select = document.getElementById('v2DatasetSelect');
-    // Only show for the currently selected symbol if it supports backtestVariants
-    const hasVariants = INSTRUMENTS[activeSym] && (
-      (INSTRUMENTS[activeSym].versions['v1'] && INSTRUMENTS[activeSym].versions['v1'].backtestVariants) ||
-      (INSTRUMENTS[activeSym].versions['v2'] && INSTRUMENTS[activeSym].versions['v2'].backtestVariants)
-    );
+    const versionConfigs = INSTRUMENTS[activeSym]?.versions || {};
+    const hasVariants = Object.values(versionConfigs).some(cfg => Boolean(cfg && cfg.backtestVariants));
     const show = activeMode === 'backtest' && hasVariants;
     if (wrap) wrap.style.display = show ? 'flex' : 'none';
     if (show) {
-      if (v1Select && INSTRUMENTS[activeSym].versions['v1'] && INSTRUMENTS[activeSym].versions['v1'].backtestVariants) {
-        v1Select.value = getSelectedBacktestVariant(activeSym, 'v1');
-      }
-      if (v2Select && INSTRUMENTS[activeSym].versions['v2'] && INSTRUMENTS[activeSym].versions['v2'].backtestVariants) {
-        v2Select.value = getSelectedBacktestVariant(activeSym, 'v2');
+      for (const version of VERSION_KEYS) {
+        const select = document.getElementById(`${version}DatasetSelect`);
+        if (!select) continue;
+        const cfg = versionConfigs[version];
+        if (!cfg || !cfg.backtestVariants) continue;
+        select.value = getSelectedBacktestVariant(activeSym, version);
       }
     }
   }
@@ -3003,13 +3000,11 @@ async function handleBacktestVariantChange(ver, value) {
   updateLastUpdated();
 }
 
-document.getElementById('v1DatasetSelect')?.addEventListener('change', event => {
-  handleBacktestVariantChange('v1', event.target.value);
-});
-
-document.getElementById('v2DatasetSelect')?.addEventListener('change', event => {
-  handleBacktestVariantChange('v2', event.target.value);
-});
+for (const version of VERSION_KEYS) {
+  document.getElementById(`${version}DatasetSelect`)?.addEventListener('change', event => {
+    handleBacktestVariantChange(version, event.target.value);
+  });
+}
 
 (async () => {
   hideDashboardData();

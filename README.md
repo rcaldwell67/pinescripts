@@ -65,9 +65,9 @@ This repository implements an Adaptive Pullback Momentum (APM) trading system wi
 
 - Strategy layer
 
-  - v1 and v2 signal engines live under backend/strategy_generator.
-  - v2 currently reuses the shared entry/exit evaluation framework used by v1, with version-specific defaults and overrides.
-  - Per-symbol and per-profile runtime overrides are loaded from backend/strategy_generator/configs/v1_runtime.json and backend/strategy_generator/configs/v2_runtime.json.
+  - v1 through v6 signal adapters live under backend/strategy_generator.
+  - v1 is the baseline evaluator; v2-v6 reuse the shared entry/exit evaluation framework with version-specific defaults and overrides.
+  - Runtime overrides are loaded from backend/strategy_generator/configs/v1_runtime.json through v6_runtime.json.
 
 - Risk and trade management layer
 
@@ -90,7 +90,7 @@ This repository implements an Adaptive Pullback Momentum (APM) trading system wi
   - Scheduler-health audit: backend/paper_trading/validate_scheduler_health.py.
   - Dashboard rendering: docs/index.html + docs/site.js.
 
-### Entry model (v1/v2 shared evaluator)
+### Entry model (v1-v6 shared evaluator)
 
 Entries are stage-gated. A bar must pass all enabled gates in sequence:
 
@@ -115,13 +115,13 @@ Near misses are logged when a bar passes some stages but fails before entry.
 
 - v1
 
-  - Supports long/short side-aware evaluation depending on symbol and execution mode.
+  - Baseline side-aware evaluator used for long/short regime gating.
   - Tuned with symbol-specific overrides for BTC/USD, ETH/USD, CLM, and CRF.
 
-- v2
+- v2-v6
 
-  - Uses v2 defaults and overrides from v2 runtime config.
-  - Current runtime has enable_longs = false and enable_shorts = true by default for configured symbols.
+  - Use version-specific defaults and runtime overrides from v2-v6 runtime config files.
+  - Reuse the shared evaluator path while preserving per-version risk and entry parameterization.
 
 ### Data source separation (important)
 
@@ -136,6 +136,19 @@ The trades table now includes a source column:
   - Generated from broker-synced realtime execution paths.
 
 Dashboard behavior is set to show broker-only rows for paper and live views.
+
+### Aligned reset workflow
+
+Use the unified aligned reset script to regenerate deterministic parity inputs
+across strategy versions:
+
+- `python reset_aligned_backtest_paper.py --all-versions`
+- `python reset_aligned_backtest_paper.py --version v3 --symbol BTC/USD`
+
+Legacy entrypoints are preserved as wrappers:
+
+- `reset_v1_aligned_backtest_paper.py`
+- `reset_v2_aligned_backtest_paper.py`
 
 ### Profile and guideline workflow
 

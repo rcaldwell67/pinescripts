@@ -2,14 +2,15 @@ import csv
 import json
 import os
 
-# Map CSV file(s) to symbol/version
+# Map CSV file(s) to symbol/version.
+# Extend this list if you add additional symbols at the repository root.
 TRADE_FILES = [
     {
-        'csv': 'apm_v1_trades.csv',
+        'csv': f'apm_{version}_trades.csv',
         'symbol': 'BTC_USD',
-        'version': 'v1',
-    },
-    # Add more trade files here if needed
+        'version': version,
+    }
+    for version in ('v1', 'v2', 'v3', 'v4', 'v5', 'v6')
 ]
 
 output = {}

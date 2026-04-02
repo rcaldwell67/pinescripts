@@ -13,14 +13,16 @@ import os
 
 DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../docs/data/tradingcopilot.db'))
 
-# Each entry maps a CSV file to symbol + version + mode
+# Each entry maps a CSV file to symbol + version + mode.
+# Uses root-level naming convention apm_v*_trades.csv for BTC_USD.
 TRADE_FILES = [
     {
-        'csv': os.path.abspath(os.path.join(os.path.dirname(__file__), '../../apm_v1_ytd_trades_btcusd_5m.csv')),
+        'csv': os.path.abspath(os.path.join(os.path.dirname(__file__), f'../../apm_{version}_trades.csv')),
         'symbol': 'BTC_USD',
-        'version': 'v1',
+        'version': version,
         'mode': 'backtest',
-    },
+    }
+    for version in ('v1', 'v2', 'v3', 'v4', 'v5', 'v6')
 ]
 
 # CSV column → DB column mapping (columns not listed here are skipped)
