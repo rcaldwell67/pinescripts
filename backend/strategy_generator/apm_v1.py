@@ -70,6 +70,9 @@ def _prepare_signal_frame(df, params):
     atr_len = int(signal["atr_len"])
     atr_baseline_len = int(signal.get("atr_baseline_len", 60))
     volume_sma_len = int(signal["volume_sma_len"])
+    bb_len = int(signal.get("bb_len", 20))
+    bb_std_mult = float(signal.get("bb_std_mult", 2.0))
+    donchian_len = int(signal.get("donchian_len", 20))
     macro_ema_period = int(signal.get("macro_ema_period", 0))
 
     df['ema21'] = ema(df['Close'], ema_fast)
@@ -90,6 +93,18 @@ def _prepare_signal_frame(df, params):
         )
     else:
         df['atr_pctile'] = np.nan
+    df['bb_mid'] = df['Close'].rolling(bb_len).mean()
+    bb_std = df['Close'].rolling(bb_len).std()
+    df['bb_upper'] = df['bb_mid'] + (bb_std_mult * bb_std)
+    df['bb_lower'] = df['bb_mid'] - (bb_std_mult * bb_std)
+    df['bb_width_pct'] = np.where(
+        df['bb_mid'].abs() > 0,
+        ((df['bb_upper'] - df['bb_lower']) / df['bb_mid'].abs()) * 100.0,
+        np.nan,
+    )
+    # Use prior-window extrema for current-bar breakout confirmation.
+    df['donchian_high_prev'] = df['High'].rolling(donchian_len).max().shift(1)
+    df['donchian_low_prev'] = df['Low'].rolling(donchian_len).min().shift(1)
     if macro_ema_period > 0:
         df['macro_ema'] = ema(df['Close'], macro_ema_period)
     else:
@@ -119,6 +134,9 @@ def _evaluate_short_entry_at(df, i, signal, et_hours):
     volume_mult_min = float(signal["volume_mult_min"])
     rvol_filter_enabled = bool(signal.get("rvol_filter_enabled", False))
     rvol_min = float(signal.get("rvol_min", 1.0))
+    bb_filter_enabled = bool(signal.get("bb_filter_enabled", False))
+    bb_width_pct_min = float(signal.get("bb_width_pct_min", 0.0))
+    donchian_filter_enabled = bool(signal.get("donchian_filter_enabled", False))
     min_body_atr_mult = float(signal["min_body_atr_mult"])
     atr_floor_pct = float(signal["atr_floor_pct"])
     atr_percentile_filter_enabled = bool(signal.get("atr_percentile_filter_enabled", False))
@@ -180,6 +198,24 @@ def _evaluate_short_entry_at(df, i, signal, et_hours):
         return {"is_entry": False, "passed_stage": passed_stage, "failed_stage": "rvol", "detail": f"failed rvol: rvol must be >= {rvol_min:g}"}
     passed_stage = "rvol"
 
+    if bb_filter_enabled and not (pd.notna(df['bb_width_pct'].iloc[i]) and df['bb_width_pct'].iloc[i] >= bb_width_pct_min):
+        return {
+            "is_entry": False,
+            "passed_stage": passed_stage,
+            "failed_stage": "bb_width",
+            "detail": f"failed bb_width: bb width % must be >= {bb_width_pct_min:g}",
+        }
+    passed_stage = "bb_width"
+
+    if donchian_filter_enabled and not (pd.notna(df['donchian_low_prev'].iloc[i]) and df['Close'].iloc[i] < df['donchian_low_prev'].iloc[i]):
+        return {
+            "is_entry": False,
+            "passed_stage": passed_stage,
+            "failed_stage": "donchian_break",
+            "detail": "failed donchian_break: close must break below prior donchian low",
+        }
+    passed_stage = "donchian_break"
+
     if atr_percentile_filter_enabled:
         atr_pctile = df['atr_pctile'].iloc[i]
         if not (pd.notna(atr_pctile) and atr_percentile_min <= atr_pctile <= atr_percentile_max):
@@ -223,6 +259,9 @@ def _evaluate_long_entry_at(df, i, signal, et_hours):
     volume_mult_min = float(signal["volume_mult_min"])
     rvol_filter_enabled = bool(signal.get("rvol_filter_enabled", False))
     rvol_min = float(signal.get("rvol_min", 1.0))
+    bb_filter_enabled = bool(signal.get("bb_filter_enabled", False))
+    bb_width_pct_min = float(signal.get("bb_width_pct_min", 0.0))
+    donchian_filter_enabled = bool(signal.get("donchian_filter_enabled", False))
     min_body_atr_mult = float(signal["min_body_atr_mult"])
     atr_floor_pct = float(signal["atr_floor_pct"])
     atr_percentile_filter_enabled = bool(signal.get("atr_percentile_filter_enabled", False))
@@ -283,6 +322,24 @@ def _evaluate_long_entry_at(df, i, signal, et_hours):
         return {"is_entry": False, "passed_stage": passed_stage, "failed_stage": "rvol", "detail": f"failed rvol: rvol must be >= {rvol_min:g}"}
     passed_stage = "rvol"
 
+    if bb_filter_enabled and not (pd.notna(df['bb_width_pct'].iloc[i]) and df['bb_width_pct'].iloc[i] >= bb_width_pct_min):
+        return {
+            "is_entry": False,
+            "passed_stage": passed_stage,
+            "failed_stage": "bb_width",
+            "detail": f"failed bb_width: bb width % must be >= {bb_width_pct_min:g}",
+        }
+    passed_stage = "bb_width"
+
+    if donchian_filter_enabled and not (pd.notna(df['donchian_high_prev'].iloc[i]) and df['Close'].iloc[i] > df['donchian_high_prev'].iloc[i]):
+        return {
+            "is_entry": False,
+            "passed_stage": passed_stage,
+            "failed_stage": "donchian_break",
+            "detail": "failed donchian_break: close must break above prior donchian high",
+        }
+    passed_stage = "donchian_break"
+
     if atr_percentile_filter_enabled:
         atr_pctile = df['atr_pctile'].iloc[i]
         if not (pd.notna(atr_pctile) and atr_percentile_min <= atr_pctile <= atr_percentile_max):
@@ -317,8 +374,10 @@ def apm_v1_latest_bar_analysis(df, side="short", params=None):
     momentum_bars = int(signal.get("momentum_bars", 5))
     adx_slope_bars = int(signal.get("adx_slope_bars", 0))
     atr_pct_window = int(signal.get("atr_percentile_window", 120)) if bool(signal.get("atr_percentile_filter_enabled", False)) else 0
+    bb_len = int(signal.get("bb_len", 20)) if bool(signal.get("bb_filter_enabled", False)) else 0
+    donchian_len = int(signal.get("donchian_len", 20)) if bool(signal.get("donchian_filter_enabled", False)) else 0
     ema_slow = int(signal["ema_slow"])
-    start_idx = max(ema_slow, slope_lookback + 1, momentum_bars, adx_slope_bars, atr_pct_window)
+    start_idx = max(ema_slow, slope_lookback + 1, momentum_bars, adx_slope_bars, atr_pct_window, bb_len, donchian_len + 1)
 
     latest_ts = None
     if len(df) > 0 and timestamps is not None and len(timestamps) == len(df):
@@ -349,8 +408,10 @@ def apm_v1_latest_bar_exit_analysis(df, side="short", params=None):
     momentum_bars = int(signal.get("momentum_bars", 5))
     adx_slope_bars = int(signal.get("adx_slope_bars", 0))
     atr_pct_window = int(signal.get("atr_percentile_window", 120)) if bool(signal.get("atr_percentile_filter_enabled", False)) else 0
+    bb_len = int(signal.get("bb_len", 20)) if bool(signal.get("bb_filter_enabled", False)) else 0
+    donchian_len = int(signal.get("donchian_len", 20)) if bool(signal.get("donchian_filter_enabled", False)) else 0
     ema_slow = int(signal["ema_slow"])
-    start_idx = max(ema_slow, slope_lookback + 1, momentum_bars, adx_slope_bars, atr_pct_window)
+    start_idx = max(ema_slow, slope_lookback + 1, momentum_bars, adx_slope_bars, atr_pct_window, bb_len, donchian_len + 1)
 
     latest_ts = None
     if len(df) > 0 and timestamps is not None and len(timestamps) == len(df):
@@ -439,10 +500,12 @@ def apm_v1_signals(df, side="short", params=None):
     momentum_bars = int(signal.get("momentum_bars", 5))
     adx_slope_bars = int(signal.get("adx_slope_bars", 0))
     atr_pct_window = int(signal.get("atr_percentile_window", 120)) if bool(signal.get("atr_percentile_filter_enabled", False)) else 0
+    bb_len = int(signal.get("bb_len", 20)) if bool(signal.get("bb_filter_enabled", False)) else 0
+    donchian_len = int(signal.get("donchian_len", 20)) if bool(signal.get("donchian_filter_enabled", False)) else 0
 
     evaluator = _evaluate_long_entry_at if side == "long" else _evaluate_short_entry_at
     entries = []
-    start_idx = max(ema_slow, slope_lookback + 1, momentum_bars, adx_slope_bars, atr_pct_window)
+    start_idx = max(ema_slow, slope_lookback + 1, momentum_bars, adx_slope_bars, atr_pct_window, bb_len, donchian_len + 1)
     for i in range(start_idx, len(df)):
         if evaluator(df, i, signal, et_hours)["is_entry"]:
             entries.append(i)
