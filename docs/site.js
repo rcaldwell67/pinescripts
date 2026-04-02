@@ -410,6 +410,7 @@ function getNormalizedSymbolKey(sym) {
     if (activeDataset !== 'backtest') return [];
     const latestBySymbol = new Map();
     const modeFilter = activeDataset === 'backtest' ? 'backtest' : (activeDataset === 'paper' ? 'paper' : 'live');
+    const requireBrokerRows = activeDataset === 'paper' || activeDataset === 'live';
 
     try {
       const stmt = db.prepare(`
@@ -2253,7 +2254,11 @@ async function handleSymbolSelect(newSym, dbInstance) {
     let rows = [];
     try {
       const stmt = db.prepare(
-        "SELECT * FROM trades WHERE REPLACE(REPLACE(REPLACE(REPLACE(UPPER(symbol), '/', ''), '_', ''), '-', ''), ' ', '') = ? AND mode = ? ORDER BY entry_time"
+        `SELECT * FROM trades
+         WHERE REPLACE(REPLACE(REPLACE(REPLACE(UPPER(symbol), '/', ''), '_', ''), '-', ''), ' ', '') = ?
+           AND mode = ?
+           ${requireBrokerRows ? "AND COALESCE(LOWER(source), '') = 'realtime'" : ''}
+         ORDER BY entry_time`
       );
       stmt.bind([normalizedSymbol, modeFilter]);
       while (stmt.step()) {
@@ -2263,7 +2268,7 @@ async function handleSymbolSelect(newSym, dbInstance) {
     } catch (e) {
       console.error('Error querying trades table:', e);
     }
-    console.log('[DEBUG] trade rows fetched for', activeSym, 'aliases:', symbolAliases, 'normalized:', normalizedSymbol, 'count:', rows.length, rows);
+    console.log('[DEBUG] trade rows fetched for', activeSym, 'aliases:', symbolAliases, 'normalized:', normalizedSymbol, 'brokerOnly:', requireBrokerRows, 'count:', rows.length, rows);
 
     // Backtest fallback: older DB snapshots may only have summary rows.
     let summaryRows = [];
