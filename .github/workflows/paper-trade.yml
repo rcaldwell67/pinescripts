@@ -42,7 +42,7 @@ on:
 
 concurrency:
   group: db-writer-main
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   paper-trade:
