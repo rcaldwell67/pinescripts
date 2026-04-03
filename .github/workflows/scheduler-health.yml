@@ -13,6 +13,8 @@ jobs:
   scheduler-health:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      ALERT_WEBHOOK_URL: ${{ secrets.SCHEDULER_ALERT_WEBHOOK }}
 
     steps:
       - name: Checkout repo
@@ -35,5 +37,18 @@ jobs:
         run: |
           python backend/paper_trading/validate_scheduler_health.py \
             --date "$(date -u +%F)" \
-            --max-schedule-misses 2 \
-            --max-gap-minutes 20
+            --max-schedule-misses 0 \
+            --max-gap-minutes 10
+
+      - name: Notify on scheduler health failure
+        if: failure()
+        run: |
+          if [ -z "${ALERT_WEBHOOK_URL}" ]; then
+            echo "SCHEDULER_ALERT_WEBHOOK secret is not set; skipping webhook notification."
+            exit 0
+          fi
+
+          payload="{\"text\":\"Scheduler Health Check failed in ${GITHUB_REPOSITORY} on ${GITHUB_REF_NAME}. Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}\"}"
+          curl -sS -X POST "${ALERT_WEBHOOK_URL}" \
+            -H "Content-Type: application/json" \
+            -d "${payload}"
