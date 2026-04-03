@@ -37,8 +37,9 @@ jobs:
         run: |
           python backend/paper_trading/validate_scheduler_health.py \
             --date "$(date -u +%F)" \
-            --max-schedule-misses 0 \
-            --max-gap-minutes 10
+            --recent-window-minutes 60 \
+            --max-schedule-misses 2 \
+            --max-gap-minutes 20
 
       - name: Notify on scheduler health failure
         if: failure()

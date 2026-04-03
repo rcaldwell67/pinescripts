@@ -17,7 +17,7 @@ import argparse
 import sqlite3
 import sys
 from dataclasses import dataclass
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -72,6 +72,14 @@ def _parse_args() -> argparse.Namespace:
         type=float,
         help="Optional hard cap for observed gap minutes; default derives from cadence threshold",
     )
+    parser.add_argument(
+        "--recent-window-minutes",
+        type=float,
+        help=(
+            "Optional sliding lookback window (minutes) for today's audit. "
+            "When set, counts and gap checks only include rows at/after now-window."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -96,7 +104,21 @@ def _versions_for_date(conn: sqlite3.Connection, audit_date: str) -> list[str]:
     return [str(row[0]) for row in rows if row[0]]
 
 
-def _load_non_scheduler_times(conn: sqlite3.Connection, audit_date: str, version: str) -> list[datetime]:
+def _window_start_for_today(audit_date: str, recent_window_minutes: float | None) -> datetime | None:
+    if recent_window_minutes is None or recent_window_minutes <= 0:
+        return None
+    today_utc = datetime.now(timezone.utc).date().isoformat()
+    if audit_date != today_utc:
+        return None
+    return datetime.now(timezone.utc) - timedelta(minutes=recent_window_minutes)
+
+
+def _load_non_scheduler_times(
+    conn: sqlite3.Connection,
+    audit_date: str,
+    version: str,
+    window_start: datetime | None = None,
+) -> list[datetime]:
     rows = conn.execute(
         """
         SELECT logged_at
@@ -109,20 +131,38 @@ def _load_non_scheduler_times(conn: sqlite3.Connection, audit_date: str, version
         (audit_date, version),
     ).fetchall()
     times = [paper_runner._parse_iso_ts(row[0]) for row in rows]
-    return [ts for ts in times if ts is not None]
+    filtered = [ts for ts in times if ts is not None]
+    if window_start is not None:
+        filtered = [ts for ts in filtered if ts >= window_start]
+    return filtered
 
 
-def _schedule_miss_count(conn: sqlite3.Connection, audit_date: str) -> int:
-    row = conn.execute(
+def _schedule_miss_count(
+    conn: sqlite3.Connection,
+    audit_date: str,
+    window_start: datetime | None = None,
+) -> int:
+    rows = conn.execute(
         """
-        SELECT COUNT(*)
+        SELECT logged_at
         FROM realtime_paper_log
         WHERE substr(logged_at, 1, 10) = ?
           AND status = 'schedule_miss'
         """,
         (audit_date,),
-    ).fetchone()
-    return int(row[0] or 0) if row else 0
+    ).fetchall()
+    if not rows:
+        return 0
+
+    if window_start is None:
+        return len(rows)
+
+    count = 0
+    for row in rows:
+        ts = paper_runner._parse_iso_ts(row[0])
+        if ts is not None and ts >= window_start:
+            count += 1
+    return count
 
 
 def _max_gap_minutes(times: list[datetime]) -> float:
@@ -141,20 +181,35 @@ def _latest_gap_minutes(times: list[datetime], audit_date: str) -> float | None:
     return (datetime.now(timezone.utc) - times[-1]).total_seconds() / 60.0
 
 
-def _audit_version(conn: sqlite3.Connection, audit_date: str, version: str) -> VersionHealth:
-    times = _load_non_scheduler_times(conn, audit_date, version)
+def _audit_version(
+    conn: sqlite3.Connection,
+    audit_date: str,
+    version: str,
+    window_start: datetime | None = None,
+) -> VersionHealth:
+    times = _load_non_scheduler_times(conn, audit_date, version, window_start)
     return VersionHealth(
         version=version,
         non_scheduler_rows=len(times),
-        schedule_miss_rows=_schedule_miss_count(conn, audit_date),
+        schedule_miss_rows=_schedule_miss_count(conn, audit_date, window_start),
         max_gap_minutes=_max_gap_minutes(times),
         latest_gap_minutes=_latest_gap_minutes(times, audit_date),
     )
 
 
-def _print_report(audit_date: str, audits: list[VersionHealth], threshold_minutes: float) -> None:
+def _print_report(
+    audit_date: str,
+    audits: list[VersionHealth],
+    threshold_minutes: float,
+    recent_window_minutes: float | None = None,
+    window_start: datetime | None = None,
+) -> None:
     print(f"Audit date (UTC): {audit_date}")
     print(f"Cadence threshold: {threshold_minutes:.1f}m")
+    if recent_window_minutes is not None and recent_window_minutes > 0:
+        print(f"Recent window: last {recent_window_minutes:.1f}m (today UTC only)")
+        if window_start is not None:
+            print(f"Window start (UTC): {window_start.isoformat()}")
     for audit in audits:
         print(f"\n[{audit.version}]")
         print(f"  non_scheduler_rows: {audit.non_scheduler_rows}")
@@ -188,11 +243,18 @@ def main() -> int:
             print(f"No realtime paper log versions found for {audit_date}.")
             return 0
 
-        audits = [_audit_version(conn, audit_date, version) for version in versions]
-        _print_report(audit_date, audits, threshold_minutes)
+        window_start = _window_start_for_today(audit_date, args.recent_window_minutes)
+        audits = [_audit_version(conn, audit_date, version, window_start) for version in versions]
+        _print_report(
+            audit_date,
+            audits,
+            threshold_minutes,
+            args.recent_window_minutes,
+            window_start,
+        )
 
         failures: list[str] = []
-        schedule_miss_rows = _schedule_miss_count(conn, audit_date)
+        schedule_miss_rows = _schedule_miss_count(conn, audit_date, window_start)
         if schedule_miss_rows > args.max_schedule_misses:
             failures.append(
                 f"schedule_miss rows {schedule_miss_rows} exceed allowed {args.max_schedule_misses}"
