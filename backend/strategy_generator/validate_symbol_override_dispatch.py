@@ -95,6 +95,22 @@ def _top_level_overrides(version: str) -> dict[str, dict[str, Any]]:
     return overrides if isinstance(overrides, dict) else {}
 
 
+def _shared_enabled_side(baseline_params: dict[str, Any], override_params: dict[str, Any]) -> str | None:
+    base_signal = baseline_params.get("signal", {}) if isinstance(baseline_params, dict) else {}
+    over_signal = override_params.get("signal", {}) if isinstance(override_params, dict) else {}
+
+    base_longs = bool(base_signal.get("enable_longs", False))
+    base_shorts = bool(base_signal.get("enable_shorts", True))
+    over_longs = bool(over_signal.get("enable_longs", False))
+    over_shorts = bool(over_signal.get("enable_shorts", True))
+
+    if base_longs and over_longs:
+        return "long"
+    if base_shorts and over_shorts:
+        return "short"
+    return None
+
+
 def main() -> int:
     try:
         df = _load_sample()
@@ -135,21 +151,27 @@ def main() -> int:
             return fail(f"run_backtest returned None for {version} symbol={symbol}")
 
         if any(path.startswith("risk.") for path in differing_paths):
+            side = _shared_enabled_side(baseline, expected)
+            if side is None:
+                return fail(
+                    f"no shared enabled side for risk validation in {version} symbol={symbol}"
+                )
+
             baseline_df = df.copy()
             override_df = df.copy()
-            live._entry_analysis(baseline_df, side="short", version=version, symbol="UNMATCHED_SYMBOL")
-            live._entry_analysis(override_df, side="short", version=version, symbol=symbol)
+            live._entry_analysis(baseline_df, side=side, version=version, symbol="UNMATCHED_SYMBOL")
+            live._entry_analysis(override_df, side=side, version=version, symbol=symbol)
             base_order = live._compute_order_params(
                 baseline_df,
                 ACCOUNT_EQUITY,
-                side="short",
+                side=side,
                 version=version,
                 symbol="UNMATCHED_SYMBOL",
             )
             override_order = live._compute_order_params(
                 override_df,
                 ACCOUNT_EQUITY,
-                side="short",
+                side=side,
                 version=version,
                 symbol=symbol,
             )
