@@ -11,6 +11,42 @@
   },
   "risk": {},
   "portfolio": {},
-  "symbol_overrides": {},
+  "symbol_overrides": {
+    "BTCUSDC": {
+      "signal": {
+        "enable_longs": true,
+        "enable_shorts": true,
+        "pullback_tolerance_pct": 0.2,
+        "momentum_bars": 5,
+        "rsi_long_min": 40,
+        "rsi_long_max": 58,
+        "rsi_short_min": 34,
+        "rsi_short_max": 50,
+        "adx_slope_bars": 2,
+        "adx_threshold": 22,
+        "di_spread": 0.0,
+        "session_filter_enabled": true,
+        "session_start_hour_et": 8,
+        "session_end_hour_et": 15,
+        "volume_mult_min": 0.3,
+        "min_body_atr_mult": 0.1,
+        "atr_floor_pct": 0.12,
+        "panic_suppression_mult": 1.2,
+        "rvol_filter_enabled": false,
+        "rvol_min": 1.05,
+        "atr_percentile_filter_enabled": true,
+        "atr_percentile_min": 20.0,
+        "atr_percentile_max": 85.0
+      },
+      "risk": {
+        "sl_atr_mult": 2.5,
+        "tp_atr_mult": 6.0,
+        "trail_activate_atr_mult": 2.5,
+        "trail_dist_atr_mult": 0.12,
+        "risk_pct": 0.8,
+        "max_bars_in_trade": 30
+      }
+    }
+  },
   "profiles": {}
 }
