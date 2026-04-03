@@ -73,6 +73,14 @@ def _parse_args() -> argparse.Namespace:
         help="Optional hard cap for observed gap minutes; default derives from cadence threshold",
     )
     parser.add_argument(
+        "--max-latest-gap-minutes",
+        type=float,
+        help=(
+            "Optional hard cap for latest gap minutes; "
+            "defaults to --max-gap-minutes (or cadence threshold when unset)."
+        ),
+    )
+    parser.add_argument(
         "--recent-window-minutes",
         type=float,
         help=(
@@ -233,6 +241,11 @@ def main() -> int:
 
     threshold_minutes = (args.schedule_interval_seconds * 1.5) / 60.0
     gap_limit_minutes = args.max_gap_minutes if args.max_gap_minutes is not None else threshold_minutes
+    latest_gap_limit_minutes = (
+        args.max_latest_gap_minutes
+        if args.max_latest_gap_minutes is not None
+        else gap_limit_minutes
+    )
 
     conn = sqlite3.connect(str(db_path))
     try:
@@ -265,9 +278,12 @@ def main() -> int:
                 failures.append(
                     f"{audit.version} max gap {audit.max_gap_minutes:.1f}m exceeds allowed {gap_limit_minutes:.1f}m"
                 )
-            if audit.latest_gap_minutes is not None and audit.latest_gap_minutes > gap_limit_minutes:
+            if (
+                audit.latest_gap_minutes is not None
+                and audit.latest_gap_minutes > latest_gap_limit_minutes
+            ):
                 failures.append(
-                    f"{audit.version} latest gap {audit.latest_gap_minutes:.1f}m exceeds allowed {gap_limit_minutes:.1f}m"
+                    f"{audit.version} latest gap {audit.latest_gap_minutes:.1f}m exceeds allowed {latest_gap_limit_minutes:.1f}m"
                 )
 
         if failures:

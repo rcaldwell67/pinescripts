@@ -39,7 +39,8 @@ jobs:
             --date "$(date -u +%F)" \
             --recent-window-minutes 60 \
             --max-schedule-misses 2 \
-            --max-gap-minutes 20
+            --max-gap-minutes 20 \
+            --max-latest-gap-minutes 25
 
       - name: Notify on scheduler health failure
         if: failure()
