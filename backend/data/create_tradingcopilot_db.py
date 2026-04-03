@@ -92,6 +92,7 @@ def create_database(db_path):
         CREATE TABLE IF NOT EXISTS Account_Info (
             account_id TEXT PRIMARY KEY,
             account_number TEXT,
+            account_mode TEXT,
             currency TEXT,
             status TEXT,
             beginning_balance REAL,

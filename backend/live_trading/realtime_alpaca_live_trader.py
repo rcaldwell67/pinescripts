@@ -240,6 +240,92 @@ def _upsert_summary(conn: sqlite3.Connection, symbol: str, version: str, status:
     )
 
 
+def _ensure_account_info_table(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS Account_Info (
+            account_id TEXT PRIMARY KEY,
+            account_number TEXT,
+            account_mode TEXT,
+            currency TEXT,
+            status TEXT,
+            beginning_balance REAL,
+            current_balance REAL,
+            buying_power REAL,
+            cash REAL,
+            last_event TEXT,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+    columns = {
+        str(row[1]).lower()
+        for row in conn.execute("PRAGMA table_info(Account_Info)").fetchall()
+        if len(row) > 1
+    }
+    if "account_mode" not in columns:
+        conn.execute("ALTER TABLE Account_Info ADD COLUMN account_mode TEXT")
+
+
+def _to_float(value: Any, default: float = 0.0) -> float:
+    try:
+        if value is None:
+            return default
+        return float(value)
+    except Exception:
+        return default
+
+
+def _upsert_account_info(conn: sqlite3.Connection, account: dict[str, Any], *, event_type: str) -> None:
+    _ensure_account_info_table(conn)
+    account_id = str(account.get("id") or "live-account")
+    account_number = str(account.get("account_number") or "")
+    currency = str(account.get("currency") or "USD")
+    status = str(account.get("status") or "")
+    current_balance = _to_float(account.get("equity") or account.get("last_equity") or account.get("cash"), 0.0)
+    buying_power = _to_float(account.get("buying_power"), 0.0)
+    cash = _to_float(account.get("cash"), 0.0)
+
+    existing = conn.execute(
+        "SELECT beginning_balance FROM Account_Info WHERE account_id = ? LIMIT 1",
+        (account_id,),
+    ).fetchone()
+    beginning_balance = _to_float(existing[0], current_balance) if existing else current_balance
+
+    conn.execute(
+        """
+        INSERT INTO Account_Info (
+            account_id, account_number, account_mode, currency, status,
+            beginning_balance, current_balance, buying_power, cash, last_event, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(account_id) DO UPDATE SET
+            account_number = excluded.account_number,
+            account_mode = excluded.account_mode,
+            currency = excluded.currency,
+            status = excluded.status,
+            beginning_balance = Account_Info.beginning_balance,
+            current_balance = excluded.current_balance,
+            buying_power = excluded.buying_power,
+            cash = excluded.cash,
+            last_event = excluded.last_event,
+            updated_at = excluded.updated_at
+        """,
+        (
+            account_id,
+            account_number,
+            "live",
+            currency,
+            status,
+            beginning_balance,
+            current_balance,
+            buying_power,
+            cash,
+            event_type,
+            datetime.now(timezone.utc).isoformat(),
+        ),
+    )
+
+
 def _ensure_fill_table(conn: sqlite3.Connection) -> None:
     conn.execute(
         """
@@ -504,6 +590,8 @@ def main() -> int:
     except sqlite3.OperationalError:
         pass
 
+    _upsert_account_info(conn, account, event_type="live:heartbeat")
+
     failures: list[str] = []
     for symbol in symbols:
         try:
@@ -515,6 +603,8 @@ def main() -> int:
 
     fill_count = _sync_fill_events(conn, api, symbols, version)
     print(f"Synced live fill activities: {fill_count}")
+
+    _upsert_account_info(conn, api.get_account(), event_type="live:post_sync")
 
     conn.commit()
     conn.close()

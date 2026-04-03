@@ -541,14 +541,33 @@ function getNormalizedSymbolKey(sym) {
     }
   }
 
-  function getLatestAccountInfo() {
+  function _normalizeAccountMode(value) {
+    const normalized = String(value || '').trim().toLowerCase();
+    if (normalized === 'paper' || normalized === 'live') return normalized;
+    return '';
+  }
+
+  function _inferAccountModeFromRow(row) {
+    const event = String(row?.last_event || '').trim().toLowerCase();
+    if (event.startsWith('live:') || event.includes(' live')) return 'live';
+    if (event.startsWith('paper:') || event.includes('paper')) return 'paper';
+    return '';
+  }
+
+  function getLatestAccountInfoByMode() {
     const db = window._SQL_DB;
     if (!db) return null;
     try {
+      const schema = db.exec("PRAGMA table_info(Account_Info)");
+      const hasAccountMode = Boolean(
+        schema.length && schema[0].values.some(row => String(row[1] || '').toLowerCase() === 'account_mode')
+      );
+      const accountModeSelect = hasAccountMode ? 'account_mode' : "'' AS account_mode";
       const res = db.exec(`
         SELECT
           account_id,
           account_number,
+          ${accountModeSelect},
           currency,
           status,
           beginning_balance,
@@ -559,58 +578,90 @@ function getNormalizedSymbolKey(sym) {
           updated_at
         FROM Account_Info
         ORDER BY datetime(updated_at) DESC
-        LIMIT 1
+        LIMIT 50
       `);
-      if (!res.length || !res[0].values.length) return null;
+      if (!res.length || !res[0].values.length) {
+        return { paper: null, live: null };
+      }
       const cols = res[0].columns;
-      const row = res[0].values[0];
-      const obj = {};
-      cols.forEach((col, i) => {
-        obj[col] = row[i];
+      const rows = res[0].values.map(values => {
+        const obj = {};
+        cols.forEach((col, i) => {
+          obj[col] = values[i];
+        });
+        return obj;
       });
-      return obj;
+
+      let paper = null;
+      let live = null;
+      const unknownRows = [];
+
+      rows.forEach(row => {
+        const explicitMode = _normalizeAccountMode(row.account_mode);
+        const inferredMode = explicitMode || _inferAccountModeFromRow(row);
+        if (inferredMode === 'paper' && !paper) {
+          paper = row;
+          return;
+        }
+        if (inferredMode === 'live' && !live) {
+          live = row;
+          return;
+        }
+        unknownRows.push(row);
+      });
+
+      if (!paper && unknownRows.length) paper = unknownRows.shift();
+      if (!live && unknownRows.length) live = unknownRows.shift();
+
+      return { paper, live };
     } catch (err) {
       console.error('Error querying Account_Info:', err);
       return null;
     }
   }
 
-  function renderAccountInfoModal(data) {
-    const setText = (id, value) => {
-      const el = document.getElementById(id);
-      if (el) el.textContent = value ?? '-';
-    };
+  function renderAccountInfoPanel(panelId, modeLabel, data) {
+    const panel = document.getElementById(panelId);
+    if (!panel) return;
 
     if (!data) {
-      setText('aiAccountId', '-');
-      setText('aiAccountNumber', '-');
-      setText('aiStatus', 'No account data found');
-      setText('aiCurrency', '-');
-      setText('aiBeginningBalance', '-');
-      setText('aiCurrentBalance', '-');
-      setText('aiBuyingPower', '-');
-      setText('aiCash', '-');
-      setText('aiLastEvent', '-');
-      setText('aiUpdatedAt', '-');
+      panel.innerHTML = [
+        `<h3>${escapeHtml(modeLabel)} Account</h3>`,
+        `<div class="account-panel-empty">No ${escapeHtml(modeLabel.toLowerCase())} account data found.</div>`,
+      ].join('');
       return;
     }
 
-    setText('aiAccountId', String(data.account_id || '-'));
-    setText('aiAccountNumber', String(data.account_number || '-'));
-    setText('aiStatus', String(data.status || '-'));
-    setText('aiCurrency', String(data.currency || '-'));
-    setText('aiBeginningBalance', formatCurrencySafe(data.beginning_balance));
-    setText('aiCurrentBalance', formatCurrencySafe(data.current_balance));
-    setText('aiBuyingPower', formatCurrencySafe(data.buying_power));
-    setText('aiCash', formatCurrencySafe(data.cash));
-    setText('aiLastEvent', String(data.last_event || '-'));
-    setText('aiUpdatedAt', String(data.updated_at || '-'));
+    const rows = [
+      ['Account ID', String(data.account_id || '-')],
+      ['Account Number', String(data.account_number || '-')],
+      ['Status', String(data.status || '-')],
+      ['Currency', String(data.currency || '-')],
+      ['Beginning Balance', formatCurrencySafe(data.beginning_balance)],
+      ['Current Balance', formatCurrencySafe(data.current_balance)],
+      ['Buying Power', formatCurrencySafe(data.buying_power)],
+      ['Cash', formatCurrencySafe(data.cash)],
+      ['Last Event', String(data.last_event || '-')],
+      ['Updated At', String(data.updated_at || '-')],
+    ];
+    const content = rows.map(([label, value]) => (
+      `<div class="account-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(String(value ?? '-'))}</strong></div>`
+    )).join('');
+
+    panel.innerHTML = `<h3>${escapeHtml(modeLabel)} Account</h3>${content}`;
+  }
+
+  function renderAccountInfoModal(dataByMode) {
+    const paperData = dataByMode && dataByMode.paper ? dataByMode.paper : null;
+    const liveData = dataByMode && dataByMode.live ? dataByMode.live : null;
+    renderAccountInfoPanel('aiPaperPanel', 'Paper', paperData);
+    renderAccountInfoPanel('aiLivePanel', 'Live', liveData);
   }
 
   function openAccountInfoModal() {
     const modal = document.getElementById('accountInfoModal');
     if (!modal) return;
-    const data = getLatestAccountInfo();
+    const data = getLatestAccountInfoByMode();
     renderAccountInfoModal(data);
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');

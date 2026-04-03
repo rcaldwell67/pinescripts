@@ -567,6 +567,7 @@ def _ensure_account_info_table(conn: sqlite3.Connection) -> None:
         CREATE TABLE IF NOT EXISTS Account_Info (
             account_id TEXT PRIMARY KEY,
             account_number TEXT,
+            account_mode TEXT,
             currency TEXT,
             status TEXT,
             beginning_balance REAL,
@@ -578,6 +579,13 @@ def _ensure_account_info_table(conn: sqlite3.Connection) -> None:
         )
         """
     )
+    columns = {
+        str(row[1]).lower()
+        for row in conn.execute("PRAGMA table_info(Account_Info)").fetchall()
+        if len(row) > 1
+    }
+    if "account_mode" not in columns:
+        conn.execute("ALTER TABLE Account_Info ADD COLUMN account_mode TEXT")
 
 
 def _to_float(value: Any, default: float = 0.0) -> float:
@@ -608,11 +616,12 @@ def _upsert_account_info(conn: sqlite3.Connection, account: dict[str, Any], *, e
     conn.execute(
         """
         INSERT INTO Account_Info (
-            account_id, account_number, currency, status,
+            account_id, account_number, account_mode, currency, status,
             beginning_balance, current_balance, buying_power, cash, last_event, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(account_id) DO UPDATE SET
             account_number = excluded.account_number,
+            account_mode = excluded.account_mode,
             currency = excluded.currency,
             status = excluded.status,
             beginning_balance = Account_Info.beginning_balance,
@@ -625,6 +634,7 @@ def _upsert_account_info(conn: sqlite3.Connection, account: dict[str, Any], *, e
         (
             account_id,
             account_number,
+            "paper",
             currency,
             status,
             beginning_balance,

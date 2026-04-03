@@ -225,16 +225,10 @@
       <button id="closeAccountInfoBtn" class="account-modal-close" type="button" aria-label="Close account info modal">x</button>
     </div>
     <div class="account-modal-body">
-      <div class="account-row"><span>Account ID</span><strong id="aiAccountId">-</strong></div>
-      <div class="account-row"><span>Account Number</span><strong id="aiAccountNumber">-</strong></div>
-      <div class="account-row"><span>Status</span><strong id="aiStatus">-</strong></div>
-      <div class="account-row"><span>Currency</span><strong id="aiCurrency">-</strong></div>
-      <div class="account-row"><span>Beginning Balance</span><strong id="aiBeginningBalance">-</strong></div>
-      <div class="account-row"><span>Current Balance</span><strong id="aiCurrentBalance">-</strong></div>
-      <div class="account-row"><span>Buying Power</span><strong id="aiBuyingPower">-</strong></div>
-      <div class="account-row"><span>Cash</span><strong id="aiCash">-</strong></div>
-      <div class="account-row"><span>Last Event</span><strong id="aiLastEvent">-</strong></div>
-      <div class="account-row"><span>Updated At</span><strong id="aiUpdatedAt">-</strong></div>
+      <div class="account-grid">
+        <section id="aiPaperPanel" class="account-panel" aria-label="Paper account info"></section>
+        <section id="aiLivePanel" class="account-panel" aria-label="Live account info"></section>
+      </div>
     </div>
   </div>
 </div>

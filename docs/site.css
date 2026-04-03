@@ -390,7 +390,7 @@
     }
     .account-modal.open { display: flex; }
     .account-modal-card {
-      width: min(560px, 100%);
+      width: min(900px, 100%);
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 10px;
@@ -428,9 +428,30 @@
     }
     .account-modal-body {
       padding: 12px 16px 16px;
+    }
+    .account-grid {
       display: grid;
-      grid-template-columns: 1fr;
-      gap: 8px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .account-panel {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: rgba(13, 17, 23, 0.55);
+      padding: 10px 12px;
+    }
+    .account-panel h3 {
+      margin: 0 0 8px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .7px;
+      color: var(--muted);
+    }
+    .account-panel-empty {
+      color: var(--muted);
+      font-size: 12px;
+      padding: 10px 0;
+      text-align: center;
     }
     .account-row {
       display: flex;
@@ -444,6 +465,9 @@
     .account-row span { color: var(--muted); font-size: 12px; }
     .account-row strong { color: var(--text); font-size: 13px; font-weight: 600; text-align: right; }
     @media (max-width: 900px) {
+      .account-grid {
+        grid-template-columns: 1fr;
+      }
       .refresh-controls {
         width: 100%;
         justify-content: flex-start;
