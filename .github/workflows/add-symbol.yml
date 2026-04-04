@@ -48,25 +48,46 @@ jobs:
             exit 1
           fi
           # Validate symbol exists on Alpaca Paper Trading assets.
-          STATUS=$(curl -s -o /tmp/alpaca_resp.json -w "%{http_code}" \
-            -H "APCA-API-KEY-ID: $KEY" \
-            -H "APCA-API-SECRET-KEY: $SECRET" \
-            "https://paper-api.alpaca.markets/v2/assets/$SYMBOL")
-          RESP=$(cat /tmp/alpaca_resp.json)
-          if [ "$STATUS" = "200" ] && echo "$RESP" | grep -q '"symbol"'; then
-            echo "Alpaca validation passed for $SYMBOL"
-            DESC=$(echo "$RESP" | sed -n 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n1)
-            DESC=$(echo "$DESC" | tr '\r\n' ' ' | xargs)
-            echo "description=$DESC" >> $GITHUB_OUTPUT
-          elif [ "$STATUS" = "401" ] || [ "$STATUS" = "403" ]; then
-            echo "Alpaca Paper authentication failed (HTTP $STATUS). Check ALPACA_PAPER_API_KEY/ALPACA_PAPER_API_SECRET (or fallback ALPACA_API_KEY/ALPACA_API_SECRET)."
-            echo "$RESP"
-            exit 1
-          else
-            echo "Alpaca validation failed for $SYMBOL (HTTP $STATUS)"
+          VALIDATION_SYMBOL=""
+          DESC=""
+          RESP=""
+
+          for CANDIDATE in "$SYMBOL" "${SYMBOL//\//}"; do
+            [ -z "$CANDIDATE" ] && continue
+            CANDIDATE_URL=$(python - "$CANDIDATE" <<'PY'
+import sys
+from urllib.parse import quote
+print(quote(sys.argv[1], safe=''))
+PY
+)
+            STATUS=$(curl -s -o /tmp/alpaca_resp.json -w "%{http_code}" \
+              -H "APCA-API-KEY-ID: $KEY" \
+              -H "APCA-API-SECRET-KEY: $SECRET" \
+              "https://paper-api.alpaca.markets/v2/assets/$CANDIDATE_URL")
+            RESP=$(cat /tmp/alpaca_resp.json)
+
+            if [ "$STATUS" = "200" ] && echo "$RESP" | grep -q '"symbol"'; then
+              VALIDATION_SYMBOL="$CANDIDATE"
+              DESC=$(echo "$RESP" | sed -n 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n1)
+              DESC=$(echo "$DESC" | tr '\r\n' ' ' | xargs)
+              break
+            fi
+
+            if [ "$STATUS" = "401" ] || [ "$STATUS" = "403" ]; then
+              echo "Alpaca Paper authentication failed (HTTP $STATUS). Check ALPACA_PAPER_API_KEY/ALPACA_PAPER_API_SECRET (or fallback ALPACA_API_KEY/ALPACA_API_SECRET)."
+              echo "$RESP"
+              exit 1
+            fi
+          done
+
+          if [ -z "$VALIDATION_SYMBOL" ]; then
+            echo "Alpaca validation failed for $SYMBOL"
             echo "$RESP"
             exit 1
           fi
+
+          echo "Alpaca validation passed for $SYMBOL (validated as $VALIDATION_SYMBOL)"
+          echo "description=$DESC" >> $GITHUB_OUTPUT
 
       - name: Set up Python
         uses: actions/setup-python@v5
