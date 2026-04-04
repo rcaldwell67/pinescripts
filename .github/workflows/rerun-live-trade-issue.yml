@@ -5,7 +5,7 @@ on:
     types: [opened]
 
 concurrency:
-  group: db-writer-main
+  group: live-rerun-${{ github.event.issue.number }}
   cancel-in-progress: false
 
 jobs:

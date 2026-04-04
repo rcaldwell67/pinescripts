@@ -5,7 +5,7 @@ on:
     types: [opened, edited, labeled, reopened]
 
 concurrency:
-  group: db-writer-main
+  group: add-symbol-${{ github.event.issue.number }}
   cancel-in-progress: false
 
 jobs:
