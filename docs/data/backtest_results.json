@@ -5,56 +5,58 @@
         "symbol": "BTC/USD",
         "version": "v1",
         "beginning_equity": 1000.0,
-        "final_equity": 1233.9347411687665,
-        "total_trades": 40,
+        "final_equity": 1216.659654792404,
+        "total_trades": 41,
         "winning_trades": 28,
-        "losing_trades": 12,
-        "win_rate": 70.0,
-        "average_pnl": 5.848368529219177,
-        "total_pnl": 233.93474116876706,
+        "losing_trades": 13,
+        "win_rate": 68.29268292682927,
+        "average_pnl": 5.284381824204983,
+        "total_pnl": 216.65965479240433,
         "max_drawdown": 52.154230118191435,
-        "net_return_pct": 23.393474116876657,
+        "net_return_pct": 21.66596547924039,
         "first_trade_date": "2026-01-07 14:00:00+00:00",
-        "last_trade_date": "2026-03-29 15:25:00+00:00"
+        "last_trade_date": "2026-04-03 13:45:00+00:00"
       }
     ],
     "v2": [
       {
         "symbol": "BTC/USD",
         "version": "v2",
-        "beginning_equity": 1000.0,
-        "final_equity": 1498.8000333565174,
-        "total_trades": 31,
-        "winning_trades": 18,
-        "losing_trades": 13,
-        "win_rate": 58.06451612903226,
-        "average_pnl": 16.090323656661866,
-        "total_pnl": 498.8000333565179,
-        "max_drawdown": 102.49210625646379,
-        "net_return_pct": 49.880003335651736,
-        "first_trade_date": "2026-01-08 14:25:00+00:00",
-        "last_trade_date": "2026-03-29 17:15:00+00:00"
+        "beginning_equity": 999.9999999999999,
+        "final_equity": 1293.7129878097583,
+        "total_trades": 18,
+        "winning_trades": 14,
+        "losing_trades": 4,
+        "win_rate": 77.77777777777779,
+        "average_pnl": 16.317388211653267,
+        "total_pnl": 293.7129878097588,
+        "max_drawdown": 43.74313666292778,
+        "net_return_pct": 29.37129878097584,
+        "first_trade_date": "2026-01-07 14:00:00+00:00",
+        "last_trade_date": "2026-03-27 16:00:00+00:00"
       }
     ],
     "v3": [
       {
+        "symbol": "BTC/USD",
         "version": "v3",
-        "beginning_equity": 1000.0,
-        "final_equity": 1321.0204618483162,
-        "total_trades": 22,
-        "winning_trades": 12,
-        "losing_trades": 10,
-        "win_rate": 54.54545454545454,
-        "average_pnl": 14.591839174923457,
-        "total_pnl": 321.0204618483161,
-        "max_drawdown": 90.81258131543132,
-        "net_return_pct": 32.10204618483162,
-        "first_trade_date": "2026-01-08 14:25:00+00:00",
-        "last_trade_date": "2026-03-27 13:45:00+00:00"
+        "beginning_equity": 999.9999999999999,
+        "final_equity": 1293.7129878097583,
+        "total_trades": 18,
+        "winning_trades": 14,
+        "losing_trades": 4,
+        "win_rate": 77.77777777777779,
+        "average_pnl": 16.317388211653267,
+        "total_pnl": 293.7129878097588,
+        "max_drawdown": 43.74313666292778,
+        "net_return_pct": 29.37129878097584,
+        "first_trade_date": "2026-01-07 14:00:00+00:00",
+        "last_trade_date": "2026-03-27 16:00:00+00:00"
       }
     ],
     "v4": [
       {
+        "symbol": "BTC/USD",
         "version": "v4",
         "beginning_equity": 999.9999999999999,
         "final_equity": 1293.7129878097583,
@@ -72,6 +74,7 @@
     ],
     "v5": [
       {
+        "symbol": "BTC/USD",
         "version": "v5",
         "beginning_equity": 999.9999999999999,
         "final_equity": 1293.7129878097583,
@@ -89,6 +92,7 @@
     ],
     "v6": [
       {
+        "symbol": "BTC/USD",
         "version": "v6",
         "beginning_equity": 999.9999999999999,
         "final_equity": 1293.7129878097583,
@@ -102,6 +106,226 @@
         "net_return_pct": 29.37129878097584,
         "first_trade_date": "2026-01-07 14:00:00+00:00",
         "last_trade_date": "2026-03-27 16:00:00+00:00"
+      }
+    ]
+  },
+  "BTC/USDC": {
+    "v1": [
+      {
+        "symbol": "BTC/USDC",
+        "version": "v1",
+        "beginning_equity": 1000.0,
+        "final_equity": 1355.2424248427715,
+        "total_trades": 180,
+        "winning_trades": 116,
+        "losing_trades": 64,
+        "win_rate": 64.44444444444444,
+        "average_pnl": 1.9735690269042871,
+        "total_pnl": 355.2424248427717,
+        "max_drawdown": 30.664300390629023,
+        "net_return_pct": 35.524242484277146,
+        "first_trade_date": "2026-01-06 18:35:00+00:00",
+        "last_trade_date": "2026-04-03 13:45:00+00:00"
+      }
+    ],
+    "v2": [
+      {
+        "symbol": "BTC/USDC",
+        "version": "v2",
+        "beginning_equity": 1000.0,
+        "final_equity": 1091.0712909640943,
+        "total_trades": 22,
+        "winning_trades": 16,
+        "losing_trades": 6,
+        "win_rate": 72.72727272727273,
+        "average_pnl": 4.13960413473158,
+        "total_pnl": 91.07129096409476,
+        "max_drawdown": 24.60145985545887,
+        "net_return_pct": 9.107129096409427,
+        "first_trade_date": "2026-01-09 02:05:00+00:00",
+        "last_trade_date": "2026-03-25 09:05:00+00:00"
+      }
+    ],
+    "v3": [
+      {
+        "symbol": "BTC/USDC",
+        "version": "v3",
+        "beginning_equity": 1000.0,
+        "final_equity": 1208.1017017200681,
+        "total_trades": 18,
+        "winning_trades": 16,
+        "losing_trades": 2,
+        "win_rate": 88.88888888888889,
+        "average_pnl": 11.561205651114872,
+        "total_pnl": 208.1017017200677,
+        "max_drawdown": 17.21364267552167,
+        "net_return_pct": 20.810170172006814,
+        "first_trade_date": "2026-01-13 13:40:00+00:00",
+        "last_trade_date": "2026-03-31 19:20:00+00:00"
+      }
+    ],
+    "v4": [
+      {
+        "symbol": "BTC/USDC",
+        "version": "v4",
+        "beginning_equity": 1000.0,
+        "final_equity": 1208.1017017200681,
+        "total_trades": 18,
+        "winning_trades": 16,
+        "losing_trades": 2,
+        "win_rate": 88.88888888888889,
+        "average_pnl": 11.561205651114872,
+        "total_pnl": 208.1017017200677,
+        "max_drawdown": 17.21364267552167,
+        "net_return_pct": 20.810170172006814,
+        "first_trade_date": "2026-01-13 13:40:00+00:00",
+        "last_trade_date": "2026-03-31 19:20:00+00:00"
+      }
+    ],
+    "v5": [
+      {
+        "symbol": "BTC/USDC",
+        "version": "v5",
+        "beginning_equity": 1000.0,
+        "final_equity": 1208.1017017200681,
+        "total_trades": 18,
+        "winning_trades": 16,
+        "losing_trades": 2,
+        "win_rate": 88.88888888888889,
+        "average_pnl": 11.561205651114872,
+        "total_pnl": 208.1017017200677,
+        "max_drawdown": 17.21364267552167,
+        "net_return_pct": 20.810170172006814,
+        "first_trade_date": "2026-01-13 13:40:00+00:00",
+        "last_trade_date": "2026-03-31 19:20:00+00:00"
+      }
+    ],
+    "v6": [
+      {
+        "symbol": "BTC/USDC",
+        "version": "v6",
+        "beginning_equity": 1000.0,
+        "final_equity": 1208.1017017200681,
+        "total_trades": 18,
+        "winning_trades": 16,
+        "losing_trades": 2,
+        "win_rate": 88.88888888888889,
+        "average_pnl": 11.561205651114872,
+        "total_pnl": 208.1017017200677,
+        "max_drawdown": 17.21364267552167,
+        "net_return_pct": 20.810170172006814,
+        "first_trade_date": "2026-01-13 13:40:00+00:00",
+        "last_trade_date": "2026-03-31 19:20:00+00:00"
+      }
+    ]
+  },
+  "BTC/USDT": {
+    "v1": [
+      {
+        "symbol": "BTC/USDT",
+        "version": "v1",
+        "beginning_equity": 1000.0,
+        "final_equity": 1222.7985176605268,
+        "total_trades": 154,
+        "winning_trades": 102,
+        "losing_trades": 52,
+        "win_rate": 66.23376623376623,
+        "average_pnl": 1.4467436211722555,
+        "total_pnl": 222.79851766052735,
+        "max_drawdown": 36.401796080363056,
+        "net_return_pct": 22.279851766052683,
+        "first_trade_date": "2026-01-06 19:50:00+00:00",
+        "last_trade_date": "2026-04-03 02:05:00+00:00"
+      }
+    ],
+    "v2": [
+      {
+        "symbol": "BTC/USDT",
+        "version": "v2",
+        "beginning_equity": 1000.0,
+        "final_equity": 2442.2161588916583,
+        "total_trades": 67,
+        "winning_trades": 39,
+        "losing_trades": 28,
+        "win_rate": 58.2089552238806,
+        "average_pnl": 21.52561431181579,
+        "total_pnl": 1442.2161588916579,
+        "max_drawdown": 354.35244374255944,
+        "net_return_pct": 144.22161588916583,
+        "first_trade_date": "2026-01-07 14:00:00+00:00",
+        "last_trade_date": "2026-04-02 13:30:00+00:00"
+      }
+    ],
+    "v3": [
+      {
+        "symbol": "BTC/USDT",
+        "version": "v3",
+        "beginning_equity": 100000.0,
+        "final_equity": 100000.0,
+        "total_trades": 0,
+        "winning_trades": 0,
+        "losing_trades": 0,
+        "win_rate": 0.0,
+        "average_pnl": 0.0,
+        "total_pnl": 0.0,
+        "max_drawdown": 0.0,
+        "net_return_pct": 0.0,
+        "first_trade_date": null,
+        "last_trade_date": null
+      }
+    ],
+    "v4": [
+      {
+        "symbol": "BTC/USDT",
+        "version": "v4",
+        "beginning_equity": 1000.0000000000001,
+        "final_equity": 983.7372312653881,
+        "total_trades": 17,
+        "winning_trades": 7,
+        "losing_trades": 10,
+        "win_rate": 41.17647058823529,
+        "average_pnl": -0.9566334549771734,
+        "total_pnl": -16.26276873461195,
+        "max_drawdown": 166.32944827398455,
+        "net_return_pct": -1.6262768734611992,
+        "first_trade_date": "2026-01-15 18:35:00+00:00",
+        "last_trade_date": "2026-04-01 15:20:00+00:00"
+      }
+    ],
+    "v5": [
+      {
+        "symbol": "BTC/USDT",
+        "version": "v5",
+        "beginning_equity": 1000.0,
+        "final_equity": 975.7797469084628,
+        "total_trades": 48,
+        "winning_trades": 18,
+        "losing_trades": 30,
+        "win_rate": 37.5,
+        "average_pnl": -0.5045886060736976,
+        "total_pnl": -24.220253091537487,
+        "max_drawdown": 239.19223558893884,
+        "net_return_pct": -2.4220253091537187,
+        "first_trade_date": "2026-01-02 18:00:00+00:00",
+        "last_trade_date": "2026-04-01 15:20:00+00:00"
+      }
+    ],
+    "v6": [
+      {
+        "symbol": "BTC/USDT",
+        "version": "v6",
+        "beginning_equity": 1000.0000000000001,
+        "final_equity": 983.7372312653881,
+        "total_trades": 17,
+        "winning_trades": 7,
+        "losing_trades": 10,
+        "win_rate": 41.17647058823529,
+        "average_pnl": -0.9566334549771734,
+        "total_pnl": -16.26276873461195,
+        "max_drawdown": 166.32944827398455,
+        "net_return_pct": -1.6262768734611992,
+        "first_trade_date": "2026-01-15 18:35:00+00:00",
+        "last_trade_date": "2026-04-01 15:20:00+00:00"
       }
     ]
   },
@@ -123,6 +347,96 @@
         "first_trade_date": "2026-03-05 14:30:00+00:00",
         "last_trade_date": "2026-03-24 13:30:00+00:00"
       }
+    ],
+    "v2": [
+      {
+        "symbol": "CLM",
+        "version": "v2",
+        "beginning_equity": 1000.0000000000001,
+        "final_equity": 1214.8051652763593,
+        "total_trades": 4,
+        "winning_trades": 4,
+        "losing_trades": 0,
+        "win_rate": 100.0,
+        "average_pnl": 53.70129131908979,
+        "total_pnl": 214.80516527635916,
+        "max_drawdown": 0.0,
+        "net_return_pct": 21.480516527635913,
+        "first_trade_date": "2026-03-05 14:30:00+00:00",
+        "last_trade_date": "2026-03-25 14:30:00+00:00"
+      }
+    ],
+    "v3": [
+      {
+        "symbol": "CLM",
+        "version": "v3",
+        "beginning_equity": 1000.0000000000001,
+        "final_equity": 1214.8051652763593,
+        "total_trades": 4,
+        "winning_trades": 4,
+        "losing_trades": 0,
+        "win_rate": 100.0,
+        "average_pnl": 53.70129131908979,
+        "total_pnl": 214.80516527635916,
+        "max_drawdown": 0.0,
+        "net_return_pct": 21.480516527635913,
+        "first_trade_date": "2026-03-05 14:30:00+00:00",
+        "last_trade_date": "2026-03-25 14:30:00+00:00"
+      }
+    ],
+    "v4": [
+      {
+        "symbol": "CLM",
+        "version": "v4",
+        "beginning_equity": 1000.0000000000001,
+        "final_equity": 1214.8051652763593,
+        "total_trades": 4,
+        "winning_trades": 4,
+        "losing_trades": 0,
+        "win_rate": 100.0,
+        "average_pnl": 53.70129131908979,
+        "total_pnl": 214.80516527635916,
+        "max_drawdown": 0.0,
+        "net_return_pct": 21.480516527635913,
+        "first_trade_date": "2026-03-05 14:30:00+00:00",
+        "last_trade_date": "2026-03-25 14:30:00+00:00"
+      }
+    ],
+    "v5": [
+      {
+        "symbol": "CLM",
+        "version": "v5",
+        "beginning_equity": 1000.0000000000001,
+        "final_equity": 1214.8051652763593,
+        "total_trades": 4,
+        "winning_trades": 4,
+        "losing_trades": 0,
+        "win_rate": 100.0,
+        "average_pnl": 53.70129131908979,
+        "total_pnl": 214.80516527635916,
+        "max_drawdown": 0.0,
+        "net_return_pct": 21.480516527635913,
+        "first_trade_date": "2026-03-05 14:30:00+00:00",
+        "last_trade_date": "2026-03-25 14:30:00+00:00"
+      }
+    ],
+    "v6": [
+      {
+        "symbol": "CLM",
+        "version": "v6",
+        "beginning_equity": 1000.0000000000001,
+        "final_equity": 1214.8051652763593,
+        "total_trades": 4,
+        "winning_trades": 4,
+        "losing_trades": 0,
+        "win_rate": 100.0,
+        "average_pnl": 53.70129131908979,
+        "total_pnl": 214.80516527635916,
+        "max_drawdown": 0.0,
+        "net_return_pct": 21.480516527635913,
+        "first_trade_date": "2026-03-05 14:30:00+00:00",
+        "last_trade_date": "2026-03-25 14:30:00+00:00"
+      }
     ]
   },
   "CRF": {
@@ -143,6 +457,96 @@
         "first_trade_date": "2026-03-05 14:30:00+00:00",
         "last_trade_date": "2026-03-20 14:30:00+00:00"
       }
+    ],
+    "v2": [
+      {
+        "symbol": "CRF",
+        "version": "v2",
+        "beginning_equity": 999.9999999999999,
+        "final_equity": 1208.3271592572391,
+        "total_trades": 4,
+        "winning_trades": 4,
+        "losing_trades": 0,
+        "win_rate": 100.0,
+        "average_pnl": 52.0817898143098,
+        "total_pnl": 208.3271592572392,
+        "max_drawdown": 0.0,
+        "net_return_pct": 20.832715925723928,
+        "first_trade_date": "2026-03-05 14:30:00+00:00",
+        "last_trade_date": "2026-03-26 16:30:00+00:00"
+      }
+    ],
+    "v3": [
+      {
+        "symbol": "CRF",
+        "version": "v3",
+        "beginning_equity": 1000.0000000000001,
+        "final_equity": 1343.7160812663299,
+        "total_trades": 4,
+        "winning_trades": 4,
+        "losing_trades": 0,
+        "win_rate": 100.0,
+        "average_pnl": 85.9290203165825,
+        "total_pnl": 343.71608126633,
+        "max_drawdown": 0.0,
+        "net_return_pct": 34.37160812663297,
+        "first_trade_date": "2026-03-05 15:30:00+00:00",
+        "last_trade_date": "2026-03-25 14:30:00+00:00"
+      }
+    ],
+    "v4": [
+      {
+        "symbol": "CRF",
+        "version": "v4",
+        "beginning_equity": 1000.0000000000001,
+        "final_equity": 1343.7160812663299,
+        "total_trades": 4,
+        "winning_trades": 4,
+        "losing_trades": 0,
+        "win_rate": 100.0,
+        "average_pnl": 85.9290203165825,
+        "total_pnl": 343.71608126633,
+        "max_drawdown": 0.0,
+        "net_return_pct": 34.37160812663297,
+        "first_trade_date": "2026-03-05 15:30:00+00:00",
+        "last_trade_date": "2026-03-25 14:30:00+00:00"
+      }
+    ],
+    "v5": [
+      {
+        "symbol": "CRF",
+        "version": "v5",
+        "beginning_equity": 1000.0000000000001,
+        "final_equity": 1343.7160812663299,
+        "total_trades": 4,
+        "winning_trades": 4,
+        "losing_trades": 0,
+        "win_rate": 100.0,
+        "average_pnl": 85.9290203165825,
+        "total_pnl": 343.71608126633,
+        "max_drawdown": 0.0,
+        "net_return_pct": 34.37160812663297,
+        "first_trade_date": "2026-03-05 15:30:00+00:00",
+        "last_trade_date": "2026-03-25 14:30:00+00:00"
+      }
+    ],
+    "v6": [
+      {
+        "symbol": "CRF",
+        "version": "v6",
+        "beginning_equity": 1000.0000000000001,
+        "final_equity": 1343.7160812663299,
+        "total_trades": 4,
+        "winning_trades": 4,
+        "losing_trades": 0,
+        "win_rate": 100.0,
+        "average_pnl": 85.9290203165825,
+        "total_pnl": 343.71608126633,
+        "max_drawdown": 0.0,
+        "net_return_pct": 34.37160812663297,
+        "first_trade_date": "2026-03-05 15:30:00+00:00",
+        "last_trade_date": "2026-03-25 14:30:00+00:00"
+      }
     ]
   },
   "ETH/USD": {
@@ -151,225 +555,107 @@
         "symbol": "ETH/USD",
         "version": "v1",
         "beginning_equity": 1000.0,
-        "final_equity": 1259.3101500596706,
-        "total_trades": 101,
-        "winning_trades": 72,
-        "losing_trades": 29,
-        "win_rate": 71.28712871287128,
-        "average_pnl": 2.567427228313572,
-        "total_pnl": 259.3101500596708,
+        "final_equity": 1261.5249300152211,
+        "total_trades": 104,
+        "winning_trades": 74,
+        "losing_trades": 30,
+        "win_rate": 71.15384615384616,
+        "average_pnl": 2.5146627886078963,
+        "total_pnl": 261.52493001522123,
         "max_drawdown": 23.03646686741149,
-        "net_return_pct": 25.931015005967062,
+        "net_return_pct": 26.15249300152211,
         "first_trade_date": "2026-01-06 19:50:00+00:00",
-        "last_trade_date": "2026-03-31 10:30:00+00:00"
+        "last_trade_date": "2026-04-02 13:35:00+00:00"
       }
     ],
     "v2": [
       {
+        "symbol": "ETH/USD",
         "version": "v2",
         "beginning_equity": 1000.0,
-        "final_equity": 1737.439536995003,
-        "total_trades": 33,
-        "winning_trades": 19,
-        "losing_trades": 14,
-        "win_rate": 57.57575757575758,
-        "average_pnl": 22.346652636212198,
-        "total_pnl": 737.4395369950025,
-        "max_drawdown": 252.1134019420697,
-        "net_return_pct": 73.7439536995003,
+        "final_equity": 1211.8375151602768,
+        "total_trades": 32,
+        "winning_trades": 23,
+        "losing_trades": 9,
+        "win_rate": 71.875,
+        "average_pnl": 6.619922348758637,
+        "total_pnl": 211.83751516027638,
+        "max_drawdown": 33.9737426871784,
+        "net_return_pct": 21.183751516027677,
         "first_trade_date": "2026-01-07 14:00:00+00:00",
-        "last_trade_date": "2026-03-29 13:25:00+00:00"
-      }
-    ]
-  },
-  "BTC/USDC": {
-    "v1": [
-      {
-        "version": "v1",
-        "beginning_equity": 1000.0,
-        "final_equity": 1363.4229626184824,
-        "total_trades": 179,
-        "winning_trades": 116,
-        "losing_trades": 63,
-        "win_rate": 64.80446927374301,
-        "average_pnl": 2.030295880550182,
-        "total_pnl": 363.4229626184826,
-        "max_drawdown": 30.664300390629023,
-        "net_return_pct": 36.34229626184824,
-        "first_trade_date": "2026-01-06 18:35:00+00:00",
-        "last_trade_date": "2026-04-03 02:00:00+00:00"
-      }
-    ],
-    "v2": [
-      {
-        "version": "v2",
-        "beginning_equity": 1000.0,
-        "final_equity": 1091.0712909640943,
-        "total_trades": 22,
-        "winning_trades": 16,
-        "losing_trades": 6,
-        "win_rate": 72.72727272727273,
-        "average_pnl": 4.13960413473158,
-        "total_pnl": 91.07129096409476,
-        "max_drawdown": 24.60145985545887,
-        "net_return_pct": 9.107129096409427,
-        "first_trade_date": "2026-01-09 02:05:00+00:00",
-        "last_trade_date": "2026-03-25 09:05:00+00:00"
+        "last_trade_date": "2026-04-02 12:05:00+00:00"
       }
     ],
     "v3": [
       {
+        "symbol": "ETH/USD",
         "version": "v3",
         "beginning_equity": 1000.0,
-        "final_equity": 1081.975392183607,
-        "total_trades": 11,
-        "winning_trades": 9,
-        "losing_trades": 2,
-        "win_rate": 81.81818181818183,
-        "average_pnl": 7.45230838032791,
-        "total_pnl": 81.97539218360701,
-        "max_drawdown": 3.2375162888096156,
-        "net_return_pct": 8.197539218360703,
-        "first_trade_date": "2026-01-07 19:05:00+00:00",
-        "last_trade_date": "2026-04-02 12:50:00+00:00"
-      }
-    ],
-    "v4": [
-      {
-        "version": "v4",
-        "beginning_equity": 1000.0,
-        "final_equity": 1041.6066244865663,
-        "total_trades": 2,
-        "winning_trades": 2,
-        "losing_trades": 0,
-        "win_rate": 100.0,
-        "average_pnl": 20.80331224328308,
-        "total_pnl": 41.60662448656616,
-        "max_drawdown": 0.0,
-        "net_return_pct": 4.160662448656626,
-        "first_trade_date": "2026-02-13 14:25:00+00:00",
-        "last_trade_date": "2026-02-24 18:00:00+00:00"
-      }
-    ],
-    "v5": [
-      {
-        "version": "v5",
-        "beginning_equity": 1000.0,
-        "final_equity": 1041.6066244865663,
-        "total_trades": 2,
-        "winning_trades": 2,
-        "losing_trades": 0,
-        "win_rate": 100.0,
-        "average_pnl": 20.80331224328308,
-        "total_pnl": 41.60662448656616,
-        "max_drawdown": 0.0,
-        "net_return_pct": 4.160662448656626,
-        "first_trade_date": "2026-02-13 14:25:00+00:00",
-        "last_trade_date": "2026-02-24 18:00:00+00:00"
-      }
-    ],
-    "v6": [
-      {
-        "version": "v6",
-        "beginning_equity": 1000.0,
-        "final_equity": 1041.6066244865663,
-        "total_trades": 2,
-        "winning_trades": 2,
-        "losing_trades": 0,
-        "win_rate": 100.0,
-        "average_pnl": 20.80331224328308,
-        "total_pnl": 41.60662448656616,
-        "max_drawdown": 0.0,
-        "net_return_pct": 4.160662448656626,
-        "first_trade_date": "2026-02-13 14:25:00+00:00",
-        "last_trade_date": "2026-02-24 18:00:00+00:00"
-      }
-    ]
-  },
-  "BTC/USDT": {
-    "v1": [
-      {
-        "version": "v1",
-        "beginning_equity": 1000.0,
-        "final_equity": 1222.7985176605268,
-        "total_trades": 154,
-        "winning_trades": 102,
-        "losing_trades": 52,
-        "win_rate": 66.23376623376623,
-        "average_pnl": 1.4467436211722555,
-        "total_pnl": 222.79851766052735,
-        "max_drawdown": 36.401796080363056,
-        "net_return_pct": 22.279851766052683,
-        "first_trade_date": "2026-01-06 19:50:00+00:00",
-        "last_trade_date": "2026-04-03 02:05:00+00:00"
-      }
-    ],
-    "v2": [
-      {
-        "version": "v2",
-        "beginning_equity": 1000.0,
-        "final_equity": 2442.2161588916583,
-        "total_trades": 67,
-        "winning_trades": 39,
-        "losing_trades": 28,
-        "win_rate": 58.2089552238806,
-        "average_pnl": 21.52561431181579,
-        "total_pnl": 1442.2161588916579,
-        "max_drawdown": 354.35244374255944,
-        "net_return_pct": 144.22161588916583,
+        "final_equity": 1211.8375151602768,
+        "total_trades": 32,
+        "winning_trades": 23,
+        "losing_trades": 9,
+        "win_rate": 71.875,
+        "average_pnl": 6.619922348758637,
+        "total_pnl": 211.83751516027638,
+        "max_drawdown": 33.9737426871784,
+        "net_return_pct": 21.183751516027677,
         "first_trade_date": "2026-01-07 14:00:00+00:00",
-        "last_trade_date": "2026-04-02 13:30:00+00:00"
+        "last_trade_date": "2026-04-02 12:05:00+00:00"
       }
     ],
     "v4": [
       {
+        "symbol": "ETH/USD",
         "version": "v4",
-        "beginning_equity": 1000.0000000000001,
-        "final_equity": 983.7372312653881,
-        "total_trades": 17,
-        "winning_trades": 7,
-        "losing_trades": 10,
-        "win_rate": 41.17647058823529,
-        "average_pnl": -0.9566334549771734,
-        "total_pnl": -16.26276873461195,
-        "max_drawdown": 166.32944827398455,
-        "net_return_pct": -1.6262768734611992,
-        "first_trade_date": "2026-01-15 18:35:00+00:00",
-        "last_trade_date": "2026-04-01 15:20:00+00:00"
+        "beginning_equity": 1000.0,
+        "final_equity": 1211.8375151602768,
+        "total_trades": 32,
+        "winning_trades": 23,
+        "losing_trades": 9,
+        "win_rate": 71.875,
+        "average_pnl": 6.619922348758637,
+        "total_pnl": 211.83751516027638,
+        "max_drawdown": 33.9737426871784,
+        "net_return_pct": 21.183751516027677,
+        "first_trade_date": "2026-01-07 14:00:00+00:00",
+        "last_trade_date": "2026-04-02 12:05:00+00:00"
       }
     ],
     "v5": [
       {
+        "symbol": "ETH/USD",
         "version": "v5",
         "beginning_equity": 1000.0,
-        "final_equity": 975.7797469084628,
-        "total_trades": 48,
-        "winning_trades": 18,
-        "losing_trades": 30,
-        "win_rate": 37.5,
-        "average_pnl": -0.5045886060736976,
-        "total_pnl": -24.220253091537487,
-        "max_drawdown": 239.19223558893884,
-        "net_return_pct": -2.4220253091537187,
-        "first_trade_date": "2026-01-02 18:00:00+00:00",
-        "last_trade_date": "2026-04-01 15:20:00+00:00"
+        "final_equity": 1211.8375151602768,
+        "total_trades": 32,
+        "winning_trades": 23,
+        "losing_trades": 9,
+        "win_rate": 71.875,
+        "average_pnl": 6.619922348758637,
+        "total_pnl": 211.83751516027638,
+        "max_drawdown": 33.9737426871784,
+        "net_return_pct": 21.183751516027677,
+        "first_trade_date": "2026-01-07 14:00:00+00:00",
+        "last_trade_date": "2026-04-02 12:05:00+00:00"
       }
     ],
     "v6": [
       {
+        "symbol": "ETH/USD",
         "version": "v6",
-        "beginning_equity": 1000.0000000000001,
-        "final_equity": 983.7372312653881,
-        "total_trades": 17,
-        "winning_trades": 7,
-        "losing_trades": 10,
-        "win_rate": 41.17647058823529,
-        "average_pnl": -0.9566334549771734,
-        "total_pnl": -16.26276873461195,
-        "max_drawdown": 166.32944827398455,
-        "net_return_pct": -1.6262768734611992,
-        "first_trade_date": "2026-01-15 18:35:00+00:00",
-        "last_trade_date": "2026-04-01 15:20:00+00:00"
+        "beginning_equity": 1000.0,
+        "final_equity": 1211.8375151602768,
+        "total_trades": 32,
+        "winning_trades": 23,
+        "losing_trades": 9,
+        "win_rate": 71.875,
+        "average_pnl": 6.619922348758637,
+        "total_pnl": 211.83751516027638,
+        "max_drawdown": 33.9737426871784,
+        "net_return_pct": 21.183751516027677,
+        "first_trade_date": "2026-01-07 14:00:00+00:00",
+        "last_trade_date": "2026-04-02 12:05:00+00:00"
       }
     ]
   }
