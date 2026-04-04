@@ -100,9 +100,18 @@ jobs:
           if git diff --cached --quiet; then
             echo "No DB changes to commit."
           else
-            git commit -m "chore: rerun live trading ${{ steps.extract.outputs.symbol }} ${{ steps.extract.outputs.version }}"
-            git pull --rebase origin main
-            git push origin HEAD:main
+            git commit -m "chore: rerun live trading ${{ steps.extract.outputs.symbol }} ${{ steps.extract.outputs.version }} (#${{ github.event.issue.number }})"
+            for attempt in 1 2 3; do
+              echo "Push attempt ${attempt}/3"
+              if git pull --rebase origin main && git push origin HEAD:main; then
+                echo "Push succeeded."
+                exit 0
+              fi
+              echo "Push attempt ${attempt} failed; retrying after short delay..."
+              sleep 2
+            done
+            echo "ERROR: Unable to push after 3 attempts due to repeated remote updates."
+            exit 1
           fi
 
       - name: Comment with result

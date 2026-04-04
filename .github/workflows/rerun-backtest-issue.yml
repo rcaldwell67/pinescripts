@@ -26,6 +26,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -38,20 +40,25 @@ jobs:
       - name: Extract symbol and version from issue title
         id: extract
         run: |
-          # Title format: Rerun Backtest: SYMBOL VERSION
-          TITLE="${{ github.event.issue.title }}"
-          PARTS=($TITLE)
-          SYMBOL=${PARTS[2]}
-          VERSION=$(echo "${PARTS[3]}" | tr '[:upper:]' '[:lower:]')
-          case "$VERSION" in
-            v1|v2|v3|v4|v5|v6) ;;
-            *)
-              echo "Unsupported version in issue title: $VERSION (expected v1-v6)" >&2
-              exit 1
-              ;;
-          esac
-          echo "symbol=$SYMBOL" >> $GITHUB_OUTPUT
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          python - <<'PY'
+          import os
+          import re
+
+          title = os.environ.get('ISSUE_TITLE', '')
+          match = re.match(r'^Rerun Backtest:\s+(.+?)\s+(v\d+)\s*$', title, re.IGNORECASE)
+          if not match:
+            raise SystemExit(f'Could not parse symbol/version from issue title: {title!r}')
+
+          symbol = match.group(1).strip().upper()
+          version = match.group(2).strip().lower()
+          if version not in {"v1", "v2", "v3", "v4", "v5", "v6"}:
+            raise SystemExit(f'Unsupported version in issue title: {version!r} (expected v1-v6)')
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as f:
+            f.write(f'symbol={symbol}\n')
+            f.write(f'version={version}\n')
+          PY
+        env:
+          ISSUE_TITLE: ${{ github.event.issue.title }}
 
       - name: Run backtest for symbol and version
         run: |
@@ -74,9 +81,18 @@ jobs:
           if git diff --cached --quiet; then
             echo "No DB changes to commit."
           else
-            git commit -m "chore: rerun backtest ${{ steps.extract.outputs.symbol }} ${{ steps.extract.outputs.version }}"
-            git pull --rebase origin main
-            git push origin HEAD:main
+            git commit -m "chore: rerun backtest ${{ steps.extract.outputs.symbol }} ${{ steps.extract.outputs.version }} (#${{ github.event.issue.number }})"
+            for attempt in 1 2 3; do
+              echo "Push attempt ${attempt}/3"
+              if git pull --rebase origin main && git push origin HEAD:main; then
+                echo "Push succeeded."
+                exit 0
+              fi
+              echo "Push attempt ${attempt} failed; retrying after short delay..."
+              sleep 2
+            done
+            echo "ERROR: Unable to push after 3 attempts due to repeated remote updates."
+            exit 1
           fi
 
       - name: Comment with result
