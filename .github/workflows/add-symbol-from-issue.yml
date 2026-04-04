@@ -217,10 +217,11 @@ jobs:
           done
       - name: Commit DB changes
         run: |
-          git config --global user.name 'github-actions'
-          git config --global user.email 'github-actions@github.com'
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add docs/data/tradingcopilot.db backend/strategy_generator/configs/v1_runtime.json backend/strategy_generator/configs/v2_runtime.json backend/strategy_generator/configs/v3_runtime.json backend/strategy_generator/configs/v4_runtime.json backend/strategy_generator/configs/v5_runtime.json backend/strategy_generator/configs/v6_runtime.json
           git commit -m "Add symbol ${{ steps.parse.outputs.symbol }} via issue #${{ github.event.issue.number }}" || echo 'No changes'
+          git pull --rebase origin main || echo 'No remote changes'
           git push
       - name: Comment and close issue
         uses: peter-evans/close-issue@v3
