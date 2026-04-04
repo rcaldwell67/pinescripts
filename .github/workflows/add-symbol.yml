@@ -218,15 +218,38 @@ jobs:
             python backend/paper_trading/paper_trade_backtrader_alpaca.py --symbol "$SYMBOL" --version "$VERSION"
           done
 
-      - name: Rebase local changes before pushing
+      - name: Commit and push changes
+        shell: bash
         run: |
+          set -euo pipefail
+
           git config --global user.name 'github-actions[bot]'
           git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git pull --rebase origin main || true
 
-      - name: Commit and push changes
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "Add symbol ${{ steps.extract.outputs.symbol }} to tradingcopilot.db via issue request"
-          file_pattern: "docs/data/tradingcopilot.db backend/strategy_generator/configs/v1_runtime.json backend/strategy_generator/configs/v2_runtime.json backend/strategy_generator/configs/v3_runtime.json backend/strategy_generator/configs/v4_runtime.json backend/strategy_generator/configs/v5_runtime.json backend/strategy_generator/configs/v6_runtime.json"
-          branch: main
+          git add docs/data/tradingcopilot.db \
+            backend/strategy_generator/configs/v1_runtime.json \
+            backend/strategy_generator/configs/v2_runtime.json \
+            backend/strategy_generator/configs/v3_runtime.json \
+            backend/strategy_generator/configs/v4_runtime.json \
+            backend/strategy_generator/configs/v5_runtime.json \
+            backend/strategy_generator/configs/v6_runtime.json
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          git commit -m "Add symbol ${{ steps.extract.outputs.symbol }} to tradingcopilot.db via issue request"
+
+          for attempt in 1 2 3; do
+            echo "Push attempt ${attempt}/3"
+            if git pull --rebase origin main && git push origin HEAD:main; then
+              echo "Push succeeded."
+              exit 0
+            fi
+            echo "Push attempt ${attempt} failed; retrying after short delay..."
+            sleep 2
+          done
+
+          echo "ERROR: Unable to push after 3 attempts due to repeated remote updates."
+          exit 1
