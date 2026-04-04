@@ -135,7 +135,10 @@ The trades table now includes a source column:
 
   - Generated from broker-synced realtime execution paths.
 
-Dashboard behavior is set to show broker-only rows for paper and live views.
+Dashboard behavior uses source-aware filtering:
+
+- Live view: broker-only rows (`source='realtime'`).
+- Paper view: prefer broker rows when present, otherwise fall back to simulation/null-source rows.
 
 ### Aligned reset workflow
 
@@ -149,6 +152,12 @@ Legacy entrypoints are preserved as wrappers:
 
 - `reset_v1_aligned_backtest_paper.py`
 - `reset_v2_aligned_backtest_paper.py`
+
+### Dashboard data integrity check
+
+Run this utility to detect missing symbol/version coverage and summary-vs-trade drift:
+
+- `python backend/data/validate_dashboard_data_integrity.py`
 
 ### Profile and guideline workflow
 

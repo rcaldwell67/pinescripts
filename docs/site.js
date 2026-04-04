@@ -3010,7 +3010,7 @@ async function handleSymbolSelect(newSym, dbInstance) {
     const symbolAliases = getSymbolAliases(activeSym);
     const normalizedSymbol = getNormalizedSymbolKey(activeSym);
     const modeFilter = activeDataset === 'backtest' ? 'backtest' : (activeDataset === 'paper' ? 'paper' : 'live');
-    const requireBrokerRows = activeDataset === 'paper' || activeDataset === 'live';
+    const requireBrokerRows = activeDataset === 'live';
     let rows = [];
     try {
       const stmt = db.prepare(
@@ -3033,12 +3033,13 @@ async function handleSymbolSelect(newSym, dbInstance) {
     }
     console.log('[DEBUG] trade rows fetched for', activeSym, 'aliases:', symbolAliases, 'normalized:', normalizedSymbol, 'brokerOnly:', requireBrokerRows, 'count:', rows.length, rows);
 
-    // Backtest fallback: older DB snapshots may only have summary rows.
+    // Summary fallback: use result summaries for versions missing trade rows.
     let summaryRows = [];
-    if (activeDataset === 'backtest' && rows.length === 0) {
+    if (activeDataset === 'backtest' || activeDataset === 'paper') {
       try {
+        const summaryTable = activeDataset === 'backtest' ? 'backtest_results' : 'paper_trading_results';
         const stmt = db.prepare(
-          "SELECT metrics, notes, timestamp FROM backtest_results WHERE REPLACE(REPLACE(REPLACE(REPLACE(UPPER(symbol), '/', ''), '_', ''), '-', ''), ' ', '') = ? ORDER BY timestamp"
+          `SELECT metrics, notes, timestamp FROM ${summaryTable} WHERE REPLACE(REPLACE(REPLACE(REPLACE(UPPER(symbol), '/', ''), '_', ''), '-', ''), ' ', '') = ? ORDER BY timestamp`
         );
         stmt.bind([normalizedSymbol]);
         while (stmt.step()) {
@@ -3046,70 +3047,98 @@ async function handleSymbolSelect(newSym, dbInstance) {
         }
         stmt.free();
       } catch (e) {
-        console.error('Error querying backtest_results table:', e);
+        console.error('Error querying summary table:', e);
       }
-      console.log('[DEBUG] backtest summary rows fetched for', activeSym, 'count:', summaryRows.length);
+      console.log('[DEBUG] summary rows fetched for', activeSym, 'dataset:', activeDataset, 'count:', summaryRows.length);
     }
+
+    const buildSummaryRows = (metrics, notes, timestamp, version) => {
+      const startTime = metrics.first_trade_date || timestamp || null;
+      const endTime = metrics.last_trade_date || metrics.first_trade_date || timestamp || null;
+      const beginEq = Number(metrics.beginning_equity || getDatasetInitialCapital());
+      const finalEq = Number(metrics.final_equity || beginEq);
+      const netPnl = Number(metrics.total_pnl || (finalEq - beginEq));
+      return [
+        {
+          version,
+          entry_time: startTime,
+          exit_time: startTime,
+          direction: 'long',
+          entry_price: 0,
+          exit_price: 0,
+          result: 'OPEN',
+          dollar_pnl: 0,
+          equity: beginEq,
+          _summary: metrics,
+          _notes: notes || '',
+        },
+        {
+          version,
+          entry_time: endTime,
+          exit_time: endTime,
+          direction: 'long',
+          entry_price: 0,
+          exit_price: 0,
+          result: 'TP',
+          dollar_pnl: netPnl,
+          equity: finalEq,
+          _summary: metrics,
+          _notes: notes || '',
+        },
+      ];
+    };
+
+    const summaryByVersion = {};
+    summaryRows.forEach(r => {
+      let metrics = null;
+      try {
+        metrics = JSON.parse(r.metrics || '{}');
+      } catch (e) {
+        metrics = null;
+      }
+      if (!metrics) return;
+      let version = (metrics.version || '').toLowerCase();
+      if (!version || !vers[version]) {
+        const m = String(r.notes || '').match(/\b(v[1-6])\b/i);
+        version = m ? m[1].toLowerCase() : 'v1';
+      }
+      summaryByVersion[version] = buildSummaryRows(metrics, r.notes, r.timestamp, version);
+    });
+
     // Group by version and store in loaded cache
     const byVersion = {};
-    if (activeDataset === 'backtest' && rows.length === 0) {
-      summaryRows.forEach(r => {
-        let metrics = null;
-        try {
-          metrics = JSON.parse(r.metrics || '{}');
-        } catch (e) {
-          metrics = null;
-        }
-        if (!metrics) return;
-        let version = (metrics.version || '').toLowerCase();
-        if (!version || !vers[version]) {
-          const m = String(r.notes || '').match(/\b(v[1-6])\b/i);
-          version = m ? m[1].toLowerCase() : 'v1';
-        }
-        if (!byVersion[version]) byVersion[version] = [];
-        const startTime = metrics.first_trade_date || r.timestamp || null;
-        const endTime = metrics.last_trade_date || metrics.first_trade_date || r.timestamp || null;
-        const beginEq = Number(metrics.beginning_equity || getDatasetInitialCapital());
-        const finalEq = Number(metrics.final_equity || beginEq);
-        const netPnl = Number(metrics.total_pnl || (finalEq - beginEq));
-        byVersion[version].push(
-          {
-            version,
-            entry_time: startTime,
-            exit_time: startTime,
-            direction: 'long',
-            entry_price: 0,
-            exit_price: 0,
-            result: 'OPEN',
-            dollar_pnl: 0,
-            equity: beginEq,
-            _summary: metrics,
-            _notes: r.notes || '',
-          },
-          {
-            version,
-            entry_time: endTime,
-            exit_time: endTime,
-            direction: 'long',
-            entry_price: 0,
-            exit_price: 0,
-            result: 'TP',
-            dollar_pnl: netPnl,
-            equity: finalEq,
-            _summary: metrics,
-            _notes: r.notes || '',
-          }
-        );
-      });
+    if (rows.length === 0 && (activeDataset === 'backtest' || activeDataset === 'paper')) {
+      Object.assign(byVersion, summaryByVersion);
     } else {
+      const byVersionAllRows = {};
       rows.forEach(r => {
         const versionKey = String(r.version || 'v1').toLowerCase();
-        if (!byVersion[versionKey]) byVersion[versionKey] = [];
-        byVersion[versionKey].push({
+        if (!byVersionAllRows[versionKey]) byVersionAllRows[versionKey] = [];
+        byVersionAllRows[versionKey].push({
           ...r,
           version: versionKey,
         });
       });
+
+      Object.entries(byVersionAllRows).forEach(([versionKey, versionRows]) => {
+        if (activeDataset === 'paper') {
+          // Prefer realtime rows version-by-version; fallback to simulation/null-source
+          // when realtime rows are absent for that version.
+          const realtimeRows = versionRows.filter(r => String(r.source || '').toLowerCase() === 'realtime');
+          byVersion[versionKey] = realtimeRows.length > 0 ? realtimeRows : versionRows;
+          return;
+        }
+        byVersion[versionKey] = versionRows;
+      });
+
+      if (activeDataset === 'backtest' || activeDataset === 'paper') {
+        // Fill per-version gaps with summaries (for legitimate zero-trade versions).
+        Object.keys(vers).forEach(versionKey => {
+          if ((!byVersion[versionKey] || byVersion[versionKey].length === 0) && summaryByVersion[versionKey]) {
+            byVersion[versionKey] = summaryByVersion[versionKey];
+          }
+        });
+      }
     }
     Object.keys(vers).forEach(v => {
       loaded[activeSym][v] = byVersion[v] || [];
