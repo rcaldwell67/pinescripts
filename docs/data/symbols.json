@@ -18,5 +18,9 @@
   {
     "symbol": "BTC/USDC",
     "description": "Bitcoin / USD Coin"
+  },
+  {
+    "symbol": "BTC/USDT",
+    "description": "Bitcoin / USD Tether"
   }
 ]
