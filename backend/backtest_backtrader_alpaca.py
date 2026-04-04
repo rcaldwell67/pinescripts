@@ -214,6 +214,34 @@ def _to_native(val):
     return val
 
 
+def _timestamp_at(df, idx):
+    try:
+        i = int(idx)
+    except (TypeError, ValueError):
+        return None
+    if i < 0 or i >= len(df):
+        return None
+    if "timestamp" not in df.columns:
+        return None
+    try:
+        return str(df["timestamp"].iloc[i])
+    except Exception:
+        return None
+
+
+def _result_label(exit_type):
+    raw = str(exit_type or "").strip().upper()
+    if raw in {"TP", "TAKE_PROFIT"}:
+        return "TP"
+    if raw in {"SL", "STOP", "STOP_LOSS"}:
+        return "SL"
+    if "TRAIL" in raw:
+        return "TRAIL"
+    if raw in {"MB", "MAX_BARS", "MAX_BARS_IN_TRADE"}:
+        return "MB"
+    return raw or None
+
+
 def save_to_db(symbol: str, version: str,
                trades: "pd.DataFrame", df: "pd.DataFrame") -> None:
     if trades.empty:
@@ -276,6 +304,61 @@ def save_to_db(symbol: str, version: str,
         "INSERT INTO backtest_results (symbol, metrics, notes) VALUES (?, ?, ?)",
         (symbol, json.dumps(metrics), notes),
     )
+
+    norm_symbol = "".join(ch for ch in symbol.upper() if ch.isalnum())
+    conn.execute(
+        """
+        DELETE FROM trades
+        WHERE REPLACE(REPLACE(REPLACE(REPLACE(UPPER(symbol), '/', ''), '_', ''), '-', ''), ' ', '') = ?
+          AND LOWER(version) = ?
+          AND mode = 'backtest'
+        """,
+        (norm_symbol, version),
+    )
+
+    trade_rows = []
+    for _, trade in trades.iterrows():
+        entry_time = _timestamp_at(df, trade.get("entry_idx"))
+        exit_time = _timestamp_at(df, trade.get("exit_idx"))
+        entry_price = float(trade.get("entry", trade.get("entry_price", 0.0)) or 0.0)
+        exit_price = float(trade.get("exit", trade.get("exit_price", 0.0)) or 0.0)
+        dollar_pnl = float(trade.get("pnl", trade.get("dollar_pnl", 0.0)) or 0.0)
+        equity = float(trade.get("equity", 0.0) or 0.0)
+        beginning_equity = equity - dollar_pnl
+        pnl_pct = (dollar_pnl / beginning_equity * 100.0) if beginning_equity else None
+
+        side = str(trade.get("side", trade.get("direction", "")) or "").lower().strip()
+        direction = side if side in ("long", "short") else "short"
+
+        trade_rows.append(
+            (
+                symbol,
+                version,
+                "backtest",
+                entry_time,
+                exit_time,
+                direction,
+                entry_price,
+                exit_price,
+                _result_label(trade.get("exit_type", trade.get("result"))),
+                pnl_pct,
+                dollar_pnl,
+                equity,
+                "simulation",
+            )
+        )
+
+    if trade_rows:
+        conn.executemany(
+            """
+            INSERT INTO trades (
+                symbol, version, mode, entry_time, exit_time, direction,
+                entry_price, exit_price, result, pnl_pct, dollar_pnl, equity, source
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            trade_rows,
+        )
+
     conn.commit()
     conn.close()
     print(f"Results saved to DB: {symbol} {version}  "
