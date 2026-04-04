@@ -62,22 +62,22 @@ jobs:
         id: extract
         run: |
           python - <<'PY'
-          import os
-          import re
+import os
+import re
 
-          title = os.environ.get('ISSUE_TITLE', '')
-          match = re.match(r'^Rerun Live Trading:\s+(.+?)\s+(v\d+)\s*$', title, re.IGNORECASE)
-          if not match:
-              raise SystemExit(f'Could not parse symbol/version from issue title: {title!r}')
+title = os.environ.get('ISSUE_TITLE', '')
+match = re.match(r'^Rerun Live Trading:\s+(.+?)\s+(v\d+)\s*$', title, re.IGNORECASE)
+if not match:
+  raise SystemExit(f'Could not parse symbol/version from issue title: {title!r}')
 
-          symbol = match.group(1).strip().upper()
-          version = match.group(2).strip().lower()
-            if version not in {"v1", "v2", "v3", "v4", "v5", "v6"}:
-              raise SystemExit(f'Unsupported version in issue title: {version!r} (expected v1-v6)')
-          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as f:
-              f.write(f'symbol={symbol}\n')
-              f.write(f'version={version}\n')
-          PY
+symbol = match.group(1).strip().upper()
+version = match.group(2).strip().lower()
+if version not in {"v1", "v2", "v3", "v4", "v5", "v6"}:
+  raise SystemExit(f'Unsupported version in issue title: {version!r} (expected v1-v6)')
+with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as f:
+  f.write(f'symbol={symbol}\n')
+  f.write(f'version={version}\n')
+PY
         env:
           ISSUE_TITLE: ${{ github.event.issue.title }}
 
