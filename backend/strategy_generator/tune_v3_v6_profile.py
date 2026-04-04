@@ -239,19 +239,18 @@ def run() -> int:
         "seed": args.seed,
     }
 
-    # Enforce that best candidate passes all guidelines for Paper Trading
-    if not payload["best_candidate"]["pass_all"]:
-        print(f"ERROR: Best candidate does not pass all guidelines. Paper Trading requires pass_all=true.")
-        print(f"  Win Rate: {best_result.win_rate:.2f}% (required: >={args.min_win_rate}%, passed: {payload['best_candidate']['pass_win_rate']})")
-        print(f"  Net Return: {best_result.net_return_pct:.2f}% (required: >={args.min_net_return}%, passed: {payload['best_candidate']['pass_net_return']})")
-        print(f"  Max Drawdown: {best_result.max_drawdown_pct:.2f}% (required: <={args.max_drawdown}%, passed: {payload['best_candidate']['pass_drawdown']})")
-        return 1
-
     out_path = REPO_ROOT / args.out
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     print(f"Wrote tuning result to {out_path}")
     print(json.dumps(payload["best_candidate"], indent=2))
+
+    if not payload["best_candidate"]["pass_all"]:
+        print(f"WARNING: Best candidate does not pass all guidelines. Runtime config will NOT be updated.")
+        print(f"  Win Rate: {best_result.win_rate:.2f}% (required: >={args.min_win_rate}%, passed: {payload['best_candidate']['pass_win_rate']})")
+        print(f"  Net Return: {best_result.net_return_pct:.2f}% (required: >={args.min_net_return}%, passed: {payload['best_candidate']['pass_net_return']})")
+        print(f"  Max Drawdown: {best_result.max_drawdown_pct:.2f}% (required: <={args.max_drawdown}%, passed: {payload['best_candidate']['pass_drawdown']})")
+        return 0
 
     if args.apply:
         config_path = REPO_ROOT / "backend" / "strategy_generator" / "configs" / f"{version}_runtime.json"
