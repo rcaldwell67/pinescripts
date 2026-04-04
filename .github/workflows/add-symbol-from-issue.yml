@@ -82,22 +82,17 @@ jobs:
       - name: Parse symbol from issue
         id: parse
         run: |
-          python - <<'PY'
-          import os, re
-          body = os.environ.get('ISSUE_BODY', '')
-          m = re.search(r'Symbol:\s*([A-Za-z0-9_\-/\.]+)', body, re.IGNORECASE)
-          symbol = (m.group(1) if m else '').upper().strip()
-          desc = ''
-          m2 = re.search(r'Description:\s*(.*)', body)
-          if m2:
-            desc = m2.group(1).strip()
-          if not symbol:
-            raise SystemExit('Could not parse Symbol: from issue body')
-          out = os.environ['GITHUB_OUTPUT']
-          with open(out, 'a', encoding='utf-8') as f:
-            f.write(f'symbol={symbol}\n')
-            f.write(f'desc={desc}\n')
-PY
+          BODY="${ISSUE_BODY:-}"
+          SYMBOL=$(printf '%s' "$BODY" | sed -nE 's/.*[Ss]ymbol:[[:space:]]*([A-Za-z0-9_\-\/\.]+).*/\1/p' | head -n1 | tr '[:lower:]' '[:upper:]' | xargs)
+          DESC=$(printf '%s' "$BODY" | sed -nE 's/.*[Dd]escription:[[:space:]]*(.*)$/\1/p' | head -n1 | xargs)
+
+          if [ -z "$SYMBOL" ]; then
+            echo "Could not parse Symbol: from issue body"
+            exit 1
+          fi
+
+          echo "symbol=$SYMBOL" >> "$GITHUB_OUTPUT"
+          echo "desc=$DESC" >> "$GITHUB_OUTPUT"
         env:
           ISSUE_BODY: ${{ github.event.issue.body }}
       - name: Add symbol to DB
@@ -117,10 +112,10 @@ PY
             for CANDIDATE in "$SYMBOL" "${SYMBOL//\//}"; do
               [ -z "$CANDIDATE" ] && continue
               CANDIDATE_URL=$(python - "$CANDIDATE" <<'PY'
-import sys
-from urllib.parse import quote
-print(quote(sys.argv[1], safe=''))
-PY
+              import sys
+              from urllib.parse import quote
+              print(quote(sys.argv[1], safe=''))
+              PY
               )
               STATUS=$(curl -s -o /tmp/alpaca_resp.json -w "%{http_code}" \
                 -H "APCA-API-KEY-ID: $KEY" \
@@ -146,28 +141,28 @@ PY
 
           if [ -z "$VALIDATION_SYMBOL" ]; then
             CACHE_RESULT=$(python - "$SYMBOL" <<'PY'
-import sqlite3
-import sys
+            import sqlite3
+            import sys
 
-symbol = sys.argv[1].strip().upper()
-candidates = [symbol]
-no_slash = symbol.replace('/', '')
-if no_slash != symbol:
-  candidates.append(no_slash)
+            symbol = sys.argv[1].strip().upper()
+            candidates = [symbol]
+            no_slash = symbol.replace('/', '')
+            if no_slash != symbol:
+              candidates.append(no_slash)
 
-conn = sqlite3.connect('docs/data/tradingcopilot.db')
-cur = conn.cursor()
-row = None
-for cand in candidates:
-  cur.execute("SELECT symbol, COALESCE(name, '') FROM alpaca_symbols WHERE UPPER(symbol)=UPPER(?) LIMIT 1", (cand,))
-  row = cur.fetchone()
-  if row:
-    break
-conn.close()
+            conn = sqlite3.connect('docs/data/tradingcopilot.db')
+            cur = conn.cursor()
+            row = None
+            for cand in candidates:
+              cur.execute("SELECT symbol, COALESCE(name, '') FROM alpaca_symbols WHERE UPPER(symbol)=UPPER(?) LIMIT 1", (cand,))
+              row = cur.fetchone()
+              if row:
+                break
+            conn.close()
 
-if row:
-  print(f"{row[0]}|{row[1]}")
-PY
+            if row:
+              print(f"{row[0]}|{row[1]}")
+            PY
             )
             if [ -n "$CACHE_RESULT" ]; then
               VALIDATION_SYMBOL="${CACHE_RESULT%%|*}"
