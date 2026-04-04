@@ -1,0 +1,106 @@
+{
+  "version": "v1",
+  "profile": "guideline_closed",
+  "guidelines": {
+    "win_rate_min": 70.0,
+    "net_return_min": 20.0,
+    "max_drawdown_max": 4.5
+  },
+  "symbols": [
+    {
+      "symbol": "BTC/USD",
+      "asset_class": "crypto",
+      "trades": 96,
+      "win_rate": 65.625,
+      "net_return_pct": 21.83951534970967,
+      "max_drawdown_pct": 3.4630606688590486,
+      "pass_win_rate": false,
+      "pass_net_return": true,
+      "pass_drawdown": true,
+      "pass_all": false
+    },
+    {
+      "symbol": "CLM",
+      "asset_class": "stocks",
+      "trades": 3,
+      "win_rate": 100.0,
+      "net_return_pct": 20.746083257803495,
+      "max_drawdown_pct": 0.0,
+      "pass_win_rate": true,
+      "pass_net_return": true,
+      "pass_drawdown": true,
+      "pass_all": true
+    },
+    {
+      "symbol": "CRF",
+      "asset_class": "stocks",
+      "trades": 3,
+      "win_rate": 100.0,
+      "net_return_pct": 20.468718210675174,
+      "max_drawdown_pct": 0.0,
+      "pass_win_rate": true,
+      "pass_net_return": true,
+      "pass_drawdown": true,
+      "pass_all": true
+    },
+    {
+      "symbol": "ETH/USD",
+      "asset_class": "crypto",
+      "trades": 91,
+      "win_rate": 72.52747252747253,
+      "net_return_pct": 20.119384664777208,
+      "max_drawdown_pct": 1.7892216000000052,
+      "pass_win_rate": true,
+      "pass_net_return": true,
+      "pass_drawdown": true,
+      "pass_all": true
+    },
+    {
+      "symbol": "BTC/USDC",
+      "asset_class": "crypto",
+      "trades": 128,
+      "win_rate": 65.625,
+      "net_return_pct": 30.314966464514193,
+      "max_drawdown_pct": 4.171337877863895,
+      "pass_win_rate": false,
+      "pass_net_return": true,
+      "pass_drawdown": true,
+      "pass_all": false
+    },
+    {
+      "symbol": "BTC/USDT",
+      "asset_class": "crypto",
+      "trades": 158,
+      "win_rate": 67.72151898734177,
+      "net_return_pct": 25.26228809891966,
+      "max_drawdown_pct": 2.4866016288632564,
+      "pass_win_rate": false,
+      "pass_net_return": true,
+      "pass_drawdown": true,
+      "pass_all": false
+    }
+  ],
+  "summary": {
+    "overall": {
+      "symbols": 6,
+      "pass_all": 3,
+      "avg_wr": 78.58316525246904,
+      "avg_net": 23.125159341066567,
+      "avg_dd": 1.985036962597701
+    },
+    "crypto": {
+      "symbols": 4,
+      "pass_all": 1,
+      "avg_wr": 67.87474787870357,
+      "avg_net": 24.384038644480185,
+      "avg_dd": 2.9775554438965512
+    },
+    "stocks": {
+      "symbols": 2,
+      "pass_all": 2,
+      "avg_wr": 100.0,
+      "avg_net": 20.607400734239334,
+      "avg_dd": 0.0
+    }
+  }
+}

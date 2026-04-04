@@ -1,0 +1,38 @@
+{
+  "symbol": "BTC/USDC",
+  "profile": "guideline_closed",
+  "constraints": {
+    "min_win_rate": 70.0,
+    "min_net_return": 20.0,
+    "max_drawdown": 4.5
+  },
+  "base": {
+    "trades": 128,
+    "win_rate": 65.625,
+    "net_return_pct": 30.314966464514193,
+    "max_drawdown_pct": 4.171337877863895
+  },
+  "best_candidate": {
+    "pullback_tolerance_pct": 0.2,
+    "rsi_short_max": 50,
+    "adx_threshold": 22,
+    "di_spread": 5.0,
+    "session_filter_enabled": true,
+    "sl_atr_mult": 4.0,
+    "tp_atr_mult": 10.0,
+    "trail_activate_atr_mult": 2.5,
+    "trail_dist_atr_mult": 0.1,
+    "risk_pct": 1.2,
+    "trades": 27,
+    "win_rate": 74.07407407407408,
+    "net_return_pct": 14.39008003960629,
+    "max_drawdown_pct": 1.4777416989056975,
+    "pass_win_rate": true,
+    "pass_net_return": false,
+    "pass_drawdown": true,
+    "meets_constraints": false,
+    "pass_all": false
+  },
+  "evaluations": 400,
+  "seed": 701
+}

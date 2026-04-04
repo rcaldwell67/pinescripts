@@ -77,16 +77,29 @@ def apply_candidate(base_params: dict[str, Any], c: dict[str, Any]) -> dict[str,
 
 def rank_key(
     result: EvalResult,
+    min_win_rate: float,
     min_net_return: float,
     max_drawdown: float,
-) -> tuple[int, float, float, float, int]:
-    meets_constraints = int(result.net_return_pct >= min_net_return and result.max_drawdown_pct <= max_drawdown)
-    # Prefer constrained winners first, then higher WR, then higher net, then lower DD, then more trades.
+) -> tuple[int, int, int, float, float, int]:
+    pass_wr = int(result.win_rate >= min_win_rate)
+    pass_net = int(result.net_return_pct >= min_net_return)
+    pass_dd = int(result.max_drawdown_pct <= max_drawdown)
+    pass_all = int(pass_wr and pass_net and pass_dd)
+    pass_count = pass_wr + pass_net + pass_dd
+
+    dd_penalty = max(0.0, result.max_drawdown_pct - max_drawdown)
+    wr_deficit = max(0.0, min_win_rate - result.win_rate)
+    net_deficit = max(0.0, min_net_return - result.net_return_pct)
+    total_deficit = (4.0 * wr_deficit / max(min_win_rate, 1e-9)) + (1.5 * net_deficit / max(min_net_return, 1e-9)) + (
+        dd_penalty / max(max_drawdown, 1e-9)
+    )
+
     return (
-        meets_constraints,
-        result.win_rate,
+        pass_all,
+        pass_wr,
+        pass_count,
+        -total_deficit,
         result.net_return_pct,
-        -result.max_drawdown_pct,
         result.trades,
     )
 
@@ -160,6 +173,7 @@ def run() -> int:
     parser.add_argument("--profile", default="eth_focus", help="Profile name to tune")
     parser.add_argument("--max-evals", type=int, default=60, help="Number of random candidates to evaluate")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
+    parser.add_argument("--min-win-rate", type=float, default=70.0, help="Constraint: minimum win-rate pct")
     parser.add_argument("--min-net-return", type=float, default=20.0, help="Constraint: minimum net return pct")
     parser.add_argument("--max-drawdown", type=float, default=4.5, help="Constraint: maximum drawdown pct")
     parser.add_argument(
@@ -194,8 +208,8 @@ def run() -> int:
         c = {k: random.choice(grid[k]) for k in keys}
         params = apply_candidate(base, c)
         result = evaluate(df, params)
-        if best_result is None or rank_key(result, args.min_net_return, args.max_drawdown) > rank_key(
-            best_result, args.min_net_return, args.max_drawdown
+        if best_result is None or rank_key(result, args.min_win_rate, args.min_net_return, args.max_drawdown) > rank_key(
+            best_result, args.min_win_rate, args.min_net_return, args.max_drawdown
         ):
             best_result = result
             best_candidate = c
@@ -206,6 +220,7 @@ def run() -> int:
         "symbol": args.symbol,
         "profile": args.profile,
         "constraints": {
+            "min_win_rate": args.min_win_rate,
             "min_net_return": args.min_net_return,
             "max_drawdown": args.max_drawdown,
         },
@@ -221,7 +236,13 @@ def run() -> int:
             "win_rate": best_result.win_rate,
             "net_return_pct": best_result.net_return_pct,
             "max_drawdown_pct": best_result.max_drawdown_pct,
+            "pass_win_rate": best_result.win_rate >= args.min_win_rate,
+            "pass_net_return": best_result.net_return_pct >= args.min_net_return,
+            "pass_drawdown": best_result.max_drawdown_pct <= args.max_drawdown,
             "meets_constraints": best_result.net_return_pct >= args.min_net_return
+            and best_result.max_drawdown_pct <= args.max_drawdown,
+            "pass_all": best_result.win_rate >= args.min_win_rate
+            and best_result.net_return_pct >= args.min_net_return
             and best_result.max_drawdown_pct <= args.max_drawdown,
         },
         "evaluations": args.max_evals,
@@ -234,8 +255,9 @@ def run() -> int:
     print(f"Wrote tuning result to {out_path}")
     print(json.dumps(payload["best_candidate"], indent=2))
 
-    if not payload["best_candidate"]["meets_constraints"]:
+    if not payload["best_candidate"]["pass_all"]:
         print(f"WARNING: Best candidate does not meet all constraints. Runtime config will NOT be updated.")
+        print(f"  Win Rate: {best_result.win_rate:.2f}% (required: >={args.min_win_rate}%)")
         print(f"  Net Return: {best_result.net_return_pct:.2f}% (required: >={args.min_net_return}%)")
         print(f"  Max Drawdown: {best_result.max_drawdown_pct:.2f}% (required: <={args.max_drawdown}%)")
         return 0

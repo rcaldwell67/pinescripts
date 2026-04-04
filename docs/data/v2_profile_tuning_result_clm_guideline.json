@@ -1,0 +1,52 @@
+{
+  "symbol": "CLM",
+  "targets": {
+    "win_rate_min": 70.0,
+    "net_return_min": 20.0,
+    "max_drawdown_max": 4.5
+  },
+  "base": {
+    "trades": 4,
+    "win_rate": 100.0,
+    "net_return_pct": 21.480516527635917,
+    "max_drawdown_pct": 0.0,
+    "pass_all": true
+  },
+  "best_candidate": {
+    "enable_longs": false,
+    "enable_shorts": true,
+    "pullback_tolerance_pct": 0.25,
+    "momentum_bars": 4,
+    "rsi_long_min": 38,
+    "rsi_long_max": 60,
+    "rsi_short_min": 32,
+    "rsi_short_max": 58,
+    "adx_slope_bars": 0,
+    "adx_threshold": 16,
+    "di_spread": 5.0,
+    "session_filter_enabled": false,
+    "session_start_hour_et": 9,
+    "session_end_hour_et": 14,
+    "volume_mult_min": 0.5,
+    "min_body_atr_mult": 0.1,
+    "atr_floor_pct": 0.08,
+    "panic_suppression_mult": 2.0,
+    "sl_atr_mult": 2.5,
+    "tp_atr_mult": 5.0,
+    "trail_activate_atr_mult": 2.5,
+    "trail_dist_atr_mult": 0.15,
+    "risk_pct": 3.0,
+    "max_bars_in_trade": 20,
+    "trades": 4,
+    "win_rate": 100.0,
+    "net_return_pct": 14.275451483682321,
+    "max_drawdown_pct": 0.0,
+    "pass_win_rate": true,
+    "pass_net_return": false,
+    "pass_drawdown": true,
+    "pass_all": false
+  },
+  "evaluations": 240,
+  "seed": 502,
+  "profile": "guideline_closed"
+}
