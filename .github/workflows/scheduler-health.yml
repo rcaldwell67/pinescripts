@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: "*/15 * * * *"
   workflow_dispatch:
+    inputs:
+      test_notification:
+        description: "Send a Discord test notification"
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
   group: scheduler-health-main
@@ -14,7 +20,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      ALERT_WEBHOOK_URL: ${{ secrets.SCHEDULER_ALERT_WEBHOOK }}
+      DISCORD_WEBHOOK_URL: ${{ secrets.SCHEDULER_ALERT_WEBHOOK }}
+      DISCORD_USER_ID: ${{ secrets.SCHEDULER_ALERT_USER_ID }}
 
     steps:
       - name: Checkout repo
@@ -42,15 +49,38 @@ jobs:
             --max-gap-minutes 20 \
             --max-latest-gap-minutes 25
 
-      - name: Notify on scheduler health failure
-        if: failure()
+      - name: Send Discord test notification
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.test_notification == 'true'
         run: |
-          if [ -z "${ALERT_WEBHOOK_URL}" ]; then
-            echo "SCHEDULER_ALERT_WEBHOOK secret is not set; skipping webhook notification."
+          if [ -z "${DISCORD_WEBHOOK_URL}" ]; then
+            echo "SCHEDULER_ALERT_WEBHOOK secret is not set; skipping Discord test notification."
             exit 0
           fi
 
-          payload="{\"text\":\"Scheduler Health Check failed in ${GITHUB_REPOSITORY} on ${GITHUB_REF_NAME}. Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}\"}"
-          curl -sS -X POST "${ALERT_WEBHOOK_URL}" \
+          mention=""
+          if [ -n "${DISCORD_USER_ID}" ]; then
+            mention="<@${DISCORD_USER_ID}> "
+          fi
+
+          payload="{\"content\":\"${mention}✅ Scheduler Health Check test notification for rcaldwell67 in ${GITHUB_REPOSITORY}. Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}\"}"
+          curl -sS -X POST "${DISCORD_WEBHOOK_URL}" \
+            -H "Content-Type: application/json" \
+            -d "${payload}"
+
+      - name: Notify on scheduler health failure
+        if: failure()
+        run: |
+          if [ -z "${DISCORD_WEBHOOK_URL}" ]; then
+            echo "SCHEDULER_ALERT_WEBHOOK secret is not set; skipping Discord failure notification."
+            exit 0
+          fi
+
+          mention=""
+          if [ -n "${DISCORD_USER_ID}" ]; then
+            mention="<@${DISCORD_USER_ID}> "
+          fi
+
+          payload="{\"content\":\"${mention}🚨 Scheduler Health Check failed for rcaldwell67 in ${GITHUB_REPOSITORY} on ${GITHUB_REF_NAME}. Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}\"}"
+          curl -sS -X POST "${DISCORD_WEBHOOK_URL}" \
             -H "Content-Type: application/json" \
             -d "${payload}"
