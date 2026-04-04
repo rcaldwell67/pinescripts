@@ -55,11 +55,11 @@ jobs:
           for CANDIDATE in "$SYMBOL" "${SYMBOL//\//}"; do
             [ -z "$CANDIDATE" ] && continue
             CANDIDATE_URL=$(python - "$CANDIDATE" <<'PY'
-import sys
-from urllib.parse import quote
-print(quote(sys.argv[1], safe=''))
-PY
-)
+            import sys
+            from urllib.parse import quote
+            print(quote(sys.argv[1], safe=''))
+            PY
+            )
             STATUS=$(curl -s -o /tmp/alpaca_resp.json -w "%{http_code}" \
               -H "APCA-API-KEY-ID: $KEY" \
               -H "APCA-API-SECRET-KEY: $SECRET" \
