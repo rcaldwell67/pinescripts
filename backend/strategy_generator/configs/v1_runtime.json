@@ -104,6 +104,22 @@
         "trail_dist_atr_mult": 0.06,
         "risk_pct": 0.6
       }
+    },
+    "BTCUSDT": {
+      "signal": {
+        "pullback_tolerance_pct": 0.2,
+        "rsi_short_max": 56,
+        "adx_threshold": 18,
+        "di_spread": 5.0,
+        "session_filter_enabled": false
+      },
+      "risk": {
+        "sl_atr_mult": 4.5,
+        "tp_atr_mult": 6.0,
+        "trail_activate_atr_mult": 2.0,
+        "trail_dist_atr_mult": 0.1,
+        "risk_pct": 0.7
+      }
     }
   },
   "profiles": {
