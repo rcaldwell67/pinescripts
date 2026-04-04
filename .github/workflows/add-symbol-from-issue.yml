@@ -83,20 +83,20 @@ jobs:
         id: parse
         run: |
           python - <<'PY'
-import os, re
-body = os.environ.get('ISSUE_BODY', '')
-m = re.search(r'Symbol:\s*([A-Za-z0-9_\-/\.]+)', body, re.IGNORECASE)
-symbol = (m.group(1) if m else '').upper().strip()
-desc = ''
-m2 = re.search(r'Description:\s*(.*)', body)
-if m2:
-  desc = m2.group(1).strip()
-if not symbol:
-  raise SystemExit('Could not parse Symbol: from issue body')
-out = os.environ['GITHUB_OUTPUT']
-with open(out, 'a', encoding='utf-8') as f:
-  f.write(f'symbol={symbol}\\n')
-  f.write(f'desc={desc}\\n')
+          import os, re
+          body = os.environ.get('ISSUE_BODY', '')
+          m = re.search(r'Symbol:\s*([A-Za-z0-9_\-/\.]+)', body, re.IGNORECASE)
+          symbol = (m.group(1) if m else '').upper().strip()
+          desc = ''
+          m2 = re.search(r'Description:\s*(.*)', body)
+          if m2:
+            desc = m2.group(1).strip()
+          if not symbol:
+            raise SystemExit('Could not parse Symbol: from issue body')
+          out = os.environ['GITHUB_OUTPUT']
+          with open(out, 'a', encoding='utf-8') as f:
+            f.write(f'symbol={symbol}\n')
+            f.write(f'desc={desc}\n')
 PY
         env:
           ISSUE_BODY: ${{ github.event.issue.body }}
@@ -121,7 +121,7 @@ import sys
 from urllib.parse import quote
 print(quote(sys.argv[1], safe=''))
 PY
-)
+              )
               STATUS=$(curl -s -o /tmp/alpaca_resp.json -w "%{http_code}" \
                 -H "APCA-API-KEY-ID: $KEY" \
                 -H "APCA-API-SECRET-KEY: $SECRET" \
@@ -168,7 +168,7 @@ conn.close()
 if row:
   print(f"{row[0]}|{row[1]}")
 PY
-)
+            )
             if [ -n "$CACHE_RESULT" ]; then
               VALIDATION_SYMBOL="${CACHE_RESULT%%|*}"
               DESC="${CACHE_RESULT#*|}"
