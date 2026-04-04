@@ -2,7 +2,7 @@ name: Add Symbol from Issue
 
 on:
   issues:
-    types: [opened, edited]
+    types: [opened, edited, labeled, reopened]
 
 concurrency:
   group: add-symbol-${{ github.event.issue.number }}
