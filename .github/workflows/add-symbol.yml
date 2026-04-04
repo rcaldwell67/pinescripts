@@ -47,8 +47,6 @@ jobs:
       - name: Resolve Alpaca credentials
         shell: bash
         env:
-          SECRET_ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
-          SECRET_ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
           SECRET_ALPACA_PAPER_API_KEY: ${{ secrets.ALPACA_PAPER_API_KEY }}
           SECRET_ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
         run: |
@@ -71,11 +69,6 @@ jobs:
           # Prioritize PAPER credentials for add-symbol workflow
           set_or_fallback ALPACA_PAPER_API_KEY "$SECRET_ALPACA_PAPER_API_KEY"
           set_or_fallback ALPACA_PAPER_API_SECRET "$SECRET_ALPACA_PAPER_API_SECRET"
-          # Only set generic LIVE credentials if PAPER ones are not available AND not already in .env
-          if [ -z "${ALPACA_PAPER_API_KEY:-}" ]; then
-            set_or_fallback ALPACA_API_KEY "$SECRET_ALPACA_API_KEY"
-            set_or_fallback ALPACA_API_SECRET "$SECRET_ALPACA_API_SECRET"
-          fi
 
       - name: Extract symbol from issue
         id: extract
@@ -93,8 +86,8 @@ jobs:
         id: validate
         run: |
           SYMBOL="${{ steps.extract.outputs.symbol }}"
-          KEY="${ALPACA_PAPER_API_KEY:-$ALPACA_API_KEY}"
-          SECRET="${ALPACA_PAPER_API_SECRET:-$ALPACA_API_SECRET}"
+          KEY="${ALPACA_PAPER_API_KEY:-}"
+          SECRET="${ALPACA_PAPER_API_SECRET:-}"
           AUTH_UNAVAILABLE="false"
           # Validate symbol exists on Alpaca Paper Trading assets when credentials are available.
           VALIDATION_SYMBOL=""
@@ -108,10 +101,10 @@ jobs:
             for CANDIDATE in "$SYMBOL" "${SYMBOL//\//}"; do
               [ -z "$CANDIDATE" ] && continue
               CANDIDATE_URL=$(python - "$CANDIDATE" <<'PY'
-              import sys
-              from urllib.parse import quote
-              print(quote(sys.argv[1], safe=''))
-              PY
+          import sys
+          from urllib.parse import quote
+          print(quote(sys.argv[1], safe=''))
+          PY
               )
               STATUS=$(curl -s -o /tmp/alpaca_resp.json -w "%{http_code}" \
                 -H "APCA-API-KEY-ID: $KEY" \
@@ -137,28 +130,28 @@ jobs:
 
           if [ -z "$VALIDATION_SYMBOL" ]; then
             CACHE_RESULT=$(python - "$SYMBOL" <<'PY'
-            import sqlite3
-            import sys
+          import sqlite3
+          import sys
 
-            symbol = sys.argv[1].strip().upper()
-            candidates = [symbol]
-            no_slash = symbol.replace('/', '')
-            if no_slash != symbol:
-              candidates.append(no_slash)
+          symbol = sys.argv[1].strip().upper()
+          candidates = [symbol]
+          no_slash = symbol.replace('/', '')
+          if no_slash != symbol:
+            candidates.append(no_slash)
 
-            conn = sqlite3.connect('docs/data/tradingcopilot.db')
-            cur = conn.cursor()
-            row = None
-            for cand in candidates:
-              cur.execute("SELECT symbol, COALESCE(name, '') FROM alpaca_symbols WHERE UPPER(symbol)=UPPER(?) LIMIT 1", (cand,))
-              row = cur.fetchone()
-              if row:
-                break
-            conn.close()
-
+          conn = sqlite3.connect('docs/data/tradingcopilot.db')
+          cur = conn.cursor()
+          row = None
+          for cand in candidates:
+            cur.execute("SELECT symbol, COALESCE(name, '') FROM alpaca_symbols WHERE UPPER(symbol)=UPPER(?) LIMIT 1", (cand,))
+            row = cur.fetchone()
             if row:
-              print(f"{row[0]}|{row[1]}")
-            PY
+              break
+          conn.close()
+
+          if row:
+            print(f"{row[0]}|{row[1]}")
+          PY
             )
             if [ -n "$CACHE_RESULT" ]; then
               VALIDATION_SYMBOL="${CACHE_RESULT%%|*}"
