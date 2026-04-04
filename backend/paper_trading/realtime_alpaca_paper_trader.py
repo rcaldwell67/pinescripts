@@ -263,6 +263,10 @@ def _order_symbol(symbol: str) -> str:
     return symbol.replace("/", "")
 
 
+def _normalize_symbol(symbol: str) -> str:
+    return "".join(ch for ch in str(symbol).upper() if ch.isalnum())
+
+
 def _load_symbols_from_db() -> list[str]:
     conn = sqlite3.connect(str(DB_PATH), timeout=30)
     rows = conn.execute("SELECT symbol FROM symbols ORDER BY symbol").fetchall()
@@ -752,14 +756,15 @@ def _sync_fill_events(
     row = conn.execute("SELECT MAX(transaction_time) FROM paper_fill_events").fetchone()
     after = row[0] if row and row[0] else None
 
-    db_symbol_by_order_symbol = {_order_symbol(s): s for s in symbols}
+    db_symbol_by_order_symbol = {_normalize_symbol(_order_symbol(s)): s for s in symbols}
     fills = api.get_fill_activities(after=after)
     inserted = 0
 
     for fill in fills:
         act_id = str(fill.get("id") or "").strip()
         order_symbol = str(fill.get("symbol") or "").strip()
-        db_symbol = db_symbol_by_order_symbol.get(order_symbol, order_symbol)
+        norm_order_symbol = _normalize_symbol(order_symbol)
+        db_symbol = db_symbol_by_order_symbol.get(norm_order_symbol, order_symbol)
         side = str(fill.get("side") or "").lower().strip()
         qty = float(fill.get("qty") or 0.0)
         price = float(fill.get("price") or 0.0)
@@ -896,7 +901,7 @@ def _sync_canceled_orders(conn: sqlite3.Connection, api: AlpacaPaperAPI, symbols
     ).fetchone()
     after = row[0] if row and row[0] else None
 
-    valid_symbols = {_order_symbol(s) for s in symbols}
+    valid_symbols = {_normalize_symbol(_order_symbol(s)) for s in symbols}
     closed_orders = api.get_closed_orders(after=after, limit=200)
     inserted = 0
     cancel_statuses = {"canceled", "expired", "rejected"}
@@ -906,7 +911,7 @@ def _sync_canceled_orders(conn: sqlite3.Connection, api: AlpacaPaperAPI, symbols
         if status not in cancel_statuses:
             continue
         symbol = str(order.get("symbol") or "").strip()
-        if valid_symbols and symbol and symbol not in valid_symbols:
+        if valid_symbols and symbol and _normalize_symbol(symbol) not in valid_symbols:
             continue
         order_id = str(order.get("id") or "").strip()
         event_time = (
@@ -1239,7 +1244,13 @@ def main() -> int:
                 ready = streamer.drain_ready_symbols()
                 if ready:
                     ready_set = set(ready)
-                    symbols_this_pass = [s for s in symbols if s in ready_set or _order_symbol(s) in ready_set]
+                    norm_ready_set = {_normalize_symbol(s) for s in ready_set}
+                    symbols_this_pass = [
+                        s
+                        for s in symbols
+                        if _normalize_symbol(s) in norm_ready_set
+                        or _normalize_symbol(_order_symbol(s)) in norm_ready_set
+                    ]
                 elif loop_count > 1:
                     # Wait briefly for live bars before doing a no-op cycle.
                     time.sleep(1)
@@ -1249,14 +1260,14 @@ def main() -> int:
 
             position_rows = api.list_positions()
             open_symbols = {
-                str(p.get("symbol") or "").strip()
+                _normalize_symbol(str(p.get("symbol") or "").strip())
                 for p in position_rows
                 if abs(float(p.get("qty") or 0.0)) > 0
             }
 
             for symbol in symbols_this_pass:
                 try:
-                    osym = _order_symbol(symbol)
+                    osym = _normalize_symbol(_order_symbol(symbol))
                     if osym not in open_symbols and len(open_symbols) >= max(args.max_open_positions, 1):
                         _upsert_summary(conn, symbol, version, "risk_cap", "max open positions reached", account_equity)
                         print(f"SKIP {symbol}: max open positions reached")

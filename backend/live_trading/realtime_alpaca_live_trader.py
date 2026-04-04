@@ -164,6 +164,10 @@ def _order_symbol(symbol: str) -> str:
     return symbol.replace("/", "")
 
 
+def _normalize_symbol(symbol: str) -> str:
+    return "".join(ch for ch in str(symbol).upper() if ch.isalnum())
+
+
 def _load_symbols_from_db() -> list[str]:
     conn = sqlite3.connect(str(DB_PATH), timeout=30)
     rows = conn.execute("SELECT symbol FROM symbols ORDER BY symbol").fetchall()
@@ -412,14 +416,15 @@ def _sync_fill_events(conn: sqlite3.Connection, api: AlpacaLiveAPI, symbols: lis
     row = conn.execute("SELECT MAX(transaction_time) FROM live_fill_events").fetchone()
     after = row[0] if row and row[0] else None
 
-    db_symbol_by_order_symbol = {_order_symbol(s): s for s in symbols}
+    db_symbol_by_order_symbol = {_normalize_symbol(_order_symbol(s)): s for s in symbols}
     fills = api.get_fill_activities(after=after)
     inserted = 0
 
     for fill in fills:
         act_id = str(fill.get("id") or "").strip()
         order_symbol = str(fill.get("symbol") or "").strip()
-        db_symbol = db_symbol_by_order_symbol.get(order_symbol, order_symbol)
+        norm_order_symbol = _normalize_symbol(order_symbol)
+        db_symbol = db_symbol_by_order_symbol.get(norm_order_symbol, order_symbol)
         side = str(fill.get("side") or "").lower().strip()
         qty = float(fill.get("qty") or 0.0)
         price = float(fill.get("price") or 0.0)
