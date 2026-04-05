@@ -313,14 +313,23 @@ function getNormalizedSymbolKey(sym) {
   const DEFAULT_INITIAL_CAPITAL = 1000;
   const PAPER_INITIAL_CAPITAL = 100000;
 
+  function hasRealtimePaperRows(rows) {
+    if (!Array.isArray(rows) || !rows.length) return false;
+    return rows.some(r => normalizeSource(r.source) === 'realtime');
+  }
+
   function getDatasetInitialCapital() {
     return activeDataset === 'paper' ? PAPER_INITIAL_CAPITAL : DEFAULT_INITIAL_CAPITAL;
   }
 
-  function normalizeBeginningEquity(beginEq) {
+  function normalizeBeginningEquity(beginEq, rows = []) {
     if (!Number.isFinite(beginEq) || beginEq <= 0) return getDatasetInitialCapital();
-    // Paper trading baseline should reflect the funded paper account.
-    if (activeDataset === 'paper' && beginEq < 10000) return PAPER_INITIAL_CAPITAL;
+    // Keep simulation baselines (typically 1000) intact so guideline metrics
+    // match the strategy reports. Only coerce tiny baselines for broker-sourced
+    // paper rows when needed.
+    if (activeDataset === 'paper' && beginEq < 10000 && hasRealtimePaperRows(rows)) {
+      return PAPER_INITIAL_CAPITAL;
+    }
     return beginEq;
   }
 
@@ -329,14 +338,14 @@ function getNormalizedSymbolKey(sym) {
     if (rows[0]._summary) {
       const s = rows[0]._summary || {};
       const beginEq = Number(s.beginning_equity);
-      return normalizeBeginningEquity(beginEq);
+      return normalizeBeginningEquity(beginEq, rows);
     }
     const first = rows[0] || {};
     const eq = Number(first.equity);
     const pnl = Number(first.dollar_pnl);
     if (Number.isFinite(eq) && Number.isFinite(pnl)) {
       const beginEq = eq - pnl;
-      if (Number.isFinite(beginEq) && beginEq > 0) return normalizeBeginningEquity(beginEq);
+      if (Number.isFinite(beginEq) && beginEq > 0) return normalizeBeginningEquity(beginEq, rows);
     }
     return getDatasetInitialCapital();
   }
@@ -427,7 +436,7 @@ function getNormalizedSymbolKey(sym) {
   function buildLatestTransactionsBySymbol() {
     const db = window._SQL_DB;
     if (!db) return [];
-    if (activeDataset !== 'backtest') return [];
+    if (activeDataset === 'live') return [];
     const latestBySymbol = new Map();
     const modeFilter = activeDataset === 'backtest' ? 'backtest' : (activeDataset === 'paper' ? 'paper' : 'live');
     const requireBrokerRows = activeDataset === 'paper' || activeDataset === 'live';
@@ -442,6 +451,11 @@ function getNormalizedSymbolKey(sym) {
       stmt.bind([modeFilter]);
       while (stmt.step()) {
         const row = stmt.getAsObject();
+        if (activeDataset === 'paper') {
+          const src = normalizeSource(row.source);
+          if (paperTradeSourceFilter === 'realtime' && src !== 'realtime') continue;
+          if (paperTradeSourceFilter === 'simulation' && src === 'realtime') continue;
+        }
         const symbolKey = getNormalizedSymbolKey(row.symbol || '');
         if (!symbolKey) continue;
 
@@ -2571,16 +2585,16 @@ function getAllSymbolsCumulativeEquity() {
 }
 
 function buildTransactions() {
-  if (activeDataset !== 'backtest') return [];
+  if (activeDataset === 'live') return [];
   const txns = [];
   const symData = INSTRUMENTS[activeSym];
   for (const [ver, cfg] of Object.entries(symData.versions)) {
-    const rows = loaded[activeSym][ver] || [];
+    const rows = filterPaperRows(loaded[activeSym][ver] || []);
     let prevEquity = getInitialCapitalFromRows(rows);
     for (const r of rows) {
       const begEquity = prevEquity;
       const isLong = r.direction === 'long';
-      const src = r.source || null;
+      const src = activeDataset === 'paper' ? normalizeSource(r.source) : (r.source || null);
       txns.push({ time:r.entry_time, sym:activeSym, ver, cfg, symLabel:symData.label,
         action: isLong?'BUY':'SELL', price:r.entry_price, type:'Open',
         direction:r.direction, pnl:null, result:null, begEquity, endEquity:null, source:src });
