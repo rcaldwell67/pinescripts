@@ -1,0 +1,61 @@
+name: Validate Symbol Pipeline Completeness
+
+on:
+  workflow_dispatch:
+    inputs:
+      symbol:
+        description: Symbol to validate (for example BTC/USDT)
+        required: true
+        default: BTC/USDT
+        type: string
+      run_realtime_passes:
+        description: Run one realtime pass for each version before validating
+        required: true
+        default: true
+        type: boolean
+
+jobs:
+  validate-symbol-pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Rebuild aligned backtest and paper datasets
+        run: |
+          python reset_aligned_backtest_paper.py --all-versions --symbol "${{ inputs.symbol }}"
+
+      - name: Run one realtime pass per version
+        if: ${{ inputs.run_realtime_passes }}
+        env:
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
+          ALPACA_PAPER_API_KEY: ${{ secrets.ALPACA_PAPER_API_KEY }}
+          ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
+        run: |
+          for version in v1 v2 v3 v4 v5 v6; do
+            python backend/paper_trading/realtime_alpaca_paper_trader.py \
+              --symbol "${{ inputs.symbol }}" \
+              --version "$version" \
+              --max-loops 1 \
+              --loop-seconds 1
+          done
+
+      - name: Validate symbol pipeline completeness
+        run: |
+          if [ "${{ inputs.run_realtime_passes }}" = "true" ]; then
+            python backend/paper_trading/validate_symbol_pipeline.py --symbol "${{ inputs.symbol }}"
+          else
+            python backend/paper_trading/validate_symbol_pipeline.py --symbol "${{ inputs.symbol }}" --skip-realtime
+          fi
