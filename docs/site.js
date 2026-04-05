@@ -1603,7 +1603,7 @@ function renderCards(rows) {
     : '';
   if (activeTab === 'all') {
     cardEl.innerHTML = totalEqCard + Object.entries(vers).map(([v,cfg])=>{
-      const r = loaded[activeSym][v];
+      const r = filterPaperRows(loaded[activeSym][v] || []);
       if (!r?.length) return `<div class="card" style="border-top:2px solid ${cfg.color};opacity:0.5">
         <div class="label">${getVersionLabel(activeSym, v)}</div>
         <div class="value neutral">-</div>
@@ -1639,7 +1639,7 @@ function renderEquityChart(rows) {
   let datasets = [];
   if (activeTab === 'all') {
     for (const [v,cfg] of Object.entries(vers)) {
-      const r = loaded[activeSym][v];
+      const r = filterPaperRows(loaded[activeSym][v] || []);
       if (!r?.length) continue;
       const pts = r.map(t=>({ x:new Date(t.entry_time.replace(' ','T')), y:t.equity }));
       const label = getVersionLabel(activeSym, v);
@@ -1675,7 +1675,7 @@ function renderOutcomeChart(rows) {
   destroyChart('outcome');
   const ctx = document.getElementById('outcomeChart').getContext('2d');
   const legendEl = document.getElementById('outcomeLegend');
-  const all = activeTab==='all' ? Object.values(loaded[activeSym]).flat() : rows;
+  const all = activeTab==='all' ? filterPaperRows(Object.values(loaded[activeSym]).flat()) : rows;
   const tp=all.filter(r=>r.result==='TP').length, sl=all.filter(r=>r.result==='SL').length;
   const trail=all.filter(r=>r.result==='TRAIL'||r.result==='TRAILING').length, mb=all.filter(r=>r.result==='MB').length;
   const other=all.length-tp-sl-trail-mb;
@@ -1709,9 +1709,9 @@ function renderDirectionChart(rows) {
     });
   } else {
     document.getElementById('dirChartTitle').textContent = 'Return by Version';
-    const vkeys=Object.keys(vers).filter(v=>loaded[activeSym][v]?.length);
-    const labels=vkeys.map(v=>vers[v].tf), wrs=vkeys.map(v=>calcMetrics(loaded[activeSym][v])?.winRate??0);
-    const pnls=vkeys.map(v=>calcMetrics(loaded[activeSym][v])?.netPnlPct??0), colors=vkeys.map(v=>vers[v].color);
+    const vkeys=Object.keys(vers).filter(v=>filterPaperRows(loaded[activeSym][v]||[]).length);
+    const labels=vkeys.map(v=>vers[v].tf), wrs=vkeys.map(v=>calcMetrics(filterPaperRows(loaded[activeSym][v]||[]))?.winRate??0);
+    const pnls=vkeys.map(v=>calcMetrics(filterPaperRows(loaded[activeSym][v]||[]))?.netPnlPct??0), colors=vkeys.map(v=>vers[v].color);
     charts.direction = new Chart(ctx, {
       type:'bar', data:{ labels, datasets:[
         { label:'Win Rate %', data:wrs,  backgroundColor:colors.map(c=>c+'44'), borderColor:colors, borderWidth:1.5, yAxisID:'wr' },
@@ -1729,7 +1729,7 @@ function renderDirectionChart(rows) {
 function renderMonthlyChart(rows) {
   destroyChart('monthly');
   const ctx=document.getElementById('monthlyChart').getContext('2d');
-  const src=activeTab==='all'?Object.values(loaded[activeSym]).flat():rows;
+  const src=activeTab==='all'?filterPaperRows(Object.values(loaded[activeSym]).flat()):rows;
   const monthly={};
   for (const r of src) {
     if (!r.entry_time) continue;
@@ -1753,9 +1753,9 @@ function renderYearChart() {
   const vers=INSTRUMENTS[activeSym].versions;
   const verKey=activeTab!=='all'
     ?(vers[activeTab]?.hasYear?activeTab:null)
-    :Object.keys(vers).find(v=>vers[v].hasYear&&loaded[activeSym][v]?.length);
+    :Object.keys(vers).find(v=>vers[v].hasYear&&filterPaperRows(loaded[activeSym][v]||[]).length);
   if (!verKey) return;
-  const rows=loaded[activeSym][verKey], cfg=vers[verKey];
+  const rows=filterPaperRows(loaded[activeSym][verKey] || []), cfg=vers[verKey];
   document.getElementById('yearChartTitle').textContent=`Year-by-Year - ${getVersionLabel(activeSym, verKey)}`;
   const years={};
   for (const r of rows) {
@@ -2681,7 +2681,7 @@ function getPriceChartMarkers(sym, tab) {
   const markers = [];
   const versToShow = tab === 'all' ? Object.keys(vers) : [tab];
   for (const vk of versToShow) {
-    const rows = loaded[sym][vk] || [];
+    const rows = filterPaperRows(loaded[sym][vk] || []);
     const cfg = vers[vk];
     for (const r of rows) {
       const entTs = r.entry_time ? Math.floor(new Date(r.entry_time.replace(' ','T')).getTime()/1000) : null;
@@ -2925,7 +2925,7 @@ function render() {
   renderMonthlyChart(rows);
   const has1D=activeTab!=='all'
     ?(vers[activeTab]?.hasYear&&rows.length>0)
-    :Object.keys(vers).some(v=>vers[v].hasYear&&loaded[activeSym][v]?.length);
+    :Object.keys(vers).some(v=>vers[v].hasYear&&filterPaperRows(loaded[activeSym][v]||[]).length);
   const yearSection=document.getElementById('yearSection');
   if (has1D) { yearSection.style.display=''; renderYearChart(); }
   else        { yearSection.style.display='none'; destroyChart('year'); }
