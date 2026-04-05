@@ -13,7 +13,7 @@
   <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js" defer></script>
   <!-- sql.js for browser-based SQLite access -->
   <script src="https://cdn.jsdelivr.net/npm/sql.js@1.8.0/dist/sql-wasm.js" defer></script>
-  <link rel="stylesheet" href="site.css">
+  <link rel="stylesheet" href="site.css?v=20260405b">
   <link rel="icon" href="data:,">
 </head>
 <body>
@@ -43,8 +43,8 @@
   </div>
   <div id="paperSourceBar" class="paper-source-bar" style="display:none;" aria-label="Paper data source toggle">
     <span style="font-size:12px;color:var(--muted);font-weight:600;">View:</span>
-    <button type="button" class="paper-src-btn active" data-src="all">All</button>
-    <button type="button" class="paper-src-btn" data-src="simulation">Simulation</button>
+    <button type="button" class="paper-src-btn" data-src="all">All</button>
+    <button type="button" class="paper-src-btn active" data-src="simulation">Simulation</button>
     <button type="button" class="paper-src-btn" data-src="realtime">Realtime</button>
   </div>
   <button id="openAccountInfoBtn" class="mode-btn" type="button" title="View Alpaca account details">Account Info</button>
@@ -262,7 +262,7 @@
   </div>
 </div>
 
-<script src='site.js' defer></script>
+<script src='site.js?v=20260405b' defer></script>
 </body>
 </html>
 

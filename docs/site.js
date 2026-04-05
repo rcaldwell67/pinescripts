@@ -163,6 +163,10 @@ function getNormalizedSymbolKey(sym) {
         pendingDatasetSymbol = (currentSelect && currentSelect.value) || activeSym || '';
         activeDataset = nextDataset;
         activeMode = activeDataset;
+        if (activeDataset === 'paper') {
+          // Guideline reviews should default to simulation data, not broker fills.
+          paperTradeSourceFilter = 'simulation';
+        }
         resetTransactionFilters();
         addDatasetSelector();
         loadSymbolsAndInit();
@@ -971,7 +975,7 @@ function getNormalizedSymbolKey(sym) {
 
   function getTodayTransactions(dateKeyArg = null) {
     const db = window._SQL_DB;
-    if (!db) return { fills: [], orders: [] };
+    if (!db) return { fills: [], orders: [], simulationEvents: [] };
 
     const dateKey = String(dateKeyArg || getUtcDateKey(0));
     const todayStart = `${dateKey}T00:00:00.000Z`;
@@ -981,6 +985,7 @@ function getNormalizedSymbolKey(sym) {
 
     const fills = [];
     const orders = [];
+    const simulationEvents = [];
 
     try {
       // Query paper fills
@@ -1097,11 +1102,74 @@ function getNormalizedSymbolKey(sym) {
         console.debug('Live orders query error:', err);
       }
 
+      // Query simulated paper trades (non-realtime) as open/close events.
+      try {
+        const simStmt = db.prepare(`
+          SELECT
+            symbol,
+            LOWER(version) AS version,
+            entry_time,
+            exit_time,
+            direction,
+            entry_price,
+            exit_price,
+            result,
+            dollar_pnl
+          FROM trades
+          WHERE mode = 'paper'
+            AND LOWER(COALESCE(source, '')) != 'realtime'
+            AND (
+              (entry_time >= ? AND entry_time < ?)
+              OR (exit_time >= ? AND exit_time < ?)
+            )
+          ORDER BY datetime(COALESCE(exit_time, entry_time)) DESC, id DESC
+        `);
+        simStmt.bind([todayStart, tomorrowStr, todayStart, tomorrowStr]);
+        while (simStmt.step()) {
+          const row = simStmt.getAsObject();
+          const symbol = String(row.symbol || '');
+          const version = String(row.version || 'unknown');
+          const direction = String(row.direction || '').toLowerCase();
+          const entryTime = row.entry_time || null;
+          const exitTime = row.exit_time || null;
+
+          if (entryTime && entryTime >= todayStart && entryTime < tomorrowStr) {
+            simulationEvents.push({
+              event_time: entryTime,
+              symbol,
+              version,
+              event_type: 'open',
+              direction,
+              price: row.entry_price,
+              pnl: null,
+              result: null,
+              mode: 'simulation',
+            });
+          }
+          if (exitTime && exitTime >= todayStart && exitTime < tomorrowStr) {
+            simulationEvents.push({
+              event_time: exitTime,
+              symbol,
+              version,
+              event_type: 'close',
+              direction,
+              price: row.exit_price,
+              pnl: row.dollar_pnl,
+              result: row.result,
+              mode: 'simulation',
+            });
+          }
+        }
+        simStmt.free();
+      } catch (err) {
+        console.debug('Simulation trade query error:', err);
+      }
+
     } catch (err) {
       console.error('Error reading transactions:', err);
     }
 
-    return { fills, orders };
+    return { fills, orders, simulationEvents };
   }
 
   function renderDailyTransactionsModal() {
@@ -1111,9 +1179,9 @@ function getNormalizedSymbolKey(sym) {
     updateDailyTransactionsDateControls();
 
     const dateKey = getSelectedDailyTransactionsDateKey();
-    const { fills, orders } = getTodayTransactions(dateKey);
+    const { fills, orders, simulationEvents } = getTodayTransactions(dateKey);
     const validation = getTodayValidationSummary(dateKey);
-    const totalTransactions = fills.length + orders.length;
+    const totalTransactions = fills.length + orders.length + simulationEvents.length;
     const executableMisses = validation.missedOpportunity;
     const blockedMisses = validation.missedBlocked;
     const scheduleMisses = validation.scheduleMiss;
@@ -1221,6 +1289,52 @@ function getNormalizedSymbolKey(sym) {
           <td style="padding: 6px; text-align: right;">${qty}</td>
           <td style="padding: 6px; text-align: right;">${notional}</td>
           <td style="padding: 6px;">${mode}</td>
+        </tr>`;
+      }
+      html += `</tbody></table></div>`;
+    }
+
+    if (simulationEvents.length > 0) {
+      html += `<div style="margin-bottom: 20px;">
+        <h3 style="margin: 0 0 10px 0; font-size: 14px; text-transform: uppercase; color: #666;">Simulation Trades (${simulationEvents.length})</h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+          <thead>
+            <tr style="border-bottom: 1px solid #ddd;">
+              <th style="padding: 6px; text-align: left; color: #666;">Time</th>
+              <th style="padding: 6px; text-align: left; color: #666;">Symbol</th>
+              <th style="padding: 6px; text-align: left; color: #666;">Event</th>
+              <th style="padding: 6px; text-align: left; color: #666;">Direction</th>
+              <th style="padding: 6px; text-align: left; color: #666;">Version</th>
+              <th style="padding: 6px; text-align: right; color: #666;">Price</th>
+              <th style="padding: 6px; text-align: right; color: #666;">P&L</th>
+              <th style="padding: 6px; text-align: left; color: #666;">Result</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+      for (const ev of simulationEvents) {
+        const time = ev.event_time ? new Date(String(ev.event_time).replace(' ', 'T')).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-';
+        const symbol = ev.symbol || '-';
+        const eventType = String(ev.event_type || '-').toUpperCase();
+        const direction = String(ev.direction || '-').toUpperCase();
+        const version = ev.version ? String(ev.version).toUpperCase() : 'UNKNOWN';
+        const priceNum = Number(ev.price);
+        const price = Number.isFinite(priceNum) ? '$' + priceNum.toFixed(2) : '-';
+        const pnlNum = Number(ev.pnl);
+        const pnl = Number.isFinite(pnlNum)
+          ? (pnlNum >= 0 ? '+' : '-') + '$' + Math.abs(pnlNum).toFixed(2)
+          : '-';
+        const result = ev.result ? String(ev.result).toUpperCase() : '-';
+
+        html += `<tr style="border-bottom: 1px solid #eee;">
+          <td style="padding: 6px;">${time}</td>
+          <td style="padding: 6px; font-weight: bold;">${symbol}</td>
+          <td style="padding: 6px;"><span style="background:${eventType === 'OPEN' ? '#58a6ff22' : '#3fb95022'}; padding: 2px 6px; border-radius: 3px; font-size: 11px;">${eventType}</span></td>
+          <td style="padding: 6px;">${direction}</td>
+          <td style="padding: 6px; font-weight: 600;">${version}</td>
+          <td style="padding: 6px; text-align: right;">${price}</td>
+          <td style="padding: 6px; text-align: right; font-weight: 600; color: ${Number.isFinite(pnlNum) ? (pnlNum >= 0 ? '#3fb950' : '#f85149') : 'var(--muted)'};">${pnl}</td>
+          <td style="padding: 6px;">${result}</td>
         </tr>`;
       }
       html += `</tbody></table></div>`;
@@ -2911,6 +3025,26 @@ function updateBalanceBar(rows) {
 }
 
 function render() {
+  if (activeDataset === 'paper') {
+    const byVersion = loaded[activeSym] || {};
+    let hasRealtime = false;
+    let hasSimulation = false;
+    Object.values(byVersion).forEach(versionRows => {
+      (versionRows || []).forEach(row => {
+        if (normalizeSource(row.source) === 'realtime') hasRealtime = true;
+        else hasSimulation = true;
+      });
+    });
+
+    // Auto-correct stale source toggles so paper charts/tables never appear empty
+    // solely due to an unavailable source for the selected symbol.
+    if (paperTradeSourceFilter === 'realtime' && !hasRealtime && hasSimulation) {
+      paperTradeSourceFilter = 'simulation';
+    } else if (paperTradeSourceFilter === 'simulation' && !hasSimulation && hasRealtime) {
+      paperTradeSourceFilter = 'realtime';
+    }
+  }
+
   const vers=INSTRUMENTS[activeSym].versions;
   const rawRows=activeTab==='all'?Object.values(loaded[activeSym]).flat():(loaded[activeSym][activeTab]||[]);
   const rows=filterPaperRows(rawRows);
