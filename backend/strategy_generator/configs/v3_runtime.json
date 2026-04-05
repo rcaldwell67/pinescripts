@@ -76,6 +76,38 @@
         "max_bars_in_trade": 30
       }
     },
+    "BTCUSDT": {
+      "signal": {
+        "enable_longs": false,
+        "enable_shorts": true,
+        "pullback_tolerance_pct": 0.25,
+        "momentum_bars": 5,
+        "rsi_long_min": 38,
+        "rsi_long_max": 58,
+        "rsi_short_min": 34,
+        "rsi_short_max": 54,
+        "adx_slope_bars": 1,
+        "adx_threshold": 14,
+        "di_spread": 7.5,
+        "session_filter_enabled": false,
+        "session_start_hour_et": 0,
+        "session_end_hour_et": 24,
+        "volume_mult_min": 0.3,
+        "min_body_atr_mult": 0.15,
+        "atr_floor_pct": 0.12,
+        "panic_suppression_mult": 1.2,
+        "rvol_filter_enabled": false,
+        "atr_percentile_filter_enabled": false
+      },
+      "risk": {
+        "sl_atr_mult": 3.5,
+        "tp_atr_mult": 6.0,
+        "trail_activate_atr_mult": 2.5,
+        "trail_dist_atr_mult": 0.08,
+        "risk_pct": 3.0,
+        "max_bars_in_trade": 30
+      }
+    },
     "CRF": {
       "signal": {
         "enable_longs": false,
