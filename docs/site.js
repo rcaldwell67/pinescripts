@@ -2936,18 +2936,17 @@ function render() {
   renderPriceChart();
 }
 
-function updateAutoRefreshStatus({ enabled = false, timestamp = null, intervalSeconds = 0, failed = false } = {}) {
-  function updatePaperSourceBar() {
-    const bar = document.getElementById('paperSourceBar');
-    if (!bar) return;
-    const show = activeDataset === 'paper';
-    bar.style.display = show ? 'flex' : 'none';
-    bar.querySelectorAll('.paper-src-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.src === paperTradeSourceFilter);
-    });
-  }
+function updatePaperSourceBar() {
+  const bar = document.getElementById('paperSourceBar');
+  if (!bar) return;
+  const show = activeDataset === 'paper';
+  bar.style.display = show ? 'flex' : 'none';
+  bar.querySelectorAll('.paper-src-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.src === paperTradeSourceFilter);
+  });
+}
 
-  function updateAutoRefreshStatus({ enabled = false, timestamp = null, intervalSeconds = 0, failed = false } = {}) {
+function updateAutoRefreshStatus({ enabled = false, timestamp = null, intervalSeconds = 0, failed = false } = {}) {
   const statusEl = document.getElementById('autoRefreshStatus');
   const statusTextEl = document.getElementById('autoRefreshStatusText');
   const statusDotEl = document.getElementById('autoRefreshStatusDot');
