@@ -98,7 +98,7 @@ let activeTab = 'all';
 let charts = {};
 let tradeTablePage = 1;
 let tradePageSize = 25;
-let paperTradeSourceFilter = 'all';
+let paperTradeSourceFilter = 'simulation';
 let txPage = 1;
 let txPageSize = 25;
 let logsPage = 1;
@@ -3123,8 +3123,14 @@ async function handleSymbolSelect(newSym, dbInstance) {
     if (activeDataset === 'backtest' || activeDataset === 'paper') {
       try {
         const summaryTable = activeDataset === 'backtest' ? 'backtest_results' : 'paper_trading_results';
+        const summaryNotesFilter = activeDataset === 'backtest'
+          ? "AND notes LIKE '%backtest summary%'"
+          : "AND notes LIKE '%paper trading summary%'";
         const stmt = db.prepare(
-          `SELECT metrics, notes, timestamp FROM ${summaryTable} WHERE REPLACE(REPLACE(REPLACE(REPLACE(UPPER(symbol), '/', ''), '_', ''), '-', ''), ' ', '') = ? ORDER BY timestamp`
+          `SELECT metrics, notes, timestamp FROM ${summaryTable}
+           WHERE REPLACE(REPLACE(REPLACE(REPLACE(UPPER(symbol), '/', ''), '_', ''), '-', ''), ' ', '') = ?
+             ${summaryNotesFilter}
+           ORDER BY timestamp`
         );
         stmt.bind([normalizedSymbol]);
         while (stmt.step()) {
@@ -3206,13 +3212,8 @@ async function handleSymbolSelect(newSym, dbInstance) {
       });
 
       Object.entries(byVersionAllRows).forEach(([versionKey, versionRows]) => {
-        if (activeDataset === 'paper') {
-          // Prefer realtime rows version-by-version; fallback to simulation/null-source
-          // when realtime rows are absent for that version.
-          const realtimeRows = versionRows.filter(r => String(r.source || '').toLowerCase() === 'realtime');
-          byVersion[versionKey] = realtimeRows.length > 0 ? realtimeRows : versionRows;
-          return;
-        }
+        // Preserve all rows for the selected dataset; source filtering is applied
+        // consistently by filterPaperRows() based on the active source toggle.
         byVersion[versionKey] = versionRows;
       });
 
