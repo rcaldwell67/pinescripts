@@ -14,8 +14,8 @@
   "symbol_overrides": {
     "BTCUSDC": {
       "signal": {
-        "enable_longs": true,
-        "enable_shorts": false,
+        "enable_longs": false,
+        "enable_shorts": true,
         "pullback_tolerance_pct": 0.2,
         "momentum_bars": 8,
         "rsi_long_min": 42,
