@@ -178,10 +178,23 @@
   </div>
   <div class="panel" style="margin-bottom:16px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-      <h2 style="margin-bottom:0;">Trade Log</h2>
-      <div class="pg-size">
-        <label>Rows</label>
-        <select id="tradePageSizeSelect" class="tx-select"><option value="10">10</option><option value="25" selected>25</option><option value="50">50</option><option value="100">100</option></select>
+      <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
+        <h2 style="margin-bottom:0;">Trade Log</h2>
+        <span class="tx-count" id="tradeRealtimeStatus" style="display:none;"></span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <div id="tradeSourceFilterWrap" class="pg-size" style="display:none;">
+          <label>Paper Source</label>
+          <select id="tradeSourceFilter" class="tx-select">
+            <option value="preferred" selected>Preferred (Realtime then Sim)</option>
+            <option value="realtime">Realtime Only</option>
+            <option value="simulation">Simulation Only</option>
+          </select>
+        </div>
+        <div class="pg-size">
+          <label>Rows</label>
+          <select id="tradePageSizeSelect" class="tx-select"><option value="10">10</option><option value="25" selected>25</option><option value="50">50</option><option value="100">100</option></select>
+        </div>
       </div>
     </div>
     <div class="table-wrap" id="tradeTableWrap"><div class="empty">Loading...</div></div>

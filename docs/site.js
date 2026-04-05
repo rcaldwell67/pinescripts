@@ -98,6 +98,7 @@ let activeTab = 'all';
 let charts = {};
 let tradeTablePage = 1;
 let tradePageSize = 25;
+let paperTradeSourceFilter = 'preferred';
 let txPage = 1;
 let txPageSize = 25;
 let logsPage = 1;
@@ -1768,10 +1769,98 @@ function renderYearChart() {
 
 function renderTradeTable(rows) {
   const wrap = document.getElementById('tradeTableWrap');
-  if (!rows?.length) { wrap.innerHTML = '<div class="empty">No data</div>'; return; }
+  const sourceFilterWrap = document.getElementById('tradeSourceFilterWrap');
+  const sourceFilterEl = document.getElementById('tradeSourceFilter');
+  const realtimeStatusEl = document.getElementById('tradeRealtimeStatus');
+  const isPaperMode = activeDataset === 'paper';
+
+  if (sourceFilterWrap) sourceFilterWrap.style.display = isPaperMode ? 'inline-flex' : 'none';
+  if (sourceFilterEl && sourceFilterEl.value) paperTradeSourceFilter = sourceFilterEl.value;
+
+  const normalizeSource = value => {
+    const src = String(value || '').toLowerCase();
+    if (src === 'realtime') return 'realtime';
+    if (src === 'simulation') return 'simulation';
+    return 'simulation';
+  };
+
+  const sourceRows = Array.isArray(rows) ? rows : [];
+  const applyPaperSourceFilter = list => {
+    if (!isPaperMode) return list;
+    const mode = paperTradeSourceFilter || 'preferred';
+    if (mode === 'realtime') return list.filter(r => normalizeSource(r.source) === 'realtime');
+    if (mode === 'simulation') return list.filter(r => normalizeSource(r.source) !== 'realtime');
+
+    const byVersion = {};
+    for (const r of list) {
+      const v = String(r.version || 'v1').toLowerCase();
+      if (!byVersion[v]) byVersion[v] = [];
+      byVersion[v].push(r);
+    }
+    const preferred = [];
+    Object.values(byVersion).forEach(versionRows => {
+      const realtimeRows = versionRows.filter(r => normalizeSource(r.source) === 'realtime');
+      if (realtimeRows.length) {
+        preferred.push(...realtimeRows);
+      } else {
+        preferred.push(...versionRows);
+      }
+    });
+    return preferred;
+  };
+
+  if (realtimeStatusEl) {
+    if (!isPaperMode) {
+      realtimeStatusEl.style.display = 'none';
+      realtimeStatusEl.textContent = '';
+    } else {
+      const now = new Date();
+      const monthStartMs = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0);
+      let realtimeMtd = 0;
+      let simulationMtd = 0;
+      let lastRealtimeTs = 0;
+
+      sourceRows.forEach(r => {
+        const ts = parseDashboardTimeValue(r.exit_time || r.entry_time);
+        if (!ts || ts < monthStartMs) return;
+        if (normalizeSource(r.source) === 'realtime') {
+          realtimeMtd += 1;
+          if (ts > lastRealtimeTs) lastRealtimeTs = ts;
+        } else {
+          simulationMtd += 1;
+        }
+      });
+
+      if (realtimeMtd > 0) {
+        const lastLabel = new Date(lastRealtimeTs).toLocaleString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+        realtimeStatusEl.textContent = `Realtime paper active this month (${realtimeMtd} trades, last ${lastLabel})`;
+        realtimeStatusEl.style.color = '#3fb950';
+      } else {
+        realtimeStatusEl.textContent = `Realtime paper inactive this month (simulation trades: ${simulationMtd})`;
+        realtimeStatusEl.style.color = '#ffa657';
+      }
+      realtimeStatusEl.style.display = '';
+    }
+  }
+
+  const displayRows = applyPaperSourceFilter(sourceRows);
+  if (!displayRows.length) {
+    const label = isPaperMode
+      ? (paperTradeSourceFilter === 'realtime' ? 'No realtime paper trades for this selection' : paperTradeSourceFilter === 'simulation' ? 'No simulated paper trades for this selection' : 'No paper trades for this selection')
+      : 'No data';
+    wrap.innerHTML = `<div class="empty">${label}</div>`;
+    return;
+  }
+
   const showVer = activeTab === 'all';
+  const showSource = isPaperMode;
   const vers = INSTRUMENTS[activeSym].versions;
-  const sorted = rows.slice().sort((a, b) => {
+  const sorted = displayRows.slice().sort((a, b) => {
     const ta = a.entry_time ? new Date(a.entry_time.replace(' ','T')).getTime() : 0;
     const tb = b.entry_time ? new Date(b.entry_time.replace(' ','T')).getTime() : 0;
     return tb - ta;
@@ -1794,16 +1883,23 @@ function renderTradeTable(rows) {
   </div>` : '';
   wrap.innerHTML = `<table><thead><tr>
     ${showVer ? '<th scope="col">Ver</th>' : ''}
-    <th scope="col">Entry</th><th scope="col">Exit</th><th scope="col">Dir</th><th scope="col">Entry $</th><th scope="col">Exit $</th><th scope="col">P&L</th><th scope="col">Result</th><th scope="col">Equity</th>
+    <th scope="col">Entry</th><th scope="col">Exit</th><th scope="col">Dir</th>${showSource ? '<th scope="col">Source</th>' : ''}<th scope="col">Entry $</th><th scope="col">Exit $</th><th scope="col">P&L</th><th scope="col">Result</th><th scope="col">Equity</th>
   </tr></thead><tbody>${paged.map(r => {
     const dirTag = r.direction === 'long' ? 'tag-long' : 'tag-short';
     const cfg = vers[r.version];
+    const src = normalizeSource(r.source);
+    const sourceTag = showSource
+      ? (src === 'realtime'
+        ? '<span class="tag tag-tp">realtime</span>'
+        : '<span class="tag tag-other">simulation</span>')
+      : '';
     const ep = r.entry_price < 100 ? '$' + r.entry_price?.toFixed(4) : '$' + r.entry_price?.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
     const xp = r.exit_price  < 100 ? '$' + r.exit_price?.toFixed(4)  : '$' + r.exit_price?.toLocaleString('en-US',  {minimumFractionDigits:2, maximumFractionDigits:2});
     return `<tr>
       ${showVer ? `<td><span class="pill" style="background:${cfg.color}22;color:${cfg.color};border-color:${cfg.color}">${cfg.tf}</span></td>` : ''}
       <td>${fmtDate(r.entry_time)}</td><td>${fmtDate(r.exit_time)}</td>
       <td><span class="tag ${dirTag}">${r.direction || '-'}</span></td>
+      ${showSource ? `<td>${sourceTag}</td>` : ''}
       <td>${ep}</td><td>${xp}</td>
       <td class="${clsVal(r.dollar_pnl)}">${fmt$(r.dollar_pnl)}</td>
       <td>${resultTag(r.result)}</td>
@@ -3499,6 +3595,11 @@ function bindStaticControlHandlers() {
   });
   document.getElementById('tradePageSizeSelect')?.addEventListener('change', e => {
     tradePageSize = parseInt(e.target.value, 10);
+    tradeTablePage = 1;
+    renderTradeTable(getActiveRows());
+  });
+  document.getElementById('tradeSourceFilter')?.addEventListener('change', e => {
+    paperTradeSourceFilter = String(e.target.value || 'preferred');
     tradeTablePage = 1;
     renderTradeTable(getActiveRows());
   });
