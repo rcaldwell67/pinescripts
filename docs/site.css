@@ -333,6 +333,10 @@
     .mode-btn.active[data-mode="backtest"] { background: #58a6ff22; border-color: var(--accent); color: var(--accent); }
     .mode-btn.active[data-mode="paper"]    { background: #ffa65722; border-color: var(--orange); color: var(--orange); }
     .mode-btn.active[data-mode="live"]     { background: #3fb95022; border-color: var(--green);  color: var(--green); }
+    .paper-source-bar { display: flex; align-items: center; gap: 6px; margin-left: 8px; }
+    .paper-src-btn { padding: 4px 12px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; font-size: 12px; font-weight: 600; transition: all .15s; }
+    .paper-src-btn:hover { border-color: var(--orange); color: var(--orange); }
+    .paper-src-btn.active { background: #ffa65722; border-color: var(--orange); color: var(--orange); }
     .refresh-controls {
       display: inline-flex;
       align-items: center;

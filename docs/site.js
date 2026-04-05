@@ -98,7 +98,7 @@ let activeTab = 'all';
 let charts = {};
 let tradeTablePage = 1;
 let tradePageSize = 25;
-let paperTradeSourceFilter = 'preferred';
+let paperTradeSourceFilter = 'all';
 let txPage = 1;
 let txPageSize = 25;
 let logsPage = 1;
@@ -116,6 +116,17 @@ let dashboardRefreshInFlight = false;
 let dashboardAutoRefreshTimer = null;
 let dailyValidationClipboardText = '';
 let dailyTransactionsDateOffsetDays = 0;
+
+function normalizeSource(value) {
+  return String(value || '').toLowerCase() === 'realtime' ? 'realtime' : 'simulation';
+}
+
+function filterPaperRows(rows) {
+  if (activeDataset !== 'paper') return rows;
+  if (paperTradeSourceFilter === 'realtime') return rows.filter(r => normalizeSource(r.source) === 'realtime');
+  if (paperTradeSourceFilter === 'simulation') return rows.filter(r => normalizeSource(r.source) !== 'realtime');
+  return rows; // 'all'
+}
 
 function getSymbolAliases(sym) {
   const raw = String(sym || '').trim();
@@ -1279,9 +1290,10 @@ function getNormalizedSymbolKey(sym) {
   }
 
   function getActiveRows() {
-    return activeTab === 'all'
+    const raw = activeTab === 'all'
       ? Object.values(loaded[activeSym] || {}).flat()
       : (loaded[activeSym]?.[activeTab] || []);
+    return filterPaperRows(raw);
   }
 
   function getSelectedBacktestVariant(sym, ver) {
@@ -1611,10 +1623,10 @@ function renderCards(rows) {
   cardEl.innerHTML = `
     ${totalEqCard}
     <div class="card"><div class="label">Total Trades</div><div class="value neutral">${m.n}</div><div class="sub">${m.longs}L / ${m.shorts}S</div></div>
-    <div class="card"><div class="label">Win Rate</div><div class="value ${m.winRate>=60?'positive':m.winRate>=50?'neutral':'negative'}">${m.winRate.toFixed(1)}%</div><div class="sub">${m.tpCount} TP - ${m.slCount} SL - ${m.trailCount} Trail${m.mbCount?' - '+m.mbCount+' MB':''}</div></div>
+      <div class="card"><div class="label">Win Rate</div><div class="value ${m.winRate>=70?'positive':m.winRate>=60?'neutral':'negative'}">${m.winRate.toFixed(1)}%</div><div class="sub">Target ≥70% · ${m.tpCount} TP - ${m.slCount} SL - ${m.trailCount} Trail${m.mbCount?' - '+m.mbCount+' MB':''}</div></div>
     <div class="card"><div class="label">Net P&L</div><div class="value ${clsVal(m.netPnl)}">${fmt$(m.netPnl)}</div><div class="sub">${fmtPct(m.netPnlPct)} on $${m.beginEq.toLocaleString()}</div></div>
     <div class="card"><div class="label">Profit Factor</div><div class="value ${m.pf>=2?'positive':m.pf>=1?'neutral':'negative'}">${fmtPF(m.pf, 3)}</div><div class="sub">Gross Win / Gross Loss</div></div>
-    <div class="card"><div class="label">Max Drawdown</div><div class="value ${m.maxDD<5?'positive':m.maxDD<15?'neutral':'negative'}">-${m.maxDD.toFixed(2)}%</div><div class="sub">Peak-to-trough</div></div>
+      <div class="card"><div class="label">Max Drawdown</div><div class="value ${m.maxDD<4.5?'positive':m.maxDD<10?'neutral':'negative'}">-${m.maxDD.toFixed(2)}%</div><div class="sub">Target ≤4.5% · Peak-to-trough</div></div>
     <div class="card"><div class="label">Final Equity</div><div class="value ${clsVal(m.finalEquity-m.beginEq)}">$${m.finalEquity.toFixed(2)}</div><div class="sub">Started $${m.beginEq.toLocaleString()}</div></div>`;
 }
 
@@ -1769,45 +1781,10 @@ function renderYearChart() {
 
 function renderTradeTable(rows) {
   const wrap = document.getElementById('tradeTableWrap');
-  const sourceFilterWrap = document.getElementById('tradeSourceFilterWrap');
-  const sourceFilterEl = document.getElementById('tradeSourceFilter');
   const realtimeStatusEl = document.getElementById('tradeRealtimeStatus');
   const isPaperMode = activeDataset === 'paper';
 
-  if (sourceFilterWrap) sourceFilterWrap.style.display = isPaperMode ? 'inline-flex' : 'none';
-  if (sourceFilterEl && sourceFilterEl.value) paperTradeSourceFilter = sourceFilterEl.value;
-
-  const normalizeSource = value => {
-    const src = String(value || '').toLowerCase();
-    if (src === 'realtime') return 'realtime';
-    if (src === 'simulation') return 'simulation';
-    return 'simulation';
-  };
-
-  const sourceRows = Array.isArray(rows) ? rows : [];
-  const applyPaperSourceFilter = list => {
-    if (!isPaperMode) return list;
-    const mode = paperTradeSourceFilter || 'preferred';
-    if (mode === 'realtime') return list.filter(r => normalizeSource(r.source) === 'realtime');
-    if (mode === 'simulation') return list.filter(r => normalizeSource(r.source) !== 'realtime');
-
-    const byVersion = {};
-    for (const r of list) {
-      const v = String(r.version || 'v1').toLowerCase();
-      if (!byVersion[v]) byVersion[v] = [];
-      byVersion[v].push(r);
-    }
-    const preferred = [];
-    Object.values(byVersion).forEach(versionRows => {
-      const realtimeRows = versionRows.filter(r => normalizeSource(r.source) === 'realtime');
-      if (realtimeRows.length) {
-        preferred.push(...realtimeRows);
-      } else {
-        preferred.push(...versionRows);
-      }
-    });
-    return preferred;
-  };
+  const displayRows = Array.isArray(rows) ? rows : [];
 
   if (realtimeStatusEl) {
     if (!isPaperMode) {
@@ -1820,7 +1797,8 @@ function renderTradeTable(rows) {
       let simulationMtd = 0;
       let lastRealtimeTs = 0;
 
-      sourceRows.forEach(r => {
+      // Always count MTD from all loaded rows regardless of active source filter
+      Object.values(loaded[activeSym] || {}).flat().forEach(r => {
         const ts = parseDashboardTimeValue(r.exit_time || r.entry_time);
         if (!ts || ts < monthStartMs) return;
         if (normalizeSource(r.source) === 'realtime') {
@@ -1848,10 +1826,9 @@ function renderTradeTable(rows) {
     }
   }
 
-  const displayRows = applyPaperSourceFilter(sourceRows);
   if (!displayRows.length) {
     const label = isPaperMode
-      ? (paperTradeSourceFilter === 'realtime' ? 'No realtime paper trades for this selection' : paperTradeSourceFilter === 'simulation' ? 'No simulated paper trades for this selection' : 'No paper trades for this selection')
+      ? (paperTradeSourceFilter === 'realtime' ? 'No realtime paper trades for this selection' : paperTradeSourceFilter === 'simulation' ? 'No simulation paper trades for this selection' : 'No paper trades for this selection')
       : 'No data';
     wrap.innerHTML = `<div class="empty">${label}</div>`;
     return;
@@ -2854,7 +2831,7 @@ function renderComparisonTable() {
   const el=document.getElementById('cmpTable');
   const vers=INSTRUMENTS[activeSym].versions;
   const vkeys=Object.keys(vers);
-  const items=vkeys.map(v=>({ v, m: loaded[activeSym][v]?.length ? calcMetrics(loaded[activeSym][v]) : null, cfg:vers[v] }));
+  const items=vkeys.map(v=>{ const r=filterPaperRows(loaded[activeSym][v]||[]); return { v, m: r.length ? calcMetrics(r) : null, cfg:vers[v] }; });
   const nd = '-';
   const rows=[
     ['Timeframe',       i=>i.cfg.tf],
@@ -2935,8 +2912,10 @@ function updateBalanceBar(rows) {
 
 function render() {
   const vers=INSTRUMENTS[activeSym].versions;
-  const rows=activeTab==='all'?Object.values(loaded[activeSym]).flat():(loaded[activeSym][activeTab]||[]);
+  const rawRows=activeTab==='all'?Object.values(loaded[activeSym]).flat():(loaded[activeSym][activeTab]||[]);
+  const rows=filterPaperRows(rawRows);
   updateDatasetSwitcher();
+  updatePaperSourceBar();
   renderTransactionTicker();
   updateBalanceBar(activeTab === 'all' ? null : rows);
   renderCards(rows);
@@ -2958,6 +2937,17 @@ function render() {
 }
 
 function updateAutoRefreshStatus({ enabled = false, timestamp = null, intervalSeconds = 0, failed = false } = {}) {
+  function updatePaperSourceBar() {
+    const bar = document.getElementById('paperSourceBar');
+    if (!bar) return;
+    const show = activeDataset === 'paper';
+    bar.style.display = show ? 'flex' : 'none';
+    bar.querySelectorAll('.paper-src-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.src === paperTradeSourceFilter);
+    });
+  }
+
+  function updateAutoRefreshStatus({ enabled = false, timestamp = null, intervalSeconds = 0, failed = false } = {}) {
   const statusEl = document.getElementById('autoRefreshStatus');
   const statusTextEl = document.getElementById('autoRefreshStatusText');
   const statusDotEl = document.getElementById('autoRefreshStatusDot');
@@ -3598,10 +3588,13 @@ function bindStaticControlHandlers() {
     tradeTablePage = 1;
     renderTradeTable(getActiveRows());
   });
-  document.getElementById('tradeSourceFilter')?.addEventListener('change', e => {
-    paperTradeSourceFilter = String(e.target.value || 'preferred');
+  document.getElementById('paperSourceBar')?.addEventListener('click', e => {
+    const btn = e.target.closest('.paper-src-btn');
+    if (!btn) return;
+    paperTradeSourceFilter = btn.dataset.src || 'all';
     tradeTablePage = 1;
-    renderTradeTable(getActiveRows());
+    updatePaperSourceBar();
+    render();
   });
   const logsRerender = () => { logsPage = 1; renderLogsPanel(); };
   document.getElementById('logSourceSelect')?.addEventListener('change', () => {

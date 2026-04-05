@@ -41,6 +41,12 @@
     <button type="button" class="mode-btn" data-mode="paper">Paper Trading</button>
     <button type="button" class="mode-btn" data-mode="live">Live Trading</button>
   </div>
+  <div id="paperSourceBar" class="paper-source-bar" style="display:none;" aria-label="Paper data source toggle">
+    <span style="font-size:12px;color:var(--muted);font-weight:600;">View:</span>
+    <button type="button" class="paper-src-btn active" data-src="all">All</button>
+    <button type="button" class="paper-src-btn" data-src="simulation">Simulation</button>
+    <button type="button" class="paper-src-btn" data-src="realtime">Realtime</button>
+  </div>
   <button id="openAccountInfoBtn" class="mode-btn" type="button" title="View Alpaca account details">Account Info</button>
   <button id="openDailyTransactionsBtn" class="mode-btn" type="button" title="View today's trades and fills">Daily Transactions</button>
   <div id="refreshControls" class="refresh-controls" aria-label="Dashboard refresh controls">
@@ -183,14 +189,6 @@
         <span class="tx-count" id="tradeRealtimeStatus" style="display:none;"></span>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-        <div id="tradeSourceFilterWrap" class="pg-size" style="display:none;">
-          <label>Paper Source</label>
-          <select id="tradeSourceFilter" class="tx-select">
-            <option value="preferred" selected>Preferred (Realtime then Sim)</option>
-            <option value="realtime">Realtime Only</option>
-            <option value="simulation">Simulation Only</option>
-          </select>
-        </div>
         <div class="pg-size">
           <label>Rows</label>
           <select id="tradePageSizeSelect" class="tx-select"><option value="10">10</option><option value="25" selected>25</option><option value="50">50</option><option value="100">100</option></select>
