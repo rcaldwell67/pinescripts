@@ -36,15 +36,18 @@
   "symbol_overrides": {
     "BTCUSD": {
       "signal": {
-        "pullback_tolerance_pct": 0.25,
-        "rsi_short_max": 54
+        "pullback_tolerance_pct": 0.2,
+        "rsi_short_max": 54,
+        "adx_threshold": 15,
+        "di_spread": 0.0,
+        "session_filter_enabled": true
       },
       "risk": {
         "sl_atr_mult": 3.5,
         "tp_atr_mult": 10.0,
         "trail_activate_atr_mult": 2.5,
         "trail_dist_atr_mult": 0.08,
-        "risk_pct": 1.4
+        "risk_pct": 1.2
       }
     },
     "ETHUSD": {
@@ -107,18 +110,18 @@
     },
     "BTCUSDT": {
       "signal": {
-        "pullback_tolerance_pct": 0.2,
-        "rsi_short_max": 56,
-        "adx_threshold": 18,
-        "di_spread": 5.0,
-        "session_filter_enabled": false
+        "pullback_tolerance_pct": 0.3,
+        "rsi_short_max": 54,
+        "adx_threshold": 22,
+        "di_spread": 0.0,
+        "session_filter_enabled": true
       },
       "risk": {
-        "sl_atr_mult": 4.5,
-        "tp_atr_mult": 6.0,
+        "sl_atr_mult": 3.5,
+        "tp_atr_mult": 8.0,
         "trail_activate_atr_mult": 2.0,
         "trail_dist_atr_mult": 0.1,
-        "risk_pct": 0.7
+        "risk_pct": 1.2
       }
     }
   },
@@ -147,18 +150,18 @@
       "symbol_overrides": {
         "BTCUSD": {
           "signal": {
-            "pullback_tolerance_pct": 0.25,
-            "rsi_short_max": 52,
+            "pullback_tolerance_pct": 0.2,
+            "rsi_short_max": 54,
             "adx_threshold": 15,
-            "di_spread": 5.0,
-            "session_filter_enabled": false
+            "di_spread": 0.0,
+            "session_filter_enabled": true
           },
           "risk": {
-            "sl_atr_mult": 4.5,
-            "tp_atr_mult": 6.0,
-            "trail_activate_atr_mult": 2.0,
-            "trail_dist_atr_mult": 0.1,
-            "risk_pct": 1.0
+            "sl_atr_mult": 3.5,
+            "tp_atr_mult": 10.0,
+            "trail_activate_atr_mult": 2.5,
+            "trail_dist_atr_mult": 0.08,
+            "risk_pct": 1.2
           }
         },
         "ETHUSD": {
