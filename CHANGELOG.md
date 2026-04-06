@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- Added `backend/data/validate_rerun_backtests.py` to validate representative backtest rerun paths on a temporary DB copy.
+  - Covers both issue-workflow branches: aligned reset reruns (default `v2`) and direct backtest reruns (default `v6`).
+  - Defaults to validating both `BTC/USDT` and `CLM` so crypto and non-crypto rerun paths are checked together.
+  - Reuses `backend/data/validate_dashboard_data_integrity.py` against the temp DB to confirm summary/trade coherence without dirtying the workspace.
+- Added `.github/workflows/validate-rerun-backtests.yml` to run the rerun validator in GitHub Actions on demand and on relevant `main` branch changes.
+- Added `backend/paper_trading/validate_rerun_paper_trading.py` to validate representative realtime paper rerun paths on a temporary DB copy with a fake Alpaca paper API.
+  - Validates actual versioned entry/exit dispatch and order parameter calculation on local sample data.
+  - Dry-runs representative crypto (`BTC/USDT` v2 long) and non-crypto (`CLM` v6 short) paper reruns without placing broker orders.
+  - Confirms summary writes, realtime fill ingestion, and paper trade persistence with `source='realtime'`.
+- Added `.github/workflows/validate-rerun-paper-trading.yml` to run the paper rerun validator in GitHub Actions on demand and on relevant `main` branch changes.
+
 - Generalized remaining v1/v2 utility workflows to v1-v6 coverage.
   - Updated `export_trades_to_json.py` and `backend/data/import_trades_to_db.py` default trade-file mappings to iterate versions `v1` through `v6`.
   - Updated `reset_paper_data.py` and `reset_paper_tmp.py` force-reset loops to execute all supported versions (`v1`-`v6`) per symbol.

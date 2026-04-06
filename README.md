@@ -159,6 +159,22 @@ Run this utility to detect missing symbol/version coverage and summary-vs-trade 
 
 - `python backend/data/validate_dashboard_data_integrity.py`
 
+### Backtest rerun validation
+
+Run this utility to validate the two issue-driven rerun backtest paths against a temporary DB copy:
+
+- `python backend/data/validate_rerun_backtests.py`
+
+By default it validates the aligned-reset branch and the direct-backtest branch on `BTC/USDT` and `CLM`, then runs the dashboard integrity check on the temporary DB so the workspace stays clean.
+
+### Paper rerun validation
+
+Run this utility to validate the issue-driven realtime paper rerun path against a temporary DB copy and a fake paper broker:
+
+- `python backend/paper_trading/validate_rerun_paper_trading.py`
+
+It validates actual versioned paper analysis/exit dispatch on local sample data, then dry-runs representative crypto and non-crypto paper reruns through the realtime runner without placing broker orders.
+
 ### Profile and guideline workflow
 
 Guideline-closed profiles exist for both versions and are intended as promoted runtime states:

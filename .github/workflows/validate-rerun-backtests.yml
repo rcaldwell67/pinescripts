@@ -1,0 +1,71 @@
+name: Validate Rerun Backtests
+
+on:
+  workflow_dispatch:
+    inputs:
+      symbol:
+        description: Optional symbol to validate. Repeat runs for additional symbols.
+        required: false
+        type: string
+      aligned_version:
+        description: Version to validate through the aligned reset path.
+        required: false
+        default: v2
+        type: string
+      direct_version:
+        description: Version to validate through the direct backtest path.
+        required: false
+        default: v6
+        type: string
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'reset_aligned_backtest_paper.py'
+      - 'requirements.txt'
+      - 'docs/data/tradingcopilot.db'
+      - '.github/workflows/rerun-backtest-issue.yml'
+      - '.github/workflows/validate-rerun-backtests.yml'
+
+jobs:
+  validate-rerun-backtests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
+      ALPACA_PAPER_API_KEY: ${{ secrets.ALPACA_PAPER_API_KEY }}
+      ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Validate rerun backtest paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXTRA_ARGS=()
+
+          if [[ -n "${{ github.event.inputs.symbol || '' }}" ]]; then
+            EXTRA_ARGS+=(--symbol "${{ github.event.inputs.symbol }}")
+          fi
+
+          if [[ -n "${{ github.event.inputs.aligned_version || 'v2' }}" ]]; then
+            EXTRA_ARGS+=(--aligned-version "${{ github.event.inputs.aligned_version || 'v2' }}")
+          fi
+
+          if [[ -n "${{ github.event.inputs.direct_version || 'v6' }}" ]]; then
+            EXTRA_ARGS+=(--direct-version "${{ github.event.inputs.direct_version || 'v6' }}")
+          fi
+
+          python backend/data/validate_rerun_backtests.py "${EXTRA_ARGS[@]}"
