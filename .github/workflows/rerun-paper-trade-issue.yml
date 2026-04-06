@@ -76,10 +76,25 @@ jobs:
           if git diff --cached --quiet; then
             echo "No DB changes to commit."
           else
-            git commit -m "chore: rerun paper trading ${{ steps.extract.outputs.symbol }} ${{ steps.extract.outputs.version }} (#${{ github.event.issue.number }})"
+            COMMIT_MSG="chore: rerun paper trading ${{ steps.extract.outputs.symbol }} ${{ steps.extract.outputs.version }} (#${{ github.event.issue.number }})"
+            SNAPSHOT_DB="$(mktemp)"
+            cp docs/data/tradingcopilot.db "$SNAPSHOT_DB"
             for attempt in 1 2 3; do
               echo "Push attempt ${attempt}/3"
-              if git pull --rebase origin main && git push origin HEAD:main; then
+
+              git fetch origin main
+              git reset --hard origin/main
+              cp "$SNAPSHOT_DB" docs/data/tradingcopilot.db
+
+              git add docs/data/tradingcopilot.db
+              if git diff --cached --quiet; then
+                echo "No effective DB changes remain after syncing with origin/main."
+                exit 0
+              fi
+
+              git commit -m "$COMMIT_MSG"
+
+              if git push origin HEAD:main; then
                 echo "Push succeeded."
                 exit 0
               fi
