@@ -2,6 +2,8 @@
 .vscode
 .nvm
 .venv
+.env
+.env.example
 
 node_modules
 .env
