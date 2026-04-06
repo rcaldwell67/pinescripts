@@ -93,13 +93,13 @@ jobs:
           for VERSION in "${VERSIONS[@]}"; do
             case "$VERSION" in
               v1)
-                python backend/strategy_generator/tune_v1_profile.py --symbol "$SYMBOL" --max-evals 24 --out /tmp/v1_symbol_tuning_rerun.json --apply --apply-top-level
+                python backend/strategy_generator/tune_v1_profile.py --symbol "$SYMBOL" --max-evals 24 --out /tmp/v1_symbol_tuning_rerun.json --apply --apply-top-level --apply-best-available
                 ;;
               v2)
-                python backend/strategy_generator/tune_v2_profile.py --symbol "$SYMBOL" --max-evals 48 --out /tmp/v2_symbol_tuning_rerun.json --apply
+                python backend/strategy_generator/tune_v2_profile.py --symbol "$SYMBOL" --max-evals 48 --out /tmp/v2_symbol_tuning_rerun.json --apply --apply-best-available
                 ;;
               v3|v4|v5|v6)
-                python backend/strategy_generator/tune_v3_v6_profile.py --version "$VERSION" --symbol "$SYMBOL" --max-evals 40 --out "/tmp/${VERSION}_symbol_tuning_rerun.json" --apply
+                python backend/strategy_generator/tune_v3_v6_profile.py --version "$VERSION" --symbol "$SYMBOL" --max-evals 40 --out "/tmp/${VERSION}_symbol_tuning_rerun.json" --apply --apply-best-available
                 ;;
             esac
           done
