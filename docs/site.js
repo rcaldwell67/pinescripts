@@ -111,6 +111,10 @@ const logsDataCache = {
 const VERSION_KEYS = ['v1', 'v2', 'v3', 'v4', 'v5', 'v6'];
 const PAPER_TRADING_SUPPORTED_VERSIONS = new Set(VERSION_KEYS);
 const LIVE_TRADING_SUPPORTED_VERSIONS = new Set(VERSION_KEYS);
+// Guideline thresholds and policy overrides.
+// These should match backend/config/guideline_policy.py to ensure consistency.
+// To update: modify backend/config/guideline_policy.py and re-generate this section,
+// or run: python backend/config/guideline_policy.py
 const GUIDELINE_THRESHOLDS = {
   minTrades: 1,
   minWinRate: 70.0,

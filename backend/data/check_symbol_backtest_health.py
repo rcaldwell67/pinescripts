@@ -1,13 +1,7 @@
 """Return failing backtest versions for a symbol based on guideline health rules.
 
-Default thresholds:
-- total_trades >= 1
-- win_rate >= 70
-- net_return_pct >= 20
-- max_drawdown_pct <= 4.5
-
-Policy exception:
-- BTC/USDC v1: win-rate is advisory only (all other thresholds still required).
+Guideline thresholds and policies are sourced from backend/config/guideline_policy.py
+to ensure consistency with dashboard audit logic and other backend checks.
 
 Prints failing versions as space-separated values (e.g. "v3 v4").
 Prints empty line when all versions pass.
@@ -19,19 +13,14 @@ import argparse
 import json
 import re
 import sqlite3
+import sys
 from pathlib import Path
 
+# Import centralized guideline policy
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "config"))
+from guideline_policy import DEFAULT_THRESHOLDS, normalize_symbol, get_override, evaluate_backtest_guideline
+
 VERSION_KEYS = ["v1", "v2", "v3", "v4", "v5", "v6"]
-
-MIN_TRADES = 1
-MIN_WIN_RATE = 70.0
-MIN_NET_RETURN = 20.0
-MAX_DRAWDOWN = 4.5
-
-# (normalized_symbol, version) -> waived hard checks.
-WAIVED_CHECKS: dict[tuple[str, str], set[str]] = {
-    ("BTCUSDC", "v1"): {"win_rate"},
-}
 
 
 def _parse_args() -> argparse.Namespace:
@@ -42,7 +31,8 @@ def _parse_args() -> argparse.Namespace:
 
 
 def _norm_symbol(symbol: str) -> str:
-    return "".join(ch for ch in str(symbol or "").upper() if ch.isalnum())
+    """Deprecated: use normalize_symbol from guideline_policy instead."""
+    return normalize_symbol(symbol)
 
 
 def _parse_version(metrics: dict, notes: str) -> str:
@@ -95,20 +85,6 @@ def _trade_metrics(conn: sqlite3.Connection, symbol: str, version: str) -> tuple
             max_dd = max(max_dd, (peak - e) / peak * 100.0)
 
     return trades, win_rate, max_dd
-
-
-def _evaluate(symbol: str, version: str, trades: int | None, win_rate: float | None, net_return: float | None, max_drawdown: float | None) -> bool:
-    waived = WAIVED_CHECKS.get((_norm_symbol(symbol), version), set())
-
-    if trades is None or trades < MIN_TRADES:
-        return False
-    if net_return is None or net_return < MIN_NET_RETURN:
-        return False
-    if max_drawdown is None or max_drawdown > MAX_DRAWDOWN:
-        return False
-    if "win_rate" not in waived and (win_rate is None or win_rate < MIN_WIN_RATE):
-        return False
-    return True
 
 
 def main() -> int:
@@ -170,7 +146,7 @@ def main() -> int:
         if max_drawdown is None:
             max_drawdown = trade_max_dd
 
-        if not _evaluate(args.symbol, ver, trades, win_rate, net_return, max_drawdown):
+        if not evaluate_backtest_guideline(args.symbol, ver, trades, win_rate, net_return, max_drawdown)[0]:
             failed.append(ver)
 
     conn.close()
