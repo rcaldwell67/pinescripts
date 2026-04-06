@@ -1497,6 +1497,7 @@ function getNormalizedSymbolKey(sym) {
 
     // Group entry dates by (symbol, version, mode)
     const groups = new Map();
+    const symbolDatesByMode = new Map();
     for (const r of rows) {
       const key = `${r.symbol}||${r.version}||${r.mode}`;
       if (!groups.has(key)) groups.set(key, { symbol: r.symbol, version: r.version, mode: r.mode, dates: [] });
@@ -1512,23 +1513,71 @@ function getNormalizedSymbolKey(sym) {
         const prefix = raw.slice(0, 10);
         if (/^\d{4}-\d{2}-\d{2}$/.test(prefix)) dateStr = prefix;
       }
-      if (dateStr) groups.get(key).dates.push(dateStr);
+      if (!dateStr) continue;
+      groups.get(key).dates.push(dateStr);
+
+      const symbolKey = String(r.symbol || '');
+      if (!symbolDatesByMode.has(symbolKey)) {
+        symbolDatesByMode.set(symbolKey, { backtest: [], paper: [] });
+      }
+      const bucket = symbolDatesByMode.get(symbolKey);
+      if (r.mode === 'backtest' || r.mode === 'paper') {
+        bucket[r.mode].push(dateStr);
+      }
     }
 
-    // Compute max gap per symbol (across all version/mode combos)
+    // Compute max gap per symbol and per mode.
     const symbolBest = new Map();
+
+    function updateBest(symbol, slot, candidate) {
+      const current = symbolBest.get(symbol) || {
+        symbol,
+        combined: null,
+        backtest: null,
+        paper: null,
+        latestBacktestEntry: null,
+        latestPaperEntry: null,
+      };
+      const prev = current[slot];
+      if (!prev || candidate.gap > prev.gap) {
+        current[slot] = candidate;
+      }
+      symbolBest.set(symbol, current);
+    }
+
     for (const { symbol, version, mode, dates } of groups.values()) {
       const sorted = [...new Set(dates)].sort();
       for (let i = 1; i < sorted.length; i++) {
         const gap = (new Date(sorted[i]) - new Date(sorted[i - 1])) / 86400000;
-        const prev = symbolBest.get(symbol);
-        if (!prev || gap > prev.gap) {
-          symbolBest.set(symbol, { symbol, gap, from: sorted[i - 1], to: sorted[i], version, mode });
+        const candidate = { gap, from: sorted[i - 1], to: sorted[i], version, mode };
+        updateBest(symbol, 'combined', candidate);
+        if (mode === 'backtest' || mode === 'paper') {
+          updateBest(symbol, mode, candidate);
         }
       }
     }
 
-    return [...symbolBest.values()].sort((a, b) => b.gap - a.gap);
+    for (const [symbol, byMode] of symbolDatesByMode.entries()) {
+      const current = symbolBest.get(symbol) || {
+        symbol,
+        combined: null,
+        backtest: null,
+        paper: null,
+        latestBacktestEntry: null,
+        latestPaperEntry: null,
+      };
+      const backDates = [...new Set(byMode.backtest || [])].sort();
+      const paperDates = [...new Set(byMode.paper || [])].sort();
+      current.latestBacktestEntry = backDates.length ? backDates[backDates.length - 1] : null;
+      current.latestPaperEntry = paperDates.length ? paperDates[paperDates.length - 1] : null;
+      symbolBest.set(symbol, current);
+    }
+
+    return [...symbolBest.values()].sort((a, b) => {
+      const aGap = a.combined ? a.combined.gap : -1;
+      const bGap = b.combined ? b.combined.gap : -1;
+      return bGap - aGap;
+    });
   }
 
   function renderTradeGapModal() {
@@ -1542,28 +1591,43 @@ function getNormalizedSymbolKey(sym) {
       return;
     }
 
-    const maxGap = results[0].gap;
-    const headerCells = ['Symbol', 'Gap (days)', 'From', 'To', 'Version', 'Mode']
-      .map(h => `<th style="padding:8px 12px; text-align:${h === 'Gap (days)' ? 'right' : 'left'}; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.6px; border-bottom:1px solid var(--border); font-weight:600; white-space:nowrap;">${escapeHtml(h)}</th>`)
+    const maxGap = Math.max(...results.map(r => (r.combined ? r.combined.gap : 0)), 0);
+    const headerCells = [
+      'Symbol',
+      'Combined Gap',
+      'Backtest Gap',
+      'Paper Gap',
+      'Latest Backtest Entry',
+      'Latest Paper Entry',
+      'Worst Gap Context',
+    ]
+      .map(h => `<th style="padding:8px 10px; text-align:${h.includes('Gap') ? 'right' : 'left'}; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.6px; border-bottom:1px solid var(--border); font-weight:600; white-space:nowrap;">${escapeHtml(h)}</th>`)
       .join('');
 
     const bodyRows = results.map(r => {
-      const ratio = maxGap > 0 ? r.gap / maxGap : 0;
+      const combined = r.combined;
+      const backtest = r.backtest;
+      const paper = r.paper;
+      const combinedGap = combined ? combined.gap : null;
+      const ratio = maxGap > 0 && combinedGap !== null ? combinedGap / maxGap : 0;
       const color = ratio > 0.7 ? 'var(--red)' : ratio > 0.4 ? 'var(--orange)' : 'var(--green)';
+      const gapCell = g => (g ? `${g.gap}` : '-');
+      const combinedText = combined ? `${combined.mode} ${combined.version} (${combined.from} -> ${combined.to})` : '-';
       return `<tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:8px 12px; font-weight:600; font-size:13px;">${escapeHtml(r.symbol)}</td>
-        <td style="padding:8px 12px; text-align:right; font-weight:700; font-size:14px; color:${color};">${r.gap}</td>
-        <td style="padding:8px 12px; font-size:12px; color:var(--muted);">${escapeHtml(r.from)}</td>
-        <td style="padding:8px 12px; font-size:12px; color:var(--muted);">${escapeHtml(r.to)}</td>
-        <td style="padding:8px 12px; font-size:12px;">${escapeHtml(r.version)}</td>
-        <td style="padding:8px 12px; font-size:12px; text-transform:capitalize;">${escapeHtml(r.mode)}</td>
+        <td style="padding:8px 10px; font-weight:600; font-size:13px;">${escapeHtml(r.symbol)}</td>
+        <td style="padding:8px 10px; text-align:right; font-weight:700; font-size:14px; color:${combinedGap !== null ? color : 'var(--muted)'};">${combinedGap !== null ? combinedGap : '-'}</td>
+        <td style="padding:8px 10px; text-align:right; font-size:12px;">${gapCell(backtest)}</td>
+        <td style="padding:8px 10px; text-align:right; font-size:12px;">${gapCell(paper)}</td>
+        <td style="padding:8px 10px; font-size:12px; color:var(--muted);">${escapeHtml(r.latestBacktestEntry || '-')}</td>
+        <td style="padding:8px 10px; font-size:12px; color:var(--muted);">${escapeHtml(r.latestPaperEntry || '-')}</td>
+        <td style="padding:8px 10px; font-size:12px; color:var(--muted);">${escapeHtml(combinedText)}</td>
       </tr>`;
     }).join('');
 
     contentDiv.innerHTML = `
       <p style="font-size:12px; color:var(--muted); margin:0 0 12px 0;">
-        Each row shows the longest gap between consecutive trade entry dates for that symbol across all versions.
-        Gaps are shown in calendar days. Version and mode indicate where the worst gap occurred.
+        Gaps are calendar days between consecutive entry dates. Combined Gap uses both backtest and paper rows.
+        Backtest Gap and Paper Gap are computed independently so you can compare modes directly.
       </p>
       <table style="width:100%; border-collapse:collapse; font-size:13px;">
         <thead><tr>${headerCells}</tr></thead>
