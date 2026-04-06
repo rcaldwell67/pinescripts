@@ -215,6 +215,66 @@ jobs:
             echo "Running paper trading for symbol: $SYMBOL (version: $VERSION)"
             python backend/paper_trading/paper_trade_backtrader_alpaca.py --symbol "$SYMBOL" --version "$VERSION"
           done
+
+      - name: Auto-repair weak/incomplete backtest versions
+        id: backtest_repair
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SYMBOL="${{ steps.parse.outputs.symbol }}"
+          DB_PATH="docs/data/tradingcopilot.db"
+
+          detect_failures() {
+            python backend/data/check_symbol_backtest_health.py --symbol "$SYMBOL" --db "$DB_PATH"
+          }
+
+          FAIL_VERSIONS="$(detect_failures)"
+          if [ -z "$FAIL_VERSIONS" ]; then
+            echo "All versions passed initial backtest quality checks."
+            echo "repair_status=passed" >> "$GITHUB_OUTPUT"
+            echo "remaining_failures=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Initial failing versions for $SYMBOL: $FAIL_VERSIONS"
+
+          for attempt in 1 2; do
+            echo "Repair pass ${attempt}/2 for versions: $FAIL_VERSIONS"
+            for VERSION in $FAIL_VERSIONS; do
+              case "$VERSION" in
+                v1)
+                  python backend/strategy_generator/tune_v1_profile.py --symbol "$SYMBOL" --max-evals 24 --out /tmp/v1_symbol_tuning_repair.json --apply --apply-top-level
+                  ;;
+                v2)
+                  python backend/strategy_generator/tune_v2_profile.py --symbol "$SYMBOL" --max-evals 48 --out /tmp/v2_symbol_tuning_repair.json --apply
+                  ;;
+                v3|v4|v5|v6)
+                  python backend/strategy_generator/tune_v3_v6_profile.py --version "$VERSION" --symbol "$SYMBOL" --max-evals 40 --out "/tmp/${VERSION}_symbol_tuning_repair.json" --apply
+                  ;;
+              esac
+
+              echo "Re-running backtest/paper for $SYMBOL $VERSION"
+              python backend/backtest_backtrader_alpaca.py --symbol "$SYMBOL" --version "$VERSION"
+              python backend/paper_trading/paper_trade_backtrader_alpaca.py --symbol "$SYMBOL" --version "$VERSION"
+            done
+
+            FAIL_VERSIONS="$(detect_failures)"
+            if [ -z "$FAIL_VERSIONS" ]; then
+              echo "All versions passed after repair pass $attempt."
+              echo "repair_status=passed_after_repair" >> "$GITHUB_OUTPUT"
+              echo "remaining_failures=" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "Still failing after pass $attempt: $FAIL_VERSIONS"
+          done
+
+          echo "repair_status=warning" >> "$GITHUB_OUTPUT"
+          echo "remaining_failures=$FAIL_VERSIONS" >> "$GITHUB_OUTPUT"
+          echo "::warning::Backtest quality still below thresholds for $SYMBOL after repair attempts: $FAIL_VERSIONS"
+          echo "Proceeding with onboarding commit so reruns are not required."
+          exit 0
+
       - name: Commit DB changes
         run: |
           set -euo pipefail
@@ -284,4 +344,8 @@ jobs:
       - name: Comment and close issue
         uses: peter-evans/close-issue@v3
         with:
-          comment: "Symbol ${{ steps.parse.outputs.symbol }} passed Alpaca Paper validation, was added to docs/data/tradingcopilot.db, received v1-v6 symbol-specific runtime tuning, and both backtest and paper-trading runs completed successfully."
+          comment: |
+            Symbol ${{ steps.parse.outputs.symbol }} passed Alpaca Paper validation, was added to docs/data/tradingcopilot.db, received v1-v6 symbol-specific runtime tuning, and both backtest and paper-trading runs completed.
+
+            Backtest repair status: `${{ steps.backtest_repair.outputs.repair_status }}`
+            Remaining weak/incomplete versions after repair: `${{ steps.backtest_repair.outputs.remaining_failures || 'none' }}`
