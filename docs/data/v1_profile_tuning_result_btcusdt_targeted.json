@@ -1,0 +1,38 @@
+{
+  "symbol": "BTC/USDT",
+  "profile": "guideline_closed",
+  "constraints": {
+    "min_win_rate": 70.0,
+    "min_net_return": 20.0,
+    "max_drawdown": 4.5
+  },
+  "base": {
+    "trades": 158,
+    "win_rate": 67.72151898734177,
+    "net_return_pct": 25.26228809891966,
+    "max_drawdown_pct": 2.4866016288632564
+  },
+  "best_candidate": {
+    "pullback_tolerance_pct": 0.2,
+    "rsi_short_max": 54,
+    "adx_threshold": 22,
+    "di_spread": 2.5,
+    "session_filter_enabled": true,
+    "sl_atr_mult": 3.5,
+    "tp_atr_mult": 8.0,
+    "trail_activate_atr_mult": 2.0,
+    "trail_dist_atr_mult": 0.1,
+    "risk_pct": 1.2,
+    "trades": 32,
+    "win_rate": 71.875,
+    "net_return_pct": 18.827971097325435,
+    "max_drawdown_pct": 2.385600000000002,
+    "pass_win_rate": true,
+    "pass_net_return": false,
+    "pass_drawdown": true,
+    "meets_constraints": false,
+    "pass_all": false
+  },
+  "evaluations": 240,
+  "seed": 702
+}
