@@ -140,6 +140,17 @@ function getNormalizedSymbolKey(sym) {
   return String(sym || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
 
+function sqliteTableExists(db, tableName) {
+  if (!db || !tableName) return false;
+  const safeName = String(tableName).replace(/'/g, "''");
+  try {
+    const res = db.exec(`SELECT name FROM sqlite_master WHERE type='table' AND name='${safeName}'`);
+    return Boolean(res.length && res[0].values && res[0].values.length);
+  } catch (err) {
+    return false;
+  }
+}
+
 function getPaperFillStats(sym, monthStartMs = 0) {
   const db = window._SQL_DB;
   if (!db || !sym) return { mtdCount: 0, lastTs: 0 };
@@ -515,13 +526,27 @@ function getPaperFillStats(sym, monthStartMs = 0) {
     if (activeDataset === 'live') return [];
     const latestBySymbol = new Map();
     const modeFilter = activeDataset === 'backtest' ? 'backtest' : (activeDataset === 'paper' ? 'paper' : 'live');
-    const requireBrokerRows = activeDataset === 'paper' || activeDataset === 'live';
+    const requireBrokerRows = activeDataset === 'live' || (activeDataset === 'paper' && paperTradeSourceFilter === 'realtime');
+    const linkTable = modeFilter === 'live' ? 'live_order_trade_links' : 'paper_order_trade_links';
+    const hasLinkTable = !requireBrokerRows || sqliteTableExists(db, linkTable);
+
+    if (requireBrokerRows && !hasLinkTable) {
+      return [];
+    }
 
     try {
+      const sourceClause = activeDataset === 'paper' && paperTradeSourceFilter === 'realtime'
+        ? "AND COALESCE(LOWER(source), '') = 'realtime'"
+        : '';
+      const brokerClause = requireBrokerRows
+        ? `AND EXISTS (SELECT 1 FROM ${linkTable} l WHERE l.trade_id = trades.id)`
+        : '';
       const stmt = db.prepare(`
         SELECT *
         FROM trades
         WHERE mode = ?
+        ${sourceClause}
+        ${brokerClause}
         ORDER BY datetime(COALESCE(exit_time, entry_time)) DESC, datetime(entry_time) DESC, id DESC
       `);
       stmt.bind([modeFilter]);
@@ -3616,21 +3641,35 @@ async function handleSymbolSelect(newSym, dbInstance) {
     const symbolAliases = getSymbolAliases(activeSym);
     const normalizedSymbol = getNormalizedSymbolKey(activeSym);
     const modeFilter = activeDataset === 'backtest' ? 'backtest' : (activeDataset === 'paper' ? 'paper' : 'live');
-    const requireBrokerRows = activeDataset === 'live';
+    const requireBrokerRows = activeDataset === 'live' || (activeDataset === 'paper' && paperTradeSourceFilter === 'realtime');
+    const linkTable = modeFilter === 'live' ? 'live_order_trade_links' : 'paper_order_trade_links';
+    const hasLinkTable = !requireBrokerRows || sqliteTableExists(db, linkTable);
     let rows = [];
     try {
-      const stmt = db.prepare(
-        `SELECT * FROM trades
-         WHERE REPLACE(REPLACE(REPLACE(REPLACE(UPPER(symbol), '/', ''), '_', ''), '-', ''), ' ', '') = ?
-           AND mode = ?
-           ${requireBrokerRows ? "AND COALESCE(LOWER(source), '') = 'realtime'" : ''}
-         ORDER BY entry_time`
-      );
-      stmt.bind([normalizedSymbol, modeFilter]);
-      while (stmt.step()) {
-        rows.push(stmt.getAsObject());
+      if (!hasLinkTable) {
+        rows = [];
+      } else {
+        const sourceClause = activeDataset === 'paper' && paperTradeSourceFilter === 'realtime'
+          ? "AND COALESCE(LOWER(source), '') = 'realtime'"
+          : '';
+        const brokerClause = requireBrokerRows
+          ? `AND EXISTS (SELECT 1 FROM ${linkTable} l WHERE l.trade_id = trades.id)`
+          : '';
+
+        const stmt = db.prepare(
+          `SELECT * FROM trades
+           WHERE REPLACE(REPLACE(REPLACE(REPLACE(UPPER(symbol), '/', ''), '_', ''), '-', ''), ' ', '') = ?
+             AND mode = ?
+             ${sourceClause}
+             ${brokerClause}
+           ORDER BY entry_time`
+        );
+        stmt.bind([normalizedSymbol, modeFilter]);
+        while (stmt.step()) {
+          rows.push(stmt.getAsObject());
+        }
+        stmt.free();
       }
-      stmt.free();
       if (requireBrokerRows) {
         rows = rows.filter(r => String(r.source || '').toLowerCase() === 'realtime');
       }
