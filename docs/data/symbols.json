@@ -30,5 +30,9 @@
   {
     "symbol": "ETH/USDC",
     "description": "Ethereum / USD Coin"
+  },
+  {
+    "symbol": "ETH/USDT",
+    "description": "Ethereum / USD Tether"
   }
 ]
