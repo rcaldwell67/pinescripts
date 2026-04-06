@@ -89,15 +89,10 @@ jobs:
           VERSIONS_CSV="${{ steps.extract.outputs.versions }}"
           IFS=',' read -r -a VERSIONS <<< "$VERSIONS_CSV"
 
-          echo "Running backtest rerun for symbol $SYMBOL versions: ${VERSIONS[*]}"
+          echo "Running strategy backtest rerun for symbol $SYMBOL versions: ${VERSIONS[*]}"
           for VERSION in "${VERSIONS[@]}"; do
-            if [[ "$VERSION" == "v1" ]]; then
-              python reset_aligned_backtest_paper.py --version v1 --symbol "$SYMBOL"
-            elif [[ "$VERSION" == "v2" ]]; then
-              python reset_aligned_backtest_paper.py --version v2 --symbol "$SYMBOL"
-            else
-              python backend/backtest_backtrader_alpaca.py --symbol "$SYMBOL" --version "$VERSION"
-            fi
+            echo "Running $VERSION for $SYMBOL"
+            python backend/backtest_backtrader_alpaca.py --symbol "$SYMBOL" --version "$VERSION"
           done
 
       - name: Commit updated DB
