@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+- Standardized `current_equity` persistence and dashboard display across backtest, paper, and live paths.
+  - Added `current_equity` column to `backtest_results`, `paper_trading_results`, and `live_trading_results` in DB bootstrap DDL.
+  - Added runtime schema hardening (`ALTER TABLE ... ADD COLUMN current_equity`) in summary writers so existing DBs are upgraded automatically.
+  - Updated backtest and paper simulation summary metrics to include `current_equity` (aliased to final equity for closed-run datasets).
+  - Updated realtime paper/live summary writes to persist `current_equity` both in metrics JSON and in the table column.
+  - Updated dashboard cards to show `Current Equity` explicitly, preferring account `current_balance` for paper/live when available and falling back to summary/trade equity.
+  - Updated account modal panels to show a `Current Equity Snapshot` row with value, source mode, and human-readable timestamp.
+  - Added freshness/staleness age badges for equity snapshots in both the `Current Equity` card subtitle and account modal snapshot row.
+
 - Added `backend/data/validate_rerun_backtests.py` to validate representative backtest rerun paths on a temporary DB copy.
   - Covers both issue-workflow branches: aligned reset reruns (default `v2`) and direct backtest reruns (default `v6`).
   - Defaults to validating both `BTC/USDT` and `CLM` so crypto and non-crypto rerun paths are checked together.

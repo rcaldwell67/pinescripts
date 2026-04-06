@@ -350,6 +350,52 @@ function getNormalizedSymbolKey(sym) {
     return getDatasetInitialCapital();
   }
 
+  function getDatasetCurrentBalance() {
+    if (activeDataset !== 'paper' && activeDataset !== 'live') return null;
+    const dataByMode = getLatestAccountInfoByMode();
+    if (!dataByMode) return null;
+    const row = activeDataset === 'paper' ? dataByMode.paper : dataByMode.live;
+    const balance = Number(row && row.current_balance);
+    if (!Number.isFinite(balance)) return null;
+    return {
+      value: balance,
+      updatedAt: row && row.updated_at ? String(row.updated_at) : null,
+      source: 'account',
+    };
+  }
+
+  function getLatestEquityTimestampFromRows(rows) {
+    if (!Array.isArray(rows) || !rows.length) return null;
+    const first = rows[0] || {};
+    if (first._summary && first._summary.timestamp) {
+      return String(first._summary.timestamp);
+    }
+    let bestMs = 0;
+    let bestRaw = null;
+    for (const row of rows) {
+      const candidates = [row && row.exit_time, row && row.entry_time];
+      for (const candidate of candidates) {
+        if (!candidate) continue;
+        const ms = parseDashboardTimeValue(candidate);
+        if (ms > bestMs) {
+          bestMs = ms;
+          bestRaw = candidate;
+        }
+      }
+    }
+    return bestRaw ? String(bestRaw) : null;
+  }
+
+  function getSnapshotAgeInfo(snapshotTime) {
+    if (!snapshotTime) {
+      return { label: 'unknown age', state: 'is-stale' };
+    }
+    const rel = formatTickerRelativeTime(snapshotTime);
+    const state = rel && rel.state ? rel.state : '';
+    const label = rel && rel.label ? rel.label : 'unknown age';
+    return { label, state };
+  }
+
   function getSymbolInitialCapital(sym) {
     const byVersion = loaded?.[sym] || {};
     for (const rows of Object.values(byVersion)) {
@@ -662,21 +708,33 @@ function getNormalizedSymbolKey(sym) {
       return;
     }
 
+    const normalizedMode = String(modeLabel || '').trim().toLowerCase() === 'live' ? 'live' : 'paper';
+    const currentBalanceText = formatCurrencySafe(data.current_balance);
+    const snapshotTime = data.updated_at ? String(data.updated_at) : null;
+    const updatedLabel = snapshotTime ? formatTickerTimestamp(snapshotTime) : 'unknown';
+    const age = getSnapshotAgeInfo(snapshotTime);
+    const snapshotText = `${currentBalanceText} (${normalizedMode} account, ${updatedLabel})`;
+    const snapshotHtml = `${escapeHtml(snapshotText)} <span class="snapshot-age ${escapeHtml(age.state)}">${escapeHtml(age.label)}</span>`;
+
     const rows = [
-      ['Account ID', String(data.account_id || '-')],
-      ['Account Number', String(data.account_number || '-')],
-      ['Status', String(data.status || '-')],
-      ['Currency', String(data.currency || '-')],
-      ['Beginning Balance', formatCurrencySafe(data.beginning_balance)],
-      ['Current Balance', formatCurrencySafe(data.current_balance)],
-      ['Buying Power', formatCurrencySafe(data.buying_power)],
-      ['Cash', formatCurrencySafe(data.cash)],
-      ['Last Event', String(data.last_event || '-')],
-      ['Updated At', String(data.updated_at || '-')],
+      { label: 'Account ID', value: String(data.account_id || '-') },
+      { label: 'Account Number', value: String(data.account_number || '-') },
+      { label: 'Status', value: String(data.status || '-') },
+      { label: 'Currency', value: String(data.currency || '-') },
+      { label: 'Current Equity Snapshot', value: snapshotHtml, isHtml: true },
+      { label: 'Beginning Balance', value: formatCurrencySafe(data.beginning_balance) },
+      { label: 'Current Balance', value: formatCurrencySafe(data.current_balance) },
+      { label: 'Buying Power', value: formatCurrencySafe(data.buying_power) },
+      { label: 'Cash', value: formatCurrencySafe(data.cash) },
+      { label: 'Last Event', value: String(data.last_event || '-') },
+      { label: 'Updated At', value: String(data.updated_at || '-') },
     ];
-    const content = rows.map(([label, value]) => (
-      `<div class="account-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(String(value ?? '-'))}</strong></div>`
-    )).join('');
+    const content = rows.map(row => {
+      const renderedValue = row.isHtml
+        ? String(row.value || '-')
+        : escapeHtml(String(row.value ?? '-'));
+      return `<div class="account-row"><span>${escapeHtml(row.label)}</span><strong>${renderedValue}</strong></div>`;
+    }).join('');
 
     panel.innerHTML = `<h3>${escapeHtml(modeLabel)} Account</h3>${content}`;
   }
@@ -1604,7 +1662,7 @@ function calcMetrics(rows) {
     const losses = Number(s.losing_trades || Math.max(0, n - wins));
     const winRate = Number(s.win_rate || (n ? (wins / n * 100) : 0));
     const beginEq = Number(s.beginning_equity || beginEqFromRows || getDatasetInitialCapital());
-    const finalEquity = Number(s.final_equity || beginEq);
+    const finalEquity = Number(s.current_equity || s.final_equity || beginEq);
     const netPnl = Number(s.total_pnl || (finalEquity - beginEq));
     const netPnlPct = Number(s.net_return_pct || (beginEq ? (netPnl / beginEq * 100) : 0));
     const maxDrawdownAbs = Number(s.max_drawdown || 0);
@@ -1748,6 +1806,19 @@ function renderCards(rows) {
   }
   const m = calcMetrics(rows);
   if (!m) { cardEl.innerHTML=''; return; }
+  const datasetBalance = getDatasetCurrentBalance();
+  const displayCurrentEq = Number.isFinite(datasetBalance && datasetBalance.value)
+    ? datasetBalance.value
+    : m.finalEquity;
+  const snapshotTime = datasetBalance && datasetBalance.updatedAt
+    ? datasetBalance.updatedAt
+    : getLatestEquityTimestampFromRows(rows);
+  const snapshotLabel = snapshotTime ? formatTickerTimestamp(snapshotTime) : 'unknown';
+  const snapshotAge = getSnapshotAgeInfo(snapshotTime);
+  const sourceLabel = datasetBalance && datasetBalance.source === 'account'
+    ? `${activeDataset} account`
+    : `${activeDataset} trades`;
+  const currentEqSub = `${sourceLabel} snapshot ${snapshotLabel} <span class="snapshot-age ${snapshotAge.state}">${snapshotAge.label}</span> - Started $${m.beginEq.toLocaleString()}`;
   cardEl.innerHTML = `
     ${totalEqCard}
     <div class="card"><div class="label">Total Trades</div><div class="value neutral">${m.n}</div><div class="sub">${m.longs}L / ${m.shorts}S</div></div>
@@ -1755,7 +1826,7 @@ function renderCards(rows) {
     <div class="card"><div class="label">Net P&L</div><div class="value ${clsVal(m.netPnl)}">${fmt$(m.netPnl)}</div><div class="sub">${fmtPct(m.netPnlPct)} on $${m.beginEq.toLocaleString()}</div></div>
     <div class="card"><div class="label">Profit Factor</div><div class="value ${m.pf>=2?'positive':m.pf>=1?'neutral':'negative'}">${fmtPF(m.pf, 3)}</div><div class="sub">Gross Win / Gross Loss</div></div>
       <div class="card"><div class="label">Max Drawdown</div><div class="value ${m.maxDD<4.5?'positive':m.maxDD<10?'neutral':'negative'}">-${m.maxDD.toFixed(2)}%</div><div class="sub">Target ≤4.5% · Peak-to-trough</div></div>
-    <div class="card"><div class="label">Final Equity</div><div class="value ${clsVal(m.finalEquity-m.beginEq)}">$${m.finalEquity.toFixed(2)}</div><div class="sub">Started $${m.beginEq.toLocaleString()}</div></div>`;
+    <div class="card"><div class="label">Current Equity</div><div class="value ${clsVal(displayCurrentEq-m.beginEq)}">$${displayCurrentEq.toFixed(2)}</div><div class="sub">${currentEqSub}</div></div>`;
 }
 
 function renderEquityChart(rows) {
@@ -3295,7 +3366,7 @@ async function handleSymbolSelect(newSym, dbInstance) {
       const startTime = metrics.first_trade_date || timestamp || null;
       const endTime = metrics.last_trade_date || metrics.first_trade_date || timestamp || null;
       const beginEq = Number(metrics.beginning_equity || getDatasetInitialCapital());
-      const finalEq = Number(metrics.final_equity || beginEq);
+      const finalEq = Number(metrics.current_equity || metrics.final_equity || beginEq);
       const netPnl = Number(metrics.total_pnl || (finalEq - beginEq));
       return [
         {

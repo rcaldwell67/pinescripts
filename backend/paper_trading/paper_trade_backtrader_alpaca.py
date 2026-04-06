@@ -22,7 +22,14 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 BACKEND_DIR = REPO_ROOT / "backend"
 sys.path.insert(0, str(BACKEND_DIR))
 
-from backtest_backtrader_alpaca import DB_PATH, VERSION_MAP, _to_native, fetch_ohlcv, run_backtest
+from backtest_backtrader_alpaca import (
+    DB_PATH,
+    VERSION_MAP,
+    _to_native,
+    ensure_result_tables_have_current_equity,
+    fetch_ohlcv,
+    run_backtest,
+)
 
 
 def _result_label(exit_type: object) -> str:
@@ -71,6 +78,7 @@ def _metrics_for_trades(symbol: str, version: str, trades, df) -> dict[str, obje
         "version": version,
         "beginning_equity": _to_native(initial_equity),
         "final_equity": _to_native(final_equity),
+        "current_equity": _to_native(final_equity),
         "total_trades": _to_native(total_trades),
         "winning_trades": _to_native(win_trades),
         "losing_trades": _to_native(loss_trades),
@@ -87,6 +95,7 @@ def _metrics_for_trades(symbol: str, version: str, trades, df) -> dict[str, obje
 def save_paper_to_db(symbol: str, version: str, trades, df, *, force_reset: bool = False) -> None:
     conn = sqlite3.connect(str(DB_PATH), timeout=30)
     conn.execute("PRAGMA journal_mode=DELETE")
+    ensure_result_tables_have_current_equity(conn)
     try:
         conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
     except sqlite3.OperationalError:
@@ -160,8 +169,8 @@ def save_paper_to_db(symbol: str, version: str, trades, df, *, force_reset: bool
         (symbol, f"%{VERSION_MAP.get(version, version)}%"),
     )
     conn.execute(
-        "INSERT INTO paper_trading_results (symbol, metrics, notes) VALUES (?, ?, ?)",
-        (symbol, json.dumps(metrics), notes),
+        "INSERT INTO paper_trading_results (symbol, metrics, notes, current_equity) VALUES (?, ?, ?, ?)",
+        (symbol, json.dumps(metrics), notes, float(metrics.get("current_equity") or metrics.get("final_equity") or 0.0)),
     )
 
     conn.commit()

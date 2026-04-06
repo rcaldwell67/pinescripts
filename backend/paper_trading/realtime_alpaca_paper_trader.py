@@ -40,7 +40,7 @@ from apm_v3 import apm_v3_latest_bar_analysis, apm_v3_latest_bar_exit_analysis
 from apm_v4 import apm_v4_latest_bar_analysis, apm_v4_latest_bar_exit_analysis
 from apm_v5 import apm_v5_latest_bar_analysis, apm_v5_latest_bar_exit_analysis
 from apm_v6 import apm_v6_latest_bar_analysis, apm_v6_latest_bar_exit_analysis
-from backtest_backtrader_alpaca import DB_PATH, VERSION_MAP, fetch_ohlcv
+from backtest_backtrader_alpaca import DB_PATH, VERSION_MAP, ensure_result_tables_have_current_equity, fetch_ohlcv
 from portfolio_system import evaluate_trade
 from v1_params import get_v1_params
 from v2_params import get_v2_params
@@ -529,6 +529,7 @@ def _check_schedule_health(conn: sqlite3.Connection, interval_seconds: int) -> l
 
 
 def _upsert_summary(conn: sqlite3.Connection, symbol: str, version: str, status: str, detail: str, equity: float | None) -> None:
+    ensure_result_tables_have_current_equity(conn)
     notes = f"{VERSION_MAP.get(version, version)} realtime alpaca summary"
     ts = datetime.now(timezone.utc).isoformat()
     metrics = {
@@ -537,6 +538,7 @@ def _upsert_summary(conn: sqlite3.Connection, symbol: str, version: str, status:
         "status": status,
         "detail": detail,
         "equity": equity,
+        "current_equity": equity,
         "timestamp": ts,
     }
     conn.execute(
@@ -544,8 +546,8 @@ def _upsert_summary(conn: sqlite3.Connection, symbol: str, version: str, status:
         (symbol, f"%{VERSION_MAP.get(version, version)} realtime alpaca%"),
     )
     conn.execute(
-        "INSERT INTO paper_trading_results (symbol, metrics, notes) VALUES (?, ?, ?)",
-        (symbol, json.dumps(metrics), notes),
+        "INSERT INTO paper_trading_results (symbol, metrics, notes, current_equity) VALUES (?, ?, ?, ?)",
+        (symbol, json.dumps(metrics), notes, float(equity) if equity is not None else None),
     )
     # Append to cumulative run log
     _ensure_realtime_paper_log_table(conn)

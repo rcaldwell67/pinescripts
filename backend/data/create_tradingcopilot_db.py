@@ -16,7 +16,8 @@ def create_database(db_path):
             symbol TEXT NOT NULL,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
             metrics TEXT,
-            notes TEXT
+            notes TEXT,
+            current_equity REAL
         )
     ''')
     # Paper Trading Results Table
@@ -26,7 +27,8 @@ def create_database(db_path):
             symbol TEXT NOT NULL,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
             metrics TEXT,
-            notes TEXT
+            notes TEXT,
+            current_equity REAL
         )
     ''')
     # Live Trading Results Table
@@ -36,7 +38,8 @@ def create_database(db_path):
             symbol TEXT NOT NULL,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
             metrics TEXT,
-            notes TEXT
+            notes TEXT,
+            current_equity REAL
         )
     ''')
     # Symbols Table

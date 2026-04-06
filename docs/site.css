@@ -199,6 +199,31 @@
     .card .label { font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin-bottom: 6px; }
     .card .value { font-size: 24px; font-weight: 700; }
     .card .sub   { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .snapshot-age {
+      display: inline-flex;
+      align-items: center;
+      padding: 0 7px;
+      border-radius: 999px;
+      border: 1px solid rgba(139, 148, 158, 0.28);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .2px;
+      margin: 0 4px;
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+    .snapshot-age.is-fresh {
+      border-color: rgba(63, 185, 80, 0.35);
+      background: rgba(63, 185, 80, 0.12);
+      color: var(--green);
+    }
+    .snapshot-age.is-stale {
+      border-color: rgba(255, 166, 87, 0.35);
+      background: rgba(255, 166, 87, 0.14);
+      color: var(--orange);
+    }
     .positive { color: var(--green); }
     .negative { color: var(--red); }
     .neutral  { color: var(--accent); }

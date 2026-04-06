@@ -48,6 +48,16 @@ VERSION_MAP: dict[str, str] = {
 }
 
 
+def ensure_result_tables_have_current_equity(conn: sqlite3.Connection) -> None:
+    """Ensure summary tables expose an explicit current_equity column."""
+    for table in ("backtest_results", "paper_trading_results", "live_trading_results"):
+        try:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN current_equity REAL")
+        except sqlite3.OperationalError:
+            # Column already exists.
+            pass
+
+
 # ── Data fetch ─────────────────────────────────────────────────────────────────
 
 def fetch_ohlcv_alpaca(symbol: str) -> "pd.DataFrame | None":
@@ -275,6 +285,7 @@ def save_to_db(symbol: str, version: str,
         "version":          version,
         "beginning_equity": _to_native(initial_equity),
         "final_equity":     _to_native(final_equity),
+        "current_equity":   _to_native(final_equity),
         "total_trades":     _to_native(total_trades),
         "winning_trades":   _to_native(win_trades),
         "losing_trades":    _to_native(loss_trades),
@@ -289,6 +300,7 @@ def save_to_db(symbol: str, version: str,
 
     conn = sqlite3.connect(str(DB_PATH), timeout=30)
     conn.execute("PRAGMA journal_mode=DELETE")
+    ensure_result_tables_have_current_equity(conn)
     try:
         conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
     except sqlite3.OperationalError:
@@ -301,8 +313,8 @@ def save_to_db(symbol: str, version: str,
         (symbol, f"%{VERSION_MAP.get(version, version)}%"),
     )
     conn.execute(
-        "INSERT INTO backtest_results (symbol, metrics, notes) VALUES (?, ?, ?)",
-        (symbol, json.dumps(metrics), notes),
+        "INSERT INTO backtest_results (symbol, metrics, notes, current_equity) VALUES (?, ?, ?, ?)",
+        (symbol, json.dumps(metrics), notes, float(final_equity)),
     )
 
     norm_symbol = "".join(ch for ch in symbol.upper() if ch.isalnum())
