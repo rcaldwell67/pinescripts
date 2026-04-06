@@ -1475,6 +1475,117 @@ function getNormalizedSymbolKey(sym) {
     modal.setAttribute('aria-hidden', 'true');
   }
 
+  // ── Trade Gap Analysis modal ────────────────────────────────────────────────
+
+  function computeTradeGapAnalysis() {
+    const db = window._SQL_DB;
+    if (!db) return [];
+
+    const rows = [];
+    try {
+      const stmt = db.prepare(
+        "SELECT symbol, version, mode, entry_time FROM trades " +
+        "WHERE mode IN ('backtest','paper') AND entry_time IS NOT NULL " +
+        "ORDER BY symbol, version, mode, entry_time"
+      );
+      while (stmt.step()) rows.push(stmt.getAsObject());
+      stmt.free();
+    } catch (e) {
+      console.error('Trade gap query failed:', e);
+      return [];
+    }
+
+    // Group entry dates by (symbol, version, mode)
+    const groups = new Map();
+    for (const r of rows) {
+      const key = `${r.symbol}||${r.version}||${r.mode}`;
+      if (!groups.has(key)) groups.set(key, { symbol: r.symbol, version: r.version, mode: r.mode, dates: [] });
+      const raw = String(r.entry_time || '').trim();
+      // Parse to a YYYY-MM-DD date string
+      let dateStr = null;
+      try {
+        const d = new Date(raw.endsWith('Z') || raw.includes('+') ? raw : raw + 'Z');
+        if (!isNaN(d.getTime())) dateStr = d.toISOString().slice(0, 10);
+      } catch (_) {}
+      if (!dateStr) {
+        // Fallback: take first 10 chars if they look like a date
+        const prefix = raw.slice(0, 10);
+        if (/^\d{4}-\d{2}-\d{2}$/.test(prefix)) dateStr = prefix;
+      }
+      if (dateStr) groups.get(key).dates.push(dateStr);
+    }
+
+    // Compute max gap per symbol (across all version/mode combos)
+    const symbolBest = new Map();
+    for (const { symbol, version, mode, dates } of groups.values()) {
+      const sorted = [...new Set(dates)].sort();
+      for (let i = 1; i < sorted.length; i++) {
+        const gap = (new Date(sorted[i]) - new Date(sorted[i - 1])) / 86400000;
+        const prev = symbolBest.get(symbol);
+        if (!prev || gap > prev.gap) {
+          symbolBest.set(symbol, { symbol, gap, from: sorted[i - 1], to: sorted[i], version, mode });
+        }
+      }
+    }
+
+    return [...symbolBest.values()].sort((a, b) => b.gap - a.gap);
+  }
+
+  function renderTradeGapModal() {
+    const contentDiv = document.getElementById('tradeGapContent');
+    if (!contentDiv) return;
+
+    const results = computeTradeGapAnalysis();
+
+    if (!results.length) {
+      contentDiv.innerHTML = '<p style="color:var(--muted); padding:12px 0;">No backtest or paper trade data found.</p>';
+      return;
+    }
+
+    const maxGap = results[0].gap;
+    const headerCells = ['Symbol', 'Gap (days)', 'From', 'To', 'Version', 'Mode']
+      .map(h => `<th style="padding:8px 12px; text-align:${h === 'Gap (days)' ? 'right' : 'left'}; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.6px; border-bottom:1px solid var(--border); font-weight:600; white-space:nowrap;">${escapeHtml(h)}</th>`)
+      .join('');
+
+    const bodyRows = results.map(r => {
+      const ratio = maxGap > 0 ? r.gap / maxGap : 0;
+      const color = ratio > 0.7 ? 'var(--red)' : ratio > 0.4 ? 'var(--orange)' : 'var(--green)';
+      return `<tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px 12px; font-weight:600; font-size:13px;">${escapeHtml(r.symbol)}</td>
+        <td style="padding:8px 12px; text-align:right; font-weight:700; font-size:14px; color:${color};">${r.gap}</td>
+        <td style="padding:8px 12px; font-size:12px; color:var(--muted);">${escapeHtml(r.from)}</td>
+        <td style="padding:8px 12px; font-size:12px; color:var(--muted);">${escapeHtml(r.to)}</td>
+        <td style="padding:8px 12px; font-size:12px;">${escapeHtml(r.version)}</td>
+        <td style="padding:8px 12px; font-size:12px; text-transform:capitalize;">${escapeHtml(r.mode)}</td>
+      </tr>`;
+    }).join('');
+
+    contentDiv.innerHTML = `
+      <p style="font-size:12px; color:var(--muted); margin:0 0 12px 0;">
+        Each row shows the longest gap between consecutive trade entry dates for that symbol across all versions.
+        Gaps are shown in calendar days. Version and mode indicate where the worst gap occurred.
+      </p>
+      <table style="width:100%; border-collapse:collapse; font-size:13px;">
+        <thead><tr>${headerCells}</tr></thead>
+        <tbody>${bodyRows}</tbody>
+      </table>`;
+  }
+
+  function openTradeGapModal() {
+    const modal = document.getElementById('tradeGapModal');
+    if (!modal) return;
+    renderTradeGapModal();
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeTradeGapModal() {
+    const modal = document.getElementById('tradeGapModal');
+    if (!modal) return;
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+  }
+
   function getActiveRows() {
     const raw = activeTab === 'all'
       ? Object.values(loaded[activeSym] || {}).flat()
@@ -3756,6 +3867,17 @@ for (const version of VERSION_KEYS) {
   const closeDailyTransactionsBtn = document.getElementById('closeDailyTransactionsBtn');
   closeDailyTransactionsBtn?.addEventListener('click', closeDailyTransactionsModal);
 
+  const tradeGapBtn = document.getElementById('openTradeGapBtn');
+  tradeGapBtn?.addEventListener('click', openTradeGapModal);
+
+  const closeTradeGapBtn = document.getElementById('closeTradeGapBtn');
+  closeTradeGapBtn?.addEventListener('click', closeTradeGapModal);
+
+  const tradeGapModal = document.getElementById('tradeGapModal');
+  tradeGapModal?.addEventListener('click', event => {
+    if (event.target === tradeGapModal) closeTradeGapModal();
+  });
+
   const refreshDailyTransactionsBtn = document.getElementById('refreshDailyTransactionsBtn');
   refreshDailyTransactionsBtn?.addEventListener('click', () => {
     updateDailyTransactionsDateControls();
@@ -3785,6 +3907,7 @@ for (const version of VERSION_KEYS) {
     if (event.key === 'Escape') {
       closeAccountInfoModal();
       closeDailyTransactionsModal();
+      closeTradeGapModal();
     }
   });
 })();

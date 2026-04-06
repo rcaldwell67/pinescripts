@@ -49,6 +49,7 @@
   </div>
   <button id="openAccountInfoBtn" class="mode-btn" type="button" title="View Alpaca account details">Account Info</button>
   <button id="openDailyTransactionsBtn" class="mode-btn" type="button" title="View today's trades and fills">Daily Transactions</button>
+  <button id="openTradeGapBtn" class="mode-btn" type="button" title="Longest gap between trades per symbol (backtest + paper)">Trade Gap Analysis</button>
   <div id="refreshControls" class="refresh-controls" aria-label="Dashboard refresh controls">
     <button id="reloadDashboardBtn" class="mode-btn" type="button" title="Reload dashboard data without refreshing the page">Reload Data</button>
     <label for="autoRefreshSelect">Auto-refresh</label>
@@ -244,6 +245,21 @@
   </div>
 </div>
 
+<div id="tradeGapModal" class="account-modal" aria-hidden="true">
+  <div class="account-modal-card" role="dialog" aria-modal="true" aria-labelledby="tradeGapModalTitle">
+    <div class="account-modal-head">
+      <h2 id="tradeGapModalTitle">Trade Gap Analysis</h2>
+      <span style="margin-left:10px; color:var(--muted); font-size:12px;">Longest gap between consecutive trades per symbol &mdash; backtest &amp; simulated paper</span>
+      <button id="closeTradeGapBtn" class="account-modal-close" type="button" aria-label="Close trade gap modal">x</button>
+    </div>
+    <div class="account-modal-body">
+      <div id="tradeGapContent" style="max-height:600px; overflow-y:auto;">
+        <p>Loading&hellip;</p>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="dailyTransactionsModal" class="account-modal" aria-hidden="true">
   <div class="account-modal-card" role="dialog" aria-modal="true" aria-labelledby="dailyTransactionsModalTitle">
     <div class="account-modal-head">
@@ -262,7 +278,7 @@
   </div>
 </div>
 
-<script src='site.js?v=20260405b' defer></script>
+<script src='site.js?v=20260406a' defer></script>
 </body>
 </html>
 
