@@ -3,7 +3,7 @@
 name: Rerun Backtest (via Issue)
 on:
   issues:
-    types: [opened]
+    types: [opened, edited, reopened]
     # Only run if the issue title starts with 'Rerun Backtest:'
     # This is enforced in the workflow jobs below
 
@@ -45,31 +45,60 @@ jobs:
           import re
 
           title = os.environ.get('ISSUE_TITLE', '')
-          match = re.match(r'^Rerun Backtest:\s+(.+?)\s+(v\d+)\s*$', title, re.IGNORECASE)
+          match = re.match(r'^Rerun Backtest:\s+(.+?)\s+(.*)$', title, re.IGNORECASE)
           if not match:
-            raise SystemExit(f'Could not parse symbol/version from issue title: {title!r}')
+            raise SystemExit(f'Could not parse symbol/version spec from issue title: {title!r}')
 
           symbol = match.group(1).strip().upper()
-          version = match.group(2).strip().lower()
-          if version not in {"v1", "v2", "v3", "v4", "v5", "v6"}:
-            raise SystemExit(f'Unsupported version in issue title: {version!r} (expected v1-v6)')
+          version_spec = match.group(2).strip().lower()
+          allowed = ["v1", "v2", "v3", "v4", "v5", "v6"]
+
+          versions = []
+          if version_spec in {"all", "v1 through v6", "v1-v6", "v1 to v6"}:
+            versions = allowed
+          else:
+            range_match = re.match(r'^(v[1-6])\s*(?:through|to|-)\s*(v[1-6])$', version_spec)
+            if range_match:
+              start = allowed.index(range_match.group(1))
+              end = allowed.index(range_match.group(2))
+              if start > end:
+                raise SystemExit(f'Invalid version range in title: {version_spec!r}')
+              versions = allowed[start:end + 1]
+            else:
+              single_match = re.match(r'^(v[1-6])$', version_spec)
+              if not single_match:
+                raise SystemExit(
+                  'Unsupported version format in issue title. '
+                  'Use vN, vX through vY, or all. '
+                  f'Got: {version_spec!r}'
+                )
+              versions = [single_match.group(1)]
+
+          versions_csv = ','.join(versions)
           with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as f:
             f.write(f'symbol={symbol}\n')
-            f.write(f'version={version}\n')
+            f.write(f'versions={versions_csv}\n')
+            f.write(f'version_display={" ".join(versions)}\n')
           PY
         env:
           ISSUE_TITLE: ${{ github.event.issue.title }}
 
-      - name: Run backtest for symbol and version
+      - name: Run backtest for symbol and version(s)
         run: |
-          echo "Running backtest for symbol ${{ steps.extract.outputs.symbol }} version ${{ steps.extract.outputs.version }}..."
-          if [[ "${{ steps.extract.outputs.version }}" == "v1" ]]; then
-            python reset_aligned_backtest_paper.py --version v1 --symbol "${{ steps.extract.outputs.symbol }}"
-          elif [[ "${{ steps.extract.outputs.version }}" == "v2" ]]; then
-            python reset_aligned_backtest_paper.py --version v2 --symbol "${{ steps.extract.outputs.symbol }}"
-          else
-            python backend/backtest_backtrader_alpaca.py --symbol "${{ steps.extract.outputs.symbol }}" --version "${{ steps.extract.outputs.version }}"
-          fi
+          SYMBOL="${{ steps.extract.outputs.symbol }}"
+          VERSIONS_CSV="${{ steps.extract.outputs.versions }}"
+          IFS=',' read -r -a VERSIONS <<< "$VERSIONS_CSV"
+
+          echo "Running backtest rerun for symbol $SYMBOL versions: ${VERSIONS[*]}"
+          for VERSION in "${VERSIONS[@]}"; do
+            if [[ "$VERSION" == "v1" ]]; then
+              python reset_aligned_backtest_paper.py --version v1 --symbol "$SYMBOL"
+            elif [[ "$VERSION" == "v2" ]]; then
+              python reset_aligned_backtest_paper.py --version v2 --symbol "$SYMBOL"
+            else
+              python backend/backtest_backtrader_alpaca.py --symbol "$SYMBOL" --version "$VERSION"
+            fi
+          done
 
       - name: Commit updated DB
         shell: bash
@@ -81,7 +110,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "No DB changes to commit."
           else
-            COMMIT_MSG="chore: rerun backtest ${{ steps.extract.outputs.symbol }} ${{ steps.extract.outputs.version }} (#${{ github.event.issue.number }})"
+            COMMIT_MSG="chore: rerun backtest ${{ steps.extract.outputs.symbol }} [${{ steps.extract.outputs.version_display }}] (#${{ github.event.issue.number }})"
             SNAPSHOT_DB="$(mktemp)"
             cp docs/data/tradingcopilot.db "$SNAPSHOT_DB"
             for attempt in 1 2 3; do
@@ -115,7 +144,7 @@ jobs:
         with:
           issue-number: ${{ github.event.issue.number }}
           body: |
-            ✅ Backtest rerun workflow completed for ${{ steps.extract.outputs.symbol }} ${{ steps.extract.outputs.version }}.
+            ✅ Backtest rerun workflow completed for ${{ steps.extract.outputs.symbol }} ${{ steps.extract.outputs.version_display }}.
             (Customize this message with actual results.)
 
       - name: Close issue
