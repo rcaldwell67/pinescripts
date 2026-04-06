@@ -111,6 +111,12 @@ const logsDataCache = {
 const VERSION_KEYS = ['v1', 'v2', 'v3', 'v4', 'v5', 'v6'];
 const PAPER_TRADING_SUPPORTED_VERSIONS = new Set(VERSION_KEYS);
 const LIVE_TRADING_SUPPORTED_VERSIONS = new Set(VERSION_KEYS);
+const GUIDELINE_THRESHOLDS = {
+  minTrades: 1,
+  minWinRate: 70.0,
+  minNetReturn: 20.0,
+  maxDrawdown: 4.5,
+};
 let pendingDatasetSymbol = '';
 let dashboardRefreshInFlight = false;
 let dashboardAutoRefreshTimer = null;
@@ -1700,6 +1706,193 @@ function getPaperFillStats(sym, monthStartMs = 0) {
 
   function closeTradeGapModal() {
     const modal = document.getElementById('tradeGapModal');
+    if (!modal) return;
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+  }
+
+  // ── Guideline audit modal ───────────────────────────────────────────────────
+
+  function _parseVersionFromSummary(metrics, notes) {
+    const direct = String((metrics && metrics.version) || '').trim().toLowerCase();
+    if (VERSION_KEYS.includes(direct)) return direct;
+    const m = String(notes || '').match(/\b(v[1-6])\b/i);
+    return m ? m[1].toLowerCase() : '';
+  }
+
+  function loadGuidelineAuditRows() {
+    const db = window._SQL_DB;
+    if (!db) return [];
+
+    const symbols = [];
+    try {
+      const stmt = db.prepare('SELECT symbol FROM symbols ORDER BY symbol');
+      while (stmt.step()) {
+        const row = stmt.getAsObject();
+        symbols.push(String(row.symbol || '').trim());
+      }
+      stmt.free();
+    } catch (err) {
+      console.error('Failed loading symbols for guideline audit:', err);
+      return [];
+    }
+
+    const latestBySymbolVersion = new Map();
+    try {
+      const stmt = db.prepare(`
+        SELECT symbol, timestamp, metrics, notes, id
+        FROM backtest_results
+        ORDER BY datetime(timestamp) DESC, id DESC
+      `);
+      while (stmt.step()) {
+        const row = stmt.getAsObject();
+        let metrics = {};
+        try {
+          metrics = JSON.parse(String(row.metrics || '{}'));
+        } catch (_) {
+          metrics = {};
+        }
+        const symbol = String(row.symbol || '').trim();
+        const version = _parseVersionFromSummary(metrics, row.notes);
+        if (!symbol || !VERSION_KEYS.includes(version)) continue;
+        const key = `${symbol}||${version}`;
+        if (!latestBySymbolVersion.has(key)) {
+          latestBySymbolVersion.set(key, {
+            symbol,
+            version,
+            timestamp: row.timestamp || null,
+            trades: Number(metrics.total_trades || 0),
+            winRate: Number(metrics.win_rate || 0),
+            netReturn: Number(metrics.net_return_pct || 0),
+            maxDrawdown: Number(metrics.max_drawdown_pct || 0),
+          });
+        }
+      }
+      stmt.free();
+    } catch (err) {
+      console.error('Failed loading backtest summaries for guideline audit:', err);
+      return [];
+    }
+
+    const rows = [];
+    symbols.forEach(symbol => {
+      VERSION_KEYS.forEach(version => {
+        const found = latestBySymbolVersion.get(`${symbol}||${version}`);
+        if (!found) {
+          rows.push({
+            symbol,
+            version,
+            timestamp: null,
+            trades: null,
+            winRate: null,
+            netReturn: null,
+            maxDrawdown: null,
+            status: 'MISSING',
+            reasons: ['no backtest summary row'],
+          });
+          return;
+        }
+
+        const reasons = [];
+        if (!Number.isFinite(found.trades) || found.trades < GUIDELINE_THRESHOLDS.minTrades) reasons.push('trades<1');
+        if (!Number.isFinite(found.winRate) || found.winRate < GUIDELINE_THRESHOLDS.minWinRate) reasons.push('wr<70');
+        if (!Number.isFinite(found.netReturn) || found.netReturn < GUIDELINE_THRESHOLDS.minNetReturn) reasons.push('net<20');
+        if (!Number.isFinite(found.maxDrawdown) || found.maxDrawdown > GUIDELINE_THRESHOLDS.maxDrawdown) reasons.push('dd>4.5');
+
+        rows.push({
+          symbol,
+          version,
+          timestamp: found.timestamp,
+          trades: found.trades,
+          winRate: found.winRate,
+          netReturn: found.netReturn,
+          maxDrawdown: found.maxDrawdown,
+          status: reasons.length ? 'FAIL' : 'PASS',
+          reasons,
+        });
+      });
+    });
+
+    return rows;
+  }
+
+  function renderGuidelineAuditModal() {
+    const content = document.getElementById('guidelineAuditContent');
+    const meta = document.getElementById('guidelineAuditMeta');
+    if (!content || !meta) return;
+
+    const rows = loadGuidelineAuditRows();
+    if (!rows.length) {
+      meta.textContent = 'No symbols or backtest summaries found.';
+      content.innerHTML = '<p style="color:var(--muted);">No guideline data available.</p>';
+      return;
+    }
+
+    const passCount = rows.filter(r => r.status === 'PASS').length;
+    const failCount = rows.filter(r => r.status === 'FAIL').length;
+    const missingCount = rows.filter(r => r.status === 'MISSING').length;
+    meta.textContent = `Thresholds: trades>=1, win_rate>=70%, net_return>=20%, max_drawdown<=4.5% | PASS ${passCount} | FAIL ${failCount} | MISSING ${missingCount}`;
+
+    const sorted = rows.slice().sort((a, b) => {
+      const s = a.symbol.localeCompare(b.symbol);
+      if (s !== 0) return s;
+      return a.version.localeCompare(b.version);
+    });
+
+    const fmtMetric = (n, digits = 2) => (Number.isFinite(Number(n)) ? Number(n).toFixed(digits) : '-');
+    const statusBadge = status => {
+      if (status === 'PASS') return '<span class="tag tag-tp">PASS</span>';
+      if (status === 'FAIL') return '<span class="tag tag-sl">FAIL</span>';
+      return '<span class="tag tag-other">MISSING</span>';
+    };
+
+    const bodyRows = sorted.map(r => {
+      const action = r.status === 'PASS'
+        ? '<span style="color:var(--muted);">-</span>'
+        : `<button type="button" class="mode-btn guideline-rerun-btn" data-symbol="${escapeHtml(r.symbol)}" data-version="${escapeHtml(r.version)}">Rerun ${escapeHtml(r.version.toUpperCase())}</button>`;
+      const reasonsText = r.reasons && r.reasons.length ? r.reasons.join(', ') : '-';
+      return `<tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px 10px; font-weight:600;">${escapeHtml(r.symbol)}</td>
+        <td style="padding:8px 10px;"><span class="pill" style="background:#58a6ff22;color:var(--accent);border-color:#58a6ff44;">${escapeHtml(r.version.toUpperCase())}</span></td>
+        <td style="padding:8px 10px; text-align:right;">${fmtMetric(r.trades, 0)}</td>
+        <td style="padding:8px 10px; text-align:right;">${fmtMetric(r.winRate)}</td>
+        <td style="padding:8px 10px; text-align:right;">${fmtMetric(r.netReturn)}</td>
+        <td style="padding:8px 10px; text-align:right;">${fmtMetric(r.maxDrawdown)}</td>
+        <td style="padding:8px 10px;">${statusBadge(r.status)}</td>
+        <td style="padding:8px 10px; color:var(--muted);">${escapeHtml(reasonsText)}</td>
+        <td style="padding:8px 10px; text-align:right;">${action}</td>
+      </tr>`;
+    }).join('');
+
+    content.innerHTML = `
+      <table style="width:100%; border-collapse:collapse; font-size:12px;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border);">
+            <th style="padding:8px 10px; text-align:left; color:var(--muted);">Symbol</th>
+            <th style="padding:8px 10px; text-align:left; color:var(--muted);">Version</th>
+            <th style="padding:8px 10px; text-align:right; color:var(--muted);">Trades</th>
+            <th style="padding:8px 10px; text-align:right; color:var(--muted);">WR%</th>
+            <th style="padding:8px 10px; text-align:right; color:var(--muted);">Net%</th>
+            <th style="padding:8px 10px; text-align:right; color:var(--muted);">MaxDD%</th>
+            <th style="padding:8px 10px; text-align:left; color:var(--muted);">Status</th>
+            <th style="padding:8px 10px; text-align:left; color:var(--muted);">Reasons</th>
+            <th style="padding:8px 10px; text-align:right; color:var(--muted);">Action</th>
+          </tr>
+        </thead>
+        <tbody>${bodyRows}</tbody>
+      </table>`;
+  }
+
+  function openGuidelineAuditModal() {
+    const modal = document.getElementById('guidelineAuditModal');
+    if (!modal) return;
+    renderGuidelineAuditModal();
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeGuidelineAuditModal() {
+    const modal = document.getElementById('guidelineAuditModal');
     if (!modal) return;
     modal.classList.remove('open');
     modal.setAttribute('aria-hidden', 'true');
@@ -4142,6 +4335,29 @@ for (const version of VERSION_KEYS) {
   const tradeGapBtn = document.getElementById('openTradeGapBtn');
   tradeGapBtn?.addEventListener('click', openTradeGapModal);
 
+  const openGuidelineAuditBtn = document.getElementById('openGuidelineAuditBtn');
+  openGuidelineAuditBtn?.addEventListener('click', openGuidelineAuditModal);
+
+  const closeGuidelineAuditBtn = document.getElementById('closeGuidelineAuditBtn');
+  closeGuidelineAuditBtn?.addEventListener('click', closeGuidelineAuditModal);
+
+  const guidelineAuditModal = document.getElementById('guidelineAuditModal');
+  guidelineAuditModal?.addEventListener('click', event => {
+    if (event.target === guidelineAuditModal) closeGuidelineAuditModal();
+  });
+
+  const guidelineAuditContent = document.getElementById('guidelineAuditContent');
+  guidelineAuditContent?.addEventListener('click', event => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+    const btn = target.closest('.guideline-rerun-btn');
+    if (!btn) return;
+    const symbol = String(btn.getAttribute('data-symbol') || '').trim();
+    const version = String(btn.getAttribute('data-version') || '').trim().toLowerCase();
+    if (!symbol || !version) return;
+    openWorkflowIssue('backtest', symbol, version);
+  });
+
   const closeTradeGapBtn = document.getElementById('closeTradeGapBtn');
   closeTradeGapBtn?.addEventListener('click', closeTradeGapModal);
 
@@ -4205,6 +4421,7 @@ for (const version of VERSION_KEYS) {
       closeAccountInfoModal();
       closeDailyTransactionsModal();
       closeTradeGapModal();
+      closeGuidelineAuditModal();
       closeLiveSymbolControlModal();
     }
   });
