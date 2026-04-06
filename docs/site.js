@@ -1766,14 +1766,6 @@ function getPaperFillStats(sym, monthStartMs = 0) {
     return `https://github.com/rcaldwell67/pinescripts/issues/new?title=${title}&body=${body}`;
   }
 
-  function updateRerunAllBacktestsButton() {
-    const btn = document.getElementById('rerunAllBacktestsBtn');
-    if (!btn) return;
-    const show = activeDataset === 'backtest' && activeTab === 'all' && Boolean(activeSym);
-    btn.style.display = show ? '' : 'none';
-    btn.disabled = !show;
-  }
-
   function renderLiveSymbolControlModal() {
     const content = document.getElementById('liveSymbolControlContent');
     if (!content) return;
@@ -1905,10 +1897,13 @@ function buildTabs() {
   for (const [vk, cfg] of Object.entries(vers)) addBtn(vk, getVersionLabel(activeSym, vk), cfg.color);
 
   const rerunBtnId = 'rerunWorkflowBtn';
+  const rerunAllBtnId = 'rerunAllVersionsWorkflowBtn';
   let rerunBtn = document.getElementById(rerunBtnId);
+  let rerunAllBtn = document.getElementById(rerunAllBtnId);
   const shouldShowBacktest = activeTab !== 'all' && activeDataset === 'backtest';
   const shouldShowPaper = activeTab !== 'all' && activeDataset === 'paper' && PAPER_TRADING_SUPPORTED_VERSIONS.has(activeTab);
   const shouldShowLive = activeTab !== 'all' && activeDataset === 'live' && LIVE_TRADING_SUPPORTED_VERSIONS.has(activeTab);
+  const shouldShowAllBacktest = activeTab === 'all' && activeDataset === 'backtest' && Boolean(activeSym);
   if (shouldShowBacktest || shouldShowPaper || shouldShowLive) {
     if (!rerunBtn) {
       rerunBtn = document.createElement('button');
@@ -1928,6 +1923,23 @@ function buildTabs() {
     rerunBtn.style.display = '';
   } else if (rerunBtn) {
     rerunBtn.style.display = 'none';
+  }
+
+  if (shouldShowAllBacktest) {
+    if (!rerunAllBtn) {
+      rerunAllBtn = document.createElement('button');
+      rerunAllBtn.id = rerunAllBtnId;
+      rerunAllBtn.style = 'margin-left:16px;padding:6px 18px;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;';
+      tabEl.appendChild(rerunAllBtn);
+    }
+    rerunAllBtn.textContent = 'Rerun All Versions';
+    rerunAllBtn.onclick = function() {
+      rerunAllBacktests(activeSym);
+    };
+    tabEl.appendChild(rerunAllBtn);
+    rerunAllBtn.style.display = '';
+  } else if (rerunAllBtn) {
+    rerunAllBtn.style.display = 'none';
   }
 }
 function openWorkflowIssue(workflowType, symbol, version) {
@@ -1955,6 +1967,17 @@ function rerunPaperTrading(symbol, version) {
 
 function rerunLiveTrading(symbol, version) {
   openWorkflowIssue('live', symbol, version);
+}
+
+function rerunAllBacktests(symbol) {
+  if (!symbol) return;
+  const confirmed = confirm(
+    `Create a GitHub issue to rerun all versions (v1-v6) for "${symbol}"?\n\n` +
+    `This triggers the Rerun Backtest workflow via issue automation.`
+  );
+  if (!confirmed) return;
+  const url = buildRerunAllBacktestsIssueUrl(symbol);
+  window.open(url, '_blank');
 }
 
 function updateWorkflowStatus(msg, color) {
@@ -3476,8 +3499,6 @@ function updateBalanceBar(rows) {
 }
 
 function render() {
-  updateRerunAllBacktestsButton();
-
   const vers=INSTRUMENTS[activeSym].versions;
   const rawRows=activeTab==='all'?Object.values(loaded[activeSym]).flat():(loaded[activeSym][activeTab]||[]);
   const rows=filterPaperRows(rawRows);
@@ -4131,18 +4152,6 @@ for (const version of VERSION_KEYS) {
 
   const openLiveSymbolControlBtn = document.getElementById('openLiveSymbolControlBtn');
   openLiveSymbolControlBtn?.addEventListener('click', openLiveSymbolControlModal);
-
-  const rerunAllBacktestsBtn = document.getElementById('rerunAllBacktestsBtn');
-  rerunAllBacktestsBtn?.addEventListener('click', () => {
-    if (!activeSym || activeDataset !== 'backtest' || activeTab !== 'all') return;
-    const confirmed = confirm(
-      `Create a GitHub issue to rerun all versions (v1-v6) for "${activeSym}"?\n\n` +
-      `This triggers the Rerun Backtest workflow via issue automation.`
-    );
-    if (!confirmed) return;
-    const url = buildRerunAllBacktestsIssueUrl(activeSym);
-    window.open(url, '_blank');
-  });
 
   const closeLiveSymbolControlBtn = document.getElementById('closeLiveSymbolControlBtn');
   closeLiveSymbolControlBtn?.addEventListener('click', closeLiveSymbolControlModal);
