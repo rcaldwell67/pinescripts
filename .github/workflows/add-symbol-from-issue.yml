@@ -89,6 +89,7 @@ jobs:
         env:
           ISSUE_BODY: ${{ github.event.issue.body }}
       - name: Add symbol to DB
+        id: validate_add
         run: |
           SYMBOL="${{ steps.parse.outputs.symbol }}"
           KEY="${ALPACA_PAPER_API_KEY:-}"
@@ -199,15 +200,17 @@ jobs:
           fi
 
           echo "Alpaca validation passed for $SYMBOL (validated as $VALIDATION_SYMBOL)"
+          echo "resolved_symbol=$VALIDATION_SYMBOL" >> "$GITHUB_OUTPUT"
+          echo "requested_symbol=$SYMBOL" >> "$GITHUB_OUTPUT"
           ISSUE_DESC="${{ steps.parse.outputs.desc }}"
           FINAL_DESC="$DESC"
           if [ -z "$FINAL_DESC" ]; then
             FINAL_DESC="$ISSUE_DESC"
           fi
           if [ -n "$FINAL_DESC" ]; then
-            python backend/data/add_symbol_to_db.py "${{ steps.parse.outputs.symbol }}" "$FINAL_DESC"
+            python backend/data/add_symbol_to_db.py "$VALIDATION_SYMBOL" "$FINAL_DESC"
           else
-            python backend/data/add_symbol_to_db.py "${{ steps.parse.outputs.symbol }}"
+            python backend/data/add_symbol_to_db.py "$VALIDATION_SYMBOL"
           fi
 
       - name: Install dependencies
@@ -217,7 +220,7 @@ jobs:
 
       - name: Tune symbol-specific runtime overrides (v1/v2)
         run: |
-          SYMBOL="${{ steps.parse.outputs.symbol }}"
+          SYMBOL="${{ steps.validate_add.outputs.resolved_symbol }}"
           echo "Tuning v1 runtime override for $SYMBOL"
           python backend/strategy_generator/tune_v1_profile.py --symbol "$SYMBOL" --max-evals 24 --out /tmp/v1_symbol_tuning.json --apply --apply-top-level
           echo "Tuning v2 runtime override for $SYMBOL"
@@ -229,7 +232,7 @@ jobs:
 
       - name: Run backtest for new symbol
         run: |
-          SYMBOL="${{ steps.parse.outputs.symbol }}"
+          SYMBOL="${{ steps.validate_add.outputs.resolved_symbol }}"
           for VERSION in v1 v2 v3 v4 v5 v6; do
             echo "Running backtest for symbol: $SYMBOL (version: $VERSION)"
             python backend/backtest_backtrader_alpaca.py --symbol "$SYMBOL" --version "$VERSION"
@@ -237,7 +240,7 @@ jobs:
 
       - name: Run paper trading for new symbol
         run: |
-          SYMBOL="${{ steps.parse.outputs.symbol }}"
+          SYMBOL="${{ steps.validate_add.outputs.resolved_symbol }}"
           for VERSION in v1 v2 v3 v4 v5 v6; do
             echo "Running paper trading for symbol: $SYMBOL (version: $VERSION)"
             python backend/paper_trading/paper_trade_backtrader_alpaca.py --symbol "$SYMBOL" --version "$VERSION"
@@ -249,7 +252,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          SYMBOL="${{ steps.parse.outputs.symbol }}"
+          SYMBOL="${{ steps.validate_add.outputs.resolved_symbol }}"
           DB_PATH="docs/data/tradingcopilot.db"
 
           detect_failures() {
@@ -341,8 +344,9 @@ jobs:
             exit 0
           fi
 
-          SYMBOL="${{ steps.parse.outputs.symbol }}"
-          COMMIT_MSG="Add symbol ${SYMBOL} via issue #${{ github.event.issue.number }}"
+          SYMBOL="${{ steps.validate_add.outputs.resolved_symbol }}"
+          REQUESTED_SYMBOL="${{ steps.validate_add.outputs.requested_symbol }}"
+          COMMIT_MSG="Add symbol ${SYMBOL} (requested ${REQUESTED_SYMBOL}) via issue #${{ github.event.issue.number }}"
 
           SNAPSHOT_DIR="$(mktemp -d)"
           mkdir -p "$SNAPSHOT_DIR/docs/data" "$SNAPSHOT_DIR/backend/strategy_generator/configs"
@@ -389,7 +393,7 @@ jobs:
         uses: peter-evans/close-issue@v3
         with:
           comment: |
-            Symbol ${{ steps.parse.outputs.symbol }} passed Alpaca Paper validation, was added to docs/data/tradingcopilot.db, received v1-v6 symbol-specific runtime tuning, and both backtest and paper-trading runs completed.
+            Symbol request `${{ steps.validate_add.outputs.requested_symbol }}` was validated as `${{ steps.validate_add.outputs.resolved_symbol }}`, added to docs/data/tradingcopilot.db, received v1-v6 symbol-specific runtime tuning, and both backtest and paper-trading runs completed.
 
             Backtest repair status: `${{ steps.backtest_repair.outputs.repair_status }}`
             Remaining weak/incomplete versions after repair: `${{ steps.backtest_repair.outputs.remaining_failures || 'none' }}`

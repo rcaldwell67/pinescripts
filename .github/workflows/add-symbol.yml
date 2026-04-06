@@ -197,6 +197,8 @@ jobs:
 
           echo "Alpaca validation passed for $SYMBOL (validated as $VALIDATION_SYMBOL)"
           echo "description=$DESC" >> $GITHUB_OUTPUT
+          echo "resolved_symbol=$VALIDATION_SYMBOL" >> $GITHUB_OUTPUT
+          echo "requested_symbol=$SYMBOL" >> $GITHUB_OUTPUT
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -205,7 +207,7 @@ jobs:
 
       - name: Add symbol to database
         run: |
-          SYMBOL="${{ steps.extract.outputs.symbol }}"
+          SYMBOL="${{ steps.validate.outputs.resolved_symbol }}"
           DESC="${{ steps.validate.outputs.description }}"
           if [ -n "$DESC" ]; then
             python3 backend/data/add_symbol_to_db.py "$SYMBOL" "$DESC"
@@ -220,7 +222,7 @@ jobs:
 
       - name: Tune symbol-specific runtime overrides (v1/v2)
         run: |
-          SYMBOL="${{ steps.extract.outputs.symbol }}"
+          SYMBOL="${{ steps.validate.outputs.resolved_symbol }}"
           echo "Tuning v1 runtime override for $SYMBOL"
           python backend/strategy_generator/tune_v1_profile.py --symbol "$SYMBOL" --max-evals 24 --out /tmp/v1_symbol_tuning.json --apply --apply-top-level
           echo "Tuning v2 runtime override for $SYMBOL"
@@ -232,7 +234,7 @@ jobs:
 
       - name: Run backtest for new symbol
         run: |
-          SYMBOL="${{ steps.extract.outputs.symbol }}"
+          SYMBOL="${{ steps.validate.outputs.resolved_symbol }}"
           for VERSION in v1 v2 v3 v4 v5 v6; do
             echo "Running backtest for symbol: $SYMBOL (version: $VERSION)"
             python backend/backtest_backtrader_alpaca.py --symbol "$SYMBOL" --version "$VERSION"
@@ -240,7 +242,7 @@ jobs:
 
       - name: Run paper trading for new symbol
         run: |
-          SYMBOL="${{ steps.extract.outputs.symbol }}"
+          SYMBOL="${{ steps.validate.outputs.resolved_symbol }}"
           for VERSION in v1 v2 v3 v4 v5 v6; do
             echo "Running paper trading for symbol: $SYMBOL (version: $VERSION)"
             python backend/paper_trading/paper_trade_backtrader_alpaca.py --symbol "$SYMBOL" --version "$VERSION"
@@ -252,7 +254,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          SYMBOL="${{ steps.extract.outputs.symbol }}"
+          SYMBOL="${{ steps.validate.outputs.resolved_symbol }}"
           DB_PATH="docs/data/tradingcopilot.db"
 
           detect_failures() {
@@ -347,8 +349,9 @@ jobs:
             exit 0
           fi
 
-          SYMBOL="${{ steps.extract.outputs.symbol }}"
-          COMMIT_MSG="Add symbol ${SYMBOL} to tradingcopilot.db via issue request"
+          SYMBOL="${{ steps.validate.outputs.resolved_symbol }}"
+          REQUESTED_SYMBOL="${{ steps.validate.outputs.requested_symbol }}"
+          COMMIT_MSG="Add symbol ${SYMBOL} (requested ${REQUESTED_SYMBOL}) to tradingcopilot.db via issue request"
 
           SNAPSHOT_DIR="$(mktemp -d)"
           mkdir -p "$SNAPSHOT_DIR/docs/data" "$SNAPSHOT_DIR/backend/strategy_generator/configs"
