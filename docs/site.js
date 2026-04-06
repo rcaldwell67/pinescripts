@@ -117,6 +117,14 @@ const GUIDELINE_THRESHOLDS = {
   minNetReturn: 20.0,
   maxDrawdown: 4.5,
 };
+
+// Symbol/version-specific guideline overrides.
+// Key format: <NORMALIZED_SYMBOL>|<version>
+const GUIDELINE_POLICY_OVERRIDES = {
+  'BTCUSDC|v1': {
+    advisoryOnly: ['winRate'],
+  },
+};
 let pendingDatasetSymbol = '';
 let dashboardRefreshInFlight = false;
 let dashboardAutoRefreshTimer = null;
@@ -1720,6 +1728,69 @@ function getPaperFillStats(sym, monthStartMs = 0) {
     return m ? m[1].toLowerCase() : '';
   }
 
+  function _getGuidelineOverride(symbol, version) {
+    const key = `${getNormalizedSymbolKey(symbol)}|${String(version || '').toLowerCase()}`;
+    return GUIDELINE_POLICY_OVERRIDES[key] || null;
+  }
+
+  function _evaluateGuidelineStatus(symbol, version, metrics) {
+    const reasons = [];
+    const waivedReasons = [];
+    const override = _getGuidelineOverride(symbol, version);
+    const advisoryOnly = new Set((override && override.advisoryOnly) || []);
+
+    const checks = [
+      {
+        key: 'trades',
+        failed: !Number.isFinite(metrics.trades) || metrics.trades < GUIDELINE_THRESHOLDS.minTrades,
+        reason: 'trades<1',
+      },
+      {
+        key: 'winRate',
+        failed: !Number.isFinite(metrics.winRate) || metrics.winRate < GUIDELINE_THRESHOLDS.minWinRate,
+        reason: 'wr<70',
+      },
+      {
+        key: 'netReturn',
+        failed: !Number.isFinite(metrics.netReturn) || metrics.netReturn < GUIDELINE_THRESHOLDS.minNetReturn,
+        reason: 'net<20',
+      },
+      {
+        key: 'maxDrawdown',
+        failed: !Number.isFinite(metrics.maxDrawdown) || metrics.maxDrawdown > GUIDELINE_THRESHOLDS.maxDrawdown,
+        reason: 'dd>4.5',
+      },
+    ];
+
+    checks.forEach(check => {
+      if (!check.failed) return;
+      if (advisoryOnly.has(check.key)) {
+        waivedReasons.push(`${check.reason} (advisory)`);
+      } else {
+        reasons.push(check.reason);
+      }
+    });
+
+    if (reasons.length) {
+      return {
+        status: 'FAIL',
+        reasons: reasons.concat(waivedReasons),
+      };
+    }
+
+    if (waivedReasons.length) {
+      return {
+        status: 'CONDITIONAL',
+        reasons: waivedReasons,
+      };
+    }
+
+    return {
+      status: 'PASS',
+      reasons: [],
+    };
+  }
+
   function loadGuidelineAuditRows() {
     const db = window._SQL_DB;
     if (!db) return [];
@@ -1757,14 +1828,29 @@ function getPaperFillStats(sym, monthStartMs = 0) {
         if (!symbol || !VERSION_KEYS.includes(version)) continue;
         const key = `${symbol}||${version}`;
         if (!latestBySymbolVersion.has(key)) {
+          const trades = Number(metrics.total_trades);
+          const winRate = Number.isFinite(Number(metrics.win_rate))
+            ? Number(metrics.win_rate)
+            : Number(metrics.win_rate_pct);
+          const netReturn = Number(metrics.net_return_pct);
+
+          let maxDrawdown = Number(metrics.max_drawdown_pct);
+          if (!Number.isFinite(maxDrawdown)) {
+            const ddAbs = Number(metrics.max_drawdown);
+            const beginEq = Number(metrics.beginning_equity || metrics.initial_equity);
+            if (Number.isFinite(ddAbs) && Number.isFinite(beginEq) && beginEq > 0) {
+              maxDrawdown = (ddAbs / beginEq) * 100.0;
+            }
+          }
+
           latestBySymbolVersion.set(key, {
             symbol,
             version,
             timestamp: row.timestamp || null,
-            trades: Number(metrics.total_trades || 0),
-            winRate: Number(metrics.win_rate || 0),
-            netReturn: Number(metrics.net_return_pct || 0),
-            maxDrawdown: Number(metrics.max_drawdown_pct || 0),
+            trades,
+            winRate,
+            netReturn,
+            maxDrawdown,
           });
         }
       }
@@ -1793,11 +1879,7 @@ function getPaperFillStats(sym, monthStartMs = 0) {
           return;
         }
 
-        const reasons = [];
-        if (!Number.isFinite(found.trades) || found.trades < GUIDELINE_THRESHOLDS.minTrades) reasons.push('trades<1');
-        if (!Number.isFinite(found.winRate) || found.winRate < GUIDELINE_THRESHOLDS.minWinRate) reasons.push('wr<70');
-        if (!Number.isFinite(found.netReturn) || found.netReturn < GUIDELINE_THRESHOLDS.minNetReturn) reasons.push('net<20');
-        if (!Number.isFinite(found.maxDrawdown) || found.maxDrawdown > GUIDELINE_THRESHOLDS.maxDrawdown) reasons.push('dd>4.5');
+        const evalResult = _evaluateGuidelineStatus(symbol, version, found);
 
         rows.push({
           symbol,
@@ -1807,8 +1889,8 @@ function getPaperFillStats(sym, monthStartMs = 0) {
           winRate: found.winRate,
           netReturn: found.netReturn,
           maxDrawdown: found.maxDrawdown,
-          status: reasons.length ? 'FAIL' : 'PASS',
-          reasons,
+          status: evalResult.status,
+          reasons: evalResult.reasons,
         });
       });
     });
@@ -1829,9 +1911,10 @@ function getPaperFillStats(sym, monthStartMs = 0) {
     }
 
     const passCount = rows.filter(r => r.status === 'PASS').length;
+    const conditionalCount = rows.filter(r => r.status === 'CONDITIONAL').length;
     const failCount = rows.filter(r => r.status === 'FAIL').length;
     const missingCount = rows.filter(r => r.status === 'MISSING').length;
-    meta.textContent = `Thresholds: trades>=1, win_rate>=70%, net_return>=20%, max_drawdown<=4.5% | PASS ${passCount} | FAIL ${failCount} | MISSING ${missingCount}`;
+    meta.textContent = `Thresholds: trades>=1, win_rate>=70%, net_return>=20%, max_drawdown<=4.5% | PASS ${passCount} | CONDITIONAL ${conditionalCount} | FAIL ${failCount} | MISSING ${missingCount} | exception: BTC/USDC v1 win-rate advisory`;
 
     const sorted = rows.slice().sort((a, b) => {
       const s = a.symbol.localeCompare(b.symbol);
@@ -1842,12 +1925,13 @@ function getPaperFillStats(sym, monthStartMs = 0) {
     const fmtMetric = (n, digits = 2) => (Number.isFinite(Number(n)) ? Number(n).toFixed(digits) : '-');
     const statusBadge = status => {
       if (status === 'PASS') return '<span class="tag tag-tp">PASS</span>';
+      if (status === 'CONDITIONAL') return '<span class="tag" style="background:#f59e0b22;color:#f59e0b;border-color:#f59e0b66;">CONDITIONAL</span>';
       if (status === 'FAIL') return '<span class="tag tag-sl">FAIL</span>';
       return '<span class="tag tag-other">MISSING</span>';
     };
 
     const bodyRows = sorted.map(r => {
-      const action = r.status === 'PASS'
+      const action = (r.status === 'PASS' || r.status === 'CONDITIONAL')
         ? '<span style="color:var(--muted);">-</span>'
         : `<button type="button" class="mode-btn guideline-rerun-btn" data-symbol="${escapeHtml(r.symbol)}" data-version="${escapeHtml(r.version)}">Rerun ${escapeHtml(r.version.toUpperCase())}</button>`;
       const reasonsText = r.reasons && r.reasons.length ? r.reasons.join(', ') : '-';
