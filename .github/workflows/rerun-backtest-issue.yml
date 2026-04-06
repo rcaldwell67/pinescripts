@@ -8,7 +8,7 @@ on:
     # This is enforced in the workflow jobs below
 
 concurrency:
-  group: db-writer-main
+  group: rerun-backtest-${{ github.event.issue.number || github.run_id }}
   cancel-in-progress: false
 
 jobs:
