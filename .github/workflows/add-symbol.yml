@@ -5,7 +5,7 @@ on:
     types: [opened, edited, labeled, reopened]
 
 concurrency:
-  group: add-symbol-${{ github.event.issue.number }}
+  group: db-writer-main
   cancel-in-progress: false
 
 jobs:
@@ -226,24 +226,59 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
 
-          git add docs/data/tradingcopilot.db \
-            backend/strategy_generator/configs/v1_runtime.json \
-            backend/strategy_generator/configs/v2_runtime.json \
-            backend/strategy_generator/configs/v3_runtime.json \
-            backend/strategy_generator/configs/v4_runtime.json \
-            backend/strategy_generator/configs/v5_runtime.json \
+          FILES=(
+            docs/data/tradingcopilot.db
+            backend/strategy_generator/configs/v1_runtime.json
+            backend/strategy_generator/configs/v2_runtime.json
+            backend/strategy_generator/configs/v3_runtime.json
+            backend/strategy_generator/configs/v4_runtime.json
+            backend/strategy_generator/configs/v5_runtime.json
             backend/strategy_generator/configs/v6_runtime.json
+          )
+
+          git add "${FILES[@]}"
 
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0
           fi
 
-          git commit -m "Add symbol ${{ steps.extract.outputs.symbol }} to tradingcopilot.db via issue request"
+          SYMBOL="${{ steps.extract.outputs.symbol }}"
+          COMMIT_MSG="Add symbol ${SYMBOL} to tradingcopilot.db via issue request"
+
+          SNAPSHOT_DIR="$(mktemp -d)"
+          mkdir -p "$SNAPSHOT_DIR/docs/data" "$SNAPSHOT_DIR/backend/strategy_generator/configs"
+          cp docs/data/tradingcopilot.db "$SNAPSHOT_DIR/docs/data/tradingcopilot.db"
+          cp backend/strategy_generator/configs/v1_runtime.json "$SNAPSHOT_DIR/backend/strategy_generator/configs/v1_runtime.json"
+          cp backend/strategy_generator/configs/v2_runtime.json "$SNAPSHOT_DIR/backend/strategy_generator/configs/v2_runtime.json"
+          cp backend/strategy_generator/configs/v3_runtime.json "$SNAPSHOT_DIR/backend/strategy_generator/configs/v3_runtime.json"
+          cp backend/strategy_generator/configs/v4_runtime.json "$SNAPSHOT_DIR/backend/strategy_generator/configs/v4_runtime.json"
+          cp backend/strategy_generator/configs/v5_runtime.json "$SNAPSHOT_DIR/backend/strategy_generator/configs/v5_runtime.json"
+          cp backend/strategy_generator/configs/v6_runtime.json "$SNAPSHOT_DIR/backend/strategy_generator/configs/v6_runtime.json"
 
           for attempt in 1 2 3; do
             echo "Push attempt ${attempt}/3"
-            if git pull --rebase origin main && git push origin HEAD:main; then
+
+            git fetch origin main
+            git reset --hard origin/main
+
+            cp "$SNAPSHOT_DIR/docs/data/tradingcopilot.db" docs/data/tradingcopilot.db
+            cp "$SNAPSHOT_DIR/backend/strategy_generator/configs/v1_runtime.json" backend/strategy_generator/configs/v1_runtime.json
+            cp "$SNAPSHOT_DIR/backend/strategy_generator/configs/v2_runtime.json" backend/strategy_generator/configs/v2_runtime.json
+            cp "$SNAPSHOT_DIR/backend/strategy_generator/configs/v3_runtime.json" backend/strategy_generator/configs/v3_runtime.json
+            cp "$SNAPSHOT_DIR/backend/strategy_generator/configs/v4_runtime.json" backend/strategy_generator/configs/v4_runtime.json
+            cp "$SNAPSHOT_DIR/backend/strategy_generator/configs/v5_runtime.json" backend/strategy_generator/configs/v5_runtime.json
+            cp "$SNAPSHOT_DIR/backend/strategy_generator/configs/v6_runtime.json" backend/strategy_generator/configs/v6_runtime.json
+
+            git add "${FILES[@]}"
+            if git diff --cached --quiet; then
+              echo "No effective changes remain after syncing with origin/main."
+              exit 0
+            fi
+
+            git commit -m "$COMMIT_MSG"
+
+            if git push origin HEAD:main; then
               echo "Push succeeded."
               exit 0
             fi
