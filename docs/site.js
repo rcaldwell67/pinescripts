@@ -98,7 +98,7 @@ let activeTab = 'all';
 let charts = {};
 let tradeTablePage = 1;
 let tradePageSize = 25;
-let paperTradeSourceFilter = 'simulation';
+let paperTradeSourceFilter = 'realtime';
 let txPage = 1;
 let txPageSize = 25;
 let logsPage = 1;
@@ -140,6 +140,36 @@ function getNormalizedSymbolKey(sym) {
   return String(sym || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
 
+function getPaperFillStats(sym, monthStartMs = 0) {
+  const db = window._SQL_DB;
+  if (!db || !sym) return { mtdCount: 0, lastTs: 0 };
+
+  const targetKey = getNormalizedSymbolKey(sym);
+  if (!targetKey) return { mtdCount: 0, lastTs: 0 };
+
+  let mtdCount = 0;
+  let lastTs = 0;
+  try {
+    const stmt = db.prepare(`
+      SELECT symbol, transaction_time
+      FROM paper_fill_events
+      ORDER BY datetime(transaction_time) DESC
+    `);
+    while (stmt.step()) {
+      const row = stmt.getAsObject();
+      if (getNormalizedSymbolKey(row.symbol) !== targetKey) continue;
+      const ts = parseDashboardTimeValue(row.transaction_time);
+      if (ts > lastTs) lastTs = ts;
+      if (!monthStartMs || ts >= monthStartMs) mtdCount += 1;
+    }
+    stmt.free();
+  } catch (err) {
+    // Table may not exist in older DB snapshots.
+  }
+
+  return { mtdCount, lastTs };
+}
+
 
 
   // --- Dataset selector logic ---
@@ -164,8 +194,8 @@ function getNormalizedSymbolKey(sym) {
         activeDataset = nextDataset;
         activeMode = activeDataset;
         if (activeDataset === 'paper') {
-          // Guideline reviews should default to simulation data, not broker fills.
-          paperTradeSourceFilter = 'simulation';
+          // Default Paper dataset to broker-backed realtime rows.
+          paperTradeSourceFilter = 'realtime';
         }
         resetTransactionFilters();
         addDatasetSelector();
@@ -2278,6 +2308,7 @@ function renderTradeTable(rows) {
       let realtimeMtd = 0;
       let simulationMtd = 0;
       let lastRealtimeTs = 0;
+      const fillStats = getPaperFillStats(activeSym, monthStartMs);
 
       // Always count MTD from all loaded rows regardless of active source filter
       Object.values(loaded[activeSym] || {}).flat().forEach(r => {
@@ -2298,10 +2329,18 @@ function renderTradeTable(rows) {
           hour: '2-digit',
           minute: '2-digit',
         });
-        realtimeStatusEl.textContent = `Realtime paper active this month (${realtimeMtd} trades, last ${lastLabel})`;
+        realtimeStatusEl.textContent = `Realtime paper active this month (${realtimeMtd} trades, fills: ${fillStats.mtdCount}, last ${lastLabel})`;
         realtimeStatusEl.style.color = '#3fb950';
       } else {
-        realtimeStatusEl.textContent = `Realtime paper inactive this month (simulation trades: ${simulationMtd})`;
+        const lastFillLabel = fillStats.lastTs > 0
+          ? new Date(fillStats.lastTs).toLocaleString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            })
+          : 'none';
+        realtimeStatusEl.textContent = `Realtime paper inactive this month (fills: ${fillStats.mtdCount}, simulation trades: ${simulationMtd}, last fill: ${lastFillLabel})`;
         realtimeStatusEl.style.color = '#ffa657';
       }
       realtimeStatusEl.style.display = '';
@@ -3393,26 +3432,6 @@ function updateBalanceBar(rows) {
 }
 
 function render() {
-  if (activeDataset === 'paper') {
-    const byVersion = loaded[activeSym] || {};
-    let hasRealtime = false;
-    let hasSimulation = false;
-    Object.values(byVersion).forEach(versionRows => {
-      (versionRows || []).forEach(row => {
-        if (normalizeSource(row.source) === 'realtime') hasRealtime = true;
-        else hasSimulation = true;
-      });
-    });
-
-    // Auto-correct stale source toggles so paper charts/tables never appear empty
-    // solely due to an unavailable source for the selected symbol.
-    if (paperTradeSourceFilter === 'realtime' && !hasRealtime && hasSimulation) {
-      paperTradeSourceFilter = 'simulation';
-    } else if (paperTradeSourceFilter === 'simulation' && !hasSimulation && hasRealtime) {
-      paperTradeSourceFilter = 'realtime';
-    }
-  }
-
   const vers=INSTRUMENTS[activeSym].versions;
   const rawRows=activeTab==='all'?Object.values(loaded[activeSym]).flat():(loaded[activeSym][activeTab]||[]);
   const rows=filterPaperRows(rawRows);
