@@ -1755,6 +1755,25 @@ function getPaperFillStats(sym, monthStartMs = 0) {
     return `https://github.com/rcaldwell67/pinescripts/issues/new?title=${title}&body=${body}&labels=toggle-live-symbol`;
   }
 
+  function buildRerunAllBacktestsIssueUrl(symbol) {
+    const normalizedSymbol = String(symbol || '').trim().toUpperCase();
+    const title = encodeURIComponent(`Rerun Backtest: ${normalizedSymbol} V1 through V6`);
+    const body = encodeURIComponent(
+      `Symbol: ${normalizedSymbol}\n` +
+      `Versions: v1,v2,v3,v4,v5,v6\n\n` +
+      `_Requested from dashboard Rerun All Backtests button._`
+    );
+    return `https://github.com/rcaldwell67/pinescripts/issues/new?title=${title}&body=${body}`;
+  }
+
+  function updateRerunAllBacktestsButton() {
+    const btn = document.getElementById('rerunAllBacktestsBtn');
+    if (!btn) return;
+    const show = activeDataset === 'backtest' && activeTab === 'all' && Boolean(activeSym);
+    btn.style.display = show ? '' : 'none';
+    btn.disabled = !show;
+  }
+
   function renderLiveSymbolControlModal() {
     const content = document.getElementById('liveSymbolControlContent');
     if (!content) return;
@@ -3457,6 +3476,8 @@ function updateBalanceBar(rows) {
 }
 
 function render() {
+  updateRerunAllBacktestsButton();
+
   const vers=INSTRUMENTS[activeSym].versions;
   const rawRows=activeTab==='all'?Object.values(loaded[activeSym]).flat():(loaded[activeSym][activeTab]||[]);
   const rows=filterPaperRows(rawRows);
@@ -4110,6 +4131,18 @@ for (const version of VERSION_KEYS) {
 
   const openLiveSymbolControlBtn = document.getElementById('openLiveSymbolControlBtn');
   openLiveSymbolControlBtn?.addEventListener('click', openLiveSymbolControlModal);
+
+  const rerunAllBacktestsBtn = document.getElementById('rerunAllBacktestsBtn');
+  rerunAllBacktestsBtn?.addEventListener('click', () => {
+    if (!activeSym || activeDataset !== 'backtest' || activeTab !== 'all') return;
+    const confirmed = confirm(
+      `Create a GitHub issue to rerun v1-v6 backtests for "${activeSym}"?\n\n` +
+      `This triggers the Rerun Backtest workflow via issue automation.`
+    );
+    if (!confirmed) return;
+    const url = buildRerunAllBacktestsIssueUrl(activeSym);
+    window.open(url, '_blank');
+  });
 
   const closeLiveSymbolControlBtn = document.getElementById('closeLiveSymbolControlBtn');
   closeLiveSymbolControlBtn?.addEventListener('click', closeLiveSymbolControlModal);
