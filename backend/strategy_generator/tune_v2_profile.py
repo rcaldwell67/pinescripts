@@ -197,6 +197,11 @@ def run() -> int:
         action="store_true",
         help="Apply best candidate to backend/strategy_generator/configs/v2_runtime.json",
     )
+    parser.add_argument(
+        "--apply-best-available",
+        action="store_true",
+        help="When used with --apply, update runtime config with best candidate even if guideline targets are not fully met.",
+    )
     args = parser.parse_args()
 
     random.seed(args.seed)
@@ -273,7 +278,9 @@ def run() -> int:
         print(f"  Win Rate: {best_result.win_rate:.2f}% (required: >={args.min_win_rate}%, passed: {payload['best_candidate']['pass_win_rate']})")
         print(f"  Net Return: {best_result.net_return_pct:.2f}% (required: >={args.min_net_return}%, passed: {payload['best_candidate']['pass_net_return']})")
         print(f"  Max Drawdown: {best_result.max_drawdown_pct:.2f}% (required: <={args.max_drawdown}%, passed: {payload['best_candidate']['pass_drawdown']})")
-        return 0
+        if not (args.apply and args.apply_best_available):
+            return 0
+        print("Applying best available candidate despite target miss (--apply-best-available enabled).")
 
     if args.apply:
         config_path = REPO_ROOT / "backend" / "strategy_generator" / "configs" / "v2_runtime.json"
