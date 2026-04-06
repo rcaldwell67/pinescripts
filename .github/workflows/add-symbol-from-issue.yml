@@ -5,8 +5,8 @@ on:
     types: [opened, edited, labeled, reopened]
 
 concurrency:
-  group: db-writer-main
-  cancel-in-progress: false
+  group: add-symbol-${{ github.event.issue.number || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   add-symbol:
