@@ -97,12 +97,34 @@ jobs:
           VALIDATION_SYMBOL=""
           DESC=""
           RESP=""
+          CANDIDATES=()
+
+          add_candidate() {
+            local candidate="$1"
+            [ -z "$candidate" ] && return
+            for existing in "${CANDIDATES[@]}"; do
+              if [ "$existing" = "$candidate" ]; then
+                return
+              fi
+            done
+            CANDIDATES+=("$candidate")
+          }
+
+          add_candidate "$SYMBOL"
+          add_candidate "${SYMBOL//\//}"
+
+          # Broker-compatibility aliasing: map USDT/USDC quote requests to USD probes.
+          if [[ "$SYMBOL" == */USDT || "$SYMBOL" == */USDC ]]; then
+            BASE_ASSET="${SYMBOL%%/*}"
+            add_candidate "${BASE_ASSET}/USD"
+            add_candidate "${BASE_ASSET}USD"
+          fi
 
           if [ -z "$KEY" ] || [ -z "$SECRET" ]; then
             AUTH_UNAVAILABLE="true"
             echo "Alpaca API keys not set. Falling back to local alpaca_symbols cache."
           else
-            for CANDIDATE in "$SYMBOL" "${SYMBOL//\//}"; do
+            for CANDIDATE in "${CANDIDATES[@]}"; do
               [ -z "$CANDIDATE" ] && continue
               CANDIDATE_URL=$(python - "$CANDIDATE" <<'PY'
           import sys
@@ -133,15 +155,20 @@ jobs:
           fi
 
           if [ -z "$VALIDATION_SYMBOL" ]; then
-            CACHE_RESULT=$(python - "$SYMBOL" <<'PY'
+            CACHE_RESULT=$(python - "${CANDIDATES[@]}" <<'PY'
           import sqlite3
           import sys
 
-          symbol = sys.argv[1].strip().upper()
-          candidates = [symbol]
-          no_slash = symbol.replace('/', '')
-          if no_slash != symbol:
-            candidates.append(no_slash)
+          candidates = []
+          for raw in sys.argv[1:]:
+            symbol = raw.strip().upper()
+            if not symbol:
+              continue
+            if symbol not in candidates:
+              candidates.append(symbol)
+            no_slash = symbol.replace('/', '')
+            if no_slash and no_slash not in candidates:
+              candidates.append(no_slash)
 
           conn = sqlite3.connect('docs/data/tradingcopilot.db')
           cur = conn.cursor()
