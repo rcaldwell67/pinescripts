@@ -26,5 +26,9 @@
   {
     "symbol": "ETH/BTC",
     "description": "Ethereum / Bitcoin"
+  },
+  {
+    "symbol": "ETH/USDC",
+    "description": "Ethereum / USD Coin"
   }
 ]
