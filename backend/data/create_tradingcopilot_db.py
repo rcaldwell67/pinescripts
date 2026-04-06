@@ -47,7 +47,8 @@ def create_database(db_path):
         CREATE TABLE IF NOT EXISTS symbols (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             symbol TEXT NOT NULL UNIQUE,
-            description TEXT
+            description TEXT,
+            live_enabled INTEGER NOT NULL DEFAULT 1
         )
     ''')
     conn.commit()

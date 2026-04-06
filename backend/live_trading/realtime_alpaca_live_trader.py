@@ -168,9 +168,18 @@ def _normalize_symbol(symbol: str) -> str:
     return "".join(ch for ch in str(symbol).upper() if ch.isalnum())
 
 
+def _ensure_symbols_live_enabled_column(conn: sqlite3.Connection) -> None:
+    cols = {str(r[1]) for r in conn.execute("PRAGMA table_info(symbols)").fetchall()}
+    if "live_enabled" not in cols:
+        conn.execute("ALTER TABLE symbols ADD COLUMN live_enabled INTEGER NOT NULL DEFAULT 1")
+
+
 def _load_symbols_from_db() -> list[str]:
     conn = sqlite3.connect(str(DB_PATH), timeout=30)
-    rows = conn.execute("SELECT symbol FROM symbols ORDER BY symbol").fetchall()
+    _ensure_symbols_live_enabled_column(conn)
+    rows = conn.execute(
+        "SELECT symbol FROM symbols WHERE COALESCE(live_enabled, 1) = 1 ORDER BY symbol"
+    ).fetchall()
     conn.close()
     return [row[0] for row in rows]
 

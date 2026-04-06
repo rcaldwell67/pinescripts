@@ -1,0 +1,89 @@
+name: Toggle Live Trading Symbol
+
+on:
+  issues:
+    types: [opened, edited, labeled, reopened]
+
+concurrency:
+  group: db-writer-main
+  cancel-in-progress: false
+
+jobs:
+  toggle-live-symbol:
+    if: ${{ contains(github.event.issue.labels.*.name, 'toggle-live-symbol') || startsWith(github.event.issue.title, 'Live Trading Toggle:') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Parse symbol and live-enabled flag from issue
+        id: parse
+        run: |
+          python - <<'PY'
+          import os, re
+
+          title = os.environ.get('ISSUE_TITLE', '')
+          body = os.environ.get('ISSUE_BODY', '')
+
+          symbol = ''
+          enabled = ''
+
+          m_symbol_title = re.search(r'Live Trading Toggle:\s*([A-Za-z0-9_\-/\.]+)', title, re.IGNORECASE)
+          m_symbol_body = re.search(r'Symbol:\s*([A-Za-z0-9_\-/\.]+)', body, re.IGNORECASE)
+          if m_symbol_title:
+              symbol = m_symbol_title.group(1)
+          elif m_symbol_body:
+              symbol = m_symbol_body.group(1)
+
+          m_enabled_title = re.search(r'->\s*(ENABLED|DISABLED|TRUE|FALSE|1|0)', title, re.IGNORECASE)
+          m_enabled_body = re.search(r'Live\s*Enabled:\s*(true|false|1|0|enabled|disabled)', body, re.IGNORECASE)
+          if m_enabled_title:
+              enabled = m_enabled_title.group(1)
+          elif m_enabled_body:
+              enabled = m_enabled_body.group(1)
+
+          symbol = (symbol or '').upper().strip()
+          enabled = (enabled or '').strip().lower()
+
+          if not symbol:
+              raise SystemExit('Could not parse symbol from issue title/body')
+          if enabled not in {'true', 'false', '1', '0', 'enabled', 'disabled'}:
+              raise SystemExit('Could not parse live enabled flag from issue title/body')
+
+          if enabled in {'enabled', 'true', '1'}:
+              enabled = 'true'
+          else:
+              enabled = 'false'
+
+          out = os.environ['GITHUB_OUTPUT']
+          with open(out, 'a', encoding='utf-8') as f:
+              f.write(f'symbol={symbol}\n')
+              f.write(f'enabled={enabled}\n')
+          PY
+        env:
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Update symbol live toggle in database
+        run: |
+          python backend/data/set_symbol_live_enabled.py "${{ steps.parse.outputs.symbol }}" "${{ steps.parse.outputs.enabled }}"
+
+      - name: Commit DB changes
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+          git add docs/data/tradingcopilot.db
+          git diff --cached --quiet && echo 'No changes to commit' || git commit -m "Toggle live trading for ${{ steps.parse.outputs.symbol }} -> ${{ steps.parse.outputs.enabled }} via issue #${{ github.event.issue.number }}"
+          git push
+
+      - name: Comment and close issue
+        uses: peter-evans/close-issue@v3
+        with:
+          comment: "Updated `${{ steps.parse.outputs.symbol }}` live trading flag to `${{ steps.parse.outputs.enabled }}` in docs/data/tradingcopilot.db."

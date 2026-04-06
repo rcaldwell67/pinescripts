@@ -50,6 +50,7 @@
   <button id="openAccountInfoBtn" class="mode-btn" type="button" title="View Alpaca account details">Account Info</button>
   <button id="openDailyTransactionsBtn" class="mode-btn" type="button" title="View today's trades and fills">Daily Transactions</button>
   <button id="openTradeGapBtn" class="mode-btn" type="button" title="Longest gap between trades per symbol (backtest + paper)">Trade Gap Analysis</button>
+  <button id="openLiveSymbolControlBtn" class="mode-btn" type="button" title="Enable or disable live trading per symbol">Live Symbol Control</button>
   <div id="refreshControls" class="refresh-controls" aria-label="Dashboard refresh controls">
     <button id="reloadDashboardBtn" class="mode-btn" type="button" title="Reload dashboard data without refreshing the page">Reload Data</button>
     <label for="autoRefreshSelect">Auto-refresh</label>
@@ -278,7 +279,22 @@
   </div>
 </div>
 
-<script src='site.js?v=20260406a' defer></script>
+<div id="liveSymbolControlModal" class="account-modal" aria-hidden="true">
+  <div class="account-modal-card" role="dialog" aria-modal="true" aria-labelledby="liveSymbolControlModalTitle">
+    <div class="account-modal-head">
+      <h2 id="liveSymbolControlModalTitle">Live Symbol Control</h2>
+      <span style="margin-left:10px; color:var(--muted); font-size:12px;">Enable or disable live trading per symbol via issue automation</span>
+      <button id="closeLiveSymbolControlBtn" class="account-modal-close" type="button" aria-label="Close live symbol control modal">x</button>
+    </div>
+    <div class="account-modal-body">
+      <div id="liveSymbolControlContent" style="max-height: 600px; overflow-y: auto;">
+        <p>Loading symbols...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src='site.js?v=20260406b' defer></script>
 </body>
 </html>
 

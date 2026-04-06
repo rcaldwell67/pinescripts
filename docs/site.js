@@ -1586,6 +1586,114 @@ function getNormalizedSymbolKey(sym) {
     modal.setAttribute('aria-hidden', 'true');
   }
 
+  // ── Live Symbol Control modal ──────────────────────────────────────────────
+
+  function loadLiveSymbolControlRows() {
+    const db = window._SQL_DB;
+    if (!db) return [];
+
+    let hasLiveEnabled = false;
+    try {
+      const info = db.exec('PRAGMA table_info(symbols)');
+      const cols = (info[0] && info[0].values ? info[0].values : []).map(row => String(row[1] || ''));
+      hasLiveEnabled = cols.includes('live_enabled');
+    } catch (e) {
+      console.warn('Could not inspect symbols schema:', e);
+    }
+
+    const query = hasLiveEnabled
+      ? 'SELECT symbol, description, COALESCE(live_enabled, 1) AS live_enabled FROM symbols ORDER BY symbol'
+      : 'SELECT symbol, description, 1 AS live_enabled FROM symbols ORDER BY symbol';
+
+    const out = [];
+    try {
+      const stmt = db.prepare(query);
+      while (stmt.step()) {
+        const row = stmt.getAsObject();
+        out.push({
+          symbol: String(row.symbol || ''),
+          description: String(row.description || ''),
+          live_enabled: Number(row.live_enabled || 0) === 1,
+        });
+      }
+      stmt.free();
+    } catch (e) {
+      console.error('Failed loading symbols for live control modal:', e);
+    }
+    return out;
+  }
+
+  function buildLiveToggleIssueUrl(symbol, targetEnabled, currentEnabled) {
+    const desired = targetEnabled ? 'true' : 'false';
+    const desiredLabel = targetEnabled ? 'ENABLED' : 'DISABLED';
+    const title = encodeURIComponent(`Live Trading Toggle: ${symbol} -> ${desiredLabel}`);
+    const body = encodeURIComponent(
+      `Symbol: ${symbol}\n` +
+      `Live Enabled: ${desired}\n` +
+      `Current Enabled (dashboard snapshot): ${currentEnabled ? 'true' : 'false'}\n\n` +
+      `_Requested from dashboard Live Symbol Control modal._`
+    );
+    return `https://github.com/rcaldwell67/pinescripts/issues/new?title=${title}&body=${body}&labels=toggle-live-symbol`;
+  }
+
+  function renderLiveSymbolControlModal() {
+    const content = document.getElementById('liveSymbolControlContent');
+    if (!content) return;
+
+    const rows = loadLiveSymbolControlRows();
+    if (!rows.length) {
+      content.innerHTML = '<p style="color:var(--muted);">No symbols found in DB.</p>';
+      return;
+    }
+
+    const bodyRows = rows.map(r => {
+      const state = r.live_enabled ? 'Enabled' : 'Disabled';
+      const stateClass = r.live_enabled ? 'is-fresh' : 'is-stale';
+      const nextEnabled = !r.live_enabled;
+      const actionLabel = nextEnabled ? 'Enable' : 'Disable';
+      return `<tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px 10px; font-weight:600;">${escapeHtml(r.symbol)}</td>
+        <td style="padding:8px 10px; color:var(--muted);">${escapeHtml(r.description || '-')}</td>
+        <td style="padding:8px 10px;"><span class="snapshot-age ${stateClass}">${escapeHtml(state)}</span></td>
+        <td style="padding:8px 10px; text-align:right;">
+          <button type="button" class="mode-btn live-toggle-btn" data-symbol="${escapeHtml(r.symbol)}" data-target-enabled="${nextEnabled ? '1' : '0'}" data-current-enabled="${r.live_enabled ? '1' : '0'}">${actionLabel}</button>
+        </td>
+      </tr>`;
+    }).join('');
+
+    content.innerHTML = `
+      <p style="font-size:12px; color:var(--muted); margin:0 0 12px 0;">
+        This dashboard opens an issue to apply each symbol toggle through CI automation.
+        Changes are committed to the DB, then used automatically by the live trading runner when it runs with --all-symbols.
+      </p>
+      <table style="width:100%; border-collapse:collapse; font-size:12px;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border);">
+            <th style="padding:8px 10px; text-align:left; color:var(--muted);">Symbol</th>
+            <th style="padding:8px 10px; text-align:left; color:var(--muted);">Description</th>
+            <th style="padding:8px 10px; text-align:left; color:var(--muted);">Live Trading</th>
+            <th style="padding:8px 10px; text-align:right; color:var(--muted);">Action</th>
+          </tr>
+        </thead>
+        <tbody>${bodyRows}</tbody>
+      </table>`;
+  }
+
+  function openLiveSymbolControlModal() {
+    const modal = document.getElementById('liveSymbolControlModal');
+    if (!modal) return;
+    renderLiveSymbolControlModal();
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeLiveSymbolControlModal() {
+    const modal = document.getElementById('liveSymbolControlModal');
+    if (!modal) return;
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+  }
+
   function getActiveRows() {
     const raw = activeTab === 'all'
       ? Object.values(loaded[activeSym] || {}).flat()
@@ -3878,6 +3986,31 @@ for (const version of VERSION_KEYS) {
     if (event.target === tradeGapModal) closeTradeGapModal();
   });
 
+  const openLiveSymbolControlBtn = document.getElementById('openLiveSymbolControlBtn');
+  openLiveSymbolControlBtn?.addEventListener('click', openLiveSymbolControlModal);
+
+  const closeLiveSymbolControlBtn = document.getElementById('closeLiveSymbolControlBtn');
+  closeLiveSymbolControlBtn?.addEventListener('click', closeLiveSymbolControlModal);
+
+  const liveSymbolControlModal = document.getElementById('liveSymbolControlModal');
+  liveSymbolControlModal?.addEventListener('click', event => {
+    if (event.target === liveSymbolControlModal) closeLiveSymbolControlModal();
+  });
+
+  const liveSymbolControlContent = document.getElementById('liveSymbolControlContent');
+  liveSymbolControlContent?.addEventListener('click', event => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+    const btn = target.closest('.live-toggle-btn');
+    if (!btn) return;
+    const symbol = String(btn.getAttribute('data-symbol') || '').trim();
+    const targetEnabled = String(btn.getAttribute('data-target-enabled') || '0') === '1';
+    const currentEnabled = String(btn.getAttribute('data-current-enabled') || '0') === '1';
+    if (!symbol) return;
+    const url = buildLiveToggleIssueUrl(symbol, targetEnabled, currentEnabled);
+    window.open(url, '_blank');
+  });
+
   const refreshDailyTransactionsBtn = document.getElementById('refreshDailyTransactionsBtn');
   refreshDailyTransactionsBtn?.addEventListener('click', () => {
     updateDailyTransactionsDateControls();
@@ -3908,6 +4041,7 @@ for (const version of VERSION_KEYS) {
       closeAccountInfoModal();
       closeDailyTransactionsModal();
       closeTradeGapModal();
+      closeLiveSymbolControlModal();
     }
   });
 })();
