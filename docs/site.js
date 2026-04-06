@@ -1761,7 +1761,7 @@ function getPaperFillStats(sym, monthStartMs = 0) {
     const body = encodeURIComponent(
       `Symbol: ${normalizedSymbol}\n` +
       `Versions: v1,v2,v3,v4,v5,v6\n\n` +
-      `_Requested from dashboard Rerun All Backtests button._`
+      `_Requested from dashboard Rerun All Versions button._`
     );
     return `https://github.com/rcaldwell67/pinescripts/issues/new?title=${title}&body=${body}`;
   }
@@ -4136,7 +4136,7 @@ for (const version of VERSION_KEYS) {
   rerunAllBacktestsBtn?.addEventListener('click', () => {
     if (!activeSym || activeDataset !== 'backtest' || activeTab !== 'all') return;
     const confirmed = confirm(
-      `Create a GitHub issue to rerun v1-v6 backtests for "${activeSym}"?\n\n` +
+      `Create a GitHub issue to rerun all versions (v1-v6) for "${activeSym}"?\n\n` +
       `This triggers the Rerun Backtest workflow via issue automation.`
     );
     if (!confirmed) return;
