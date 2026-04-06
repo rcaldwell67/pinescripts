@@ -250,7 +250,24 @@ jobs:
                   python backend/strategy_generator/tune_v2_profile.py --symbol "$SYMBOL" --max-evals 48 --out /tmp/v2_symbol_tuning_repair.json --apply
                   ;;
                 v3|v4|v5|v6)
-                  python backend/strategy_generator/tune_v3_v6_profile.py --version "$VERSION" --symbol "$SYMBOL" --max-evals 40 --out "/tmp/${VERSION}_symbol_tuning_repair.json" --apply
+                  if [ "$attempt" -eq 1 ]; then
+                    EVALS=120
+                    SEED=101
+                  else
+                    EVALS=180
+                    SEED=202
+                  fi
+                  python backend/strategy_generator/tune_v3_v6_profile.py \
+                    --version "$VERSION" \
+                    --symbol "$SYMBOL" \
+                    --max-evals "$EVALS" \
+                    --seed "$SEED" \
+                    --min-win-rate 55 \
+                    --min-net-return 0 \
+                    --max-drawdown 12 \
+                    --out "/tmp/${VERSION}_symbol_tuning_repair.json" \
+                    --apply \
+                    --apply-best-available
                   ;;
               esac
 
