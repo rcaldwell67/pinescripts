@@ -159,28 +159,24 @@
     {
       "version": "v3",
       "symbol": "BTC/USDT",
-      "timestamp": "2026-04-07 14:22:54",
-      "trades": 29,
-      "win_rate_pct": 68.96551724137932,
-      "net_return_pct": 39.41707058941756,
-      "max_drawdown_pct": 4.68944834799563,
-      "pass_all": false,
-      "reasons": [
-        "dd>4.5"
-      ]
+      "timestamp": "2026-04-07 11:53:00",
+      "trades": 67,
+      "win_rate_pct": 65.67164179104478,
+      "net_return_pct": 18.93011847784547,
+      "max_drawdown_pct": 3.6608536914189536,
+      "pass_all": true,
+      "reasons": []
     },
     {
       "version": "v4",
       "symbol": "BTC/USDT",
-      "timestamp": "2026-04-07 14:23:34",
-      "trades": 15,
-      "win_rate_pct": 80.0,
-      "net_return_pct": 77.60314640158245,
-      "max_drawdown_pct": 4.520070654455367,
-      "pass_all": false,
-      "reasons": [
-        "dd>4.5"
-      ]
+      "timestamp": "2026-04-07 12:51:35",
+      "trades": 76,
+      "win_rate_pct": 65.78947368421053,
+      "net_return_pct": 18.697731217637493,
+      "max_drawdown_pct": 4.2752742959576695,
+      "pass_all": true,
+      "reasons": []
     },
     {
       "version": "v5",
@@ -363,88 +359,71 @@
     {
       "version": "v1",
       "symbol": "ETH/BTC",
-      "timestamp": "2026-04-07 14:21:36",
-      "trades": 57,
-      "win_rate_pct": 47.368421052631575,
-      "net_return_pct": 13.58339292900032,
-      "max_drawdown_pct": 27.81053515863907,
-      "pass_all": false,
-      "reasons": [
-        "wr<65",
-        "net<15",
-        "dd>4.5"
-      ]
+      "timestamp": "2026-04-07 10:03:15",
+      "trades": 61,
+      "win_rate_pct": 67.21311475409836,
+      "net_return_pct": 19.073966696801413,
+      "max_drawdown_pct": 3.153526248444295,
+      "pass_all": true,
+      "reasons": []
     },
     {
       "version": "v2",
       "symbol": "ETH/BTC",
-      "timestamp": "2026-04-07 14:22:18",
-      "trades": 62,
-      "win_rate_pct": 51.61290322580645,
-      "net_return_pct": 100.76605102516308,
-      "max_drawdown_pct": 25.692161219816807,
-      "pass_all": false,
-      "reasons": [
-        "wr<65",
-        "dd>4.5"
-      ]
+      "timestamp": "2026-04-07 10:50:21",
+      "trades": 61,
+      "win_rate_pct": 73.77049180327869,
+      "net_return_pct": 36.71220230071442,
+      "max_drawdown_pct": 2.3941431812992238,
+      "pass_all": true,
+      "reasons": []
     },
     {
       "version": "v3",
       "symbol": "ETH/BTC",
-      "timestamp": "2026-04-07 14:23:00",
-      "trades": 0,
-      "win_rate_pct": 0.0,
-      "net_return_pct": 0.0,
-      "max_drawdown_pct": 0.0,
-      "pass_all": false,
-      "reasons": [
-        "trades<10",
-        "wr<65",
-        "net<15"
-      ]
+      "timestamp": "2026-04-07 12:05:55",
+      "trades": 29,
+      "win_rate_pct": 68.96551724137932,
+      "net_return_pct": 24.111289825394454,
+      "max_drawdown_pct": 3.9403990000000046,
+      "pass_all": true,
+      "reasons": []
     },
     {
       "version": "v4",
       "symbol": "ETH/BTC",
-      "timestamp": "2026-04-07 14:23:42",
-      "trades": 3,
-      "win_rate_pct": 33.33333333333333,
-      "net_return_pct": -2.158698349889755,
-      "max_drawdown_pct": 2.9100000000000024,
-      "pass_all": false,
-      "reasons": [
-        "trades<10",
-        "wr<65",
-        "net<15"
-      ]
+      "timestamp": "2026-04-07 13:02:58",
+      "trades": 34,
+      "win_rate_pct": 67.64705882352942,
+      "net_return_pct": 22.316678588268157,
+      "max_drawdown_pct": 3.9599999999999933,
+      "pass_all": true,
+      "reasons": []
     },
     {
       "version": "v5",
       "symbol": "ETH/BTC",
-      "timestamp": "2026-04-07 14:24:26",
-      "trades": 49,
-      "win_rate_pct": 42.857142857142854,
-      "net_return_pct": 32.149516108443194,
-      "max_drawdown_pct": 23.563697926814164,
+      "timestamp": "2026-04-07 13:44:44",
+      "trades": 27,
+      "win_rate_pct": 66.66666666666666,
+      "net_return_pct": 13.708505379095314,
+      "max_drawdown_pct": 1.237554277972065,
       "pass_all": false,
       "reasons": [
-        "wr<65",
-        "dd>4.5"
+        "net<15"
       ]
     },
     {
       "version": "v6",
       "symbol": "ETH/BTC",
-      "timestamp": "2026-04-07 14:25:07",
-      "trades": 3,
-      "win_rate_pct": 33.33333333333333,
-      "net_return_pct": -2.158698349889755,
-      "max_drawdown_pct": 2.9100000000000024,
+      "timestamp": "2026-04-07 14:38:18",
+      "trades": 4,
+      "win_rate_pct": 75.0,
+      "net_return_pct": 13.137469540034719,
+      "max_drawdown_pct": 0.0,
       "pass_all": false,
       "reasons": [
         "trades<10",
-        "wr<65",
         "net<15"
       ]
     },
@@ -517,171 +496,143 @@
     {
       "version": "v1",
       "symbol": "ETH/USDC",
-      "timestamp": "2026-04-07 14:21:48",
-      "trades": 59,
-      "win_rate_pct": 47.45762711864407,
-      "net_return_pct": 20.342364528686243,
-      "max_drawdown_pct": 31.74751495340154,
-      "pass_all": false,
-      "reasons": [
-        "wr<65",
-        "dd>4.5"
-      ]
+      "timestamp": "2026-04-07 10:16:00",
+      "trades": 170,
+      "win_rate_pct": 68.82352941176471,
+      "net_return_pct": 100.92976836522398,
+      "max_drawdown_pct": 4.4885254993452754,
+      "pass_all": true,
+      "reasons": []
     },
     {
       "version": "v2",
       "symbol": "ETH/USDC",
-      "timestamp": "2026-04-07 14:22:30",
-      "trades": 64,
-      "win_rate_pct": 51.5625,
-      "net_return_pct": 125.72507768224719,
-      "max_drawdown_pct": 43.72597236204429,
+      "timestamp": "2026-04-07 11:14:44",
+      "trades": 4,
+      "win_rate_pct": 75.0,
+      "net_return_pct": 22.480789749060982,
+      "max_drawdown_pct": 3.0000000000000053,
       "pass_all": false,
       "reasons": [
-        "wr<65",
-        "dd>4.5"
+        "trades<10"
       ]
     },
     {
       "version": "v3",
       "symbol": "ETH/USDC",
-      "timestamp": "2026-04-07 14:23:11",
-      "trades": 2,
-      "win_rate_pct": 50.0,
-      "net_return_pct": 2.729114797789748,
+      "timestamp": "2026-04-07 12:21:37",
+      "trades": 7,
+      "win_rate_pct": 100.0,
+      "net_return_pct": 27.15483145977091,
       "max_drawdown_pct": 0.0,
       "pass_all": false,
       "reasons": [
+        "trades<10"
+      ]
+    },
+    {
+      "version": "v4",
+      "symbol": "ETH/USDC",
+      "timestamp": "2026-04-07 13:17:09",
+      "trades": 12,
+      "win_rate_pct": 66.66666666666666,
+      "net_return_pct": 37.6671904629484,
+      "max_drawdown_pct": 3.0000000000000036,
+      "pass_all": true,
+      "reasons": []
+    },
+    {
+      "version": "v5",
+      "symbol": "ETH/USDC",
+      "timestamp": "2026-04-07 13:59:26",
+      "trades": 10,
+      "win_rate_pct": 70.0,
+      "net_return_pct": 25.129080804810044,
+      "max_drawdown_pct": 1.2000000000000064,
+      "pass_all": true,
+      "reasons": []
+    },
+    {
+      "version": "v6",
+      "symbol": "ETH/USDC",
+      "timestamp": "2026-04-07 14:53:33",
+      "trades": 46,
+      "win_rate_pct": 69.56521739130434,
+      "net_return_pct": 30.18998144283549,
+      "max_drawdown_pct": 3.959999999999993,
+      "pass_all": true,
+      "reasons": []
+    },
+    {
+      "version": "v1",
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-04-07 10:29:19",
+      "trades": 62,
+      "win_rate_pct": 66.12903225806451,
+      "net_return_pct": 17.261743445566303,
+      "max_drawdown_pct": 3.54174213267539,
+      "pass_all": true,
+      "reasons": []
+    },
+    {
+      "version": "v2",
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-04-07 11:38:18",
+      "trades": 271,
+      "win_rate_pct": 65.31365313653137,
+      "net_return_pct": 64.63504395425674,
+      "max_drawdown_pct": 3.179970593532521,
+      "pass_all": true,
+      "reasons": []
+    },
+    {
+      "version": "v3",
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-04-07 12:37:02",
+      "trades": 8,
+      "win_rate_pct": 75.0,
+      "net_return_pct": 4.498941965418157,
+      "max_drawdown_pct": 2.97750000000001,
+      "pass_all": false,
+      "reasons": [
         "trades<10",
-        "wr<65",
         "net<15"
       ]
     },
     {
       "version": "v4",
-      "symbol": "ETH/USDC",
-      "timestamp": "2026-04-07 14:23:56",
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-04-07 13:32:04",
       "trades": 15,
-      "win_rate_pct": 60.0,
-      "net_return_pct": 37.774324244172135,
-      "max_drawdown_pct": 7.791661063891593,
+      "win_rate_pct": 66.66666666666666,
+      "net_return_pct": 13.716694662928841,
+      "max_drawdown_pct": 2.97749999999999,
       "pass_all": false,
       "reasons": [
-        "wr<65",
-        "dd>4.5"
-      ]
-    },
-    {
-      "version": "v5",
-      "symbol": "ETH/USDC",
-      "timestamp": "2026-04-07 14:24:37",
-      "trades": 51,
-      "win_rate_pct": 49.01960784313725,
-      "net_return_pct": 49.4500191273097,
-      "max_drawdown_pct": 32.810273798959976,
-      "pass_all": false,
-      "reasons": [
-        "wr<65",
-        "dd>4.5"
-      ]
-    },
-    {
-      "version": "v6",
-      "symbol": "ETH/USDC",
-      "timestamp": "2026-04-07 14:25:23",
-      "trades": 15,
-      "win_rate_pct": 60.0,
-      "net_return_pct": 37.774324244172135,
-      "max_drawdown_pct": 7.791661063891593,
-      "pass_all": false,
-      "reasons": [
-        "wr<65",
-        "dd>4.5"
-      ]
-    },
-    {
-      "version": "v1",
-      "symbol": "ETH/USDT",
-      "timestamp": "2026-04-07 14:21:54",
-      "trades": 65,
-      "win_rate_pct": 55.38461538461539,
-      "net_return_pct": 51.46610133656846,
-      "max_drawdown_pct": 27.44021646624485,
-      "pass_all": false,
-      "reasons": [
-        "wr<65",
-        "dd>4.5"
-      ]
-    },
-    {
-      "version": "v2",
-      "symbol": "ETH/USDT",
-      "timestamp": "2026-04-07 14:22:36",
-      "trades": 71,
-      "win_rate_pct": 54.929577464788736,
-      "net_return_pct": 175.50476755002725,
-      "max_drawdown_pct": 73.24905639391577,
-      "pass_all": false,
-      "reasons": [
-        "wr<65",
-        "dd>4.5"
-      ]
-    },
-    {
-      "version": "v3",
-      "symbol": "ETH/USDT",
-      "timestamp": "2026-04-07 14:23:17",
-      "trades": 117,
-      "win_rate_pct": 60.68376068376068,
-      "net_return_pct": 217.02643239970536,
-      "max_drawdown_pct": 38.85556845758693,
-      "pass_all": false,
-      "reasons": [
-        "wr<65",
-        "dd>4.5"
-      ]
-    },
-    {
-      "version": "v4",
-      "symbol": "ETH/USDT",
-      "timestamp": "2026-04-07 14:24:04",
-      "trades": 19,
-      "win_rate_pct": 63.1578947368421,
-      "net_return_pct": 53.91151065571606,
-      "max_drawdown_pct": 5.763142469908439,
-      "pass_all": false,
-      "reasons": [
-        "wr<65",
-        "dd>4.5"
+        "net<15"
       ]
     },
     {
       "version": "v5",
       "symbol": "ETH/USDT",
-      "timestamp": "2026-04-07 14:24:43",
-      "trades": 60,
-      "win_rate_pct": 48.333333333333336,
-      "net_return_pct": 82.02833665720826,
-      "max_drawdown_pct": 30.710082304798426,
-      "pass_all": false,
-      "reasons": [
-        "wr<65",
-        "dd>4.5"
-      ]
+      "timestamp": "2026-04-07 14:24:58",
+      "trades": 19,
+      "win_rate_pct": 68.42105263157895,
+      "net_return_pct": 21.997879140000265,
+      "max_drawdown_pct": 3.5569727999999925,
+      "pass_all": true,
+      "reasons": []
     },
     {
       "version": "v6",
       "symbol": "ETH/USDT",
-      "timestamp": "2026-04-07 14:25:32",
-      "trades": 19,
-      "win_rate_pct": 63.1578947368421,
-      "net_return_pct": 53.91151065571606,
-      "max_drawdown_pct": 5.763142469908439,
-      "pass_all": false,
-      "reasons": [
-        "wr<65",
-        "dd>4.5"
-      ]
+      "timestamp": "2026-04-07 15:09:02",
+      "trades": 55,
+      "win_rate_pct": 70.9090909090909,
+      "net_return_pct": 54.377318502553095,
+      "max_drawdown_pct": 4.000385187137387,
+      "pass_all": true,
+      "reasons": []
     }
   ],
   "summary": {
