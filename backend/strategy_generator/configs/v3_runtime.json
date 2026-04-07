@@ -213,36 +213,36 @@
     "ETHUSDT": {
       "signal": {
         "enable_longs": true,
-        "enable_shorts": false,
-        "pullback_tolerance_pct": 0.25,
+        "enable_shorts": true,
+        "pullback_tolerance_pct": 0.15,
         "momentum_bars": 6,
-        "rsi_long_min": 40,
-        "rsi_long_max": 62,
+        "rsi_long_min": 38,
+        "rsi_long_max": 60,
         "rsi_short_min": 28,
-        "rsi_short_max": 50,
+        "rsi_short_max": 54,
         "adx_slope_bars": 1,
-        "adx_threshold": 22,
+        "adx_threshold": 14,
         "di_spread": 0.0,
-        "session_filter_enabled": true,
+        "session_filter_enabled": false,
         "session_start_hour_et": 10,
         "session_end_hour_et": 14,
-        "volume_mult_min": 0.5,
+        "volume_mult_min": 0.7,
         "min_body_atr_mult": 0.2,
-        "atr_floor_pct": 0.1,
+        "atr_floor_pct": 0.15,
         "panic_suppression_mult": 2.0,
         "rvol_filter_enabled": false,
         "rvol_min": 1.2,
-        "atr_percentile_filter_enabled": false,
+        "atr_percentile_filter_enabled": true,
         "atr_percentile_min": 20.0,
-        "atr_percentile_max": 90.0
+        "atr_percentile_max": 85.0
       },
       "risk": {
         "sl_atr_mult": 3.5,
-        "tp_atr_mult": 6.0,
-        "trail_activate_atr_mult": 2.5,
+        "tp_atr_mult": 8.0,
+        "trail_activate_atr_mult": 1.5,
         "trail_dist_atr_mult": 0.1,
-        "risk_pct": 1.5,
-        "max_bars_in_trade": 40
+        "risk_pct": 0.4,
+        "max_bars_in_trade": 60
       }
     },
     "ETHBTC": {
