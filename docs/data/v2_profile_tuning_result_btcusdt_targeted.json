@@ -1,0 +1,52 @@
+{
+  "symbol": "BTC/USDT",
+  "targets": {
+    "win_rate_min": 70.0,
+    "net_return_min": 20.0,
+    "max_drawdown_max": 4.5
+  },
+  "base": {
+    "trades": 133,
+    "win_rate": 66.16541353383458,
+    "net_return_pct": 31.368904357047246,
+    "max_drawdown_pct": 2.955950314781623,
+    "pass_all": false
+  },
+  "best_candidate": {
+    "enable_longs": true,
+    "enable_shorts": false,
+    "pullback_tolerance_pct": 0.2,
+    "momentum_bars": 8,
+    "rsi_long_min": 42,
+    "rsi_long_max": 58,
+    "rsi_short_min": 32,
+    "rsi_short_max": 62,
+    "adx_slope_bars": 2,
+    "adx_threshold": 20,
+    "di_spread": 2.5,
+    "session_filter_enabled": false,
+    "session_start_hour_et": 9,
+    "session_end_hour_et": 14,
+    "volume_mult_min": 0.7,
+    "min_body_atr_mult": 0.1,
+    "atr_floor_pct": 0.12,
+    "panic_suppression_mult": 1.5,
+    "sl_atr_mult": 3.5,
+    "tp_atr_mult": 10.0,
+    "trail_activate_atr_mult": 3.0,
+    "trail_dist_atr_mult": 0.05,
+    "risk_pct": 3.0,
+    "max_bars_in_trade": 30,
+    "trades": 13,
+    "win_rate": 76.92307692307693,
+    "net_return_pct": 26.569744881728052,
+    "max_drawdown_pct": 3.0000000000000018,
+    "pass_win_rate": true,
+    "pass_net_return": true,
+    "pass_drawdown": true,
+    "pass_all": true
+  },
+  "evaluations": 600,
+  "seed": 620,
+  "profile": null
+}
