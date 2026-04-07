@@ -1,0 +1,38 @@
+{
+  "symbol": "ETH/USDT",
+  "profile": "guideline_closed",
+  "constraints": {
+    "min_win_rate": 65.0,
+    "min_net_return": 15.0,
+    "max_drawdown": 4.5
+  },
+  "base": {
+    "trades": 66,
+    "win_rate": 54.54545454545454,
+    "net_return_pct": 50.55838176146119,
+    "max_drawdown_pct": 15.574840531891462
+  },
+  "best_candidate": {
+    "pullback_tolerance_pct": 0.3,
+    "rsi_short_max": 50,
+    "adx_threshold": 18,
+    "di_spread": 5.0,
+    "session_filter_enabled": true,
+    "sl_atr_mult": 4.0,
+    "tp_atr_mult": 6.0,
+    "trail_activate_atr_mult": 2.0,
+    "trail_dist_atr_mult": 0.08,
+    "risk_pct": 0.8,
+    "trades": 62,
+    "win_rate": 66.12903225806451,
+    "net_return_pct": 17.261743445566303,
+    "max_drawdown_pct": 3.54174213267539,
+    "pass_win_rate": true,
+    "pass_net_return": true,
+    "pass_drawdown": true,
+    "meets_constraints": true,
+    "pass_all": true
+  },
+  "evaluations": 240,
+  "seed": 503
+}

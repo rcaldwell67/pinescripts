@@ -15,6 +15,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Updated account modal panels to show a `Current Equity Snapshot` row with value, source mode, and human-readable timestamp.
   - Added freshness/staleness age badges for equity snapshots in both the `Current Equity` card subtitle and account modal snapshot row.
 
+- Extended `guideline_closed` profile to cover ETH pairs (ETH/BTC, ETH/USDC, ETH/USDT) across v1–v6 via targeted parameter tuning.
+  - v1 ETH/BTC: 67.21% WR, 19.07% net return, 3.15% max DD — all constraints met.
+  - v1 ETH/USDC: 68.82% WR, 100.93% net return, 4.49% max DD — all constraints met.
+  - v1 ETH/USDT: 66.13% WR, 17.26% net return, 3.54% max DD — all constraints met.
+  - v2–v6 ETH pairs tuned with `tune_v2_profile.py` / `tune_v3_v6_profile.py`; best-available candidate applied via `--apply-best-available`.
+  - Per-symbol `guideline_closed` overrides written to `v1_runtime.json` through `v6_runtime.json`.
+  - Tuning result snapshots written to `docs/data/v{1..6}_profile_tuning_result_eth{btc,usdc,usdt}_guideline_retry.json`.
+
+- Housekeeping: removed 35+ obsolete scripts, data files, and database snapshots.
+  - Root: removed one-off debug scripts (`check_yesterday*.py`, `diagnostics_summary.py`, `scheduler_gap_analysis.py`, `missed_opportunities_report.py`), Playwright diagnostics, CSV trade exports, shell rename helper, paper reset shims (`reset_paper_data.py`, `reset_paper_tmp.py`, `reset_v1/v2_aligned_backtest_paper.py`), and other single-use utilities.
+  - `backend/data/`: removed bootstrap CSV files, temp data files, and migration script superseded by current DDL.
+  - `backend/strategy_generator/`: removed v1-only analysis scripts (`run_apm_v1_backtest.py`, `save_apm_v1_summary_to_db.py`, `summarize_apm_v1_results.py`), walkforward optimizer, parameter extractor, and filter-impact analyzer; removed orphaned `v1_optimized_walkforward_smoketest.json` config.
+  - `docs/`: removed `index_head_snapshot.html` one-off capture.
+  - `docs/data/`: removed 19 old pre-align DB snapshots (retaining last 3), temp/scratch DBs, paper-fill temp DB, diagnostic JSONL log files, and stale guideline report variants.
+  - Removed empty `backend/backtests/` directory.
+
 - Added `backend/data/validate_rerun_backtests.py` to validate representative backtest rerun paths on a temporary DB copy.
   - Covers both issue-workflow branches: aligned reset reruns (default `v2`) and direct backtest reruns (default `v6`).
   - Defaults to validating both `BTC/USDT` and `CLM` so crypto and non-crypto rerun paths are checked together.
