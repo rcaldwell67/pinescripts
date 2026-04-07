@@ -52,6 +52,40 @@ The dashboard exposes backtest-only selectors for BTC-USD v1 and v2 so you can s
 
 ## Trading System Documentation
 
+## React Trading Monitor (Crypto + ETFs)
+
+A new React dashboard scaffold is available in `frontend-react/` and reads a snapshot JSON generated from `tradingcopilot.db`.
+
+### Generate snapshot data
+
+```bash
+python backend/data/export_dashboard_snapshot.py
+```
+
+This writes:
+
+- `docs/data/dashboard_snapshot.json`
+- `frontend-react/public/data/dashboard_snapshot.json`
+
+### Run the React monitor
+
+```bash
+npm --prefix frontend-react install
+npm --prefix frontend-react run dev
+```
+
+### Build the React monitor
+
+```bash
+npm --prefix frontend-react run build
+```
+
+You can also use root-level scripts:
+
+- `npm run dashboard:export`
+- `npm run dashboard:dev`
+- `npm run dashboard:build`
+
 This repository implements an Adaptive Pullback Momentum (APM) trading system with versioned strategy logic, shared risk controls, and separate backtest, paper, and live execution paths.
 
 ### Design goals

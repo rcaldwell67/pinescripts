@@ -1,0 +1,74 @@
+name: Build and Deploy Trading Dashboard
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend-react/**"
+      - "backend/data/export_dashboard_snapshot.py"
+      - "docs/data/tradingcopilot.db"
+      - ".github/workflows/dashboard-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: dashboard-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Export dashboard snapshot
+        run: python backend/data/export_dashboard_snapshot.py
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend-react/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci --prefix frontend-react
+
+      - name: Build dashboard
+        env:
+          VITE_BASE_PATH: "/${{ github.event.repository.name }}/"
+        run: npm run build --prefix frontend-react
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend-react/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

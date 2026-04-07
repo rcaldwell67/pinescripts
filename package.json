@@ -1,4 +1,9 @@
 {
+  "scripts": {
+    "dashboard:export": "python backend/data/export_dashboard_snapshot.py",
+    "dashboard:dev": "npm --prefix frontend-react run dev",
+    "dashboard:build": "npm --prefix frontend-react run build"
+  },
   "dependencies": {
     "alpaca-mcp": "^1.0.2",
     "mcp-server-pinescript": "github:iamrichardD/mcp-server-pinescript",
