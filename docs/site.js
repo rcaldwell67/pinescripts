@@ -116,9 +116,9 @@ const LIVE_TRADING_SUPPORTED_VERSIONS = new Set(VERSION_KEYS);
 // To update: modify backend/config/guideline_policy.py and re-generate this section,
 // or run: python backend/config/guideline_policy.py
 const GUIDELINE_THRESHOLDS = {
-  minTrades: 1,
-  minWinRate: 70.0,
-  minNetReturn: 20.0,
+  minTrades: 10,
+  minWinRate: 65.0,
+  minNetReturn: 15.0,
   maxDrawdown: 4.5,
 };
 
@@ -1747,22 +1747,22 @@ function getPaperFillStats(sym, monthStartMs = 0) {
       {
         key: 'trades',
         failed: !Number.isFinite(metrics.trades) || metrics.trades < GUIDELINE_THRESHOLDS.minTrades,
-        reason: 'trades<1',
+        reason: `trades<${GUIDELINE_THRESHOLDS.minTrades}`,
       },
       {
         key: 'winRate',
         failed: !Number.isFinite(metrics.winRate) || metrics.winRate < GUIDELINE_THRESHOLDS.minWinRate,
-        reason: 'wr<70',
+        reason: `wr<${GUIDELINE_THRESHOLDS.minWinRate}`,
       },
       {
         key: 'netReturn',
         failed: !Number.isFinite(metrics.netReturn) || metrics.netReturn < GUIDELINE_THRESHOLDS.minNetReturn,
-        reason: 'net<20',
+        reason: `net<${GUIDELINE_THRESHOLDS.minNetReturn}`,
       },
       {
         key: 'maxDrawdown',
         failed: !Number.isFinite(metrics.maxDrawdown) || metrics.maxDrawdown > GUIDELINE_THRESHOLDS.maxDrawdown,
-        reason: 'dd>4.5',
+        reason: `dd>${GUIDELINE_THRESHOLDS.maxDrawdown}`,
       },
     ];
 

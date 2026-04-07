@@ -17,8 +17,8 @@ sys.path.insert(0, str(SG_DIR))
 from backtest_backtrader_alpaca import fetch_ohlcv, run_backtest  # noqa: E402
 
 
-WIN_RATE_TARGET = 70.0
-NET_RETURN_TARGET = 20.0
+WIN_RATE_TARGET = 65.0
+NET_RETURN_TARGET = 15.0
 MAX_DD_TARGET = 4.5
 
 

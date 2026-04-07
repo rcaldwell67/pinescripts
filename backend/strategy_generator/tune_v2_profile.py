@@ -19,8 +19,8 @@ from backtest_backtrader_alpaca import fetch_ohlcv  # noqa: E402
 from apm_v2_backtest import backtest_apm_v2  # noqa: E402
 from v2_params import get_v2_params  # noqa: E402
 
-WIN_RATE_TARGET = 70.0
-NET_RETURN_TARGET = 20.0
+WIN_RATE_TARGET = 65.0
+NET_RETURN_TARGET = 15.0
 MAX_DD_TARGET = 4.5
 
 

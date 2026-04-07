@@ -15,9 +15,9 @@ from typing import Any
 class GuidelineThresholds:
     """Default guideline thresholds for all strategies."""
 
-    min_trades: int = 1
-    min_win_rate_pct: float = 70.0
-    min_net_return_pct: float = 20.0
+    min_trades: int = 10
+    min_win_rate_pct: float = 65.0
+    min_net_return_pct: float = 15.0
     max_drawdown_pct: float = 4.5
 
 
@@ -30,9 +30,9 @@ class GuidelineOverride:
 
 # Default thresholds applied to all symbols/versions unless overridden.
 DEFAULT_THRESHOLDS = GuidelineThresholds(
-    min_trades=1,
-    min_win_rate_pct=70.0,
-    min_net_return_pct=20.0,
+    min_trades=10,
+    min_win_rate_pct=65.0,
+    min_net_return_pct=15.0,
     max_drawdown_pct=4.5,
 )
 
@@ -78,7 +78,7 @@ def evaluate_backtest_guideline(
 
     # Check trades
     if trades is None or trades < thresholds.min_trades:
-        failures.append("trades<1")
+        failures.append(f"trades<{thresholds.min_trades}")
 
     # Check win rate
     if win_rate_pct is None or win_rate_pct < thresholds.min_win_rate_pct:

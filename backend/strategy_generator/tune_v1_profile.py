@@ -173,8 +173,8 @@ def run() -> int:
     parser.add_argument("--profile", default="eth_focus", help="Profile name to tune")
     parser.add_argument("--max-evals", type=int, default=60, help="Number of random candidates to evaluate")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
-    parser.add_argument("--min-win-rate", type=float, default=70.0, help="Constraint: minimum win-rate pct")
-    parser.add_argument("--min-net-return", type=float, default=20.0, help="Constraint: minimum net return pct")
+    parser.add_argument("--min-win-rate", type=float, default=65.0, help="Constraint: minimum win-rate pct")
+    parser.add_argument("--min-net-return", type=float, default=15.0, help="Constraint: minimum net return pct")
     parser.add_argument("--max-drawdown", type=float, default=4.5, help="Constraint: maximum drawdown pct")
     parser.add_argument(
         "--out",
