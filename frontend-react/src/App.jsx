@@ -56,6 +56,27 @@ export default function App() {
   const [assetFilter, setAssetFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [alpacaSymbols, setAlpacaSymbols] = useState([]);
+  const [selectedAlpacaSymbol, setSelectedAlpacaSymbol] = useState("");
+  const [alpacaLoading, setAlpacaLoading] = useState(false);
+  // Load Alpaca symbols (simulate API or static list for demo)
+  useEffect(() => {
+    async function fetchAlpacaSymbols() {
+      setAlpacaLoading(true);
+      try {
+        // Replace with real API or static JSON fetch as needed
+        const res = await fetch("https://raw.githubusercontent.com/rcaldwell67/pinescripts/main/docs/data/alpaca_symbols.json");
+        if (!res.ok) throw new Error("Failed to load Alpaca symbols");
+        const data = await res.json();
+        setAlpacaSymbols(data.symbols || []);
+      } catch (e) {
+        setAlpacaSymbols([]);
+      } finally {
+        setAlpacaLoading(false);
+      }
+    }
+    fetchAlpacaSymbols();
+  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -134,6 +155,25 @@ export default function App() {
 
   const account = snapshot?.account || {};
 
+  // Handler for Add Symbol button
+  function handleAddSymbol() {
+    if (!selectedAlpacaSymbol) {
+      alert("Please select a symbol from the dropdown first.");
+      return;
+    }
+    const desc = window.prompt("Enter a description for this symbol (optional):", "");
+    const title = encodeURIComponent("Add symbol: " + selectedAlpacaSymbol);
+    const body = encodeURIComponent(
+      `Symbol: ${selectedAlpacaSymbol}\nDescription: ${desc || ""}\n\n_Selected from Alpaca Paper Trading assets via dashboard._`
+    );
+    const url = `https://github.com/rcaldwell67/pinescripts/issues/new?title=${title}&body=${body}&labels=add-symbol`;
+    window.open(url, "_blank");
+  }
+
+  // Filter Alpaca symbols to only those not already in the dashboard
+  const existingSymbols = new Set(symbols.map(s => s.symbol));
+  const availableAlpacaSymbols = alpacaSymbols.filter(s => !existingSymbols.has(s));
+
   return (
     <div className="page-shell">
       <div className="bg-grid" />
@@ -164,6 +204,30 @@ export default function App() {
             <option value="crypto">Crypto</option>
             <option value="etf">ETF</option>
           </select>
+        </label>
+        <label>
+          Add Alpaca Symbol
+          <div style={{ display: 'flex', gap: 8 }}>
+            <select
+              value={selectedAlpacaSymbol}
+              onChange={e => setSelectedAlpacaSymbol(e.target.value)}
+              disabled={alpacaLoading || availableAlpacaSymbols.length === 0}
+              style={{ minWidth: 120 }}
+            >
+              <option value="">{alpacaLoading ? "Loading..." : "Select..."}</option>
+              {availableAlpacaSymbols.map(sym => (
+                <option key={sym} value={sym}>{sym}</option>
+              ))}
+            </select>
+            <button
+              type="button"
+              style={{ padding: '8px 16px', borderRadius: 6, border: '1px solid var(--edge)', background: 'var(--aqua)', color: '#181c20', fontWeight: 600, cursor: 'pointer' }}
+              onClick={handleAddSymbol}
+              disabled={!selectedAlpacaSymbol}
+            >
+              Add
+            </button>
+          </div>
         </label>
       </section>
 
