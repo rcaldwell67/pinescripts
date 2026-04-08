@@ -414,8 +414,6 @@ function getPaperFillStats(sym, monthStartMs = 0) {
       });
       return instruments;
     }
-      }
-    }
     enableDropdownWhenReady();
     buildSymbolSwitcher(symbols);
     // Save db instance for later use
