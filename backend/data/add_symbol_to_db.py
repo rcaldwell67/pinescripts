@@ -9,15 +9,16 @@ def add_symbol(symbol, description=None):
     try:
         c.execute(
             '''
-            INSERT INTO symbols (symbol, description)
-            VALUES (?, ?)
+            INSERT INTO symbols (symbol, description, live_enabled)
+            VALUES (?, ?, 0)
             ON CONFLICT(symbol) DO UPDATE SET
-              description = COALESCE(excluded.description, symbols.description)
+              description = COALESCE(excluded.description, symbols.description),
+              live_enabled = symbols.live_enabled
             ''',
             (symbol, description),
         )
         conn.commit()
-        print(f"Symbol {symbol} added to database.")
+        print(f"Symbol {symbol} added to database as DISABLED (live_enabled=0). Vet before enabling.")
     finally:
         conn.close()
 
