@@ -252,7 +252,7 @@ export default function App() {
                 <tr>
                   <th>Symbol</th>
                   <th>Mode</th>
-                  <th>Version</th>
+                  {/* Version column removed */}
                   <th>Direction</th>
                   <th>P/L $</th>
                   <th>P/L %</th>
@@ -264,7 +264,7 @@ export default function App() {
                   <tr key={`${row.symbol}-${row.entry_time}-${idx}`}>
                     <td>{row.symbol}</td>
                     <td>{row.mode}</td>
-                    <td>{row.version}</td>
+                    {/* Version cell removed */}
                     <td>{row.direction}</td>
                     <td className={Number(row.dollar_pnl) >= 0 ? "up" : "down"}>{fmtCurrency(row.dollar_pnl)}</td>
                     <td className={Number(row.pnl_pct) >= 0 ? "up" : "down"}>{fmtPct(row.pnl_pct)}</td>
