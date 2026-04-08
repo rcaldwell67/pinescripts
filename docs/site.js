@@ -1996,6 +1996,11 @@ function getPaperFillStats(sym, monthStartMs = 0) {
 
     content.innerHTML = '<p style="color:var(--muted);">Loading guideline audit...</p>';
     const rows = await loadGuidelineAuditRows();
+    _cachedAuditRows = rows;
+
+    // Reset to status tab on fresh open
+    switchGuidelineAuditTab('status');
+
     if (!rows.length) {
       meta.textContent = 'No symbols or backtest summaries found.';
       content.innerHTML = '<p style="color:var(--muted);">No guideline data available.</p>';
@@ -2072,6 +2077,241 @@ function getPaperFillStats(sym, monthStartMs = 0) {
     if (!modal) return;
     modal.classList.remove('open');
     modal.setAttribute('aria-hidden', 'true');
+  }
+
+  // ── Guideline vs. Dashboard Data comparison ────────────────────────────────
+
+  let _guidelineAuditView = 'status'; // 'status' | 'compare'
+  let _cachedAuditRows = null;
+
+  async function loadDashboardDataJsons() {
+    const btPaths = ['data/backtest_results.json', 'docs/data/backtest_results.json'];
+    const ptPaths = ['data/paper_trading_results.json', 'docs/data/paper_trading_results.json'];
+
+    const fetchFirst = async (paths) => {
+      for (const p of paths) {
+        try {
+          const r = await fetch(`${p}?v=${Date.now()}`);
+          if (r.ok) return await r.json();
+        } catch (_) { /* try next */ }
+      }
+      return null;
+    };
+
+    const [btRaw, ptRaw] = await Promise.all([fetchFirst(btPaths), fetchFirst(ptPaths)]);
+
+    // Build (symbol, version) → row lookup for backtest
+    const btLookup = new Map();
+    if (btRaw && typeof btRaw === 'object') {
+      for (const [sym, versObj] of Object.entries(btRaw)) {
+        if (!versObj || typeof versObj !== 'object') continue;
+        for (const [ver, rows] of Object.entries(versObj)) {
+          const row = Array.isArray(rows) ? rows[0] : null;
+          if (row) btLookup.set(`${sym}||${ver}`, row);
+        }
+      }
+    }
+
+    // Build (symbol, version) → row lookup for paper trading
+    const ptLookup = new Map();
+    if (ptRaw && typeof ptRaw === 'object') {
+      if (Array.isArray(ptRaw)) {
+        for (const row of ptRaw) {
+          if (row && row.symbol && row.version) ptLookup.set(`${row.symbol}||${row.version}`, row);
+        }
+      } else {
+        for (const [sym, rows] of Object.entries(ptRaw)) {
+          const list = Array.isArray(rows) ? rows : Object.values(rows);
+          for (const row of list) {
+            if (row && row.version) ptLookup.set(`${sym}||${row.version}`, row);
+          }
+        }
+      }
+    }
+
+    return { btLookup, ptLookup };
+  }
+
+  async function renderGuidelineCompareTable(auditRows) {
+    const el = document.getElementById('guidelineCompareContent');
+    if (!el) return;
+    el.innerHTML = '<p style="color:var(--muted); padding:12px;">Loading dashboard data...</p>';
+
+    const { btLookup, ptLookup } = await loadDashboardDataJsons();
+
+    const fmtN = (n, d = 2) => Number.isFinite(Number(n)) ? Number(n).toFixed(d) : '-';
+    const fmtDelta = (d, thresh) => {
+      if (!Number.isFinite(d)) return '<td class="gca-delta">-</td>';
+      const abs = Math.abs(d);
+      const style = abs > thresh
+        ? 'color:#f85149; font-weight:600;'
+        : abs > thresh / 4
+          ? 'color:#f59e0b;'
+          : 'color:var(--muted);';
+      const sign = d >= 0 ? '+' : '';
+      return `<td class="gca-delta" style="${style}">${sign}${d.toFixed(2)}</td>`;
+    };
+
+    const sorted = auditRows.slice().sort((a, b) => {
+      const s = a.symbol.localeCompare(b.symbol);
+      return s !== 0 ? s : a.version.localeCompare(b.version);
+    });
+
+    const sourceTag = (label, color) =>
+      `<span style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;background:${color}22;color:${color};border:1px solid ${color}66;">${label}</span>`;
+
+    let rows = '';
+    let prevSym = '';
+    for (const r of sorted) {
+      const key = `${r.symbol}||${r.version}`;
+      const bt = btLookup.get(key);
+      const pt = ptLookup.get(key);
+
+      const borderTop = r.symbol !== prevSym ? 'border-top:2px solid var(--border);' : '';
+      prevSym = r.symbol;
+
+      // ── Guideline row
+      const gmTrades = Number(r.trades);
+      const gmWR = Number(r.winRate);
+      const gmNet = Number(r.netReturn);
+      const gmDD = Number(r.maxDrawdown);
+      const statusBadge = r.status === 'PASS'
+        ? '<span class="tag tag-tp">PASS</span>'
+        : r.status === 'CONDITIONAL'
+          ? '<span class="tag" style="background:#f59e0b22;color:#f59e0b;border-color:#f59e0b66;">COND</span>'
+          : r.status === 'FAIL'
+            ? '<span class="tag tag-sl">FAIL</span>'
+            : '<span class="tag tag-other">MISSING</span>';
+
+      rows += `<tr style="${borderTop}">
+        <td rowspan="${1 + (bt ? 1 : 0) + (pt ? 1 : 0)}" style="padding:6px 10px; font-weight:600; vertical-align:top;">${escapeHtml(r.symbol)}</td>
+        <td rowspan="${1 + (bt ? 1 : 0) + (pt ? 1 : 0)}" style="padding:6px 10px; vertical-align:top;"><span class="pill" style="background:#58a6ff22;color:var(--accent);border-color:#58a6ff44;">${escapeHtml(r.version.toUpperCase())}</span></td>
+        <td class="gca-src">${sourceTag('Guideline', '#58a6ff')}</td>
+        <td class="gca-num">${fmtN(gmTrades, 0)}</td>
+        <td class="gca-num">${fmtN(gmWR)}</td>
+        <td class="gca-num">${fmtN(gmNet)}</td>
+        <td class="gca-num">${fmtN(gmDD)}</td>
+        <td class="gca-delta">-</td>
+        <td class="gca-delta">-</td>
+        <td class="gca-delta">-</td>
+        <td class="gca-delta">-</td>
+        <td style="padding:6px 10px;">${statusBadge}</td>
+      </tr>`;
+
+      // ── Backtest row
+      if (bt) {
+        const beginEq = Number(bt.beginning_equity || 0);
+        const btMdd = beginEq > 0 ? (Number(bt.max_drawdown) / beginEq * 100) : Number(bt.max_drawdown);
+        const btTrades = Number(bt.total_trades);
+        const btWR = Number(bt.win_rate);
+        const btNet = Number(bt.net_return_pct);
+        const dTr = Number.isFinite(gmTrades) && Number.isFinite(btTrades) ? gmTrades - btTrades : NaN;
+        const dWR = Number.isFinite(gmWR) && Number.isFinite(btWR) ? gmWR - btWR : NaN;
+        const dNet = Number.isFinite(gmNet) && Number.isFinite(btNet) ? gmNet - btNet : NaN;
+        const dDD = Number.isFinite(gmDD) && Number.isFinite(btMdd) ? gmDD - btMdd : NaN;
+        rows += `<tr>
+          <td class="gca-src">${sourceTag('Backtest', '#3fb950')}</td>
+          <td class="gca-num">${fmtN(btTrades, 0)}</td>
+          <td class="gca-num">${fmtN(btWR)}</td>
+          <td class="gca-num">${fmtN(btNet)}</td>
+          <td class="gca-num">${fmtN(btMdd)}</td>
+          ${fmtDelta(dTr, 2)}
+          ${fmtDelta(dWR, 2)}
+          ${fmtDelta(dNet, 2)}
+          ${fmtDelta(dDD, 1)}
+          <td style="padding:6px 10px;"></td>
+        </tr>`;
+      }
+
+      // ── Paper trading row
+      if (pt) {
+        const beginEq = Number(pt.beginning_equity || 0);
+        const ptMdd = beginEq > 0 ? (Number(pt.max_drawdown) / beginEq * 100) : Number(pt.max_drawdown);
+        const ptTrades = Number(pt.total_trades);
+        const ptWR = Number(pt.win_rate);
+        const ptNet = Number(pt.net_return_pct);
+        const dTr = Number.isFinite(gmTrades) && Number.isFinite(ptTrades) ? gmTrades - ptTrades : NaN;
+        const dWR = Number.isFinite(gmWR) && Number.isFinite(ptWR) ? gmWR - ptWR : NaN;
+        const dNet = Number.isFinite(gmNet) && Number.isFinite(ptNet) ? gmNet - ptNet : NaN;
+        const dDD = Number.isFinite(gmDD) && Number.isFinite(ptMdd) ? gmDD - ptMdd : NaN;
+        rows += `<tr>
+          <td class="gca-src">${sourceTag('Paper', '#f59e0b')}</td>
+          <td class="gca-num">${fmtN(ptTrades, 0)}</td>
+          <td class="gca-num">${fmtN(ptWR)}</td>
+          <td class="gca-num">${fmtN(ptNet)}</td>
+          <td class="gca-num">${fmtN(ptMdd)}</td>
+          ${fmtDelta(dTr, 2)}
+          ${fmtDelta(dWR, 2)}
+          ${fmtDelta(dNet, 2)}
+          ${fmtDelta(dDD, 1)}
+          <td style="padding:6px 10px;"></td>
+        </tr>`;
+      }
+    }
+
+    // Count rows with significant mismatches
+    let mismatchCount = 0;
+    for (const r of sorted) {
+      const key = `${r.symbol}||${r.version}`;
+      const bt = btLookup.get(key);
+      if (!bt) continue;
+      const beginEq = Number(bt.beginning_equity || 0);
+      const btMdd = beginEq > 0 ? (Number(bt.max_drawdown) / beginEq * 100) : Number(bt.max_drawdown);
+      const dTr = Math.abs(Number(r.trades) - Number(bt.total_trades));
+      const dNet = Math.abs(Number(r.netReturn) - Number(bt.net_return_pct));
+      const dDD = Math.abs(Number(r.maxDrawdown) - btMdd);
+      if (dTr > 2 || dNet > 2 || dDD > 1) mismatchCount++;
+    }
+
+    const metaEl = document.getElementById('guidelineAuditMeta');
+    if (metaEl) {
+      metaEl.textContent = `Comparing guideline matrix vs. backtest_results.json & paper_trading_results.json. ${mismatchCount} of ${sorted.length} symbol/version combos have significant discrepancies (|trades|>2, |net%|>2, or |mdd%|>1). Delta columns show: Guideline minus Dashboard source.`;
+    }
+
+    el.innerHTML = `
+      <style>
+        .gca-src { padding: 5px 10px; }
+        .gca-num { padding: 5px 10px; text-align: right; font-variant-numeric: tabular-nums; }
+        .gca-delta { padding: 5px 10px; text-align: right; font-variant-numeric: tabular-nums; }
+      </style>
+      <table style="width:100%; border-collapse:collapse; font-size:12px;">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border); position:sticky; top:0; background:var(--card-bg, #161b22);">
+            <th style="padding:8px 10px; text-align:left; color:var(--muted);">Symbol</th>
+            <th style="padding:8px 10px; text-align:left; color:var(--muted);">Ver</th>
+            <th style="padding:8px 10px; text-align:left; color:var(--muted);">Source</th>
+            <th style="padding:8px 10px; text-align:right; color:var(--muted);">Trades</th>
+            <th style="padding:8px 10px; text-align:right; color:var(--muted);">WR%</th>
+            <th style="padding:8px 10px; text-align:right; color:var(--muted);">Net%</th>
+            <th style="padding:8px 10px; text-align:right; color:var(--muted);">MaxDD%</th>
+            <th style="padding:8px 10px; text-align:right; color:var(--muted);">dTrades</th>
+            <th style="padding:8px 10px; text-align:right; color:var(--muted);">dWR</th>
+            <th style="padding:8px 10px; text-align:right; color:var(--muted);">dNet%</th>
+            <th style="padding:8px 10px; text-align:right; color:var(--muted);">dDD%</th>
+            <th style="padding:8px 10px; text-align:left; color:var(--muted);">Status</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+
+  function switchGuidelineAuditTab(tab) {
+    _guidelineAuditView = tab;
+    const statusContent = document.getElementById('guidelineAuditContent');
+    const compareContent = document.getElementById('guidelineCompareContent');
+    const statusBtn = document.getElementById('guidelineTabStatus');
+    const compareBtn = document.getElementById('guidelineTabCompare');
+    if (!statusContent || !compareContent) return;
+
+    const showStatus = tab === 'status';
+    statusContent.style.display = showStatus ? '' : 'none';
+    compareContent.style.display = showStatus ? 'none' : '';
+    statusBtn && statusBtn.classList.toggle('active', showStatus);
+    compareBtn && compareBtn.classList.toggle('active', !showStatus);
+
+    if (!showStatus && _cachedAuditRows) {
+      renderGuidelineCompareTable(_cachedAuditRows);
+    }
   }
 
   // ── Live Symbol Control modal ──────────────────────────────────────────────
@@ -4521,6 +4761,10 @@ for (const version of VERSION_KEYS) {
   guidelineAuditModal?.addEventListener('click', event => {
     if (event.target === guidelineAuditModal) closeGuidelineAuditModal();
   });
+
+  // Tab switching inside the guideline audit modal
+  document.getElementById('guidelineTabStatus')?.addEventListener('click', () => switchGuidelineAuditTab('status'));
+  document.getElementById('guidelineTabCompare')?.addEventListener('click', () => switchGuidelineAuditTab('compare'));
 
   const guidelineAuditContent = document.getElementById('guidelineAuditContent');
   guidelineAuditContent?.addEventListener('click', event => {

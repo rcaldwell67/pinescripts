@@ -299,13 +299,19 @@
   <div class="account-modal-card" role="dialog" aria-modal="true" aria-labelledby="guidelineAuditModalTitle">
     <div class="account-modal-head">
       <h2 id="guidelineAuditModalTitle">Guideline Audit</h2>
-      <span style="margin-left:10px; color:var(--muted); font-size:12px;">Latest backtest summary row per symbol/version from tradingcopilot.db</span>
+      <div style="display:flex;align-items:center;gap:6px;margin-left:10px;">
+        <button id="guidelineTabStatus" class="mode-btn active" type="button" data-guideline-tab="status">Audit Status</button>
+        <button id="guidelineTabCompare" class="mode-btn" type="button" data-guideline-tab="compare">vs. Dashboard Data</button>
+      </div>
       <button id="closeGuidelineAuditBtn" class="account-modal-close" type="button" aria-label="Close guideline audit modal">x</button>
     </div>
     <div class="account-modal-body">
       <div id="guidelineAuditMeta" style="font-size:12px; color:var(--muted); margin-bottom:10px;"></div>
       <div id="guidelineAuditContent" style="max-height: 640px; overflow-y: auto;">
         <p>Loading guideline audit...</p>
+      </div>
+      <div id="guidelineCompareContent" style="display:none; max-height: 640px; overflow-y: auto;">
+        <p style="color:var(--muted);">Loading comparison...</p>
       </div>
     </div>
   </div>
