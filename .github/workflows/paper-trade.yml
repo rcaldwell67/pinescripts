@@ -112,16 +112,16 @@ jobs:
               if [[ "$VERSION" == "v1" ]]; then
                 echo "Running aligned v1 backtest/paper regeneration ($TARGET_FLAG)"
                 if [[ -n "$SYMBOL" ]]; then
-                  python reset_v1_aligned_backtest_paper.py --symbol "$SYMBOL"
+                  python reset_aligned_backtest_paper.py --version v1 --symbol "$SYMBOL"
                 else
-                  python reset_v1_aligned_backtest_paper.py
+                  python reset_aligned_backtest_paper.py --version v1
                 fi
               elif [[ "$VERSION" == "v2" ]]; then
                 echo "Running aligned v2 backtest/paper regeneration ($TARGET_FLAG)"
                 if [[ -n "$SYMBOL" ]]; then
-                  python reset_v2_aligned_backtest_paper.py --symbol "$SYMBOL"
+                  python reset_aligned_backtest_paper.py --version v2 --symbol "$SYMBOL"
                 else
-                  python reset_v2_aligned_backtest_paper.py
+                  python reset_aligned_backtest_paper.py --version v2
                 fi
               else
                 echo "Running simulation paper trading ($TARGET_FLAG) for version $VERSION"
