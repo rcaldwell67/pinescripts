@@ -249,11 +249,35 @@ def _append_latest_realtime_bar(df: "pd.DataFrame", symbol: str) -> "pd.DataFram
     return out
 
 
+def _apply_data_scope(df: "pd.DataFrame", scope: str) -> "pd.DataFrame":
+    """Filter OHLCV rows to the configured simulation scope."""
+    if scope == "historical":
+        return df
+
+    if scope != "same_day":
+        raise ValueError(f"Unknown data scope: {scope!r}. Expected historical or same_day")
+
+    import pandas as pd
+
+    if "timestamp" not in df.columns:
+        raise RuntimeError("OHLCV data missing timestamp column; cannot apply same_day scope")
+
+    ts = pd.to_datetime(df["timestamp"], utc=True, errors="coerce")
+    today_utc = datetime.now(timezone.utc).date()
+    same_day_mask = ts.dt.date == today_utc
+    filtered = df.loc[same_day_mask].copy()
+    if filtered.empty:
+        raise RuntimeError(f"No bars available for same_day scope (UTC date={today_utc.isoformat()})")
+    filtered.reset_index(drop=True, inplace=True)
+    return filtered
+
+
 def fetch_ohlcv(
     symbol: str,
     *,
     prefer_realtime_bar: bool = False,
     alpaca_only: bool = False,
+    data_scope: str = "historical",
 ) -> "pd.DataFrame":
     """Fetch OHLCV data, trying Alpaca first, then Yahoo Finance as fallback.
 
@@ -274,7 +298,7 @@ def fetch_ohlcv(
     if prefer_realtime_bar:
         df = _append_latest_realtime_bar(df, symbol)
 
-    return df
+    return _apply_data_scope(df, data_scope)
 
 
 # ── Run strategy ───────────────────────────────────────────────────────────────

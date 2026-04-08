@@ -158,6 +158,12 @@ def _parse_args() -> argparse.Namespace:
         action="store_true",
         help="Require Alpaca data source only (disable Yahoo fallback)",
     )
+    parser.add_argument(
+        "--data-scope",
+        choices=["historical", "same_day"],
+        default="historical",
+        help="Simulation data scope: full historical window or same UTC day only",
+    )
     return parser.parse_args()
 
 
@@ -194,6 +200,7 @@ def main() -> int:
                     symbol,
                     prefer_realtime_bar=args.prefer_realtime_data,
                     alpaca_only=args.realtime_only_data,
+                    data_scope=args.data_scope,
                 )
                 trades = run_backtest(df, version, symbol=symbol)
                 rows = _build_rows(symbol, version, trades, df)

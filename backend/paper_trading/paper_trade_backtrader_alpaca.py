@@ -195,12 +195,14 @@ def run_one(
     force_reset: bool = False,
     prefer_realtime_data: bool = False,
     realtime_only_data: bool = False,
+    data_scope: str = "historical",
 ) -> None:
     print(f"Fetching YTD OHLCV for {symbol}...")
     df = fetch_ohlcv(
         symbol,
         prefer_realtime_bar=prefer_realtime_data,
         alpaca_only=realtime_only_data,
+        data_scope=data_scope,
     )
     print(f"  {len(df):,} bars fetched ({df['timestamp'].iloc[0]} -> {df['timestamp'].iloc[-1]})")
 
@@ -231,6 +233,12 @@ def main() -> int:
         action="store_true",
         help="Require Alpaca data source only (disable Yahoo fallback)",
     )
+    parser.add_argument(
+        "--data-scope",
+        choices=["historical", "same_day"],
+        default="historical",
+        help="Simulation data scope: full historical window or same UTC day only",
+    )
     args = parser.parse_args()
 
     version = args.version.strip().lower()
@@ -252,6 +260,7 @@ def main() -> int:
                 force_reset=args.force_reset,
                 prefer_realtime_data=args.prefer_realtime_data,
                 realtime_only_data=args.realtime_only_data,
+                data_scope=args.data_scope,
             )
         except Exception as exc:
             print(f"ERROR: Paper trading failed for {symbol} {version}: {exc}", file=sys.stderr)
