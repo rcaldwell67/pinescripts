@@ -241,10 +241,9 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    version = args.version.strip().lower()
-    if version not in VERSION_MAP:
-        print(f"ERROR: version {version!r} is not implemented. Valid: {list(VERSION_MAP)}", file=sys.stderr)
-        return 1
+
+    # Force v6 for all paper trading
+    version = "v6"
 
     symbols = [args.symbol.strip()] if args.symbol else load_symbols_from_db()
     if not symbols:

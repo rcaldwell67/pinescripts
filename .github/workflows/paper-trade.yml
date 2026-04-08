@@ -9,11 +9,7 @@ on:
         description: "Optional symbol to run, e.g. BTC/USD"
         required: false
         type: string
-      version:
-        description: "Strategy version to run (v1-v6 or all)"
-        required: false
-        default: "v6"
-        type: string
+      # version input removed; v6 is now enforced in code
       execution_mode:
         description: "realtime (Alpaca orders) or simulation (backtest-style)"
         required: false

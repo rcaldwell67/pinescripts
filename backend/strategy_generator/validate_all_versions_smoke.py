@@ -15,7 +15,7 @@ from backtest_backtrader_alpaca import run_backtest  # noqa: E402
 from live_trading import realtime_alpaca_live_trader as live  # noqa: E402
 from paper_trading import realtime_alpaca_paper_trader as paper  # noqa: E402
 
-VERSIONS = ("v1", "v2", "v3", "v4", "v5", "v6")
+VERSIONS = ("v6",)
 SAMPLE_CSV = REPO_ROOT / "backend" / "data" / "btc_usd_5m_ytd.csv"
 
 
