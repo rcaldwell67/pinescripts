@@ -34,5 +34,13 @@
   {
     "symbol": "ETH/USDT",
     "description": "Ethereum / USD Tether"
+  },
+  {
+    "symbol": "QQQ",
+    "description": "Invesco QQQ Trust, Series 1"
+  },
+  {
+    "symbol": "SPY",
+    "description": "State Street SPDR Su0026P 500 ETF Trust"
   }
 ]
