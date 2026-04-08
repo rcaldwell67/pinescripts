@@ -145,7 +145,7 @@ export default function App() {
         </div>
         <div style={{display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px'}}>
           <a
-            href="/docs/dashboard.html"
+            href="/dashboard.html"
             className="chip"
             style={{
               background: '#2ad4ff',
