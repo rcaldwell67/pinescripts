@@ -98,7 +98,7 @@ let activeTab = 'all';
 let charts = {};
 let tradeTablePage = 1;
 let tradePageSize = 25;
-let paperTradeSourceFilter = 'realtime';
+let paperTradeSourceFilter = 'simulation';
 let simulationDataScopeFilter = 'historical';
 let txPage = 1;
 let txPageSize = 25;
@@ -286,8 +286,8 @@ function getPaperFillStats(sym, monthStartMs = 0) {
         activeDataset = nextDataset;
         activeMode = activeDataset;
         if (activeDataset === 'paper') {
-          // Default Paper dataset to broker-backed realtime rows.
-          paperTradeSourceFilter = 'realtime';
+          // Default Paper dataset to simulation rows.
+          paperTradeSourceFilter = 'simulation';
         }
         resetTransactionFilters();
         addDatasetSelector();

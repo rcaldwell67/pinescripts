@@ -17,7 +17,7 @@ on:
       execution_mode:
         description: "realtime (Alpaca orders) or simulation (backtest-style)"
         required: false
-        default: "realtime"
+        default: "simulation"
         type: string
       max_open_positions:
         description: "Realtime mode: max simultaneous open positions"
@@ -93,7 +93,7 @@ jobs:
           set -euo pipefail
           VERSION_INPUT="${{ github.event.inputs.version || 'v1' }}"
           SYMBOL="${{ github.event.inputs.symbol || '' }}"
-          EXECUTION_MODE="${{ github.event.inputs.execution_mode || 'realtime' }}"
+          EXECUTION_MODE="${{ github.event.inputs.execution_mode || 'simulation' }}"
           MAX_OPEN_POSITIONS="${{ github.event.inputs.max_open_positions || '8' }}"
           CLOSE_ON_SIGNAL="${{ github.event.inputs.close_on_signal || 'false' }}"
           STREAM_BARS="${{ github.event.inputs.stream_bars || 'false' }}"
@@ -185,7 +185,7 @@ jobs:
           set -euo pipefail
           VERSION_INPUT="${{ github.event.inputs.version || 'v1' }}"
           SYMBOL="${{ github.event.inputs.symbol || '' }}"
-          EXECUTION_MODE="${{ github.event.inputs.execution_mode || 'realtime' }}"
+          EXECUTION_MODE="${{ github.event.inputs.execution_mode || 'simulation' }}"
 
           if [[ "$EXECUTION_MODE" != "simulation" ]]; then
             echo "Skipping parity check: execution_mode=$EXECUTION_MODE"

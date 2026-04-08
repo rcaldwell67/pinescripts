@@ -56,9 +56,9 @@ jobs:
             m = re.search(rf'^{re.escape(label)}:\s*(.+?)\s*$', body, re.IGNORECASE | re.MULTILINE)
             return (m.group(1).strip() if m else default)
 
-          execution_mode = parse_setting('Execution Mode', 'realtime').lower()
+          execution_mode = parse_setting('Execution Mode', 'simulation').lower()
           if execution_mode not in {'realtime', 'simulation'}:
-            execution_mode = 'realtime'
+            execution_mode = 'simulation'
 
           simulation_data_scope = parse_setting('Simulation Data Scope', 'historical').lower()
           if simulation_data_scope not in {'historical', 'same_day'}:
