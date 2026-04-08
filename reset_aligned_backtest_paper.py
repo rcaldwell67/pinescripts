@@ -148,6 +148,16 @@ def _parse_args() -> argparse.Namespace:
         action="store_true",
         help="Regenerate all supported versions (v1-v6).",
     )
+    parser.add_argument(
+        "--prefer-realtime-data",
+        action="store_true",
+        help="Attempt to append the latest Alpaca realtime bar when building simulation OHLCV",
+    )
+    parser.add_argument(
+        "--realtime-only-data",
+        action="store_true",
+        help="Require Alpaca data source only (disable Yahoo fallback)",
+    )
     return parser.parse_args()
 
 
@@ -180,7 +190,11 @@ def main() -> int:
             for symbol in symbols:
                 print(f"\n[RUN] {symbol} {version}")
                 _clear_existing(conn, symbol, version, version_note)
-                df = fetch_ohlcv(symbol)
+                df = fetch_ohlcv(
+                    symbol,
+                    prefer_realtime_bar=args.prefer_realtime_data,
+                    alpaca_only=args.realtime_only_data,
+                )
                 trades = run_backtest(df, version, symbol=symbol)
                 rows = _build_rows(symbol, version, trades, df)
 

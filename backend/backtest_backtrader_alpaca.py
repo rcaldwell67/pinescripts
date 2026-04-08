@@ -21,6 +21,9 @@ import sqlite3
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
+
+import requests
 
 # ── Bootstrap path so strategy_generator imports work ─────────────────────────
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -161,16 +164,117 @@ def fetch_ohlcv_yfinance(symbol: str) -> "pd.DataFrame":
     return df
 
 
-def fetch_ohlcv(symbol: str) -> "pd.DataFrame":
-    """Fetch OHLCV data, trying Alpaca first, then Yahoo Finance as fallback."""
+def _fetch_latest_realtime_bar(symbol: str) -> dict[str, Any] | None:
+    """Best-effort fetch of the latest Alpaca bar for a symbol.
+
+    Returns a dict with timestamp/Open/High/Low/Close/Volume fields, or None.
+    """
+    key = ALPACA_API_KEY
+    secret = ALPACA_API_SECRET
+    if not key or not secret:
+        return None
+
+    headers = {
+        "APCA-API-KEY-ID": key,
+        "APCA-API-SECRET-KEY": secret,
+        "Accept": "application/json",
+    }
+
+    is_crypto = "/" in symbol
+    req_symbol = symbol if is_crypto else symbol.replace("/", "")
+    try:
+        if is_crypto:
+            url = "https://data.alpaca.markets/v1beta3/crypto/us/bars/latest"
+            resp = requests.get(url, headers=headers, params={"symbols": req_symbol}, timeout=15)
+        else:
+            # IEX is broadly available for stocks on free plans.
+            url = "https://data.alpaca.markets/v2/stocks/bars/latest"
+            resp = requests.get(url, headers=headers, params={"symbols": req_symbol, "feed": "iex"}, timeout=15)
+
+        if not resp.ok:
+            return None
+
+        payload = resp.json()
+        bars = payload.get("bars") if isinstance(payload, dict) else None
+        if not isinstance(bars, dict):
+            return None
+
+        bar = bars.get(req_symbol) or bars.get(symbol)
+        if not isinstance(bar, dict):
+            return None
+
+        # Alpaca uses keys: t,o,h,l,c,v
+        ts = bar.get("t")
+        o = bar.get("o")
+        h = bar.get("h")
+        l = bar.get("l")
+        c = bar.get("c")
+        v = bar.get("v")
+        if ts is None or any(x is None for x in (o, h, l, c, v)):
+            return None
+
+        return {
+            "timestamp": ts,
+            "Open": float(o),
+            "High": float(h),
+            "Low": float(l),
+            "Close": float(c),
+            "Volume": float(v),
+        }
+    except Exception:
+        return None
+
+
+def _append_latest_realtime_bar(df: "pd.DataFrame", symbol: str) -> "pd.DataFrame":
+    """Append latest Alpaca realtime bar when it is newer than the last loaded bar."""
+    latest = _fetch_latest_realtime_bar(symbol)
+    if not latest:
+        return df
+
+    import pandas as pd
+
+    latest_ts = pd.to_datetime(latest["timestamp"], utc=True, errors="coerce")
+    if pd.isna(latest_ts):
+        return df
+
+    if "timestamp" not in df.columns or len(df) == 0:
+        return df
+
+    existing_ts = pd.to_datetime(df["timestamp"], utc=True, errors="coerce")
+    if len(existing_ts) and not pd.isna(existing_ts.iloc[-1]) and latest_ts <= existing_ts.iloc[-1]:
+        return df
+
+    out = pd.concat([df, pd.DataFrame([latest])], ignore_index=True)
+    print(f"  Appended latest realtime bar at {latest_ts.isoformat()} for {symbol}", file=sys.stderr)
+    return out
+
+
+def fetch_ohlcv(
+    symbol: str,
+    *,
+    prefer_realtime_bar: bool = False,
+    alpaca_only: bool = False,
+) -> "pd.DataFrame":
+    """Fetch OHLCV data, trying Alpaca first, then Yahoo Finance as fallback.
+
+    When prefer_realtime_bar=True, attempts to append the latest Alpaca realtime
+    bar if it is newer than the last historical bar.
+    """
     # Try Alpaca first
     df = fetch_ohlcv_alpaca(symbol)
-    if df is not None:
-        return df
+    if df is None:
+        if alpaca_only:
+            raise RuntimeError(
+                f"Alpaca market data unavailable for {symbol}; alpaca_only=True disables fallback sources"
+            )
+        # Fall back to Yahoo Finance
+        print(f"  Falling back to Yahoo Finance for {symbol}...", file=sys.stderr)
+        df = fetch_ohlcv_yfinance(symbol)
     
-    # Fall back to Yahoo Finance
-    print(f"  Falling back to Yahoo Finance for {symbol}...", file=sys.stderr)
-    return fetch_ohlcv_yfinance(symbol)
+    if prefer_realtime_bar:
+        df = _append_latest_realtime_bar(df, symbol)
+
+    return df
 
 
 # ── Run strategy ───────────────────────────────────────────────────────────────

@@ -188,9 +188,20 @@ def load_symbols_from_db() -> list[str]:
     return [row[0] for row in rows]
 
 
-def run_one(symbol: str, version: str, *, force_reset: bool = False) -> None:
+def run_one(
+    symbol: str,
+    version: str,
+    *,
+    force_reset: bool = False,
+    prefer_realtime_data: bool = False,
+    realtime_only_data: bool = False,
+) -> None:
     print(f"Fetching YTD OHLCV for {symbol}...")
-    df = fetch_ohlcv(symbol)
+    df = fetch_ohlcv(
+        symbol,
+        prefer_realtime_bar=prefer_realtime_data,
+        alpaca_only=realtime_only_data,
+    )
     print(f"  {len(df):,} bars fetched ({df['timestamp'].iloc[0]} -> {df['timestamp'].iloc[-1]})")
 
     print(f"Running paper-trading simulation {version} for {symbol}...")
@@ -210,6 +221,16 @@ def main() -> int:
         action="store_true",
         help="Delete and regenerate all paper trades instead of appending new ones",
     )
+    parser.add_argument(
+        "--prefer-realtime-data",
+        action="store_true",
+        help="Attempt to append the latest Alpaca realtime bar when building simulation OHLCV",
+    )
+    parser.add_argument(
+        "--realtime-only-data",
+        action="store_true",
+        help="Require Alpaca data source only (disable Yahoo fallback)",
+    )
     args = parser.parse_args()
 
     version = args.version.strip().lower()
@@ -225,7 +246,13 @@ def main() -> int:
     failures: list[str] = []
     for symbol in symbols:
         try:
-            run_one(symbol, version, force_reset=args.force_reset)
+            run_one(
+                symbol,
+                version,
+                force_reset=args.force_reset,
+                prefer_realtime_data=args.prefer_realtime_data,
+                realtime_only_data=args.realtime_only_data,
+            )
         except Exception as exc:
             print(f"ERROR: Paper trading failed for {symbol} {version}: {exc}", file=sys.stderr)
             failures.append(symbol)

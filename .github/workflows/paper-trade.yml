@@ -39,6 +39,16 @@ on:
         required: false
         default: "false"
         type: string
+      prefer_realtime_data:
+        description: "Simulation mode: try appending latest realtime Alpaca bar before backtest-style run"
+        required: false
+        default: "true"
+        type: string
+      realtime_only_data:
+        description: "Simulation mode: require Alpaca data only (disable historical fallback sources)"
+        required: false
+        default: "true"
+        type: string
 
 concurrency:
   group: db-writer-main
@@ -82,9 +92,19 @@ jobs:
           MAX_OPEN_POSITIONS="${{ github.event.inputs.max_open_positions || '8' }}"
           CLOSE_ON_SIGNAL="${{ github.event.inputs.close_on_signal || 'false' }}"
           STREAM_BARS="${{ github.event.inputs.stream_bars || 'false' }}"
+          PREFER_REALTIME_DATA="${{ github.event.inputs.prefer_realtime_data || 'true' }}"
+          REALTIME_ONLY_DATA="${{ github.event.inputs.realtime_only_data || 'true' }}"
           FORCE_RESET_FLAG=""
           if [[ "${{ github.event.inputs.force_reset || 'false' }}" == "true" ]]; then
             FORCE_RESET_FLAG="--force-reset"
+          fi
+          REALTIME_DATA_FLAG=""
+          if [[ "${PREFER_REALTIME_DATA,,}" == "true" || "${PREFER_REALTIME_DATA}" == "1" || "${PREFER_REALTIME_DATA,,}" == "yes" ]]; then
+            REALTIME_DATA_FLAG="--prefer-realtime-data"
+          fi
+          REALTIME_ONLY_FLAG=""
+          if [[ "${REALTIME_ONLY_DATA,,}" == "true" || "${REALTIME_ONLY_DATA}" == "1" || "${REALTIME_ONLY_DATA,,}" == "yes" ]]; then
+            REALTIME_ONLY_FLAG="--realtime-only-data"
           fi
 
           if [[ -n "$SYMBOL" ]]; then
@@ -112,20 +132,20 @@ jobs:
               if [[ "$VERSION" == "v1" ]]; then
                 echo "Running aligned v1 backtest/paper regeneration ($TARGET_FLAG)"
                 if [[ -n "$SYMBOL" ]]; then
-                  python reset_aligned_backtest_paper.py --version v1 --symbol "$SYMBOL"
+                  python reset_aligned_backtest_paper.py --version v1 --symbol "$SYMBOL" $REALTIME_DATA_FLAG $REALTIME_ONLY_FLAG
                 else
-                  python reset_aligned_backtest_paper.py --version v1
+                  python reset_aligned_backtest_paper.py --version v1 $REALTIME_DATA_FLAG $REALTIME_ONLY_FLAG
                 fi
               elif [[ "$VERSION" == "v2" ]]; then
                 echo "Running aligned v2 backtest/paper regeneration ($TARGET_FLAG)"
                 if [[ -n "$SYMBOL" ]]; then
-                  python reset_aligned_backtest_paper.py --version v2 --symbol "$SYMBOL"
+                  python reset_aligned_backtest_paper.py --version v2 --symbol "$SYMBOL" $REALTIME_DATA_FLAG $REALTIME_ONLY_FLAG
                 else
-                  python reset_aligned_backtest_paper.py --version v2
+                  python reset_aligned_backtest_paper.py --version v2 $REALTIME_DATA_FLAG $REALTIME_ONLY_FLAG
                 fi
               else
                 echo "Running simulation paper trading ($TARGET_FLAG) for version $VERSION"
-                python backend/paper_trading/paper_trade_backtrader_alpaca.py $TARGET_FLAG --version "$VERSION" $FORCE_RESET_FLAG
+                python backend/paper_trading/paper_trade_backtrader_alpaca.py $TARGET_FLAG --version "$VERSION" $FORCE_RESET_FLAG $REALTIME_DATA_FLAG $REALTIME_ONLY_FLAG
               fi
             else
               echo "Running realtime Alpaca paper trading ($TARGET_FLAG) for version $VERSION"
