@@ -182,10 +182,30 @@ function normalizeSource(value) {
   return String(value || '').toLowerCase() === 'realtime' ? 'realtime' : 'simulation';
 }
 
+function getUtcDateFromTimestamp(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  const m = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+  return m ? m[1] : '';
+}
+
+function isSameDaySimulationTradeRow(row) {
+  const dateKey = getUtcDateKey(0);
+  const entryDate = getUtcDateFromTimestamp(row && row.entry_time);
+  const exitDate = getUtcDateFromTimestamp(row && row.exit_time);
+  return entryDate === dateKey || exitDate === dateKey;
+}
+
 function filterPaperRows(rows) {
   if (activeDataset !== 'paper') return rows;
   if (paperTradeSourceFilter === 'realtime') return rows.filter(r => normalizeSource(r.source) === 'realtime');
-  if (paperTradeSourceFilter === 'simulation') return rows.filter(r => normalizeSource(r.source) !== 'realtime');
+  if (paperTradeSourceFilter === 'simulation') {
+    const simRows = rows.filter(r => normalizeSource(r.source) !== 'realtime');
+    if (simulationDataScopeFilter === 'same_day') {
+      return simRows.filter(isSameDaySimulationTradeRow);
+    }
+    return simRows;
+  }
   return rows; // 'all'
 }
 
@@ -4909,7 +4929,10 @@ function bindStaticControlHandlers() {
     const btn = e.target.closest('.sim-scope-btn');
     if (!btn) return;
     simulationDataScopeFilter = btn.dataset.simScope === 'same_day' ? 'same_day' : 'historical';
+    tradeTablePage = 1;
+    txPage = 1;
     updatePaperSourceBar();
+    render();
     updateWorkflowStatus(
       `Simulation scope set to ${simulationDataScopeFilter === 'same_day' ? 'Same Day' : 'Historical'}.`,
       '#58a6ff'
