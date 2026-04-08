@@ -403,7 +403,7 @@
     {
       "version": "v5",
       "symbol": "ETH/BTC",
-      "timestamp": "2026-04-07 18:49:35",
+      "timestamp": "2026-04-07 19:19:26",
       "trades": 34,
       "win_rate_pct": 67.64705882352942,
       "net_return_pct": 22.316678588268157,
@@ -414,16 +414,13 @@
     {
       "version": "v6",
       "symbol": "ETH/BTC",
-      "timestamp": "2026-04-07 14:38:18",
-      "trades": 4,
-      "win_rate_pct": 75.0,
-      "net_return_pct": 13.137469540034719,
-      "max_drawdown_pct": 0.0,
-      "pass_all": false,
-      "reasons": [
-        "trades<10",
-        "net<15"
-      ]
+      "timestamp": "2026-04-07 19:31:32",
+      "trades": 34,
+      "win_rate_pct": 67.64705882352942,
+      "net_return_pct": 22.316678588268157,
+      "max_drawdown_pct": 3.9599999999999933,
+      "pass_all": true,
+      "reasons": []
     },
     {
       "version": "v1",
