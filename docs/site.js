@@ -2572,6 +2572,9 @@ function openWorkflowIssue(workflowType, symbol, version, options = {}) {
     bodyLines.push('');
     bodyLines.push(`Execution Mode: ${executionMode}`);
     bodyLines.push(`Simulation Data Scope: ${simulationDataScope}`);
+    if (executionMode === 'simulation' && simulationDataScope === 'same_day') {
+      bodyLines.push('Force Reset: true');
+    }
     bodyLines.push('Prefer Realtime Data: true');
     bodyLines.push('Realtime Only Data: true');
   }

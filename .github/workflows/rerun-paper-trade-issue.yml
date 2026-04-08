@@ -64,6 +64,8 @@ jobs:
           if simulation_data_scope not in {'historical', 'same_day'}:
             simulation_data_scope = 'historical'
 
+          force_reset = parse_setting('Force Reset', 'false').lower() in {'1', 'true', 'yes'}
+
           prefer_realtime_data = parse_setting('Prefer Realtime Data', 'true').lower() in {'1', 'true', 'yes'}
           realtime_only_data = parse_setting('Realtime Only Data', 'true').lower() in {'1', 'true', 'yes'}
 
@@ -72,6 +74,7 @@ jobs:
             f.write(f'version={version}\n')
             f.write(f'execution_mode={execution_mode}\n')
             f.write(f'simulation_data_scope={simulation_data_scope}\n')
+            f.write(f'force_reset={str(force_reset).lower()}\n')
             f.write(f'prefer_realtime_data={str(prefer_realtime_data).lower()}\n')
             f.write(f'realtime_only_data={str(realtime_only_data).lower()}\n')
           PY
@@ -86,6 +89,7 @@ jobs:
           VERSION="${{ steps.extract.outputs.version }}"
           EXECUTION_MODE="${{ steps.extract.outputs.execution_mode }}"
           SIM_SCOPE="${{ steps.extract.outputs.simulation_data_scope }}"
+          FORCE_RESET="${{ steps.extract.outputs.force_reset }}"
           PREFER_REALTIME_DATA="${{ steps.extract.outputs.prefer_realtime_data }}"
           REALTIME_ONLY_DATA="${{ steps.extract.outputs.realtime_only_data }}"
 
@@ -104,12 +108,17 @@ jobs:
             SIM_SCOPE_FLAG="--data-scope same_day"
           fi
 
+          FORCE_RESET_FLAG=""
+          if [[ "${FORCE_RESET,,}" == "true" || "${FORCE_RESET}" == "1" || "${FORCE_RESET,,}" == "yes" ]]; then
+            FORCE_RESET_FLAG="--force-reset"
+          fi
+
           if [[ "${EXECUTION_MODE}" == "simulation" ]]; then
             echo "Running simulation paper trading for symbol ${SYMBOL} version ${VERSION} (scope=${SIM_SCOPE})..."
             if [[ "${VERSION}" == "v1" || "${VERSION}" == "v2" ]]; then
               python reset_aligned_backtest_paper.py --version "${VERSION}" --symbol "${SYMBOL}" $REALTIME_DATA_FLAG $REALTIME_ONLY_FLAG $SIM_SCOPE_FLAG
             else
-              python backend/paper_trading/paper_trade_backtrader_alpaca.py --symbol "${SYMBOL}" --version "${VERSION}" $REALTIME_DATA_FLAG $REALTIME_ONLY_FLAG $SIM_SCOPE_FLAG
+              python backend/paper_trading/paper_trade_backtrader_alpaca.py --symbol "${SYMBOL}" --version "${VERSION}" $FORCE_RESET_FLAG $REALTIME_DATA_FLAG $REALTIME_ONLY_FLAG $SIM_SCOPE_FLAG
             fi
           else
             echo "Running realtime paper trading for symbol ${SYMBOL} version ${VERSION}..."
