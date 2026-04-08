@@ -1,4 +1,4 @@
-name: Export Backtest Results to JSON
+name: Export Dashboard Results to JSON
 
 on:
   push:
@@ -7,11 +7,12 @@ on:
       - 'backend/data/create_tradingcopilot_db.py'
       - 'backend/data/add_symbol_to_db.py'
       - 'backend/strategy_generator/save_apm_v1_summary_to_db.py'
+      - 'backend/data/export_paper_trading_results.py'
   schedule:
     - cron: '0 * * * *' # every hour
 
 jobs:
-  export-backtest-results:
+  export-results:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -40,10 +41,12 @@ jobs:
             json.dump(result, f, indent=2)
           conn.close()
           EOF
-      - name: Commit and push backtest_results.json
+      - name: Export paper_trading_results from DB to JSON
+        run: python3 backend/data/export_paper_trading_results.py
+      - name: Commit and push JSON exports
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
-          git add docs/data/backtest_results.json
-          git commit -m 'Update backtest_results.json from tradingcopilot.db' || echo 'No changes to commit'
+          git add docs/data/backtest_results.json docs/data/paper_trading_results.json
+          git commit -m 'Update dashboard JSON exports from tradingcopilot.db' || echo 'No changes to commit'
           git push
