@@ -3701,6 +3701,10 @@ function buildTransactions() {
   if (activeDataset === 'live') return [];
   const txns = [];
   const symData = INSTRUMENTS[activeSym];
+  const sameDaySimOnly = activeDataset === 'paper'
+    && paperTradeSourceFilter === 'simulation'
+    && simulationDataScopeFilter === 'same_day';
+  const todayDateKey = sameDaySimOnly ? getUtcDateKey(0) : '';
   for (const [ver, cfg] of Object.entries(symData.versions)) {
     const rows = filterPaperRows(loaded[activeSym][ver] || []);
     let prevEquity = getInitialCapitalFromRows(rows);
@@ -3708,12 +3712,18 @@ function buildTransactions() {
       const begEquity = prevEquity;
       const isLong = r.direction === 'long';
       const src = activeDataset === 'paper' ? normalizeSource(r.source) : (r.source || null);
-      txns.push({ time:r.entry_time, sym:activeSym, ver, cfg, symLabel:symData.label,
-        action: isLong?'BUY':'SELL', price:r.entry_price, type:'Open',
-        direction:r.direction, pnl:null, result:null, begEquity, endEquity:null, source:src });
-      txns.push({ time:r.exit_time, sym:activeSym, ver, cfg, symLabel:symData.label,
-        action: isLong?'SELL':'BUY', price:r.exit_price, type:'Close',
-        direction:r.direction, pnl:r.dollar_pnl, result:r.result, begEquity, endEquity:r.equity, source:src });
+      const includeOpen = !sameDaySimOnly || getUtcDateFromTimestamp(r.entry_time) === todayDateKey;
+      const includeClose = !sameDaySimOnly || getUtcDateFromTimestamp(r.exit_time) === todayDateKey;
+      if (includeOpen) {
+        txns.push({ time:r.entry_time, sym:activeSym, ver, cfg, symLabel:symData.label,
+          action: isLong?'BUY':'SELL', price:r.entry_price, type:'Open',
+          direction:r.direction, pnl:null, result:null, begEquity, endEquity:null, source:src });
+      }
+      if (includeClose) {
+        txns.push({ time:r.exit_time, sym:activeSym, ver, cfg, symLabel:symData.label,
+          action: isLong?'SELL':'BUY', price:r.exit_price, type:'Close',
+          direction:r.direction, pnl:r.dollar_pnl, result:r.result, begEquity, endEquity:r.equity, source:src });
+      }
       prevEquity = r.equity;
     }
   }
