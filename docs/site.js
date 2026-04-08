@@ -109,7 +109,7 @@ const logsDataCache = {
   diagnosticRows: null,
   diagnosticPath: null,
 };
-const VERSION_KEYS = ['v1', 'v2', 'v3', 'v4', 'v5', 'v6'];
+const VERSION_KEYS = (window.FORCE_V6_ONLY ? ['v6'] : ['v1', 'v2', 'v3', 'v4', 'v5', 'v6']);
 const PAPER_TRADING_SUPPORTED_VERSIONS = new Set(VERSION_KEYS);
 const LIVE_TRADING_SUPPORTED_VERSIONS = new Set(VERSION_KEYS);
 // Guideline thresholds and policy overrides.
@@ -366,53 +366,54 @@ function getPaperFillStats(sym, monthStartMs = 0) {
     const symbols = symbolsData.map(obj => obj.symbol);
     console.log('[DEBUG] symbols array:', symbols);
     window.SYMBOLS = symbols;
-    INSTRUMENTS = buildInstruments(symbols);
-    console.log('[DEBUG] INSTRUMENTS object:', INSTRUMENTS);
-    initStateObjects(symbols);
-    const restoreSymbol = symbols.includes(pendingDatasetSymbol) ? pendingDatasetSymbol : '';
-
-    // Populate symbol selector
-    const select = document.getElementById('symbolSelect');
-    select.innerHTML = '';
-    select.disabled = true;
-
-    const placeholderOpt = document.createElement('option');
-    placeholderOpt.value = '';
-    placeholderOpt.textContent = 'Select...';
-    select.appendChild(placeholderOpt);
-
-    [...symbolsData].sort((a, b) => a.symbol.localeCompare(b.symbol)).forEach(obj => {
-      const opt = document.createElement('option');
-      opt.value = obj.symbol;
-      opt.textContent = obj.description ? `${obj.symbol} - ${obj.description}` : obj.symbol;
-      select.appendChild(opt);
-    });
-    console.log('[DEBUG] symbolSelect options populated:', select.innerHTML);
-    select.value = restoreSymbol;
-    // Wait for loaded to be initialized, then enable and attach event (robust)
-    function enableDropdownWhenReady() {
-      if (typeof loaded !== 'undefined' && loaded) {
-        // Remove all previous event listeners by replacing the element
-        const oldSelect = select;
-        const newSelect = oldSelect.cloneNode(true);
-        oldSelect.parentNode.replaceChild(newSelect, oldSelect);
-        newSelect.disabled = false;
-        // Debounce handler to avoid slow UI and race conditions
-        let debounceTimer = null;
-        newSelect.addEventListener('change', function() {
-          if (debounceTimer) clearTimeout(debounceTimer);
-          const value = this.value;
-          debounceTimer = setTimeout(() => {
-            handleSymbolSelect(value, db);
-          }, 100); // 100ms debounce
+    function buildInstruments(symbols) {
+      // Build the instruments object dynamically using naming conventions
+      const instruments = {};
+      const versionTemplates = window.FORCE_V6_ONLY
+        ? [{ key: 'v6', label: 'v6 - 1D Both', tf: '1D', color: '#ff7b72' }]
+        : [
+            { key: 'v1', label: 'v1 - 5m Shorts', tf: '5m', color: '#58a6ff' },
+            { key: 'v2', label: 'v2 - 10m Both', tf: '10m', color: '#3fb950' },
+            { key: 'v3', label: 'v3 - 15m Shorts', tf: '15m', color: '#ffa657' },
+            { key: 'v4', label: 'v4 - 30m Both', tf: '30m', color: '#bc8cff' },
+            { key: 'v5', label: 'v5 - 1h Longs', tf: '1h', color: '#d29922' },
+            { key: 'v6', label: 'v6 - 1D Both', tf: '1D', color: '#ff7b72' }
+          ];
+      symbols.forEach(sym => {
+        // Normalize symbol for file paths
+        const fileSym = sym.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+        // Label: SYMBOL_KEY -> SYMBOL-LABEL
+        const label = sym.replace(/_/g, '-');
+        const versions = {};
+        versionTemplates.forEach(vt => {
+          versions[vt.key] = {
+            label: vt.label,
+            tf: vt.tf,
+            color: vt.color,
+            file: `data/${fileSym}/${vt.key}_trades.csv`,
+            paperFile: `data/${fileSym}/${vt.key}_trades_paper.csv`,
+            liveFile: `data/${fileSym}/${vt.key}_trades_live.csv`,
+            pnlCol: 'dollar_pnl',
+            equityCol: 'equity',
+            resultCol: vt.key === 'v6' ? 'exit_reason' : 'result',
+            dirCol: 'direction',
+            entryCol: 'entry',
+            exitCol: 'exit',
+            entryTimeCol: 'entry_time',
+            exitTimeCol: 'exit_time',
+            ...(vt.key === 'v1' || vt.key === 'v2' ? {
+              backtestVariants: {
+                main: { label: 'Main', file: `data/${fileSym}/${vt.key}_trades.csv` },
+                '12mo': { label: '12mo', file: `data/${fileSym}/${vt.key}_trades_12mo.csv` }
+              }
+            } : {}),
+            ...(vt.key === 'v6' ? { hasYear: true } : {})
+          };
         });
-        if (restoreSymbol) {
-          newSelect.value = restoreSymbol;
-          setTimeout(() => handleSymbolSelect(restoreSymbol, db), 0);
-        }
-        console.log('[Dropdown] Dropdown enabled and event attached. Ready for user interaction.');
-      } else {
-        setTimeout(enableDropdownWhenReady, 50);
+        instruments[sym] = { label, versions };
+      });
+      return instruments;
+    }
       }
     }
     enableDropdownWhenReady();

@@ -79,7 +79,7 @@ export default function App() {
   const symbolOptions = ["ALL", ...symbols.map((s) => s.symbol)];
 
   const filteredTrades = useMemo(() => {
-    const trades = snapshot?.trades || [];
+    const trades = (snapshot?.trades || []).filter(t => t.version === 'v6');
     return trades.filter((t) => {
       const symbolOk = symbolFilter === "ALL" || t.symbol === symbolFilter;
       const assetOk = assetFilter === "all" || t.asset_class === assetFilter;
@@ -91,7 +91,7 @@ export default function App() {
     const results = [];
     const groups = snapshot?.results || {};
     for (const mode of ["backtest", "paper", "live"]) {
-      for (const row of groups[mode] || []) {
+      for (const row of (groups[mode] || []).filter(r => r.version === 'v6')) {
         const symbolOk = symbolFilter === "ALL" || row.symbol === symbolFilter;
         const asset = symbols.find((s) => s.symbol === row.symbol)?.asset_class || "etf";
         const assetOk = assetFilter === "all" || asset === assetFilter;

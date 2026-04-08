@@ -1,0 +1,19 @@
+<!-- Static dashboard entry point for v6-only view -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>APM Static Dashboard (v6 only)</title>
+  <link rel="stylesheet" href="site.css?v=20260405b">
+  <link rel="icon" href="data:,">
+</head>
+<body>
+  <script>
+    // Force v6-only mode for all dashboard logic
+    window.FORCE_V6_ONLY = true;
+  </script>
+  <div id="static-dashboard-root"></div>
+  <script src="site.js?v=20260405b" defer></script>
+</body>
+</html>
