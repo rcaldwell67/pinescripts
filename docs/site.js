@@ -412,7 +412,6 @@ function buildInstruments(symbols) {
   });
   return instruments;
 }
-    enableDropdownWhenReady();
     buildSymbolSwitcher(symbols);
     // Save db instance for later use
     window._SQL_DB = db;
