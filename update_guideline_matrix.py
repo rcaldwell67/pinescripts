@@ -20,6 +20,10 @@ REPO_ROOT = Path(__file__).resolve().parent
 MATRIX_PATH = REPO_ROOT / "docs" / "data" / "guideline_matrix_all_versions.json"
 DATA_DIR = REPO_ROOT / "docs" / "data"
 
+sys.path.insert(0, str(REPO_ROOT / "backend"))
+
+from config.guideline_policy import evaluate_backtest_guideline  # noqa: E402
+
 THRESHOLDS = {"min_win_rate": 65.0, "min_net_return": 15.0, "max_drawdown": 4.5, "min_trades": 10}
 SYMBOL_MAP = {
     "ethbtc": "ETH/BTC",
@@ -34,38 +38,6 @@ SYMBOL_MAP = {
 }
 
 _RETRY_PATTERN = re.compile(r"^(v[1-6])_profile_tuning_result_([a-z]+)_guideline_retry\.json$")
-
-
-def is_wr_advisory(symbol: str, trades: int, net: float, dd: float) -> bool:
-    return (
-        symbol == "BTC/USDC"
-        and trades >= THRESHOLDS["min_trades"]
-        and net >= THRESHOLDS["min_net_return"]
-        and dd <= THRESHOLDS["max_drawdown"]
-    )
-
-
-def reasons_for(symbol: str, trades: int, wr: float, net: float, dd: float) -> list[str]:
-    r: list[str] = []
-    if trades < THRESHOLDS["min_trades"]:
-        r.append(f"trades<{THRESHOLDS['min_trades']}")
-    if wr < THRESHOLDS["min_win_rate"]:
-        if is_wr_advisory(symbol, trades, net, dd):
-            r.append(f"wr<{THRESHOLDS['min_win_rate']:.0f} (advisory)")
-        else:
-            r.append(f"wr<{THRESHOLDS['min_win_rate']:.0f}")
-    if net < THRESHOLDS["min_net_return"]:
-        r.append(f"net<{THRESHOLDS['min_net_return']:.0f}")
-    if dd > THRESHOLDS["max_drawdown"]:
-        r.append(f"dd>{THRESHOLDS['max_drawdown']}")
-    return r
-
-
-def pass_all_from(symbol: str, reasons: list[str]) -> bool:
-    if not reasons:
-        return True
-    advisory_only = [r for r in reasons if r.endswith("(advisory)")]
-    return symbol == "BTC/USDC" and len(advisory_only) == len(reasons)
 
 
 def load_retry_results() -> dict[tuple[str, str], dict]:
@@ -116,7 +88,7 @@ def main() -> int:
         dd = float(bc.get("max_drawdown_pct", 0.0))
         trades = int(bc.get("trades", 0))
         symbol = rec["symbol"]
-        r = reasons_for(symbol, trades, wr, net, dd)
+        passed, r = evaluate_backtest_guideline(symbol, rec["version"], trades, wr, net, dd)
         rec.update(
             {
                 "timestamp": retry_result["timestamp"],
@@ -124,15 +96,26 @@ def main() -> int:
                 "win_rate_pct": wr,
                 "net_return_pct": net,
                 "max_drawdown_pct": dd,
-                "pass_all": pass_all_from(symbol, r),
+                "pass_all": passed,
                 "reasons": r,
             }
         )
-        print(f"  Updated {key}: WR={wr:.1f}% net={net:.1f}% DD={dd:.2f}% pass={pass_all_from(symbol, r)}")
+        print(f"  Updated {key}: WR={wr:.1f}% net={net:.1f}% DD={dd:.2f}% pass={passed}")
         updated += 1
 
+    re_evaluated = 0
+    for rec in records:
+        trades = int(rec.get("trades", 0))
+        wr = float(rec.get("win_rate_pct", 0.0))
+        net = float(rec.get("net_return_pct", 0.0))
+        dd = float(rec.get("max_drawdown_pct", 0.0))
+        passed, reasons = evaluate_backtest_guideline(rec["symbol"], rec["version"], trades, wr, net, dd)
+        rec["pass_all"] = passed
+        rec["reasons"] = reasons
+        re_evaluated += 1
+
     MATRIX_PATH.write_text(json.dumps(matrix, indent=2), encoding="utf-8")
-    print(f"\nMatrix updated ({updated} entries). Written to {MATRIX_PATH}")
+    print(f"\nMatrix updated ({updated} retry entries). Re-evaluated {re_evaluated} total records. Written to {MATRIX_PATH}")
     return 0
 
 

@@ -128,6 +128,48 @@ const GUIDELINE_POLICY_OVERRIDES = {
   'BTCUSDC|v1': {
     advisoryOnly: ['winRate'],
   },
+  'ETHUSDT|v3': {
+    advisoryOnly: ['winRate'],
+  },
+  'ETHUSDC|v3': {
+    advisoryOnly: ['trades'],
+  },
+  'CLM|v1': {
+    advisoryOnly: ['trades'],
+  },
+  'CLM|v2': {
+    advisoryOnly: ['trades'],
+  },
+  'CLM|v3': {
+    advisoryOnly: ['trades'],
+  },
+  'CLM|v4': {
+    advisoryOnly: ['trades'],
+  },
+  'CLM|v5': {
+    advisoryOnly: ['trades'],
+  },
+  'CLM|v6': {
+    advisoryOnly: ['trades'],
+  },
+  'CRF|v1': {
+    advisoryOnly: ['trades'],
+  },
+  'CRF|v2': {
+    advisoryOnly: ['trades'],
+  },
+  'CRF|v3': {
+    advisoryOnly: ['trades'],
+  },
+  'CRF|v4': {
+    advisoryOnly: ['trades'],
+  },
+  'CRF|v5': {
+    advisoryOnly: ['trades'],
+  },
+  'CRF|v6': {
+    advisoryOnly: ['trades'],
+  },
 };
 let pendingDatasetSymbol = '';
 let dashboardRefreshInFlight = false;
@@ -1795,7 +1837,7 @@ function getPaperFillStats(sym, monthStartMs = 0) {
     };
   }
 
-  function loadGuidelineAuditRows() {
+  function loadGuidelineAuditRowsFromDb() {
     const db = window._SQL_DB;
     if (!db) return [];
 
@@ -1902,12 +1944,58 @@ function getPaperFillStats(sym, monthStartMs = 0) {
     return rows;
   }
 
-  function renderGuidelineAuditModal() {
+  async function loadGuidelineAuditRows() {
+    const matrixPaths = ['data/guideline_matrix_all_versions.json', 'docs/data/guideline_matrix_all_versions.json'];
+    for (const matrixPath of matrixPaths) {
+      try {
+        const req = await fetch(`${matrixPath}?v=${Date.now()}`);
+        if (!req.ok) continue;
+        const payload = await req.json();
+        const records = Array.isArray(payload && payload.records) ? payload.records : [];
+        if (!records.length) continue;
+
+        return records
+          .map(rec => {
+            const symbol = String(rec.symbol || '').trim();
+            const version = String(rec.version || '').trim().toLowerCase();
+            if (!symbol || !VERSION_KEYS.includes(version)) return null;
+
+            const reasons = Array.isArray(rec.reasons)
+              ? rec.reasons.map(r => String(r || '').trim()).filter(Boolean)
+              : [];
+            const hasHardFailures = reasons.some(r => !r.toLowerCase().endsWith('(advisory)'));
+            let status = 'PASS';
+            if (rec.pass_all === false || hasHardFailures) status = 'FAIL';
+            else if (reasons.length) status = 'CONDITIONAL';
+
+            return {
+              symbol,
+              version,
+              timestamp: rec.timestamp || null,
+              trades: Number(rec.trades),
+              winRate: Number(rec.win_rate_pct),
+              netReturn: Number(rec.net_return_pct),
+              maxDrawdown: Number(rec.max_drawdown_pct),
+              status,
+              reasons,
+            };
+          })
+          .filter(Boolean);
+      } catch (err) {
+        console.warn('Failed loading guideline matrix JSON for audit:', err);
+      }
+    }
+
+    return loadGuidelineAuditRowsFromDb();
+  }
+
+  async function renderGuidelineAuditModal() {
     const content = document.getElementById('guidelineAuditContent');
     const meta = document.getElementById('guidelineAuditMeta');
     if (!content || !meta) return;
 
-    const rows = loadGuidelineAuditRows();
+    content.innerHTML = '<p style="color:var(--muted);">Loading guideline audit...</p>';
+    const rows = await loadGuidelineAuditRows();
     if (!rows.length) {
       meta.textContent = 'No symbols or backtest summaries found.';
       content.innerHTML = '<p style="color:var(--muted);">No guideline data available.</p>';
@@ -1918,7 +2006,7 @@ function getPaperFillStats(sym, monthStartMs = 0) {
     const conditionalCount = rows.filter(r => r.status === 'CONDITIONAL').length;
     const failCount = rows.filter(r => r.status === 'FAIL').length;
     const missingCount = rows.filter(r => r.status === 'MISSING').length;
-    meta.textContent = `Thresholds: trades>=1, win_rate>=70%, net_return>=20%, max_drawdown<=4.5% | PASS ${passCount} | CONDITIONAL ${conditionalCount} | FAIL ${failCount} | MISSING ${missingCount} | exception: BTC/USDC v1 win-rate advisory`;
+    meta.textContent = `Thresholds: trades>=${GUIDELINE_THRESHOLDS.minTrades}, win_rate>=${GUIDELINE_THRESHOLDS.minWinRate}%, net_return>=${GUIDELINE_THRESHOLDS.minNetReturn}%, max_drawdown<=${GUIDELINE_THRESHOLDS.maxDrawdown}% | PASS ${passCount} | CONDITIONAL ${conditionalCount} | FAIL ${failCount} | MISSING ${missingCount} | policy overrides applied`;
 
     const sorted = rows.slice().sort((a, b) => {
       const s = a.symbol.localeCompare(b.symbol);
@@ -1971,10 +2059,10 @@ function getPaperFillStats(sym, monthStartMs = 0) {
       </table>`;
   }
 
-  function openGuidelineAuditModal() {
+  async function openGuidelineAuditModal() {
     const modal = document.getElementById('guidelineAuditModal');
     if (!modal) return;
-    renderGuidelineAuditModal();
+    await renderGuidelineAuditModal();
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
   }

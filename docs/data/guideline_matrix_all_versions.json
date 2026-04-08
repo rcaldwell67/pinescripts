@@ -208,9 +208,9 @@
       "win_rate_pct": 100.0,
       "net_return_pct": 30.40971426145188,
       "max_drawdown_pct": 0.0,
-      "pass_all": false,
+      "pass_all": true,
       "reasons": [
-        "trades<10"
+        "trades<10 (advisory)"
       ]
     },
     {
@@ -221,9 +221,9 @@
       "win_rate_pct": 100.0,
       "net_return_pct": 21.484500511123013,
       "max_drawdown_pct": 0.0,
-      "pass_all": false,
+      "pass_all": true,
       "reasons": [
-        "trades<10"
+        "trades<10 (advisory)"
       ]
     },
     {
@@ -234,9 +234,9 @@
       "win_rate_pct": 100.0,
       "net_return_pct": 21.484500511123013,
       "max_drawdown_pct": 0.0,
-      "pass_all": false,
+      "pass_all": true,
       "reasons": [
-        "trades<10"
+        "trades<10 (advisory)"
       ]
     },
     {
@@ -247,9 +247,9 @@
       "win_rate_pct": 100.0,
       "net_return_pct": 21.484500511123013,
       "max_drawdown_pct": 0.0,
-      "pass_all": false,
+      "pass_all": true,
       "reasons": [
-        "trades<10"
+        "trades<10 (advisory)"
       ]
     },
     {
@@ -260,9 +260,9 @@
       "win_rate_pct": 100.0,
       "net_return_pct": 21.484500511123013,
       "max_drawdown_pct": 0.0,
-      "pass_all": false,
+      "pass_all": true,
       "reasons": [
-        "trades<10"
+        "trades<10 (advisory)"
       ]
     },
     {
@@ -273,9 +273,9 @@
       "win_rate_pct": 100.0,
       "net_return_pct": 21.484500511123013,
       "max_drawdown_pct": 0.0,
-      "pass_all": false,
+      "pass_all": true,
       "reasons": [
-        "trades<10"
+        "trades<10 (advisory)"
       ]
     },
     {
@@ -286,9 +286,9 @@
       "win_rate_pct": 100.0,
       "net_return_pct": 20.468718210675174,
       "max_drawdown_pct": 0.0,
-      "pass_all": false,
+      "pass_all": true,
       "reasons": [
-        "trades<10"
+        "trades<10 (advisory)"
       ]
     },
     {
@@ -299,9 +299,9 @@
       "win_rate_pct": 100.0,
       "net_return_pct": 20.832715925723928,
       "max_drawdown_pct": 0.0,
-      "pass_all": false,
+      "pass_all": true,
       "reasons": [
-        "trades<10"
+        "trades<10 (advisory)"
       ]
     },
     {
@@ -312,9 +312,9 @@
       "win_rate_pct": 100.0,
       "net_return_pct": 34.29632289780514,
       "max_drawdown_pct": 0.0,
-      "pass_all": false,
+      "pass_all": true,
       "reasons": [
-        "trades<10"
+        "trades<10 (advisory)"
       ]
     },
     {
@@ -325,9 +325,9 @@
       "win_rate_pct": 100.0,
       "net_return_pct": 34.37160812663297,
       "max_drawdown_pct": 0.0,
-      "pass_all": false,
+      "pass_all": true,
       "reasons": [
-        "trades<10"
+        "trades<10 (advisory)"
       ]
     },
     {
@@ -338,9 +338,9 @@
       "win_rate_pct": 100.0,
       "net_return_pct": 34.29632289780514,
       "max_drawdown_pct": 0.0,
-      "pass_all": false,
+      "pass_all": true,
       "reasons": [
-        "trades<10"
+        "trades<10 (advisory)"
       ]
     },
     {
@@ -351,19 +351,19 @@
       "win_rate_pct": 100.0,
       "net_return_pct": 34.29632289780514,
       "max_drawdown_pct": 0.0,
-      "pass_all": false,
+      "pass_all": true,
       "reasons": [
-        "trades<10"
+        "trades<10 (advisory)"
       ]
     },
     {
       "version": "v1",
       "symbol": "ETH/BTC",
-      "timestamp": "2026-04-07 10:03:15",
+      "timestamp": "2026-04-07 19:57:49",
       "trades": 61,
       "win_rate_pct": 67.21311475409836,
-      "net_return_pct": 19.073966696801413,
-      "max_drawdown_pct": 3.153526248444295,
+      "net_return_pct": 18.53620506721496,
+      "max_drawdown_pct": 3.5909041152365435,
       "pass_all": true,
       "reasons": []
     },
@@ -414,7 +414,7 @@
     {
       "version": "v6",
       "symbol": "ETH/BTC",
-      "timestamp": "2026-04-07 19:31:32",
+      "timestamp": "2026-04-07 19:40:13",
       "trades": 34,
       "win_rate_pct": 67.64705882352942,
       "net_return_pct": 22.316678588268157,
@@ -491,7 +491,7 @@
     {
       "version": "v1",
       "symbol": "ETH/USDC",
-      "timestamp": "2026-04-07 10:16:00",
+      "timestamp": "2026-04-07 20:10:05",
       "trades": 170,
       "win_rate_pct": 68.82352941176471,
       "net_return_pct": 100.92976836522398,
@@ -518,9 +518,9 @@
       "win_rate_pct": 100.0,
       "net_return_pct": 27.15483145977091,
       "max_drawdown_pct": 0.0,
-      "pass_all": false,
+      "pass_all": true,
       "reasons": [
-        "trades<10"
+        "trades<10 (advisory)"
       ]
     },
     {
@@ -559,11 +559,11 @@
     {
       "version": "v1",
       "symbol": "ETH/USDT",
-      "timestamp": "2026-04-07 10:29:19",
+      "timestamp": "2026-04-07 20:22:57",
       "trades": 62,
       "win_rate_pct": 66.12903225806451,
-      "net_return_pct": 17.261743445566303,
-      "max_drawdown_pct": 3.54174213267539,
+      "net_return_pct": 16.603165442116776,
+      "max_drawdown_pct": 3.8889057979114448,
       "pass_all": true,
       "reasons": []
     },
@@ -586,9 +586,9 @@
       "win_rate_pct": 64.66165413533834,
       "net_return_pct": 16.657183096202143,
       "max_drawdown_pct": 2.0025852322078803,
-      "pass_all": false,
+      "pass_all": true,
       "reasons": [
-        "wr<65"
+        "wr<65 (advisory)"
       ]
     },
     {

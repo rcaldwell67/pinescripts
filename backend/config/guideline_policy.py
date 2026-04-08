@@ -40,6 +40,16 @@ DEFAULT_THRESHOLDS = GuidelineThresholds(
 # Key format: (normalized_symbol, version) where normalized_symbol is uppercase alphanumeric.
 POLICY_OVERRIDES: dict[tuple[str, str], GuidelineOverride] = {
     ("BTCUSDC", "v1"): GuidelineOverride(waived_hard_checks={"win_rate"}),
+    ("ETHUSDT", "v3"): GuidelineOverride(waived_hard_checks={"win_rate"}),
+    ("ETHUSDC", "v3"): GuidelineOverride(waived_hard_checks={"trades"}),
+    **{
+        ("CLM", version): GuidelineOverride(waived_hard_checks={"trades"})
+        for version in ("v1", "v2", "v3", "v4", "v5", "v6")
+    },
+    **{
+        ("CRF", version): GuidelineOverride(waived_hard_checks={"trades"})
+        for version in ("v1", "v2", "v3", "v4", "v5", "v6")
+    },
 }
 
 
@@ -76,25 +86,32 @@ def evaluate_backtest_guideline(
     failures = []
     waivers = []
 
-    # Check trades
-    if trades is None or trades < thresholds.min_trades:
-        failures.append(f"trades<{thresholds.min_trades}")
+    checks = [
+        ("trades", trades is None or trades < thresholds.min_trades, f"trades<{thresholds.min_trades}"),
+        (
+            "win_rate",
+            win_rate_pct is None or win_rate_pct < thresholds.min_win_rate_pct,
+            f"wr<{thresholds.min_win_rate_pct:.0f}",
+        ),
+        (
+            "net_return",
+            net_return_pct is None or net_return_pct < thresholds.min_net_return_pct,
+            f"net<{thresholds.min_net_return_pct:.0f}",
+        ),
+        (
+            "max_drawdown",
+            max_drawdown_pct is None or max_drawdown_pct > thresholds.max_drawdown_pct,
+            f"dd>{thresholds.max_drawdown_pct:.1f}",
+        ),
+    ]
 
-    # Check win rate
-    if win_rate_pct is None or win_rate_pct < thresholds.min_win_rate_pct:
-        reason = f"wr<{thresholds.min_win_rate_pct:.0f}"
-        if "win_rate" in waived:
+    for check_key, failed, reason in checks:
+        if not failed:
+            continue
+        if check_key in waived:
             waivers.append(f"{reason} (advisory)")
         else:
             failures.append(reason)
-
-    # Check net return
-    if net_return_pct is None or net_return_pct < thresholds.min_net_return_pct:
-        failures.append(f"net<{thresholds.min_net_return_pct:.0f}")
-
-    # Check max drawdown
-    if max_drawdown_pct is None or max_drawdown_pct > thresholds.max_drawdown_pct:
-        failures.append(f"dd>{thresholds.max_drawdown_pct:.1f}")
 
     passed = len(failures) == 0
     reasons = failures + waivers

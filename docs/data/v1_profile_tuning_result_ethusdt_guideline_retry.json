@@ -7,10 +7,10 @@
     "max_drawdown": 4.5
   },
   "base": {
-    "trades": 66,
-    "win_rate": 54.54545454545454,
-    "net_return_pct": 50.55838176146119,
-    "max_drawdown_pct": 15.574840531891462
+    "trades": 62,
+    "win_rate": 66.12903225806451,
+    "net_return_pct": 16.603165442116776,
+    "max_drawdown_pct": 3.8889057979114448
   },
   "best_candidate": {
     "pullback_tolerance_pct": 0.3,
@@ -25,8 +25,8 @@
     "risk_pct": 0.8,
     "trades": 62,
     "win_rate": 66.12903225806451,
-    "net_return_pct": 17.261743445566303,
-    "max_drawdown_pct": 3.54174213267539,
+    "net_return_pct": 16.603165442116776,
+    "max_drawdown_pct": 3.8889057979114448,
     "pass_win_rate": true,
     "pass_net_return": true,
     "pass_drawdown": true,
