@@ -1,4 +1,22 @@
+// Guideline thresholds (should match backend/config/guideline_policy.py)
+const GUIDELINE_THRESHOLDS = {
+  minTrades: 10,
+  minWinRate: 65.0,
+  minNetReturn: 15.0,
+  maxDrawdown: 4.5,
+};
+
+function guidelineStatus(row) {
+  if (!row) return null;
+  const fails = [];
+  if (row.total_trades < GUIDELINE_THRESHOLDS.minTrades) fails.push("trades");
+  if (row.win_rate < GUIDELINE_THRESHOLDS.minWinRate) fails.push("win rate");
+  if (row.net_return_pct < GUIDELINE_THRESHOLDS.minNetReturn) fails.push("return");
+  if (row.max_drawdown_pct > GUIDELINE_THRESHOLDS.maxDrawdown) fails.push("drawdown");
+  return fails.length === 0 ? "PASS" : `FAIL: ${fails.join(", ")}`;
+}
 import { useEffect, useMemo, useState } from "react";
+import TradeGapAnalysis from "./TradeGapAnalysis";
 import {
   Area,
   AreaChart,
@@ -252,7 +270,6 @@ export default function App() {
                 <tr>
                   <th>Symbol</th>
                   <th>Mode</th>
-                  {/* Version column removed */}
                   <th>Direction</th>
                   <th>P/L $</th>
                   <th>P/L %</th>
@@ -264,7 +281,6 @@ export default function App() {
                   <tr key={`${row.symbol}-${row.entry_time}-${idx}`}>
                     <td>{row.symbol}</td>
                     <td>{row.mode}</td>
-                    {/* Version cell removed */}
                     <td>{row.direction}</td>
                     <td className={Number(row.dollar_pnl) >= 0 ? "up" : "down"}>{fmtCurrency(row.dollar_pnl)}</td>
                     <td className={Number(row.pnl_pct) >= 0 ? "up" : "down"}>{fmtPct(row.pnl_pct)}</td>
@@ -274,6 +290,38 @@ export default function App() {
               </tbody>
             </table>
           </section>
+
+          <section className="panel">
+            <h2>Guideline Audit</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Mode</th>
+                  <th>Symbol</th>
+                  <th>Net Return</th>
+                  <th>Win Rate</th>
+                  <th>Max DD</th>
+                  <th>Trades</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {latestResults.map((row, idx) => (
+                  <tr key={`${row.mode}-${row.symbol}-${idx}`}>
+                    <td><span className={`badge ${row.mode}`}>{row.mode}</span></td>
+                    <td>{row.symbol}</td>
+                    <td>{fmtPct(row.net_return_pct)}</td>
+                    <td>{fmtPct(row.win_rate)}</td>
+                    <td>{fmtPct(row.max_drawdown_pct)}</td>
+                    <td>{row.total_trades ?? "-"}</td>
+                    <td>{guidelineStatus(row)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+
+          <TradeGapAnalysis trades={filteredTrades} />
         </>
       )}
     </div>
