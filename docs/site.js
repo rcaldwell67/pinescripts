@@ -99,6 +99,7 @@ let charts = {};
 let tradeTablePage = 1;
 let tradePageSize = 25;
 let paperTradeSourceFilter = 'realtime';
+let simulationDataScopeFilter = 'historical';
 let txPage = 1;
 let txPageSize = 25;
 let logsPage = 1;
@@ -2551,16 +2552,32 @@ function buildTabs() {
     rerunAllBtn.style.display = 'none';
   }
 }
-function openWorkflowIssue(workflowType, symbol, version) {
+function openWorkflowIssue(workflowType, symbol, version, options = {}) {
   const sym = symbol.toUpperCase();
   const ver = version.toUpperCase();
   const isPaper = workflowType === 'paper';
   const isLive = workflowType === 'live';
   const workflowLabel = isLive ? 'Live Trading' : (isPaper ? 'Paper Trading' : 'Backtest');
   const issueTitle = encodeURIComponent(`Rerun ${workflowLabel}: ${sym} ${ver}`);
-  const issueBody = encodeURIComponent(
-    `Please rerun ${isLive ? 'live trading' : (isPaper ? 'paper trading' : 'the backtest')} for ${sym} version ${ver}.\n\n_This request was generated from the dashboard UI._`
-  );
+  const executionMode = String(options.executionMode || 'realtime').toLowerCase() === 'simulation'
+    ? 'simulation'
+    : 'realtime';
+  const simulationDataScope = String(options.simulationDataScope || 'historical').toLowerCase() === 'same_day'
+    ? 'same_day'
+    : 'historical';
+  const bodyLines = [
+    `Please rerun ${isLive ? 'live trading' : (isPaper ? 'paper trading' : 'the backtest')} for ${sym} version ${ver}.`,
+  ];
+  if (isPaper) {
+    bodyLines.push('');
+    bodyLines.push(`Execution Mode: ${executionMode}`);
+    bodyLines.push(`Simulation Data Scope: ${simulationDataScope}`);
+    bodyLines.push('Prefer Realtime Data: true');
+    bodyLines.push('Realtime Only Data: true');
+  }
+  bodyLines.push('');
+  bodyLines.push('_This request was generated from the dashboard UI._');
+  const issueBody = encodeURIComponent(bodyLines.join('\n'));
   const url = `https://github.com/rcaldwell67/pinescripts/issues/new?title=${issueTitle}&body=${issueBody}`;
   window.open(url, '_blank');
   updateWorkflowStatus(`${workflowLabel} rerun requested for ${sym} ${ver}. Submit the opened GitHub issue form to start the workflow.`, '#58a6ff');
@@ -2571,7 +2588,11 @@ function rerunBacktest(symbol, version) {
 }
 
 function rerunPaperTrading(symbol, version) {
-  openWorkflowIssue('paper', symbol, version);
+  const executionMode = paperTradeSourceFilter === 'simulation' ? 'simulation' : 'realtime';
+  openWorkflowIssue('paper', symbol, version, {
+    executionMode,
+    simulationDataScope: simulationDataScopeFilter,
+  });
 }
 
 function rerunLiveTrading(symbol, version) {
@@ -4135,12 +4156,20 @@ function render() {
 
 function updatePaperSourceBar() {
   const bar = document.getElementById('paperSourceBar');
+  const scopeBar = document.getElementById('simulationScopeBar');
   if (!bar) return;
   const show = activeDataset === 'paper';
   bar.style.display = show ? 'flex' : 'none';
   bar.querySelectorAll('.paper-src-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.src === paperTradeSourceFilter);
   });
+  if (scopeBar) {
+    const showScope = show && paperTradeSourceFilter === 'simulation';
+    scopeBar.style.display = showScope ? 'flex' : 'none';
+    scopeBar.querySelectorAll('.sim-scope-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.simScope === simulationDataScopeFilter);
+    });
+  }
 }
 
 function updateAutoRefreshStatus({ enabled = false, timestamp = null, intervalSeconds = 0, failed = false } = {}) {
@@ -4872,6 +4901,16 @@ function bindStaticControlHandlers() {
     tradeTablePage = 1;
     updatePaperSourceBar();
     render();
+  });
+  document.getElementById('simulationScopeBar')?.addEventListener('click', e => {
+    const btn = e.target.closest('.sim-scope-btn');
+    if (!btn) return;
+    simulationDataScopeFilter = btn.dataset.simScope === 'same_day' ? 'same_day' : 'historical';
+    updatePaperSourceBar();
+    updateWorkflowStatus(
+      `Simulation scope set to ${simulationDataScopeFilter === 'same_day' ? 'Same Day' : 'Historical'}.`,
+      '#58a6ff'
+    );
   });
   const logsRerender = () => { logsPage = 1; renderLogsPanel(); };
   document.getElementById('logSourceSelect')?.addEventListener('change', () => {

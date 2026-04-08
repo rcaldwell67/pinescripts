@@ -47,6 +47,11 @@
     <button type="button" class="paper-src-btn active" data-src="simulation">Simulation</button>
     <button type="button" class="paper-src-btn" data-src="realtime">Realtime</button>
   </div>
+  <div id="simulationScopeBar" class="paper-source-bar" style="display:none;" aria-label="Simulation data scope toggle">
+    <span style="font-size:12px;color:var(--muted);font-weight:600;">Simulation Scope:</span>
+    <button type="button" class="paper-src-btn sim-scope-btn active" data-sim-scope="historical">Historical</button>
+    <button type="button" class="paper-src-btn sim-scope-btn" data-sim-scope="same_day">Same Day</button>
+  </div>
   <button id="openAccountInfoBtn" class="mode-btn" type="button" title="View Alpaca account details">Account Info</button>
   <button id="openDailyTransactionsBtn" class="mode-btn" type="button" title="View today's trades and fills">Daily Transactions</button>
   <button id="openTradeGapBtn" class="mode-btn" type="button" title="Longest gap between trades per symbol (backtest + paper)">Trade Gap Analysis</button>

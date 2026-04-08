@@ -34,7 +34,7 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r requirements.txt
 
-      - name: Extract symbol and version from issue title
+      - name: Extract symbol/version and paper options from issue
         id: extract
         run: |
           python - <<'PY'
@@ -42,6 +42,7 @@ jobs:
           import re
 
           title = os.environ.get('ISSUE_TITLE', '')
+          body = os.environ.get('ISSUE_BODY', '')
           match = re.match(r'^Rerun Paper Trading:\s+(.+?)\s+(v\d+)\s*$', title, re.IGNORECASE)
           if not match:
             raise SystemExit(f'Could not parse symbol/version from issue title: {title!r}')
@@ -50,21 +51,70 @@ jobs:
           version = match.group(2).strip().lower()
           if version not in {"v1", "v2", "v3", "v4", "v5", "v6"}:
             raise SystemExit(f'Unsupported version in issue title: {version!r} (expected v1-v6)')
+
+          def parse_setting(label: str, default: str) -> str:
+            m = re.search(rf'^{re.escape(label)}:\s*(.+?)\s*$', body, re.IGNORECASE | re.MULTILINE)
+            return (m.group(1).strip() if m else default)
+
+          execution_mode = parse_setting('Execution Mode', 'realtime').lower()
+          if execution_mode not in {'realtime', 'simulation'}:
+            execution_mode = 'realtime'
+
+          simulation_data_scope = parse_setting('Simulation Data Scope', 'historical').lower()
+          if simulation_data_scope not in {'historical', 'same_day'}:
+            simulation_data_scope = 'historical'
+
+          prefer_realtime_data = parse_setting('Prefer Realtime Data', 'true').lower() in {'1', 'true', 'yes'}
+          realtime_only_data = parse_setting('Realtime Only Data', 'true').lower() in {'1', 'true', 'yes'}
+
           with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as f:
             f.write(f'symbol={symbol}\n')
             f.write(f'version={version}\n')
+            f.write(f'execution_mode={execution_mode}\n')
+            f.write(f'simulation_data_scope={simulation_data_scope}\n')
+            f.write(f'prefer_realtime_data={str(prefer_realtime_data).lower()}\n')
+            f.write(f'realtime_only_data={str(realtime_only_data).lower()}\n')
           PY
         env:
           ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
 
       - name: Run paper trading for symbol and version
         run: |
           set -euo pipefail
           SYMBOL="${{ steps.extract.outputs.symbol }}"
           VERSION="${{ steps.extract.outputs.version }}"
-          echo "Running realtime paper trading for symbol ${SYMBOL} version ${VERSION}..."
+          EXECUTION_MODE="${{ steps.extract.outputs.execution_mode }}"
+          SIM_SCOPE="${{ steps.extract.outputs.simulation_data_scope }}"
+          PREFER_REALTIME_DATA="${{ steps.extract.outputs.prefer_realtime_data }}"
+          REALTIME_ONLY_DATA="${{ steps.extract.outputs.realtime_only_data }}"
 
-          python backend/paper_trading/realtime_alpaca_paper_trader.py --symbol "$SYMBOL" --version "$VERSION"
+          REALTIME_DATA_FLAG=""
+          if [[ "${PREFER_REALTIME_DATA,,}" == "true" || "${PREFER_REALTIME_DATA}" == "1" || "${PREFER_REALTIME_DATA,,}" == "yes" ]]; then
+            REALTIME_DATA_FLAG="--prefer-realtime-data"
+          fi
+
+          REALTIME_ONLY_FLAG=""
+          if [[ "${REALTIME_ONLY_DATA,,}" == "true" || "${REALTIME_ONLY_DATA}" == "1" || "${REALTIME_ONLY_DATA,,}" == "yes" ]]; then
+            REALTIME_ONLY_FLAG="--realtime-only-data"
+          fi
+
+          SIM_SCOPE_FLAG="--data-scope historical"
+          if [[ "${SIM_SCOPE}" == "same_day" ]]; then
+            SIM_SCOPE_FLAG="--data-scope same_day"
+          fi
+
+          if [[ "${EXECUTION_MODE}" == "simulation" ]]; then
+            echo "Running simulation paper trading for symbol ${SYMBOL} version ${VERSION} (scope=${SIM_SCOPE})..."
+            if [[ "${VERSION}" == "v1" || "${VERSION}" == "v2" ]]; then
+              python reset_aligned_backtest_paper.py --version "${VERSION}" --symbol "${SYMBOL}" $REALTIME_DATA_FLAG $REALTIME_ONLY_FLAG $SIM_SCOPE_FLAG
+            else
+              python backend/paper_trading/paper_trade_backtrader_alpaca.py --symbol "${SYMBOL}" --version "${VERSION}" $REALTIME_DATA_FLAG $REALTIME_ONLY_FLAG $SIM_SCOPE_FLAG
+            fi
+          else
+            echo "Running realtime paper trading for symbol ${SYMBOL} version ${VERSION}..."
+            python backend/paper_trading/realtime_alpaca_paper_trader.py --symbol "$SYMBOL" --version "$VERSION"
+          fi
 
       - name: Commit updated DB
         shell: bash
@@ -111,6 +161,8 @@ jobs:
           issue-number: ${{ github.event.issue.number }}
           body: |
             ✅ Paper-trading rerun workflow completed for ${{ steps.extract.outputs.symbol }} ${{ steps.extract.outputs.version }}.
+            - execution_mode: ${{ steps.extract.outputs.execution_mode }}
+            - simulation_data_scope: ${{ steps.extract.outputs.simulation_data_scope }}
 
       - name: Close issue
         uses: peter-evans/close-issue@v3
