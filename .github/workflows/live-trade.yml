@@ -12,7 +12,7 @@ on:
       version:
         description: "Strategy version to run (v1-v6 or all)"
         required: false
-        default: "v1"
+        default: "v6"
         type: string
       confirm_live_trading:
         description: "Set to true to enable live order placement"
