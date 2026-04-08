@@ -143,7 +143,32 @@ export default function App() {
           <h1>Crypto + ETF Trading Monitor</h1>
           <p className="sub">Unified backtest, paper, and live observability from Alpaca + Backtrader.</p>
         </div>
-        <div className="chip">Snapshot: {snapshot?.generated_at || "-"}</div>
+        <div style={{display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px'}}>
+          <a
+            href="/docs/dashboard.html"
+            className="chip"
+            style={{
+              background: '#2ad4ff',
+              color: '#181c20',
+              fontWeight: 700,
+              borderRadius: 8,
+              padding: '10px 20px',
+              textDecoration: 'none',
+              marginBottom: '6px',
+              border: 'none',
+              fontSize: '14px',
+              boxShadow: '0 2px 8px #0002',
+              transition: 'background 0.2s',
+              display: 'inline-block',
+              textAlign: 'center',
+              cursor: 'pointer',
+            }}
+            tabIndex={0}
+          >
+            Dashboard Switcher
+          </a>
+          <div className="chip">Snapshot: {snapshot?.generated_at || "-"}</div>
+        </div>
       </header>
 
       <section className="controls">
