@@ -366,54 +366,52 @@ function getPaperFillStats(sym, monthStartMs = 0) {
     const symbols = symbolsData.map(obj => obj.symbol);
     console.log('[DEBUG] symbols array:', symbols);
     window.SYMBOLS = symbols;
-    function buildInstruments(symbols) {
-      // Build the instruments object dynamically using naming conventions
-      const instruments = {};
-      const versionTemplates = window.FORCE_V6_ONLY
-        ? [{ key: 'v6', label: 'v6 - 1D Both', tf: '1D', color: '#ff7b72' }]
-        : [
-            { key: 'v1', label: 'v1 - 5m Shorts', tf: '5m', color: '#58a6ff' },
-            { key: 'v2', label: 'v2 - 10m Both', tf: '10m', color: '#3fb950' },
-            { key: 'v3', label: 'v3 - 15m Shorts', tf: '15m', color: '#ffa657' },
-            { key: 'v4', label: 'v4 - 30m Both', tf: '30m', color: '#bc8cff' },
-            { key: 'v5', label: 'v5 - 1h Longs', tf: '1h', color: '#d29922' },
-            { key: 'v6', label: 'v6 - 1D Both', tf: '1D', color: '#ff7b72' }
-          ];
-      symbols.forEach(sym => {
-        // Normalize symbol for file paths
-        const fileSym = sym.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-        // Label: SYMBOL_KEY -> SYMBOL-LABEL
-        const label = sym.replace(/_/g, '-');
-        const versions = {};
-        versionTemplates.forEach(vt => {
-          versions[vt.key] = {
-            label: vt.label,
-            tf: vt.tf,
-            color: vt.color,
-            file: `data/${fileSym}/${vt.key}_trades.csv`,
-            paperFile: `data/${fileSym}/${vt.key}_trades_paper.csv`,
-            liveFile: `data/${fileSym}/${vt.key}_trades_live.csv`,
-            pnlCol: 'dollar_pnl',
-            equityCol: 'equity',
-            resultCol: vt.key === 'v6' ? 'exit_reason' : 'result',
-            dirCol: 'direction',
-            entryCol: 'entry',
-            exitCol: 'exit',
-            entryTimeCol: 'entry_time',
-            exitTimeCol: 'exit_time',
-            ...(vt.key === 'v1' || vt.key === 'v2' ? {
-              backtestVariants: {
-                main: { label: 'Main', file: `data/${fileSym}/${vt.key}_trades.csv` },
-                '12mo': { label: '12mo', file: `data/${fileSym}/${vt.key}_trades_12mo.csv` }
-              }
-            } : {}),
-            ...(vt.key === 'v6' ? { hasYear: true } : {})
-          };
-        });
-        instruments[sym] = { label, versions };
-      });
-      return instruments;
-    }
+// Build the instruments object dynamically using naming conventions
+function buildInstruments(symbols) {
+  const instruments = {};
+  const versionTemplates = window.FORCE_V6_ONLY
+    ? [{ key: 'v6', label: 'v6 - 1D Both', tf: '1D', color: '#ff7b72' }]
+    : [
+        { key: 'v1', label: 'v1 - 5m Shorts', tf: '5m', color: '#58a6ff' },
+        { key: 'v2', label: 'v2 - 10m Both', tf: '10m', color: '#3fb950' },
+        { key: 'v3', label: 'v3 - 15m Shorts', tf: '15m', color: '#ffa657' },
+        { key: 'v4', label: 'v4 - 30m Both', tf: '30m', color: '#bc8cff' },
+        { key: 'v5', label: 'v5 - 1h Longs', tf: '1h', color: '#d29922' },
+        { key: 'v6', label: 'v6 - 1D Both', tf: '1D', color: '#ff7b72' }
+      ];
+  symbols.forEach(sym => {
+    const fileSym = sym.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    const label = sym.replace(/_/g, '-');
+    const versions = {};
+    versionTemplates.forEach(vt => {
+      versions[vt.key] = {
+        label: vt.label,
+        tf: vt.tf,
+        color: vt.color,
+        file: `data/${fileSym}/${vt.key}_trades.csv`,
+        paperFile: `data/${fileSym}/${vt.key}_trades_paper.csv`,
+        liveFile: `data/${fileSym}/${vt.key}_trades_live.csv`,
+        pnlCol: 'dollar_pnl',
+        equityCol: 'equity',
+        resultCol: vt.key === 'v6' ? 'exit_reason' : 'result',
+        dirCol: 'direction',
+        entryCol: 'entry',
+        exitCol: 'exit',
+        entryTimeCol: 'entry_time',
+        exitTimeCol: 'exit_time',
+        ...(vt.key === 'v1' || vt.key === 'v2' ? {
+          backtestVariants: {
+            main: { label: 'Main', file: `data/${fileSym}/${vt.key}_trades.csv` },
+            '12mo': { label: '12mo', file: `data/${fileSym}/${vt.key}_trades_12mo.csv` }
+          }
+        } : {}),
+        ...(vt.key === 'v6' ? { hasYear: true } : {})
+      };
+    });
+    instruments[sym] = { label, versions };
+  });
+  return instruments;
+}
     enableDropdownWhenReady();
     buildSymbolSwitcher(symbols);
     // Save db instance for later use
