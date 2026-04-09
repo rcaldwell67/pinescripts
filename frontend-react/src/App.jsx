@@ -51,6 +51,14 @@ function scoreFromTrade(t) {
   return "flat";
 }
 
+const DASHBOARD_TABS = [
+  { key: 'overview', label: 'Overview' },
+  { key: 'transactions', label: 'All Transactions' },
+  { key: 'charts', label: 'Charts' },
+  { key: 'tradeLog', label: 'Trade Log' },
+  { key: 'logs', label: 'Logs' },
+];
+
 export default function App() {
   const [snapshot, setSnapshot] = useState(null);
   const [symbolFilter, setSymbolFilter] = useState("ALL");
@@ -58,6 +66,14 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [alpacaSymbols, setAlpacaSymbols] = useState([]);
+  const [activeTab, setActiveTab] = useState('overview');
+  // Filters for All Transactions
+  const [filterVersion, setFilterVersion] = useState('');
+  const [filterTimeframe, setFilterTimeframe] = useState('');
+  const [filterAction, setFilterAction] = useState('');
+  const [filterDirection, setFilterDirection] = useState('');
+  const [filterType, setFilterType] = useState('');
+  const [pageSize, setPageSize] = useState(50);
   const [selectedAlpacaSymbol, setSelectedAlpacaSymbol] = useState("");
   const [alpacaLoading, setAlpacaLoading] = useState(false);
   // Alpaca type filters (checkboxes for crypto, stocks)
@@ -303,156 +319,180 @@ export default function App() {
 
       {!loading && !error && (
         <>
-          <section className="kpi-grid">
-            <article className="kpi">
-              <h3>Current Balance</h3>
-              <p>{fmtCurrency(account.current_balance)}</p>
-            </article>
-            <article className="kpi">
-              <h3>Buying Power</h3>
-              <p>{fmtCurrency(account.buying_power)}</p>
-            </article>
-            <article className="kpi">
-              <h3>Recent Trades</h3>
-              <p>{filteredTrades.length}</p>
-            </article>
-            <article className="kpi">
-              <h3>Tracked Symbols</h3>
-              <p>{symbols.length}</p>
-            </article>
-          </section>
+          {/* Dashboard Tabs */}
+          <nav style={{ display: 'flex', gap: 12, marginBottom: 18 }}>
+            {DASHBOARD_TABS.map(tab => (
+              <button
+                key={tab.key}
+                className={activeTab === tab.key ? 'mode-btn active' : 'mode-btn'}
+                style={{ fontWeight: activeTab === tab.key ? 700 : 400, fontSize: 15, padding: '8px 18px', borderRadius: 8, border: '1px solid var(--edge)', background: activeTab === tab.key ? 'var(--aqua)' : 'rgba(0,0,0,0.12)', color: activeTab === tab.key ? '#181c20' : 'var(--text)', cursor: 'pointer' }}
+                onClick={() => setActiveTab(tab.key)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
 
-          <section className="two-col">
-            <article className="panel">
-              <h2>Equity Trail</h2>
-              <div className="chart-wrap">
-                <ResponsiveContainer width="100%" height={260}>
-                  <AreaChart data={equitySeries}>
-                    <defs>
-                      <linearGradient id="eqFill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#2ad4ff" stopOpacity={0.55} />
-                        <stop offset="95%" stopColor="#2ad4ff" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="4 4" stroke="#274253" />
-                    <XAxis dataKey="i" stroke="#9bb4c7" />
-                    <YAxis stroke="#9bb4c7" />
-                    <Tooltip />
-                    <Area type="monotone" dataKey="equity" stroke="#2ad4ff" fill="url(#eqFill)" strokeWidth={2.5} />
-                  </AreaChart>
-                </ResponsiveContainer>
+          {/* Tab Content */}
+          {activeTab === 'overview' && (
+            <>
+              <section className="kpi-grid">
+                <article className="kpi">
+                  <h3>Current Balance</h3>
+                  <p>{fmtCurrency(account.current_balance)}</p>
+                </article>
+                <article className="kpi">
+                  <h3>Buying Power</h3>
+                  <p>{fmtCurrency(account.buying_power)}</p>
+                </article>
+                <article className="kpi">
+                  <h3>Recent Trades</h3>
+                  <p>{filteredTrades.length}</p>
+                </article>
+                <article className="kpi">
+                  <h3>Tracked Symbols</h3>
+                  <p>{symbols.length}</p>
+                </article>
+              </section>
+              <section className="panel">
+                <h2>Guideline Audit</h2>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Mode</th>
+                      <th>Symbol</th>
+                      <th>Net Return</th>
+                      <th>Win Rate</th>
+                      <th>Max DD</th>
+                      <th>Trades</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {latestResults.map((row, idx) => (
+                      <tr key={`${row.mode}-${row.symbol}-${idx}`}>
+                        <td><span className={`badge ${row.mode}`}>{row.mode}</span></td>
+                        <td>{row.symbol}</td>
+                        <td>{fmtPct(row.net_return_pct)}</td>
+                        <td>{fmtPct(row.win_rate)}</td>
+                        <td>{fmtPct(row.max_drawdown_pct)}</td>
+                        <td>{row.total_trades ?? "-"}</td>
+                        <td>{guidelineStatus(row)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </section>
+              <TradeGapAnalysis trades={filteredTrades} />
+            </>
+          )}
+          {activeTab === 'transactions' && (
+            <section className="panel">
+              <h2>All Transactions</h2>
+              {/* Filters UI */}
+              <div style={{ display: 'flex', gap: 16, marginBottom: 16, flexWrap: 'wrap' }}>
+                <select style={{ minWidth: 120 }} value={filterVersion} onChange={e => setFilterVersion(e.target.value)}>
+                  <option value="">Version</option>
+                  {[...new Set(filteredTrades.map(t => t.mode))].map(v => v && <option key={v} value={v}>{v}</option>)}
+                </select>
+                <select style={{ minWidth: 120 }} value={filterTimeframe} onChange={e => setFilterTimeframe(e.target.value)}>
+                  <option value="">Timeframe</option>
+                  {[...new Set(filteredTrades.map(t => t.timeframe))].map(tf => tf && <option key={tf} value={tf}>{tf}</option>)}
+                </select>
+                <select style={{ minWidth: 120 }} value={filterAction} onChange={e => setFilterAction(e.target.value)}>
+                  <option value="">Action</option>
+                  {[...new Set(filteredTrades.map(t => t.action))].map(a => a && <option key={a} value={a}>{a}</option>)}
+                </select>
+                <select style={{ minWidth: 120 }} value={filterDirection} onChange={e => setFilterDirection(e.target.value)}>
+                  <option value="">Direction</option>
+                  {[...new Set(filteredTrades.map(t => t.direction))].map(d => d && <option key={d} value={d}>{d}</option>)}
+                </select>
+                <select style={{ minWidth: 120 }} value={filterType} onChange={e => setFilterType(e.target.value)}>
+                  <option value="">Type</option>
+                  {[...new Set(filteredTrades.map(t => t.type))].map(tp => tp && <option key={tp} value={tp}>{tp}</option>)}
+                </select>
+                <select style={{ minWidth: 120 }} value={pageSize} onChange={e => setPageSize(Number(e.target.value))}>
+                  {[20, 50, 100, 200].map(sz => <option key={sz} value={sz}>{sz} / page</option>)}
+                </select>
               </div>
-            </article>
-
-            <article className="panel">
-              <h2>Trade Outcome Mix</h2>
-              <div className="chart-wrap">
-                <ResponsiveContainer width="100%" height={260}>
-                  <PieChart>
-                    <Pie
-                      data={tradeMix}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={90}
-                      fill="#5f87ff"
-                      label
-                    />
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </article>
-          </section>
-
-          <section className="panel">
-            <h2>Mode Snapshots</h2>
-            <table>
-              <thead>
-                <tr>
-                  <th>Mode</th>
-                  <th>Symbol</th>
-                  <th>Net Return</th>
-                  <th>Win Rate</th>
-                  <th>Max DD</th>
-                  <th>Trades</th>
-                </tr>
-              </thead>
-              <tbody>
-                {latestResults.map((row, idx) => (
-                  <tr key={`${row.mode}-${row.symbol}-${idx}`}>
-                    <td><span className={`badge ${row.mode}`}>{row.mode}</span></td>
-                    <td>{row.symbol}</td>
-                    <td>{fmtPct(row.net_return_pct)}</td>
-                    <td>{fmtPct(row.win_rate)}</td>
-                    <td>{fmtPct(row.max_drawdown_pct)}</td>
-                    <td>{row.total_trades ?? "-"}</td>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Symbol</th>
+                    <th>Mode</th>
+                    <th>Direction</th>
+                    <th>P/L $</th>
+                    <th>P/L %</th>
+                    <th>Exit Time</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
-
-          <section className="panel">
-            <h2>Latest Trades</h2>
-            <table>
-              <thead>
-                <tr>
-                  <th>Symbol</th>
-                  <th>Mode</th>
-                  <th>Direction</th>
-                  <th>P/L $</th>
-                  <th>P/L %</th>
-                  <th>Exit Time</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredTrades.slice(0, 20).map((row, idx) => (
-                  <tr key={`${row.symbol}-${row.entry_time}-${idx}`}>
-                    <td>{row.symbol}</td>
-                    <td>{row.mode}</td>
-                    <td>{row.direction}</td>
-                    <td className={Number(row.dollar_pnl) >= 0 ? "up" : "down"}>{fmtCurrency(row.dollar_pnl)}</td>
-                    <td className={Number(row.pnl_pct) >= 0 ? "up" : "down"}>{fmtPct(row.pnl_pct)}</td>
-                    <td>{row.exit_time || "open"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
-
-          <section className="panel">
-            <h2>Guideline Audit</h2>
-            <table>
-              <thead>
-                <tr>
-                  <th>Mode</th>
-                  <th>Symbol</th>
-                  <th>Net Return</th>
-                  <th>Win Rate</th>
-                  <th>Max DD</th>
-                  <th>Trades</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {latestResults.map((row, idx) => (
-                  <tr key={`${row.mode}-${row.symbol}-${idx}`}>
-                    <td><span className={`badge ${row.mode}`}>{row.mode}</span></td>
-                    <td>{row.symbol}</td>
-                    <td>{fmtPct(row.net_return_pct)}</td>
-                    <td>{fmtPct(row.win_rate)}</td>
-                    <td>{fmtPct(row.max_drawdown_pct)}</td>
-                    <td>{row.total_trades ?? "-"}</td>
-                    <td>{guidelineStatus(row)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
-
-          <TradeGapAnalysis trades={filteredTrades} />
+                </thead>
+                <tbody>
+                  {filteredTrades
+                    .filter(row => !filterVersion || row.mode === filterVersion)
+                    .filter(row => !filterTimeframe || row.timeframe === filterTimeframe)
+                    .filter(row => !filterAction || row.action === filterAction)
+                    .filter(row => !filterDirection || row.direction === filterDirection)
+                    .filter(row => !filterType || row.type === filterType)
+                    .slice(0, pageSize)
+                    .map((row, idx) => (
+                      <tr key={`${row.symbol}-${row.entry_time}-${idx}`}>
+                        <td>{row.symbol}</td>
+                        <td>{row.mode}</td>
+                        <td>{row.direction}</td>
+                        <td className={Number(row.dollar_pnl) >= 0 ? "up" : "down"}>{fmtCurrency(row.dollar_pnl)}</td>
+                        <td className={Number(row.pnl_pct) >= 0 ? "up" : "down"}>{fmtPct(row.pnl_pct)}</td>
+                        <td>{row.exit_time || "open"}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </section>
+          )}
+          {activeTab === 'charts' && (
+            <section className="two-col">
+              <article className="panel">
+                <h2>Equity Trail</h2>
+                <div className="chart-wrap">
+                  <ResponsiveContainer width="100%" height={260}>
+                    <AreaChart data={equitySeries}>
+                      <defs>
+                        <linearGradient id="eqFill" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#2ad4ff" stopOpacity={0.55} />
+                          <stop offset="95%" stopColor="#2ad4ff" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="4 4" stroke="#274253" />
+                      <XAxis dataKey="i" stroke="#9bb4c7" />
+                      <YAxis stroke="#9bb4c7" />
+                      <Tooltip />
+                      <Area type="monotone" dataKey="equity" stroke="#2ad4ff" fill="url(#eqFill)" strokeWidth={2.5} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </article>
+              <article className="panel">
+                <h2>Trade Outcome Mix</h2>
+                <div className="chart-wrap">
+                  <ResponsiveContainer width="100%" height={260}>
+                    <PieChart>
+                      <Pie
+                        data={tradeMix}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={90}
+                        fill="#5f87ff"
+                        label
+                      />
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </article>
+            </section>
+          )}
+          {/* TODO: Implement Trade Log and Logs tabs */}
         </>
       )}
     </div>
