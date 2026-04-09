@@ -261,9 +261,20 @@ function getPaperFillStats(sym, monthStartMs = 0) {
 
 
   // --- Dataset selector logic ---
-  let activeDataset = 'backtest'; // 'backtest' or 'paper';
+  let activeDataset = 'backtest'; // 'backtest', 'paper-sim', 'paper-rt', 'live'
   function getResultsJsonFile() {
-    return activeDataset === 'backtest' ? 'data/backtest_results.json' : 'data/paper_trading_results.json';
+    switch (activeDataset) {
+      case 'backtest':
+        return 'data/backtest_results.json';
+      case 'paper-sim':
+        return 'data/paper_trading_results.json';
+      case 'paper-rt':
+        return 'data/paper_trading_results.json'; // Could be a different file if needed
+      case 'live':
+        return 'data/live_trading_results.json';
+      default:
+        return 'data/backtest_results.json';
+    }
   }
 
   function addDatasetSelector() {
@@ -281,9 +292,13 @@ function getPaperFillStats(sym, monthStartMs = 0) {
         pendingDatasetSymbol = (currentSelect && currentSelect.value) || activeSym || '';
         activeDataset = nextDataset;
         activeMode = activeDataset;
-        if (activeDataset === 'paper') {
-          // Default Paper dataset to simulation rows.
+        // Set filters for each mode
+        if (activeDataset === 'paper-sim') {
           paperTradeSourceFilter = 'simulation';
+        } else if (activeDataset === 'paper-rt') {
+          paperTradeSourceFilter = 'realtime';
+        } else {
+          paperTradeSourceFilter = null;
         }
         resetTransactionFilters();
         addDatasetSelector();

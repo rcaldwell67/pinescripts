@@ -40,9 +40,10 @@
     <button id="addSymbolBtn" style="margin-left:4px; padding:4px 12px; border-radius:6px; border:1px solid var(--border); background:var(--accent); color:#fff; font-size:12px; cursor:pointer;">Add</button>
     <button id="removeSymbolBtn" disabled style="margin-left:4px; padding:4px 12px; border-radius:6px; border:1px solid #f85149; background:#f85149; color:#fff; font-size:12px; cursor:pointer; opacity:0.4;" title="Remove selected symbol from database">Remove</button>
   </div>
-  <div class="mode-switcher" id="datasetModeButtons" aria-label="Data view selector">
-    <button type="button" class="mode-btn active" data-mode="backtest">Backtest</button>
-    <button type="button" class="mode-btn" data-mode="paper">Paper Trading</button>
+  <div class="mode-switcher" id="datasetModeButtons" aria-label="Trading mode selector">
+    <button type="button" class="mode-btn active" data-mode="backtest">Backtesting</button>
+    <button type="button" class="mode-btn" data-mode="paper-sim">Simulated Paper Trading</button>
+    <button type="button" class="mode-btn" data-mode="paper-rt">Real-Time Paper Trading</button>
     <button type="button" class="mode-btn" data-mode="live">Live Trading</button>
   </div>
   <div id="paperSourceBar" class="paper-source-bar" style="display:none;" aria-label="Paper data source">
