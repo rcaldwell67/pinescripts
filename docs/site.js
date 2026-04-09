@@ -621,16 +621,25 @@ function getPaperFillStats(sym, monthStartMs = 0) {
       const brokerClause = requireBrokerRows
         ? `AND EXISTS (SELECT 1 FROM ${linkTable} l WHERE l.trade_id = trades.id)`
         : '';
-      const stmt = db.prepare(`
+      // If a symbol is selected, filter for that symbol only
+      const selectedSymbol = (typeof window !== 'undefined' && window.document) ? document.getElementById('symbolSelect')?.value : '';
+      const symbolClause = selectedSymbol && selectedSymbol !== '' ? `AND symbol = ?` : '';
+      const query = `
         SELECT *
         FROM trades
         WHERE mode = ?
         AND LOWER(version) = 'v6'
         ${sourceClause}
         ${brokerClause}
+        ${symbolClause}
         ORDER BY datetime(COALESCE(exit_time, entry_time)) DESC, datetime(entry_time) DESC, id DESC
-      `);
-      stmt.bind([modeFilter]);
+      `;
+      const stmt = db.prepare(query);
+      if (symbolClause) {
+        stmt.bind([modeFilter, selectedSymbol]);
+      } else {
+        stmt.bind([modeFilter]);
+      }
       while (stmt.step()) {
         const row = stmt.getAsObject();
         if (activeDataset === 'paper') {
@@ -703,13 +712,22 @@ function getPaperFillStats(sym, monthStartMs = 0) {
     const track = document.getElementById('transactionTickerTrack');
     if (!shell || !track) return;
 
+    // Hide ticker if no data view is selected (shouldn't happen, but for safety)
+    if (!activeDataset) {
+      shell.style.display = 'none';
+      return;
+    }
+
     const items = buildLatestTransactionsBySymbol();
     shell.classList.remove('is-animated');
 
+    // Show/hide ticker based on whether there are items for the current view
     if (!items.length) {
+      shell.style.display = '';
       track.innerHTML = `<div class="ticker-empty">No recent ${escapeHtml(activeDataset)} transactions found.</div>`;
       return;
     }
+    shell.style.display = '';
 
     const html = items.map(item => {
       const qtyText = formatTickerQuantity(item.qty);
