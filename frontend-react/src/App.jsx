@@ -59,22 +59,24 @@ export default function App() {
   const [alpacaSymbols, setAlpacaSymbols] = useState([]);
   const [selectedAlpacaSymbol, setSelectedAlpacaSymbol] = useState("");
   const [alpacaLoading, setAlpacaLoading] = useState(false);
+  // Alpaca type filter (e.g., crypto, stock, etf)
+  const [alpacaTypeFilter, setAlpacaTypeFilter] = useState("all");
+
   // Load Alpaca symbols (simulate API or static list for demo)
-  useEffect(() => {
-    async function fetchAlpacaSymbols() {
-      setAlpacaLoading(true);
-      try {
-        // Replace with real API or static JSON fetch as needed
-        const res = await fetch("https://raw.githubusercontent.com/rcaldwell67/pinescripts/main/docs/data/alpaca_symbols.json");
-        if (!res.ok) throw new Error("Failed to load Alpaca symbols");
-        const data = await res.json();
-        setAlpacaSymbols(data.symbols || []);
-      } catch (e) {
-        setAlpacaSymbols([]);
-      } finally {
-        setAlpacaLoading(false);
-      }
+  const fetchAlpacaSymbols = async () => {
+    setAlpacaLoading(true);
+    try {
+      const res = await fetch("https://raw.githubusercontent.com/rcaldwell67/pinescripts/main/docs/data/alpaca_symbols.json");
+      if (!res.ok) throw new Error("Failed to load Alpaca symbols");
+      const data = await res.json();
+      setAlpacaSymbols(data.symbols || []);
+    } catch (e) {
+      setAlpacaSymbols([]);
+    } finally {
+      setAlpacaLoading(false);
     }
+  };
+  useEffect(() => {
     fetchAlpacaSymbols();
   }, []);
 
@@ -170,9 +172,25 @@ export default function App() {
     window.open(url, "_blank");
   }
 
-  // Filter Alpaca symbols to only those not already in the dashboard
+  // Filter Alpaca symbols to only those not already in the dashboard, and by type
   const existingSymbols = new Set(symbols.map(s => s.symbol));
-  const availableAlpacaSymbols = alpacaSymbols.filter(s => !existingSymbols.has(s));
+  const availableAlpacaSymbols = alpacaSymbols
+    .filter(s => !existingSymbols.has(s))
+    .filter(s => alpacaTypeFilter === "all" || (s.asset_class || "").toLowerCase() === alpacaTypeFilter);
+
+  // Handler for Remove Symbol button
+  function handleRemoveSymbol() {
+    if (!symbolFilter || symbolFilter === "ALL") {
+      alert("Please select a symbol to remove.");
+      return;
+    }
+    const confirmRemove = window.confirm(`Are you sure you want to request removal of symbol: ${symbolFilter}?`);
+    if (!confirmRemove) return;
+    const title = encodeURIComponent("Remove symbol: " + symbolFilter);
+    const body = encodeURIComponent(`Symbol: ${symbolFilter}\n\n_Request to remove symbol from dashboard via React app._`);
+    const url = `https://github.com/rcaldwell67/pinescripts/issues/new?title=${title}&body=${body}&labels=remove-symbol`;
+    window.open(url, "_blank");
+  }
 
   return (
     <div className="page-shell">
@@ -186,27 +204,40 @@ export default function App() {
         <div className="chip">Snapshot: {snapshot?.generated_at || "-"}</div>
       </header>
 
-      <section className="controls">
-        <label>
-          Symbol
-          <select value={symbolFilter} onChange={(e) => setSymbolFilter(e.target.value)}>
-            {symbolOptions.map((symbol) => (
-              <option key={symbol} value={symbol}>
-                {symbol}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Asset Class
+      <section className="controls" style={{ alignItems: 'end', gap: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <label>Symbol
+            <select value={symbolFilter} onChange={(e) => setSymbolFilter(e.target.value)}>
+              {symbolOptions.map((symbol) => (
+                <option key={symbol} value={symbol}>{symbol}</option>
+              ))}
+            </select>
+          </label>
+          <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+            <button
+              type="button"
+              style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid var(--edge)', background: 'var(--aqua)', color: '#181c20', fontWeight: 600, cursor: 'pointer' }}
+              onClick={fetchAlpacaSymbols}
+              title="Refresh available Alpaca symbols"
+            >Refresh</button>
+            <button
+              type="button"
+              style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid #f85149', background: '#f85149', color: '#fff', fontWeight: 600, cursor: symbolFilter && symbolFilter !== 'ALL' ? 'pointer' : 'not-allowed', opacity: symbolFilter && symbolFilter !== 'ALL' ? 1 : 0.4 }}
+              onClick={handleRemoveSymbol}
+              disabled={!symbolFilter || symbolFilter === 'ALL'}
+              title="Request removal of selected symbol from dashboard"
+            >Remove</button>
+          </div>
+        </div>
+        <label>Asset Class
           <select value={assetFilter} onChange={(e) => setAssetFilter(e.target.value)}>
             <option value="all">All</option>
             <option value="crypto">Crypto</option>
             <option value="etf">ETF</option>
           </select>
         </label>
-        <label>
-          Add Alpaca Symbol
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <label>Add Alpaca Symbol</label>
           <div style={{ display: 'flex', gap: 8 }}>
             <select
               value={selectedAlpacaSymbol}
@@ -224,11 +255,20 @@ export default function App() {
               style={{ padding: '8px 16px', borderRadius: 6, border: '1px solid var(--edge)', background: 'var(--aqua)', color: '#181c20', fontWeight: 600, cursor: 'pointer' }}
               onClick={handleAddSymbol}
               disabled={!selectedAlpacaSymbol}
+            >Add</button>
+            <select
+              value={alpacaTypeFilter}
+              onChange={e => setAlpacaTypeFilter(e.target.value)}
+              style={{ minWidth: 100 }}
+              title="Filter Alpaca symbols by type"
             >
-              Add
-            </button>
+              <option value="all">All Types</option>
+              <option value="crypto">Crypto</option>
+              <option value="us_equity">Stock</option>
+              <option value="etf">ETF</option>
+            </select>
           </div>
-        </label>
+        </div>
       </section>
 
       {loading && <div className="panel">Loading snapshot...</div>}
