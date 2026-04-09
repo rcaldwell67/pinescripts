@@ -68,8 +68,9 @@ export default function App() {
     async function loadSymbolsFromDb() {
       setAlpacaLoading(true);
       try {
-        // Download the SQLite DB file
-        const dbRes = await fetch("/pinescripts/data/tradingcopilot.db");
+        // Download the SQLite DB file using the correct base URL
+        const dbPath = `${import.meta.env.BASE_URL}data/tradingcopilot.db`;
+        const dbRes = await fetch(dbPath);
         if (!dbRes.ok) throw new Error("Failed to fetch tradingcopilot.db");
         const dbBuffer = await dbRes.arrayBuffer();
         // Init sql.js
