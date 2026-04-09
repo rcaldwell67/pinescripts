@@ -359,8 +359,9 @@ function getPaperFillStats(sym, monthStartMs = 0) {
       throw new Error('Failed to query symbols table');
     }
     // Prepare symbol list and UI
-    const symbols = symbolsData.map(obj => obj.symbol);
-    console.log('[DEBUG] symbols array:', symbols);
+    let symbols = symbolsData.map(obj => obj.symbol);
+    symbols = symbols.slice().sort((a, b) => a.localeCompare(b));
+    console.log('[DEBUG] symbols array (sorted):', symbols);
     window.SYMBOLS = symbols;
     // Build the instruments object dynamically using naming conventions
     // (existing buildInstruments function is defined elsewhere)
