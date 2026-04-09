@@ -123,7 +123,8 @@
         <span class="tx-count" id="txCount"></span>
       </div>
       <div class="tx-filters">
-        <select id="txVerFilter" class="tx-select"><option value="all">All Versions</option></select>
+        <!-- Version filter hidden for v6-only dashboard -->
+        <select id="txVerFilter" class="tx-select" style="display:none;"><option value="v6">v6 Only</option></select>
         <select id="txTfFilter" class="tx-select"><option value="all">All Timeframes</option></select>
         <select id="txActionFilter" class="tx-select"><option value="all">All Actions</option><option value="BUY">BUY</option><option value="SELL">SELL</option></select>
         <select id="txDirFilter" class="tx-select"><option value="all">All Directions</option><option value="long">Long</option><option value="short">Short</option></select>
@@ -229,10 +230,7 @@
     <div class="tx-count" id="logsMeta" style="margin-bottom:10px;"></div>
     <div class="table-wrap" id="logsTableWrap"><div class="empty">Loading logs...</div></div>
   </div>
-  <div class="panel">
-    <h2>Version Comparison</h2>
-    <div class="table-wrap"><table class="cmp" id="cmpTable"></table></div>
-  </div>
+  <!-- Version Comparison panel removed for v6-only dashboard -->
 </main>
 
 <div id="accountInfoModal" class="account-modal" aria-hidden="true">

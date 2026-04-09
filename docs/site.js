@@ -21,12 +21,8 @@ function buildInstruments(symbols) {
 
   // Build the instruments object dynamically using naming conventions
   const instruments = {};
+  // Only v6 version is available in v6-only dashboard
   const versionTemplates = [
-    { key: 'v1', label: 'v1 - 5m Shorts', tf: '5m', color: '#58a6ff' },
-    { key: 'v2', label: 'v2 - 10m Both', tf: '10m', color: '#3fb950' },
-    { key: 'v3', label: 'v3 - 15m Shorts', tf: '15m', color: '#ffa657' },
-    { key: 'v4', label: 'v4 - 30m Both', tf: '30m', color: '#bc8cff' },
-    { key: 'v5', label: 'v5 - 1h Longs', tf: '1h', color: '#d29922' },
     { key: 'v6', label: 'v6 - 1D Both', tf: '1D', color: '#ff7b72' }
   ];
   symbols.forEach(sym => {
@@ -109,7 +105,7 @@ const logsDataCache = {
   diagnosticRows: null,
   diagnosticPath: null,
 };
-const VERSION_KEYS = (window.FORCE_V6_ONLY ? ['v6'] : ['v1', 'v2', 'v3', 'v4', 'v5', 'v6']);
+const VERSION_KEYS = ['v6'];
 const PAPER_TRADING_SUPPORTED_VERSIONS = new Set(VERSION_KEYS);
 const LIVE_TRADING_SUPPORTED_VERSIONS = new Set(VERSION_KEYS);
 // Guideline thresholds and policy overrides.
@@ -2374,10 +2370,10 @@ function getPaperFillStats(sym, monthStartMs = 0) {
 
   function buildRerunAllBacktestsIssueUrl(symbol) {
     const normalizedSymbol = String(symbol || '').trim().toUpperCase();
-    const title = encodeURIComponent(`Rerun Backtest: ${normalizedSymbol} V1 through V6`);
+    const title = encodeURIComponent(`Rerun Backtest: ${normalizedSymbol} V6`);
     const body = encodeURIComponent(
       `Symbol: ${normalizedSymbol}\n` +
-      `Versions: v1,v2,v3,v4,v5,v6\n\n` +
+      `Version: v6\n\n` +
       `_Requested from dashboard Rerun All Versions button._`
     );
     return `https://github.com/rcaldwell67/pinescripts/issues/new?title=${title}&body=${body}`;
@@ -2612,7 +2608,7 @@ function rerunLiveTrading(symbol, version) {
 function rerunAllBacktests(symbol) {
   if (!symbol) return;
   const confirmed = confirm(
-    `Create a GitHub issue to rerun all versions (v1-v6) for "${symbol}"?\n\n` +
+    `Create a GitHub issue to rerun v6 for "${symbol}"?\n\n` +
     `This triggers the Rerun Backtest workflow via issue automation.`
   );
   if (!confirmed) return;
@@ -2775,7 +2771,7 @@ function getTotalEquityAllVersionsAllSymbols() {
             ORDER BY datetime(COALESCE(exit_time, entry_time)) DESC, id DESC
           ) AS rn
         FROM trades
-        WHERE mode = 'backtest' AND equity IS NOT NULL AND LOWER(version) IN ('v1', 'v2', 'v3', 'v4', 'v5', 'v6')
+        WHERE mode = 'backtest' AND equity IS NOT NULL AND LOWER(version) IN ('v6')
       )
       SELECT COALESCE(SUM(equity), 0) AS total_equity, COUNT(*) AS buckets
       FROM latest
@@ -3630,7 +3626,7 @@ function getAllSymbolsCumulativeEquity() {
   const modeFilter = activeDataset === 'backtest' ? 'backtest' : (activeDataset === 'paper' ? 'paper' : 'live');
   const rowsBySymbolVersion = new Map();
   try {
-    const stmt = db.prepare("SELECT symbol, version, equity, dollar_pnl, direction, result, entry_time, exit_time FROM trades WHERE mode = ? AND LOWER(version) IN ('v1', 'v2', 'v3', 'v4', 'v5', 'v6')");
+    const stmt = db.prepare("SELECT symbol, version, equity, dollar_pnl, direction, result, entry_time, exit_time FROM trades WHERE mode = ? AND LOWER(version) IN ('v6')");
     stmt.bind([modeFilter]);
     while (stmt.step()) {
       const r = stmt.getAsObject();
