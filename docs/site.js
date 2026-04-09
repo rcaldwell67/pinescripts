@@ -625,6 +625,7 @@ function getPaperFillStats(sym, monthStartMs = 0) {
         SELECT *
         FROM trades
         WHERE mode = ?
+        AND LOWER(version) = 'v6'
         ${sourceClause}
         ${brokerClause}
         ORDER BY datetime(COALESCE(exit_time, entry_time)) DESC, datetime(entry_time) DESC, id DESC
