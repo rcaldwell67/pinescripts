@@ -59,8 +59,8 @@ export default function App() {
   const [alpacaSymbols, setAlpacaSymbols] = useState([]);
   const [selectedAlpacaSymbol, setSelectedAlpacaSymbol] = useState("");
   const [alpacaLoading, setAlpacaLoading] = useState(false);
-  // Alpaca type filter (e.g., crypto, stock, etf)
-  const [alpacaTypeFilter, setAlpacaTypeFilter] = useState("all");
+  // Alpaca type filters (checkboxes for crypto, stocks)
+  const [typeFilters, setTypeFilters] = useState({ crypto: true, stocks: true });
 
   // Load Alpaca symbols (simulate API or static list for demo)
   const fetchAlpacaSymbols = async () => {
@@ -172,11 +172,18 @@ export default function App() {
     window.open(url, "_blank");
   }
 
-  // Filter Alpaca symbols to only those not already in the dashboard, and by type
+  // Helper: determine if a symbol matches the selected type filters
+  function matchesTypeFilters(sym) {
+    const assetClass = (sym.asset_class || '').toLowerCase();
+    if (typeFilters.crypto && assetClass === 'crypto') return true;
+    if (typeFilters.stocks && (assetClass === 'us_equity' || assetClass === 'etf')) return true;
+    return false;
+  }
+  // Filter Alpaca symbols to only those not already in the dashboard, and by checked types
   const existingSymbols = new Set(symbols.map(s => s.symbol));
   const availableAlpacaSymbols = alpacaSymbols
     .filter(s => !existingSymbols.has(s))
-    .filter(s => alpacaTypeFilter === "all" || (s.asset_class || "").toLowerCase() === alpacaTypeFilter);
+    .filter(matchesTypeFilters);
 
   // Handler for Remove Symbol button
   function handleRemoveSymbol() {
@@ -238,7 +245,7 @@ export default function App() {
         </label>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <label>Add Alpaca Symbol</label>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <select
               value={selectedAlpacaSymbol}
               onChange={e => setSelectedAlpacaSymbol(e.target.value)}
@@ -256,17 +263,22 @@ export default function App() {
               onClick={handleAddSymbol}
               disabled={!selectedAlpacaSymbol}
             >Add</button>
-            <select
-              value={alpacaTypeFilter}
-              onChange={e => setAlpacaTypeFilter(e.target.value)}
-              style={{ minWidth: 100 }}
-              title="Filter Alpaca symbols by type"
-            >
-              <option value="all">All Types</option>
-              <option value="crypto">Crypto</option>
-              <option value="us_equity">Stock</option>
-              <option value="etf">ETF</option>
-            </select>
+            <div style={{ display: 'flex', gap: 8, marginLeft: 8 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}>
+                <input
+                  type="checkbox"
+                  checked={typeFilters.crypto}
+                  onChange={e => setTypeFilters(f => ({ ...f, crypto: e.target.checked }))}
+                /> Crypto
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}>
+                <input
+                  type="checkbox"
+                  checked={typeFilters.stocks}
+                  onChange={e => setTypeFilters(f => ({ ...f, stocks: e.target.checked }))}
+                /> Stocks
+              </label>
+            </div>
           </div>
         </div>
       </section>
