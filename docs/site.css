@@ -532,8 +532,5 @@
         padding-left: 0;
         border-left: none;
       }
-      .ticker-shell.is-animated .ticker-track {
-        animation: none;
-      }
     }
   
