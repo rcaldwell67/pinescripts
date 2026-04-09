@@ -252,7 +252,7 @@ export default function App() {
               disabled={alpacaLoading || availableAlpacaSymbols.length === 0}
               style={{ minWidth: 120 }}
             >
-              <option value="">{alpacaLoading ? "Loading..." : "Select..."}</option>
+              <option value="">{alpacaLoading ? "Loading..." : availableAlpacaSymbols.length === 0 ? "No symbols available" : "Select..."}</option>
               {availableAlpacaSymbols.map(sym => (
                 <option key={sym} value={sym}>{sym}</option>
               ))}
@@ -279,6 +279,12 @@ export default function App() {
                 /> Stocks
               </label>
             </div>
+            {alpacaLoading && <span style={{ color: '#ffa657', fontSize: 13 }}>Loading symbols...</span>}
+            {!alpacaLoading && availableAlpacaSymbols.length === 0 && (
+              <span style={{ color: '#ffa657', fontSize: 13, marginLeft: 8 }}>
+                No symbols available. Check your filters or data source.
+              </span>
+            )}
           </div>
         </div>
       </section>
