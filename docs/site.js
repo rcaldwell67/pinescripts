@@ -4397,6 +4397,7 @@ async function handleSymbolSelect(newSym, dbInstance) {
     updateModeButtonStates();
     const removeBtn = document.getElementById('removeSymbolBtn');
     if (removeBtn) { removeBtn.disabled = true; removeBtn.style.opacity = '0.4'; }
+    renderTransactionTicker();
     return;
   }
   if (newSym === activeSym) return;
@@ -4411,6 +4412,7 @@ async function handleSymbolSelect(newSym, dbInstance) {
   if (!vers) {
     hideDashboardData();
     updateModeButtonStates();
+    renderTransactionTicker();
     return;
   }
   // Use dbInstance if provided, else window._SQL_DB
@@ -4418,6 +4420,7 @@ async function handleSymbolSelect(newSym, dbInstance) {
   console.log('[DEBUG] DB instance in handleSymbolSelect:', db);
   if (!db) {
     console.error('No SQL DB instance available');
+    renderTransactionTicker();
     return;
   }
     // Prefer trade-level rows for every dataset. Symbol formats vary across
@@ -4588,6 +4591,7 @@ async function handleSymbolSelect(newSym, dbInstance) {
     buildTabs();
     render();
     updateLastUpdated();
+    renderTransactionTicker();
     updateModeButtonStates();
 }
 
