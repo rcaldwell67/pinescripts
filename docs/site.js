@@ -832,10 +832,27 @@ function getPaperFillStats(sym, monthStartMs = 0) {
 
     track.innerHTML = `<div class="ticker-group">${html}</div><div class="ticker-group" aria-hidden="true">${html}</div>`;
     track.style.setProperty('--ticker-duration', `${Math.max(24, items.length * 9)}s`);
-    if (items.length > 1) shell.classList.add('is-animated');
+    if (items.length > 1) {
+      shell.classList.add('is-animated');
+    } else {
+      shell.classList.remove('is-animated');
+    }
     const activeButton = track.querySelector('.ticker-item.is-active');
     if (activeButton) {
       setTimeout(() => activeButton.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' }), 50);
+    }
+
+    // Re-trigger ticker animation on resize
+    if (!shell._tickerResizeHandler) {
+      shell._tickerResizeHandler = () => {
+        if (items.length > 1) {
+          shell.classList.remove('is-animated');
+          // Force reflow to restart animation
+          void shell.offsetWidth;
+          shell.classList.add('is-animated');
+        }
+      };
+      window.addEventListener('resize', shell._tickerResizeHandler);
     }
   }
 
