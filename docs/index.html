@@ -22,105 +22,109 @@
     <h1>APM Dashboard</h1>
     <div class="subtitle">Adaptive Pullback Momentum</div>
   </div>
-  <div class="sym-switcher">
-    <label for="symbolSelect" style="margin-right:8px;">Symbol:</label>
-    <select id="symbolSelect" class="tx-select">
-      <option value="">Select...</option>
-      <option value="AAPL">AAPL</option>
-      <option value="BTCUSD">BTCUSD</option>
-      <option value="ETHUSD">ETHUSD</option>
-      <option value="SPY">SPY</option>
-      <option value="TSLA">TSLA</option>
-    </select>
-    <select id="alpacaSymbolSelect" class="tx-select" style="margin-left:10px; width:140px;" disabled>
-      <option value="">Refresh to load...</option>
-    </select>
-    <div id="alpacaTypeFilters" style="display:none; margin-left:8px; align-items:center; gap:10px; font-size:12px; color:var(--muted);"></div>
-    <button id="loadAlpacaSymbolsBtn" style="margin-left:4px; padding:4px 12px; border-radius:6px; border:1px solid var(--border); background:var(--accent); color:#fff; font-size:12px; cursor:pointer;" title="Refresh available symbols from local cache">Refresh</button>
-    <button id="addSymbolBtn" style="margin-left:4px; padding:4px 12px; border-radius:6px; border:1px solid var(--border); background:var(--accent); color:#fff; font-size:12px; cursor:pointer;">Add</button>
-    <button id="removeSymbolBtn" disabled style="margin-left:4px; padding:4px 12px; border-radius:6px; border:1px solid #f85149; background:#f85149; color:#fff; font-size:12px; cursor:pointer; opacity:0.4;" title="Remove selected symbol from database">Remove</button>
-  </div>
-  <div class="mode-switcher" id="datasetModeButtons" aria-label="Trading mode selector">
-    <button type="button" class="mode-btn active" data-mode="backtest">Backtesting</button>
-    <button type="button" class="mode-btn" data-mode="paper-sim">Simulated Paper Trading</button>
-    <button type="button" class="mode-btn" data-mode="paper-rt">Real-Time Paper Trading</button>
-    <button type="button" class="mode-btn" data-mode="live">Live Trading</button>
-  </div>
-  <div id="paperSourceBar" class="paper-source-bar" style="display:none;" aria-label="Paper data source">
-    <span style="font-size:12px;color:var(--muted);font-weight:600;">View:</span>
-    <span style="font-size:12px;color:#3fb950;font-weight:700;">Simulation (default)</span>
-  </div>
-  <div id="simulationScopeBar" class="paper-source-bar" style="display:none;" aria-label="Simulation data scope toggle">
-    <span style="font-size:12px;color:var(--muted);font-weight:600;">Simulation Scope:</span>
-    <button type="button" class="paper-src-btn sim-scope-btn active" data-sim-scope="historical">Historical</button>
-    <button type="button" class="paper-src-btn sim-scope-btn" data-sim-scope="same_day">Same Day</button>
-  </div>
-  <button id="openAccountInfoBtn" class="mode-btn" type="button" title="View Alpaca account details">Account Info</button>
-  <button id="openDailyTransactionsBtn" class="mode-btn" type="button" title="View today's trades and fills">Daily Transactions</button>
-  <button id="openTradeGapBtn" class="mode-btn" type="button" title="Longest gap between trades per symbol (backtest + paper)">Trade Gap Analysis</button>
-  <button id="openGuidelineAuditBtn" class="mode-btn" type="button" title="Audit current symbol/version guideline compliance from DB">Guideline Audit</button>
-  <button id="openLiveSymbolControlBtn" class="mode-btn" type="button" title="Enable or disable live trading per symbol">Live Symbol Control</button>
-  <div id="refreshControls" class="refresh-controls" aria-label="Dashboard refresh controls">
-    <button id="reloadDashboardBtn" class="mode-btn" type="button" title="Reload dashboard data without refreshing the page">Reload Data</button>
-    <label for="autoRefreshSelect">Auto-refresh</label>
-    <select id="autoRefreshSelect" class="tx-select" title="Automatically reload dashboard data at a fixed interval">
-      <option value="0" selected>Off</option>
-      <option value="15">15s</option>
-      <option value="30">30s</option>
-      <option value="60">1m</option>
-      <option value="300">5m</option>
-    </select>
-    <span id="autoRefreshStatus" class="auto-refresh-status" aria-live="polite">
-      <span id="autoRefreshStatusDot" class="auto-refresh-dot" data-state="off" aria-hidden="true"></span>
-      <span id="autoRefreshStatusText">Last auto refresh: Off</span>
-    </span>
-  </div>
-  <div id="balanceBar">
-    <div class="bal-item">
-      <span class="bal-label">Beginning Balance</span>
-      <span class="bal-value neutral" id="beginningBalanceVal">$1,000</span>
-    </div>
-    <div class="bal-divider"></div>
-    <div class="bal-item">
-      <span class="bal-label">Ending Balance</span>
-      <span class="bal-value" id="endingBalanceVal">-</span>
-    </div>
-    <div class="bal-divider"></div>
-    <div class="bal-item">
-      <span class="bal-label">Total Equity</span>
-      <span class="bal-value" id="totalEquityVal">-</span>
-    </div>
-    <div class="bal-divider"></div>
-    <div class="bal-item">
-      <span class="bal-label">Total Equity (All Versions)</span>
-      <span class="bal-value" id="totalEquityAllVal">-</span>
-    </div>
-    <div class="bal-divider"></div>
-    <div class="bal-item">
-      <span class="bal-label">Total Equity (All Versions, All Symbols)</span>
-      <span class="bal-value" id="totalEquityAllSymbolsVal">-</span>
-    </div>
-  </div>
-  <div id="transactionTicker" class="ticker-shell" aria-live="polite">
-    <div class="ticker-label">Latest Transactions</div>
-    <div class="ticker-viewport">
-      <div id="transactionTickerTrack" class="ticker-track">
-        <div class="ticker-empty">Loading latest transactions...</div>
-      </div>
-    </div>
-  </div>
-  <span id="lastUpdated"></span>
-  <button id="dailyValidationBadge" class="mode-btn" type="button" style="display:none; margin-left:12px; padding:4px 10px;" title="Open today's validation summary">Validation: -</button>
-  <div id="dailyValidationPopover" class="validation-popover" aria-hidden="true" role="status"></div>
-  <span id="workflowStatus" style="margin-left:24px;color:#58a6ff;font-size:13px;font-weight:600;"></span>
-  <!-- Add a notice element to the header for no data -->
-  <div id="noDataNotice" style="display:none;margin-left:24px;color:#ffa657;font-size:13px;font-weight:600;">
-    No Data Is Available For That Selection
-  </div>
 </header>
 <main>
   <div class="tabs" id="tabs"></div>
-  <div class="cards" id="cards"></div>
+  <div class="cards" id="cards">
+    <div class="card" id="dataViewsCard">
+      <div class="sym-switcher">
+        <label for="symbolSelect" style="margin-right:8px;">Symbol:</label>
+        <select id="symbolSelect" class="tx-select">
+          <option value="">Select...</option>
+          <option value="AAPL">AAPL</option>
+          <option value="BTCUSD">BTCUSD</option>
+          <option value="ETHUSD">ETHUSD</option>
+          <option value="SPY">SPY</option>
+          <option value="TSLA">TSLA</option>
+        </select>
+        <select id="alpacaSymbolSelect" class="tx-select" style="margin-left:10px; width:140px;" disabled>
+          <option value="">Refresh to load...</option>
+        </select>
+        <div id="alpacaTypeFilters" style="display:none; margin-left:8px; align-items:center; gap:10px; font-size:12px; color:var(--muted);"></div>
+        <button id="loadAlpacaSymbolsBtn" style="margin-left:4px; padding:4px 12px; border-radius:6px; border:1px solid var(--border); background:var(--accent); color:#fff; font-size:12px; cursor:pointer;" title="Refresh available symbols from local cache">Refresh</button>
+        <button id="addSymbolBtn" style="margin-left:4px; padding:4px 12px; border-radius:6px; border:1px solid var(--border); background:var(--accent); color:#fff; font-size:12px; cursor:pointer;">Add</button>
+        <button id="removeSymbolBtn" disabled style="margin-left:4px; padding:4px 12px; border-radius:6px; border:1px solid #f85149; background:#f85149; color:#fff; font-size:12px; cursor:pointer; opacity:0.4;" title="Remove selected symbol from database">Remove</button>
+      </div>
+      <div class="mode-switcher" id="datasetModeButtons" aria-label="Trading mode selector">
+        <button type="button" class="mode-btn active" data-mode="backtest">Backtesting</button>
+        <button type="button" class="mode-btn" data-mode="paper-sim">Simulated Paper Trading</button>
+        <button type="button" class="mode-btn" data-mode="paper-rt">Real-Time Paper Trading</button>
+        <button type="button" class="mode-btn" data-mode="live">Live Trading</button>
+      </div>
+      <div id="paperSourceBar" class="paper-source-bar" style="display:none;" aria-label="Paper data source">
+        <span style="font-size:12px;color:var(--muted);font-weight:600;">View:</span>
+        <span style="font-size:12px;color:#3fb950;font-weight:700;">Simulation (default)</span>
+      </div>
+      <div id="simulationScopeBar" class="paper-source-bar" style="display:none;" aria-label="Simulation data scope toggle">
+        <span style="font-size:12px;color:var(--muted);font-weight:600;">Simulation Scope:</span>
+        <button type="button" class="paper-src-btn sim-scope-btn active" data-sim-scope="historical">Historical</button>
+        <button type="button" class="paper-src-btn sim-scope-btn" data-sim-scope="same_day">Same Day</button>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">
+        <button id="openAccountInfoBtn" class="mode-btn" type="button" title="View Alpaca account details">Account Info</button>
+        <button id="openDailyTransactionsBtn" class="mode-btn" type="button" title="View today's trades and fills">Daily Transactions</button>
+        <button id="openTradeGapBtn" class="mode-btn" type="button" title="Longest gap between trades per symbol (backtest + paper)">Trade Gap Analysis</button>
+        <button id="openGuidelineAuditBtn" class="mode-btn" type="button" title="Audit current symbol/version guideline compliance from DB">Guideline Audit</button>
+        <button id="openLiveSymbolControlBtn" class="mode-btn" type="button" title="Enable or disable live trading per symbol">Live Symbol Control</button>
+      </div>
+      <div id="refreshControls" class="refresh-controls" aria-label="Dashboard refresh controls" style="margin-top:10px;">
+        <button id="reloadDashboardBtn" class="mode-btn" type="button" title="Reload dashboard data without refreshing the page">Reload Data</button>
+        <label for="autoRefreshSelect">Auto-refresh</label>
+        <select id="autoRefreshSelect" class="tx-select" title="Automatically reload dashboard data at a fixed interval">
+          <option value="0" selected>Off</option>
+          <option value="15">15s</option>
+          <option value="30">30s</option>
+          <option value="60">1m</option>
+          <option value="300">5m</option>
+        </select>
+        <span id="autoRefreshStatus" class="auto-refresh-status" aria-live="polite">
+          <span id="autoRefreshStatusDot" class="auto-refresh-dot" data-state="off" aria-hidden="true"></span>
+          <span id="autoRefreshStatusText">Last auto refresh: Off</span>
+        </span>
+      </div>
+      <div id="balanceBar" style="margin-top:10px;">
+        <div class="bal-item">
+          <span class="bal-label">Beginning Balance</span>
+          <span class="bal-value neutral" id="beginningBalanceVal">$1,000</span>
+        </div>
+        <div class="bal-divider"></div>
+        <div class="bal-item">
+          <span class="bal-label">Ending Balance</span>
+          <span class="bal-value" id="endingBalanceVal">-</span>
+        </div>
+        <div class="bal-divider"></div>
+        <div class="bal-item">
+          <span class="bal-label">Total Equity</span>
+          <span class="bal-value" id="totalEquityVal">-</span>
+        </div>
+        <div class="bal-divider"></div>
+        <div class="bal-item">
+          <span class="bal-label">Total Equity (All Versions)</span>
+          <span class="bal-value" id="totalEquityAllVal">-</span>
+        </div>
+        <div class="bal-divider"></div>
+        <div class="bal-item">
+          <span class="bal-label">Total Equity (All Versions, All Symbols)</span>
+          <span class="bal-value" id="totalEquityAllSymbolsVal">-</span>
+        </div>
+      </div>
+      <div id="transactionTicker" class="ticker-shell" aria-live="polite" style="margin-top:10px;">
+        <div class="ticker-label">Latest Transactions</div>
+        <div class="ticker-viewport">
+          <div id="transactionTickerTrack" class="ticker-track">
+            <div class="ticker-empty">Loading latest transactions...</div>
+          </div>
+        </div>
+      </div>
+      <span id="lastUpdated"></span>
+      <button id="dailyValidationBadge" class="mode-btn" type="button" style="display:none; margin-left:12px; padding:4px 10px;" title="Open today's validation summary">Validation: -</button>
+      <div id="dailyValidationPopover" class="validation-popover" aria-hidden="true" role="status"></div>
+      <span id="workflowStatus" style="margin-left:24px;color:#58a6ff;font-size:13px;font-weight:600;"></span>
+      <div id="noDataNotice" style="display:none;margin-left:24px;color:#ffa657;font-size:13px;font-weight:600;">
+        No Data Is Available For That Selection
+      </div>
+    </div>
+  </div>
   <div class="panel" style="margin-bottom:16px;">
     <div class="tx-controls">
       <div style="display:flex;align-items:baseline;gap:10px;">
