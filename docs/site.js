@@ -640,6 +640,59 @@ function getPaperFillStats(sym, monthStartMs = 0) {
       } else {
         stmt.bind([modeFilter]);
       }
+      // If a symbol is selected, just return the single latest event for that symbol (if any)
+      if (symbolClause) {
+        if (stmt.step()) {
+          const row = stmt.getAsObject();
+          const symbolKey = getNormalizedSymbolKey(row.symbol || '');
+          if (!symbolKey) return [];
+          const qty = row.qty ?? row.quantity ?? row.shares ?? row.size ?? null;
+          const entryTime = parseDashboardTimeValue(row.entry_time);
+          const exitTime = parseDashboardTimeValue(row.exit_time);
+          const isLong = String(row.direction || '').toLowerCase() !== 'short';
+          const events = [];
+          if (entryTime > 0) {
+            events.push({
+              symbol: row.symbol,
+              version: String(row.version || 'v1').toLowerCase(),
+              action: isLong ? 'BUY' : 'SELL',
+              type: 'Open',
+              direction: String(row.direction || '-'),
+              price: row.entry_price,
+              qty,
+              notional: Number.isFinite(Number(qty)) && Number.isFinite(Number(row.entry_price)) ? Number(qty) * Number(row.entry_price) : null,
+              pnl: null,
+              result: null,
+              equity: null,
+              timestamp: row.entry_time,
+              sortTime: entryTime,
+            });
+          }
+          if (exitTime > 0) {
+            events.push({
+              symbol: row.symbol,
+              version: String(row.version || 'v1').toLowerCase(),
+              action: isLong ? 'SELL' : 'BUY',
+              type: 'Close',
+              direction: String(row.direction || '-'),
+              price: row.exit_price,
+              qty,
+              notional: Number.isFinite(Number(qty)) && Number.isFinite(Number(row.exit_price)) ? Number(qty) * Number(row.exit_price) : null,
+              pnl: row.dollar_pnl,
+              result: row.result,
+              equity: row.equity,
+              timestamp: row.exit_time,
+              sortTime: exitTime,
+            });
+          }
+          if (!events.length) return [];
+          // Only show the latest event (open or close)
+          const latestEvent = events.sort((a, b) => b.sortTime - a.sortTime)[0];
+          return latestEvent ? [latestEvent] : [];
+        }
+        return [];
+      }
+      // Otherwise, show the latest for all symbols as before
       while (stmt.step()) {
         const row = stmt.getAsObject();
         if (activeDataset === 'paper') {
