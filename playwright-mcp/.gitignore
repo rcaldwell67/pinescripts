@@ -1,0 +1,6 @@
+# .gitignore for playwright-mcp
+node_modules/
+*.log
+*.tmp
+*.cache
+output/

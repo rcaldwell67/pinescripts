@@ -13,6 +13,12 @@
         "command": "node",
         "args": ["./.vscode/alpaca-mcp-wrapper.mjs"],
         "envFile": "${workspaceFolder}/.env"
+      },
+      "playwright-mcp": {
+        "type": "stdio",
+        "command": "npx",
+        "args": ["playwright", "test"],
+        "cwd": "${workspaceFolder}/playwright-mcp"
       }
     }
   }
