@@ -436,6 +436,21 @@ function getPaperFillStats(sym, monthStartMs = 0) {
     // switch doesn't hit the early-exit guard in handleSymbolSelect.
     activeSym = '';
     pendingDatasetSymbol = '';
+    // --- PATCH: If no symbols available, show error and keep dashboard visible ---
+    const noDataNotice = document.getElementById('noDataNotice');
+    if (symbols.length === 0) {
+      if (noDataNotice) {
+        noDataNotice.style.display = '';
+        noDataNotice.textContent = 'No symbols are available. Data could not be loaded. Please check your deployment or data files.';
+      }
+      showDashboardData();
+      // Do not hide dashboard panels on data load failure
+    } else {
+      if (noDataNotice) {
+        noDataNotice.style.display = 'none';
+        noDataNotice.textContent = 'No Data Is Available For That Selection';
+      }
+    }
     if (usedFallback) {
       console.warn('[FALLBACK] Symbol dropdown populated from symbols.json. Some features may be limited.');
     }
