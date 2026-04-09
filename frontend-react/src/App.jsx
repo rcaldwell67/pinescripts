@@ -239,19 +239,15 @@ export default function App() {
             </select>
           </label>
           {/* Refresh button hidden as requested */}
-          // --- WASM/SQLite integration placeholder ---
-          // TODO: Use sql.js WASM to load tradingcopilot.db and populate Alpaca symbols directly from the DB.
-          // Example:
-          // import initSqlJs from 'sql.js';
-          // const SQL = await initSqlJs({ locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.8.0/dist/${file}` });
-          // const db = new SQL.Database(dbFileBuffer);
-          // const res = db.exec('SELECT symbol, description FROM symbols');
-          // setAlpacaSymbols(...)
         </div>
         {/* Asset Class filter hidden as requested */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <label>Add Alpaca Symbol</label>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {/* Debug: Show number of symbols loaded and error if any */}
+            <span style={{ color: '#9bb4c7', fontSize: 13, marginRight: 8 }}>
+              {alpacaLoading ? 'Loading symbols...' : `Loaded: ${alpacaSymbols.length}`}
+            </span>
             <select
               value={selectedAlpacaSymbol}
               onChange={e => setSelectedAlpacaSymbol(e.target.value)}
@@ -260,7 +256,7 @@ export default function App() {
             >
               <option value="">{alpacaLoading ? "Loading..." : availableAlpacaSymbols.length === 0 ? "No symbols available" : "Select..."}</option>
               {availableAlpacaSymbols.map(sym => (
-                <option key={sym} value={sym}>{sym}</option>
+                <option key={sym.symbol} value={sym.symbol}>{sym.symbol}</option>
               ))}
             </select>
             <button
