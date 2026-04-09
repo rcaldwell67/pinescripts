@@ -236,13 +236,7 @@ export default function App() {
             >Remove</button>
           </div>
         </div>
-        <label>Asset Class
-          <select value={assetFilter} onChange={(e) => setAssetFilter(e.target.value)}>
-            <option value="all">All</option>
-            <option value="crypto">Crypto</option>
-            <option value="etf">ETF</option>
-          </select>
-        </label>
+        {/* Asset Class filter hidden as requested */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <label>Add Alpaca Symbol</label>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -263,6 +257,13 @@ export default function App() {
               onClick={handleAddSymbol}
               disabled={!selectedAlpacaSymbol}
             >Add</button>
+            <button
+              type="button"
+              style={{ padding: '8px 16px', borderRadius: 6, border: '1px solid #f85149', background: '#f85149', color: '#fff', fontWeight: 600, cursor: symbolFilter && symbolFilter !== 'ALL' ? 'pointer' : 'not-allowed', opacity: symbolFilter && symbolFilter !== 'ALL' ? 1 : 0.4, marginLeft: 0 }}
+              onClick={handleRemoveSymbol}
+              disabled={!symbolFilter || symbolFilter === 'ALL'}
+              title="Request removal of selected symbol from dashboard"
+            >Remove</button>
             <div style={{ display: 'flex', gap: 8, marginLeft: 8 }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}>
                 <input
