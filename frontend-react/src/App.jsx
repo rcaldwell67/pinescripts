@@ -227,13 +227,6 @@ export default function App() {
               onClick={fetchAlpacaSymbols}
               title="Refresh available Alpaca symbols"
             >Refresh</button>
-            <button
-              type="button"
-              style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid #f85149', background: '#f85149', color: '#fff', fontWeight: 600, cursor: symbolFilter && symbolFilter !== 'ALL' ? 'pointer' : 'not-allowed', opacity: symbolFilter && symbolFilter !== 'ALL' ? 1 : 0.4 }}
-              onClick={handleRemoveSymbol}
-              disabled={!symbolFilter || symbolFilter === 'ALL'}
-              title="Request removal of selected symbol from dashboard"
-            >Remove</button>
           </div>
         </div>
         {/* Asset Class filter hidden as requested */}
