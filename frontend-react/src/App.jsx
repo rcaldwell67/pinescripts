@@ -16,6 +16,7 @@ function guidelineStatus(row) {
   return fails.length === 0 ? "PASS" : `FAIL: ${fails.join(", ")}`;
 }
 import { useEffect, useMemo, useState } from "react";
+import initSqlJs from 'sql.js';
 import TradeGapAnalysis from "./TradeGapAnalysis";
 import {
   Area,
@@ -62,22 +63,38 @@ export default function App() {
   // Alpaca type filters (checkboxes for crypto, stocks)
   const [typeFilters, setTypeFilters] = useState({ crypto: true, stocks: true });
 
-  // Load Alpaca symbols (simulate API or static list for demo)
-  const fetchAlpacaSymbols = async () => {
-    setAlpacaLoading(true);
-    try {
-      const res = await fetch("https://raw.githubusercontent.com/rcaldwell67/pinescripts/main/docs/data/alpaca_symbols.json");
-      if (!res.ok) throw new Error("Failed to load Alpaca symbols");
-      const data = await res.json();
-      setAlpacaSymbols(data.symbols || []);
-    } catch (e) {
-      setAlpacaSymbols([]);
-    } finally {
-      setAlpacaLoading(false);
-    }
-  };
+  // Load Alpaca symbols from SQLite DB using sql.js WASM
   useEffect(() => {
-    fetchAlpacaSymbols();
+    async function loadSymbolsFromDb() {
+      setAlpacaLoading(true);
+      try {
+        // Download the SQLite DB file
+        const dbRes = await fetch("/pinescripts/data/tradingcopilot.db");
+        if (!dbRes.ok) throw new Error("Failed to fetch tradingcopilot.db");
+        const dbBuffer = await dbRes.arrayBuffer();
+        // Init sql.js
+        const SQL = await initSqlJs({ locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.8.0/dist/${file}` });
+        const db = new SQL.Database(new Uint8Array(dbBuffer));
+        // Query symbols table
+        const res = db.exec('SELECT symbol, description, asset_class FROM symbols');
+        let symbols = [];
+        if (res.length > 0) {
+          const cols = res[0].columns;
+          const values = res[0].values;
+          symbols = values.map(row => {
+            const obj = {};
+            cols.forEach((col, i) => { obj[col] = row[i]; });
+            return obj;
+          });
+        }
+        setAlpacaSymbols(symbols);
+      } catch (e) {
+        setAlpacaSymbols([]);
+      } finally {
+        setAlpacaLoading(false);
+      }
+    }
+    loadSymbolsFromDb();
   }, []);
 
   useEffect(() => {
@@ -220,14 +237,15 @@ export default function App() {
               ))}
             </select>
           </label>
-          <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-            <button
-              type="button"
-              style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid var(--edge)', background: 'var(--aqua)', color: '#181c20', fontWeight: 600, cursor: 'pointer' }}
-              onClick={fetchAlpacaSymbols}
-              title="Refresh available Alpaca symbols"
-            >Refresh</button>
-          </div>
+          {/* Refresh button hidden as requested */}
+          // --- WASM/SQLite integration placeholder ---
+          // TODO: Use sql.js WASM to load tradingcopilot.db and populate Alpaca symbols directly from the DB.
+          // Example:
+          // import initSqlJs from 'sql.js';
+          // const SQL = await initSqlJs({ locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.8.0/dist/${file}` });
+          // const db = new SQL.Database(dbFileBuffer);
+          // const res = db.exec('SELECT symbol, description FROM symbols');
+          // setAlpacaSymbols(...)
         </div>
         {/* Asset Class filter hidden as requested */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
