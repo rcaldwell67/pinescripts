@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test';
 
 
 test('Data Views card is visible and not hidden', async ({ page }) => {
-  await page.goto('file:///d:/OneDrive/codebase/pinescripts-1/docs/index.html');
+  await page.goto('https://rcaldwell67.github.io/pinescripts/');
 
   // Wait for the Data Views card to be present in the DOM
   const card = await page.locator('#dataViewsCard');
