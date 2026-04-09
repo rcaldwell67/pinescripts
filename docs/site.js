@@ -322,64 +322,76 @@ function getPaperFillStats(sym, monthStartMs = 0) {
       console.error('[DEBUG] sql.js not loaded');
       throw new Error('sql.js not loaded');
     }
-    // Fetch the SQLite database file with fallback logic
-    const dbPaths = ['data/tradingcopilot.db', 'docs/data/tradingcopilot.db'];
-    let dbReq = null, dbPathUsed = '';
-    for (const dbPath of dbPaths) {
+    // Try to load tradingcopilot.db, fallback to symbols.json if any error
+    let symbols = [];
+    let db = null;
+    let usedFallback = false;
+    try {
+      // Fetch the SQLite database file with fallback logic
+      const dbPaths = ['data/tradingcopilot.db', 'docs/data/tradingcopilot.db'];
+      let dbReq = null, dbPathUsed = '';
+      for (const dbPath of dbPaths) {
+        try {
+          console.log('[DEBUG] window.location.href:', window.location.href);
+          // Add cache-busting query string
+          const cacheBustedPath = dbPath + '?v=' + Date.now();
+          const resolvedUrl = new URL(cacheBustedPath, window.location.href).toString();
+          console.log('[DEBUG] Attempting to fetch', cacheBustedPath, '->', resolvedUrl);
+          dbReq = await fetch(cacheBustedPath);
+          console.log('[DEBUG] Fetch response for', cacheBustedPath + ':', dbReq);
+          if (dbReq.ok) {
+            dbPathUsed = dbPath;
+            break;
+          }
+        } catch (e) {
+          console.error('[ERROR] Exception fetching', dbPath, e);
+        }
+      }
+      if (!dbReq || !dbReq.ok) throw new Error('Failed to fetch tradingcopilot.db');
+      const dbBuffer = await dbReq.arrayBuffer();
+      console.log('[DEBUG] DB file loaded from', dbPathUsed, ', initializing sql.js...');
+      // Initialize sql.js
+      const SQL = await window.initSqlJs({ locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.8.0/dist/${file}` });
+      db = new SQL.Database(new Uint8Array(dbBuffer));
+      console.log('[DEBUG] SQL.js initialized, DB instance created:', db);
+      // Query the symbols table
+      let symbolsData = [];
       try {
-        console.log('[DEBUG] window.location.href:', window.location.href);
-        // Add cache-busting query string
-        const cacheBustedPath = dbPath + '?v=' + Date.now();
-        const resolvedUrl = new URL(cacheBustedPath, window.location.href).toString();
-        console.log('[DEBUG] Attempting to fetch', cacheBustedPath, '->', resolvedUrl);
-        dbReq = await fetch(cacheBustedPath);
-        console.log('[DEBUG] Fetch response for', cacheBustedPath + ':', dbReq);
-        if (dbReq.ok) {
-          dbPathUsed = dbPath;
-          break;
+        const res = db.exec('SELECT symbol, description FROM symbols');
+        console.log('[DEBUG] symbols table query result:', res);
+        if (res.length > 0) {
+          const cols = res[0].columns;
+          const values = res[0].values;
+          symbolsData = values.map(row => {
+            const obj = {};
+            cols.forEach((col, i) => { obj[col] = row[i]; });
+            return obj;
+          });
+          console.log('[DEBUG] symbolsData array:', symbolsData);
+        } else {
+          console.warn('[DEBUG] symbols table query returned no results');
         }
       } catch (e) {
-        console.error('[ERROR] Exception fetching', dbPath, e);
+        console.error('[DEBUG] Error querying symbols table:', e);
+        throw new Error('Failed to query symbols table');
+      }
+      symbols = symbolsData.map(obj => obj.symbol);
+      symbols = symbols.slice().sort((a, b) => a.localeCompare(b));
+    } catch (err) {
+      // Fallback to symbols.json
+      usedFallback = true;
+      console.warn('[FALLBACK] Using symbols.json due to DB error:', err);
+      try {
+        const resp = await fetch('data/symbols.json?v=' + Date.now());
+        if (!resp.ok) throw new Error('Failed to fetch symbols.json');
+        const json = await resp.json();
+        symbols = (json || []).map(obj => obj.symbol).sort((a, b) => a.localeCompare(b));
+      } catch (jsonErr) {
+        console.error('[FALLBACK] Failed to load symbols.json:', jsonErr);
+        symbols = [];
       }
     }
-    if (!dbReq || !dbReq.ok) {
-      console.error('[ERROR] Failed to fetch tradingcopilot.db from all tried paths. Last status:', dbReq?.status, dbReq?.statusText);
-      throw new Error('Failed to fetch tradingcopilot.db');
-    }
-    const dbBuffer = await dbReq.arrayBuffer();
-    console.log('[DEBUG] DB file loaded from', dbPathUsed, ', initializing sql.js...');
-    // Initialize sql.js
-    const SQL = await window.initSqlJs({ locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.8.0/dist/${file}` });
-    const db = new SQL.Database(new Uint8Array(dbBuffer));
-    console.log('[DEBUG] SQL.js initialized, DB instance created:', db);
-    // Query the symbols table
-    let symbolsData = [];
-    try {
-      const res = db.exec('SELECT symbol, description FROM symbols');
-      console.log('[DEBUG] symbols table query result:', res);
-      if (res.length > 0) {
-        const cols = res[0].columns;
-        const values = res[0].values;
-        symbolsData = values.map(row => {
-          const obj = {};
-          cols.forEach((col, i) => { obj[col] = row[i]; });
-          return obj;
-        });
-        console.log('[DEBUG] symbolsData array:', symbolsData);
-      } else {
-        console.warn('[DEBUG] symbols table query returned no results');
-      }
-    } catch (e) {
-      console.error('[DEBUG] Error querying symbols table:', e);
-      throw new Error('Failed to query symbols table');
-    }
-    // Prepare symbol list and UI
-    let symbols = symbolsData.map(obj => obj.symbol);
-    symbols = symbols.slice().sort((a, b) => a.localeCompare(b));
-    console.log('[DEBUG] symbols array (sorted):', symbols);
     window.SYMBOLS = symbols;
-    // Build the instruments object dynamically using naming conventions
-    // (existing buildInstruments function is defined elsewhere)
     buildSymbolSwitcher(symbols);
 
     // --- Restore symbol dropdown population logic ---
@@ -416,7 +428,7 @@ function getPaperFillStats(sym, monthStartMs = 0) {
       }
     }
 
-    // Save db instance for later use
+    // Save db instance for later use (may be null if fallback)
     window._SQL_DB = db;
     renderDailyValidationBadge();
     renderTransactionTicker();
@@ -424,6 +436,9 @@ function getPaperFillStats(sym, monthStartMs = 0) {
     // switch doesn't hit the early-exit guard in handleSymbolSelect.
     activeSym = '';
     pendingDatasetSymbol = '';
+    if (usedFallback) {
+      console.warn('[FALLBACK] Symbol dropdown populated from symbols.json. Some features may be limited.');
+    }
     console.log('[DEBUG] loadSymbolsAndInit complete');
   }
 

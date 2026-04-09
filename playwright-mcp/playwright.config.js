@@ -1,5 +1,4 @@
-# Playwright configuration for MCP dashboard testing
-# See https://playwright.dev/docs/test-configuration
+
 
 module.exports = {
   testDir: './',
@@ -7,7 +6,7 @@ module.exports = {
   retries: 0,
   use: {
     headless: true,
-    baseURL: 'http://localhost:3000',
+    baseURL: 'https://rcaldwell67.github.io/pinescripts',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
   },
