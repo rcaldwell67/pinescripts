@@ -11,6 +11,6 @@
     "sql.js": "^1.14.1"
   },
   "devDependencies": {
-    "@playwright/test": "^1.58.2"
+    "@playwright/test": "^1.59.1"
   }
 }
