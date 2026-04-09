@@ -2,13 +2,15 @@ import React, { useMemo } from "react";
 
 export default function TradeGapAnalysis({ trades }) {
   // trades: array of { symbol, version, mode, entry_time }
-  // Compute gaps by symbol, version, mode
+  // Only use version v6
   const results = useMemo(() => {
     if (!Array.isArray(trades)) return [];
+    // Filter to only v6
+    const v6trades = trades.filter(t => t.version === 'v6');
     // Group by symbol, version, mode
     const groups = new Map();
     const symbolDatesByMode = new Map();
-    for (const r of trades) {
+    for (const r of v6trades) {
       const key = `${r.symbol}||${r.version}||${r.mode}`;
       if (!groups.has(key)) groups.set(key, { symbol: r.symbol, version: r.version, mode: r.mode, dates: [] });
       const raw = String(r.entry_time || '').trim();
