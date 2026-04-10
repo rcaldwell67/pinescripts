@@ -1,3 +1,99 @@
+/* === Inline Styles Refactor: Modals and Content === */
+.ml-auto { margin-left: auto; }
+.mr-6 { margin-right: 6px; }
+.mr-8 { margin-right: 8px; }
+.maxh-600 { max-height: 600px; }
+.maxh-640 { max-height: 640px; }
+.ovy-auto { overflow-y: auto; }
+.c-muted { color: var(--muted); }
+.fs-12 { font-size: 12px; }
+.mb-10 { margin-bottom: 10px; }
+.d-none { display: none !important; }
+/* === Inline Styles Refactor: Dashboard Controls and Notices === */
+.mt-10 { margin-top: 10px; }
+.d-none { display: none !important; }
+.ml-12 { margin-left: 12px; }
+.plr-10 { padding: 4px 10px; }
+.ml-24 { margin-left: 24px; }
+.c-accent { color: #58a6ff; }
+.fs-13 { font-size: 13px; }
+.fw-600 { font-weight: 600; }
+.c-orange { color: #ffa657; }
+.fw-700 { font-weight: 700; }
+/* === Inline Styles Refactor: Paper Source, Simulation Scope, Spans, etc. === */
+.d-none { display: none !important; }
+.fs-12 { font-size: 12px; }
+.c-muted { color: var(--muted); }
+.fw-600 { font-weight: 600; }
+.c-green { color: #3fb950; }
+.fw-700 { font-weight: 700; }
+.ml-10 { margin-left: 10px; }
+.mt-10 { margin-top: 10px; }
+.flex-wrap { flex-wrap: wrap; }
+.gap-8 { gap: 8px; }
+.flex { display: flex; }
+.ai-center { align-items: center; }
+.ml-24 { margin-left: 24px; }
+.c-accent { color: var(--accent); }
+.fs-13 { font-size: 13px; }
+.c-orange { color: #ffa657; }
+.fw-700 { font-weight: 700; }
+.mb-16 { margin-bottom: 16px; }
+.mb-12 { margin-bottom: 12px; }
+.jc-between { justify-content: space-between; }
+.gap-10 { gap: 10px; }
+.gap-12 { gap: 12px; }
+.jc-center { justify-content: center; }
+.ai-baseline { align-items: baseline; }
+.o-4 { opacity: 0.4; }
+.bg-58a6ff { background: #58a6ff; }
+.bg-ffa657 { background: #ffa657; }
+.bg-f85149 { background: #f85149; }
+.bg-3fb950 { background: #3fb950; }
+.fs-11 { font-size: 11px; }
+.fs-14 { font-size: 14px; }
+.fw-700 { font-weight: 700; }
+.mt-12 { margin-top: 12px; }
+.maxh-600 { max-height: 600px; }
+.ovy-auto { overflow-y: auto; }
+/* === Dashboard Inline Styles Refactor === */
+.dataViewsCard-debug {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  background: rgba(255,0,0,0.08) !important;
+  border: 2px solid red !important;
+}
+.mr-8 { margin-right: 8px; }
+.ml-10 { margin-left: 10px; }
+.w-140 { width: 140px; }
+.ml-4 { margin-left: 4px; }
+.plr-12 { padding: 4px 12px; }
+.br-6 { border-radius: 6px; }
+.b-accent { border: 1px solid var(--border); }
+.bg-accent { background: var(--accent); }
+.c-white { color: #fff; }
+.fs-12 { font-size: 12px; }
+.cp { cursor: pointer; }
+.b-red { border: 1px solid #f85149; }
+.bg-red { background: #f85149; }
+.o-4 { opacity: 0.4; }
+.d-none { display: none !important; }
+.ml-8 { margin-left: 8px; }
+.ai-center { align-items: center; }
+.gap-10 { gap: 10px; }
+.c-muted { color: var(--muted); }
+.fw-600 { font-weight: 600; }
+.fs-13 { font-size: 13px; }
+.ml-12 { margin-left: 12px; }
+.fw-700 { font-weight: 700; }
+.c-green { color: #3fb950; }
+.bg-green { background: #3fb950; }
+.ml-24 { margin-left: 24px; }
+.c-orange { color: #ffa657; }
+.bg-orange { background: #ffa657; }
+.mt-10 { margin-top: 10px; }
+.fw-700 { font-weight: 700; }
 /* Debug: Ensure parent container is visible and sized */
 #cards, .cards {
   min-height: 200px !important;

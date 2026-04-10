@@ -26,10 +26,13 @@
 </header>
 <main>
   <div class="tabs" id="tabs"></div>
+  <div class="panel" id="cmpTablePanel">
+    <table id="cmpTable" class="cmp"></table>
+  </div>
   <div class="cards" id="cards">
-    <div class="card full-width" id="dataViewsCard" style="display:block !important; visibility:visible !important; opacity:1 !important; background:rgba(255,0,0,0.08) !important; border:2px solid red !important;">
+    <div class="card full-width dataViewsCard-debug" id="dataViewsCard">
       <div class="sym-switcher">
-        <label for="symbolSelect" style="margin-right:8px;">Symbol:</label>
+        <label for="symbolSelect" class="mr-8">Symbol:</label>
         <select id="symbolSelect" class="tx-select">
           <option value="">Select...</option>
           <option value="AAPL">AAPL</option>
@@ -38,13 +41,13 @@
           <option value="SPY">SPY</option>
           <option value="TSLA">TSLA</option>
         </select>
-        <select id="alpacaSymbolSelect" class="tx-select" style="margin-left:10px; width:140px;" disabled>
+        <select id="alpacaSymbolSelect" class="tx-select ml-10 w-140" disabled>
           <option value="">Refresh to load...</option>
         </select>
-        <div id="alpacaTypeFilters" style="display:none; margin-left:8px; align-items:center; gap:10px; font-size:12px; color:var(--muted);"></div>
-        <button id="loadAlpacaSymbolsBtn" style="margin-left:4px; padding:4px 12px; border-radius:6px; border:1px solid var(--border); background:var(--accent); color:#fff; font-size:12px; cursor:pointer;" title="Refresh available symbols from local cache">Refresh</button>
-        <button id="addSymbolBtn" style="margin-left:4px; padding:4px 12px; border-radius:6px; border:1px solid var(--border); background:var(--accent); color:#fff; font-size:12px; cursor:pointer;">Add</button>
-        <button id="removeSymbolBtn" disabled style="margin-left:4px; padding:4px 12px; border-radius:6px; border:1px solid #f85149; background:#f85149; color:#fff; font-size:12px; cursor:pointer; opacity:0.4;" title="Remove selected symbol from database">Remove</button>
+        <div id="alpacaTypeFilters" class="d-none ml-8 ai-center gap-10 fs-12 c-muted"></div>
+        <button id="loadAlpacaSymbolsBtn" class="ml-4 plr-12 br-6 b-accent bg-accent c-white fs-12 cp" title="Refresh available symbols from local cache">Refresh</button>
+        <button id="addSymbolBtn" class="ml-4 plr-12 br-6 b-accent bg-accent c-white fs-12 cp">Add</button>
+        <button id="removeSymbolBtn" disabled class="ml-4 plr-12 br-6 b-red bg-red c-white fs-12 cp o-4" title="Remove selected symbol from database">Remove</button>
       </div>
       <div class="mode-switcher" id="datasetModeButtons" aria-label="Trading mode selector">
         <button type="button" class="mode-btn active" data-mode="backtest">Backtesting</button>
@@ -52,23 +55,23 @@
         <button type="button" class="mode-btn" data-mode="paper-rt">Real-Time Paper Trading</button>
         <button type="button" class="mode-btn" data-mode="live">Live Trading</button>
       </div>
-      <div id="paperSourceBar" class="paper-source-bar" style="display:none;" aria-label="Paper data source">
-        <span style="font-size:12px;color:var(--muted);font-weight:600;">View:</span>
-        <span style="font-size:12px;color:#3fb950;font-weight:700;">Simulation (default)</span>
+      <div id="paperSourceBar" class="paper-source-bar d-none" aria-label="Paper data source">
+        <span class="fs-12 c-muted fw-600">View:</span>
+        <span class="fs-12 c-green fw-700">Simulation (default)</span>
       </div>
-      <div id="simulationScopeBar" class="paper-source-bar" style="display:none;" aria-label="Simulation data scope toggle">
-        <span style="font-size:12px;color:var(--muted);font-weight:600;">Simulation Scope:</span>
+      <div id="simulationScopeBar" class="paper-source-bar d-none" aria-label="Simulation data scope toggle">
+        <span class="fs-12 c-muted fw-600">Simulation Scope:</span>
         <button type="button" class="paper-src-btn sim-scope-btn active" data-sim-scope="historical">Historical</button>
         <button type="button" class="paper-src-btn sim-scope-btn" data-sim-scope="same_day">Same Day</button>
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">
+      <div class="flex flex-wrap gap-8 mt-10">
         <button id="openAccountInfoBtn" class="mode-btn" type="button" title="View Alpaca account details">Account Info</button>
         <button id="openDailyTransactionsBtn" class="mode-btn" type="button" title="View today's trades and fills">Daily Transactions</button>
         <button id="openTradeGapBtn" class="mode-btn" type="button" title="Longest gap between trades per symbol (backtest + paper)">Trade Gap Analysis</button>
         <button id="openGuidelineAuditBtn" class="mode-btn" type="button" title="Audit current symbol/version guideline compliance from DB">Guideline Audit</button>
         <button id="openLiveSymbolControlBtn" class="mode-btn" type="button" title="Enable or disable live trading per symbol">Live Symbol Control</button>
       </div>
-      <div id="refreshControls" class="refresh-controls" aria-label="Dashboard refresh controls" style="margin-top:10px;">
+      <div id="refreshControls" class="refresh-controls mt-10" aria-label="Dashboard refresh controls">
         <button id="reloadDashboardBtn" class="mode-btn" type="button" title="Reload dashboard data without refreshing the page">Reload Data</button>
         <label for="autoRefreshSelect">Auto-refresh</label>
         <select id="autoRefreshSelect" class="tx-select" title="Automatically reload dashboard data at a fixed interval">
@@ -83,7 +86,7 @@
           <span id="autoRefreshStatusText">Last auto refresh: Off</span>
         </span>
       </div>
-      <div id="balanceBar" style="margin-top:10px;">
+      <div id="balanceBar" class="mt-10">
         <div class="bal-item">
           <span class="bal-label">Beginning Balance</span>
           <span class="bal-value neutral" id="beginningBalanceVal">$1,000</span>
@@ -109,7 +112,7 @@
           <span class="bal-value" id="totalEquityAllSymbolsVal">-</span>
         </div>
       </div>
-      <div id="transactionTicker" class="ticker-shell" aria-live="polite" style="margin-top:10px;">
+      <div id="transactionTicker" class="ticker-shell mt-10" aria-live="polite">
         <div class="ticker-label">Latest Transactions</div>
         <div class="ticker-viewport">
           <div id="transactionTickerTrack" class="ticker-track">
@@ -118,10 +121,10 @@
         </div>
       </div>
       <span id="lastUpdated"></span>
-      <button id="dailyValidationBadge" class="mode-btn" type="button" style="display:none; margin-left:12px; padding:4px 10px;" title="Open today's validation summary">Validation: -</button>
+      <button id="dailyValidationBadge" class="mode-btn d-none ml-12 plr-10" type="button" title="Open today's validation summary">Validation: -</button>
       <div id="dailyValidationPopover" class="validation-popover" aria-hidden="true" role="status"></div>
-      <span id="workflowStatus" style="margin-left:24px;color:#58a6ff;font-size:13px;font-weight:600;"></span>
-      <div id="noDataNotice" style="display:none;margin-left:24px;color:#ffa657;font-size:13px;font-weight:600;">
+      <span id="workflowStatus" class="ml-24 c-accent fs-13 fw-600"></span>
+      <div id="noDataNotice" class="d-none ml-24 c-orange fs-13 fw-700">
         No Data Is Available For That Selection
       </div>
     </div>
@@ -262,11 +265,11 @@
   <div class="account-modal-card" role="dialog" aria-modal="true" aria-labelledby="tradeGapModalTitle">
     <div class="account-modal-head">
       <h2 id="tradeGapModalTitle">Trade Gap Analysis</h2>
-      <span style="margin-left:10px; color:var(--muted); font-size:12px;">Longest gap between consecutive trades per symbol &mdash; backtest &amp; simulated paper</span>
+      <span class="ml-10 c-muted fs-12">Longest gap between consecutive trades per symbol &mdash; backtest &amp; simulated paper</span>
       <button id="closeTradeGapBtn" class="account-modal-close" type="button" aria-label="Close trade gap modal">x</button>
     </div>
     <div class="account-modal-body">
-      <div id="tradeGapContent" style="max-height:600px; overflow-y:auto;">
+      <div id="tradeGapContent" class="maxh-600 ovy-auto">
         <p>Loading&hellip;</p>
       </div>
     </div>
@@ -277,14 +280,14 @@
   <div class="account-modal-card" role="dialog" aria-modal="true" aria-labelledby="dailyTransactionsModalTitle">
     <div class="account-modal-head">
       <h2 id="dailyTransactionsModalTitle">Daily Transactions</h2>
-      <span id="dailyTransactionsDateLabel" style="margin-left:10px; color:var(--muted); font-size:12px;">UTC -</span>
-      <button id="dailyTransactionsTodayBtn" class="mode-btn" type="button" style="margin-left:auto; margin-right:6px; padding:4px 10px;" title="Show current UTC date">Today</button>
-      <button id="dailyTransactionsYesterdayBtn" class="mode-btn" type="button" style="margin-right:6px; padding:4px 10px;" title="Show previous UTC date">Yesterday</button>
-      <button id="refreshDailyTransactionsBtn" class="mode-btn" type="button" style="margin-right:8px; padding:4px 10px;" title="Refresh selected date transaction and validation summary">Refresh</button>
+      <span id="dailyTransactionsDateLabel" class="ml-10 c-muted fs-12">UTC -</span>
+      <button id="dailyTransactionsTodayBtn" class="mode-btn ml-auto mr-6 plr-10" type="button" title="Show current UTC date">Today</button>
+      <button id="dailyTransactionsYesterdayBtn" class="mode-btn mr-6 plr-10" type="button" title="Show previous UTC date">Yesterday</button>
+      <button id="refreshDailyTransactionsBtn" class="mode-btn mr-8 plr-10" type="button" title="Refresh selected date transaction and validation summary">Refresh</button>
       <button id="closeDailyTransactionsBtn" class="account-modal-close" type="button" aria-label="Close daily transactions modal">x</button>
     </div>
     <div class="account-modal-body">
-      <div id="dailyTransactionsContent" style="max-height: 600px; overflow-y: auto;">
+      <div id="dailyTransactionsContent" class="maxh-600 ovy-auto">
         <p>Loading transactions...</p>
       </div>
     </div>
@@ -295,11 +298,11 @@
   <div class="account-modal-card" role="dialog" aria-modal="true" aria-labelledby="liveSymbolControlModalTitle">
     <div class="account-modal-head">
       <h2 id="liveSymbolControlModalTitle">Live Symbol Control</h2>
-      <span style="margin-left:10px; color:var(--muted); font-size:12px;">Enable or disable live trading per symbol via issue automation</span>
+      <span class="ml-10 c-muted fs-12">Enable or disable live trading per symbol via issue automation</span>
       <button id="closeLiveSymbolControlBtn" class="account-modal-close" type="button" aria-label="Close live symbol control modal">x</button>
     </div>
     <div class="account-modal-body">
-      <div id="liveSymbolControlContent" style="max-height: 600px; overflow-y: auto;">
+      <div id="liveSymbolControlContent" class="maxh-600 ovy-auto">
         <p>Loading symbols...</p>
       </div>
     </div>
@@ -310,19 +313,19 @@
   <div class="account-modal-card" role="dialog" aria-modal="true" aria-labelledby="guidelineAuditModalTitle">
     <div class="account-modal-head">
       <h2 id="guidelineAuditModalTitle">Guideline Audit</h2>
-      <div style="display:flex;align-items:center;gap:6px;margin-left:10px;">
+      <div class="flex ai-center gap-6 ml-10">
         <button id="guidelineTabStatus" class="mode-btn active" type="button" data-guideline-tab="status">Audit Status</button>
         <button id="guidelineTabCompare" class="mode-btn" type="button" data-guideline-tab="compare">vs. Dashboard Data</button>
       </div>
       <button id="closeGuidelineAuditBtn" class="account-modal-close" type="button" aria-label="Close guideline audit modal">x</button>
     </div>
     <div class="account-modal-body">
-      <div id="guidelineAuditMeta" style="font-size:12px; color:var(--muted); margin-bottom:10px;"></div>
-      <div id="guidelineAuditContent" style="max-height: 640px; overflow-y: auto;">
+      <div id="guidelineAuditMeta" class="fs-12 c-muted mb-10"></div>
+      <div id="guidelineAuditContent" class="maxh-640 ovy-auto">
         <p>Loading guideline audit...</p>
       </div>
-      <div id="guidelineCompareContent" style="display:none; max-height: 640px; overflow-y: auto;">
-        <p style="color:var(--muted);">Loading comparison...</p>
+      <div id="guidelineCompareContent" class="d-none maxh-640 ovy-auto">
+        <p class="c-muted">Loading comparison...</p>
       </div>
     </div>
   </div>

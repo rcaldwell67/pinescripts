@@ -444,7 +444,29 @@ function getPaperFillStats(sym, monthStartMs = 0) {
     }
     hideDbError();
     window.SYMBOLS = symbols;
+    // Rebuild INSTRUMENTS after loading symbols
+    INSTRUMENTS = buildInstruments(symbols);
+
+    // Defensive: ensure activeSym is a valid key in INSTRUMENTS
+    const keys = Object.keys(INSTRUMENTS);
+    if (!activeSym || !INSTRUMENTS[activeSym]) {
+      if (keys.length > 0) {
+        console.warn('[WARN] activeSym', activeSym, 'not found in INSTRUMENTS. Defaulting to', keys[0]);
+        activeSym = keys[0];
+      } else {
+        console.error('[ERROR] No valid symbols found in INSTRUMENTS after DB load.');
+        return;
+      }
+    }
     buildSymbolSwitcher(symbols);
+    // Always trigger dashboard render after setting activeSym
+    // Ensure loaded[activeSym] is populated with real data before rendering
+    if (activeSym && typeof handleSymbolSelect === 'function') {
+      handleSymbolSelect(activeSym, window._SQL_DB);
+    } else {
+      buildTabs();
+      render();
+    }
 
     // --- Restore symbol dropdown population logic ---
     const symbolSelect = document.getElementById('symbolSelect');
@@ -488,7 +510,12 @@ function getPaperFillStats(sym, monthStartMs = 0) {
     renderTransactionTicker();
     // Reset active selection so re-selecting the same symbol after a dataset
     // switch doesn't hit the early-exit guard in handleSymbolSelect.
-    activeSym = '';
+    if (!activeSym && symbols.length > 0) {
+      activeSym = symbols[0];
+      if (symbolSelect) symbolSelect.value = activeSym;
+      // Trigger initial dashboard load for the first symbol
+      handleSymbolSelect(activeSym, window._SQL_DB);
+    }
     pendingDatasetSymbol = '';
     // --- PATCH: If no symbols available, show error and keep dashboard visible ---
     const noDataNotice = document.getElementById('noDataNotice');
@@ -2689,6 +2716,10 @@ function resultTag(r) {
 function destroyChart(key) { if (charts[key]) { charts[key].destroy(); delete charts[key]; } }
 
 function buildTabs() {
+  if (!INSTRUMENTS[activeSym] || !INSTRUMENTS[activeSym].versions) {
+    console.error('[ERROR] buildTabs: INSTRUMENTS[activeSym] or its versions is undefined for', activeSym);
+    return;
+  }
   const vers = INSTRUMENTS[activeSym].versions;
   const tabEl = document.getElementById('tabs');
   tabEl.innerHTML = '';
@@ -4262,6 +4293,10 @@ document.getElementById('chartRangeBtns')?.addEventListener('click', e => {
 
 function renderComparisonTable() {
   const el=document.getElementById('cmpTable');
+  if (!el) {
+    console.error('[ERROR] renderComparisonTable: cmpTable element not found');
+    return;
+  }
   const vers=INSTRUMENTS[activeSym].versions;
   const vkeys=Object.keys(vers);
   const items=vkeys.map(v=>{ const r=filterPaperRows(loaded[activeSym][v]||[]); return { v, m: r.length ? calcMetrics(r) : null, cfg:vers[v] }; });
@@ -4344,7 +4379,12 @@ function updateBalanceBar(rows) {
 }
 
 function render() {
+  if (!INSTRUMENTS[activeSym] || !INSTRUMENTS[activeSym].versions) {
+    console.error('[ERROR] render: INSTRUMENTS[activeSym] or its versions is undefined for', activeSym);
+    return;
+  }
   const vers=INSTRUMENTS[activeSym].versions;
+  if (!loaded[activeSym]) loaded[activeSym] = {};
   const rawRows=activeTab==='all'?Object.values(loaded[activeSym]).flat():(loaded[activeSym][activeTab]||[]);
   const rows=filterPaperRows(rawRows);
   updateDatasetSwitcher();
@@ -4510,6 +4550,8 @@ function handleSymbolSelect(newSym, dbInstance) {
 }
 
 
+    // Ensure vers is defined for this block
+    const vers = (INSTRUMENTS && INSTRUMENTS[activeSym]) ? INSTRUMENTS[activeSym].versions : {};
     const buildSummaryRows = (metrics, notes, timestamp, version) => {
       const startTime = metrics.first_trade_date || timestamp || null;
       const endTime = metrics.last_trade_date || metrics.first_trade_date || timestamp || null;
@@ -4596,6 +4638,8 @@ function handleSymbolSelect(newSym, dbInstance) {
         });
       }
     }
+    if (!loaded) loaded = {};
+    if (!loaded[activeSym]) loaded[activeSym] = {};
     Object.keys(vers).forEach(v => {
       loaded[activeSym][v] = byVersion[v] || [];
     });
@@ -4611,8 +4655,13 @@ function handleSymbolSelect(newSym, dbInstance) {
       hideDashboardData();
       if (noDataNotice) noDataNotice.style.display = '';
     }
-    buildTabs();
-    render();
+    // Only build tabs and render if activeSym is valid
+    if (activeSym && INSTRUMENTS[activeSym] && INSTRUMENTS[activeSym].versions) {
+      buildTabs();
+      render();
+    } else {
+      console.warn('[WARN] Skipping buildTabs/render: activeSym or INSTRUMENTS[activeSym] invalid:', activeSym);
+    }
     updateLastUpdated();
     renderTransactionTicker();
     updateModeButtonStates();
