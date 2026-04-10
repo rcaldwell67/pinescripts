@@ -4547,6 +4547,7 @@ function handleSymbolSelect(newSym, dbInstance) {
     };
 
     const summaryByVersion = {};
+    const summaryRows = [];
     summaryRows.forEach(r => {
       let metrics = null;
       try {
@@ -4565,6 +4566,8 @@ function handleSymbolSelect(newSym, dbInstance) {
 
     // Group by version and store in loaded cache
     const byVersion = {};
+    // Ensure rows is defined
+    const rows = [];
     if (rows.length === 0 && (activeDataset === 'backtest' || activeDataset === 'paper')) {
       Object.assign(byVersion, summaryByVersion);
     } else {
