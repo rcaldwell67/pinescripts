@@ -4444,30 +4444,6 @@ function handleSymbolSelect(newSym, dbInstance) {
   renderTransactionTicker();
   updateModeButtonStates();
 }
-    updateModeButtonStates();
-    const removeBtn = document.getElementById('removeSymbolBtn');
-    if (removeBtn) { removeBtn.disabled = true; removeBtn.style.opacity = '0.4'; }
-    renderTransactionTicker();
-    return;
-  }
-  if (newSym === activeSym) return;
-  activeSym = newSym;
-  resetTransactionFilters();
-  activeTab = 'all'; tradeTablePage = 1; txPage = 1;
-  logsPage = 1;
-  const removeBtn = document.getElementById('removeSymbolBtn');
-  if (removeBtn) { removeBtn.disabled = false; removeBtn.style.opacity = '1'; }
-  if (!loaded[activeSym]) loaded[activeSym] = {};
-  const vers = INSTRUMENTS[activeSym]?.versions;
-  if (!vers) {
-    hideDashboardData();
-    updateModeButtonStates();
-    renderTransactionTicker();
-    return;
-  }
-  // Use dbInstance if provided, else window._SQL_DB
-  const db = dbInstance || window._SQL_DB;
-  console.log('[DEBUG] DB instance in handleSymbolSelect:', db);
   if (!db) {
     console.error('No SQL DB instance available');
     renderTransactionTicker();
