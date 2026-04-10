@@ -341,7 +341,6 @@ function getPaperFillStats(sym, monthStartMs = 0) {
           console.log('[DEBUG] Fetch response for', cacheBustedPath + ':', dbReq);
           if (dbReq.ok) {
             dbPathUsed = dbPath;
-            break;
           }
         } catch (e) {
           console.error('[ERROR] Exception fetching', dbPath, e);
@@ -352,6 +351,7 @@ function getPaperFillStats(sym, monthStartMs = 0) {
       console.log('[DEBUG] DB file loaded from', dbPathUsed, ', initializing sql.js...');
       // Initialize sql.js
       const SQL = await window.initSqlJs({ locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.8.0/dist/${file}` });
+
       db = new SQL.Database(new Uint8Array(dbBuffer));
       console.log('[DEBUG] SQL.js initialized, DB instance created:', db);
       // Query the symbols table
@@ -4444,61 +4444,6 @@ function handleSymbolSelect(newSym, dbInstance) {
   renderTransactionTicker();
   updateModeButtonStates();
 }
-  if (!db) {
-    console.error('No SQL DB instance available');
-    renderTransactionTicker();
-    return;
-  }
-    // Prefer trade-level rows for every dataset. Symbol formats vary across
-    // sources (e.g. BTC/USD vs BTC_USD), so query common aliases.
-    const symbolAliases = getSymbolAliases(activeSym);
-    const normalizedSymbol = getNormalizedSymbolKey(activeSym);
-    const modeFilter = activeDataset === 'backtest' ? 'backtest' : (activeDataset === 'paper' ? 'paper' : 'live');
-    const requireBrokerRows = activeDataset === 'live' || (activeDataset === 'paper' && paperTradeSourceFilter === 'realtime');
-    const linkTable = modeFilter === 'live' ? 'live_order_trade_links' : 'paper_order_trade_links';
-    const hasLinkTable = !requireBrokerRows || sqliteTableExists(db, linkTable);
-    let rows = [];
-    try {
-      if (!hasLinkTable) {
-        rows = [];
-      } else {
-        const sourceClause = activeDataset === 'paper' && paperTradeSourceFilter === 'realtime'
-          ? "AND COALESCE(LOWER(source), '') = 'realtime'"
-          : '';
-        const brokerClause = requireBrokerRows
-          ? `AND EXISTS (SELECT 1 FROM ${linkTable} l WHERE l.trade_id = trades.id)`
-          : '';
-
-        const stmt = db.prepare(
-          `SELECT * FROM trades
-           WHERE REPLACE(REPLACE(REPLACE(REPLACE(UPPER(symbol), '/', ''), '_', ''), '-', ''), ' ', '') = ?
-             AND mode = ?
-             ${sourceClause}
-             ${brokerClause}
-           ORDER BY entry_time`
-        );
-        stmt.bind([normalizedSymbol, modeFilter]);
-        while (stmt.step()) {
-          rows.push(stmt.getAsObject());
-        }
-        stmt.free();
-      }
-      if (requireBrokerRows) {
-        rows = rows.filter(r => String(r.source || '').toLowerCase() === 'realtime');
-      }
-    } catch (e) {
-      console.error('Error querying trades table:', e);
-    }
-    console.log('[DEBUG] trade rows fetched for', activeSym, 'aliases:', symbolAliases, 'normalized:', normalizedSymbol, 'brokerOnly:', requireBrokerRows, 'count:', rows.length, rows);
-
-    // Summary fallback: use result summaries for versions missing trade rows.
-    let summaryRows = [];
-    if (activeDataset === 'backtest' || activeDataset === 'paper') {
-      try {
-        const summaryTable = activeDataset === 'backtest' ? 'backtest_results' : 'paper_trading_results';
-        const summaryNotesFilter = activeDataset === 'backtest'
-          ? "AND notes LIKE '%backtest summary%'"
-          : "AND notes LIKE '%paper trading summary%'";
         const stmt = db.prepare(
           `SELECT metrics, notes, timestamp FROM ${summaryTable}
            WHERE REPLACE(REPLACE(REPLACE(REPLACE(UPPER(symbol), '/', ''), '_', ''), '-', ''), ' ', '') = ?
@@ -4510,11 +4455,7 @@ function handleSymbolSelect(newSym, dbInstance) {
           summaryRows.push(stmt.getAsObject());
         }
         stmt.free();
-      } catch (e) {
-        console.error('Error querying summary table:', e);
-      }
-      console.log('[DEBUG] summary rows fetched for', activeSym, 'dataset:', activeDataset, 'count:', summaryRows.length);
-    }
+
 
     const buildSummaryRows = (metrics, notes, timestamp, version) => {
       const startTime = metrics.first_trade_date || timestamp || null;
@@ -4619,7 +4560,6 @@ function handleSymbolSelect(newSym, dbInstance) {
     updateLastUpdated();
     renderTransactionTicker();
     updateModeButtonStates();
-}
 
 // --- Ensure loadSymbolsAndInit is called at script end ---
 hideDashboardData();
