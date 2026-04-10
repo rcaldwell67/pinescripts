@@ -36,9 +36,6 @@ function buildInstruments(symbols) {
         label: vt.label,
         tf: vt.tf,
         color: vt.color,
-        file: `data/${fileSym}/${vt.key}_trades.csv`,
-        paperFile: `data/${fileSym}/${vt.key}_trades_paper.csv`,
-        liveFile: `data/${fileSym}/${vt.key}_trades_live.csv`,
         pnlCol: 'dollar_pnl',
         equityCol: 'equity',
         resultCol: vt.key === 'v6' ? 'exit_reason' : 'result',
@@ -47,12 +44,6 @@ function buildInstruments(symbols) {
         exitCol: 'exit',
         entryTimeCol: 'entry_time',
         exitTimeCol: 'exit_time',
-        ...(vt.key === 'v1' || vt.key === 'v2' ? {
-          backtestVariants: {
-            main: { label: 'Main', file: `data/${fileSym}/${vt.key}_trades.csv` },
-            '12mo': { label: '12mo', file: `data/${fileSym}/${vt.key}_trades_12mo.csv` }
-          }
-        } : {}),
         ...(vt.key === 'v6' ? { hasYear: true } : {})
       };
     });
@@ -451,8 +442,8 @@ function getPaperFillStats(sym, monthStartMs = 0) {
     const keys = Object.keys(INSTRUMENTS);
     if (!activeSym || !INSTRUMENTS[activeSym]) {
       if (keys.length > 0) {
-        console.warn('[WARN] activeSym', activeSym, 'not found in INSTRUMENTS. Defaulting to', keys[0]);
         activeSym = keys[0];
+        console.warn('[WARN] activeSym not found in INSTRUMENTS. Resetting to', activeSym);
       } else {
         console.error('[ERROR] No valid symbols found in INSTRUMENTS after DB load.');
         return;
@@ -2674,26 +2665,14 @@ function getPaperFillStats(sym, monthStartMs = 0) {
 
   function getVersionLabel(sym, ver) {
     const cfg = INSTRUMENTS[sym].versions[ver];
-    if (activeMode !== 'backtest' || !cfg.backtestVariants) return cfg.label;
-    const variant = cfg.backtestVariants[getSelectedBacktestVariant(sym, ver)];
-    return variant && variant.label !== 'Main' ? `${cfg.label} - ${variant.label}` : cfg.label;
+    // No backtestVariants; just return label
+    return cfg.label;
   }
 
   function updateDatasetSwitcher() {
     const wrap = document.getElementById('datasetSwitcher');
-    const versionConfigs = INSTRUMENTS[activeSym]?.versions || {};
-    const hasVariants = Object.values(versionConfigs).some(cfg => Boolean(cfg && cfg.backtestVariants));
-    const show = activeMode === 'backtest' && hasVariants;
-    if (wrap) wrap.style.display = show ? 'flex' : 'none';
-    if (show) {
-      for (const version of VERSION_KEYS) {
-        const select = document.getElementById(`${version}DatasetSelect`);
-        if (!select) continue;
-        const cfg = versionConfigs[version];
-        if (!cfg || !cfg.backtestVariants) continue;
-        select.value = getSelectedBacktestVariant(activeSym, version);
-      }
-    }
+    // No backtestVariants; always hide variant selectors
+    if (wrap) wrap.style.display = 'none';
   }
 const fmt$   = n => (n>=0?'+$':'-$') + Math.abs(n).toFixed(2);
 const fmtPct = n => (n>=0?'+':'') + n.toFixed(2) + '%';
@@ -4510,20 +4489,30 @@ function setDashboardAutoRefresh(seconds) {
 
 
 function hideDashboardData() {
-  document.getElementById('balanceBar').style.display = 'none';
-  document.getElementById('lastUpdated').style.display = 'none';
-  document.getElementById('tabs').style.display = 'none';
-  document.getElementById('cards').style.display = 'none';
+  // PATCH: Force dashboard to always remain visible
+  //document.getElementById('balanceBar').style.display = '';
+  //document.getElementById('lastUpdated').style.display = '';
+  //document.getElementById('tabs').style.display = '';
+  //document.getElementById('cards').style.display = '';
   const panels = document.querySelectorAll('.panel');
-  panels.forEach(p => p.style.display = 'none');
+  //panels.forEach(p => p.style.display = '');
+  // Optionally, remove d-none class if present
+  //panels.forEach(p => p.classList.remove('d-none'));
+  //document.body.classList.remove('d-none');
+  //document.querySelectorAll('main, .cards, .tabs').forEach(e => e.classList.remove('d-none'));
 }
 function showDashboardData() {
-  document.getElementById('balanceBar').style.display = '';
-  document.getElementById('lastUpdated').style.display = '';
-  document.getElementById('tabs').style.display = '';
-  document.getElementById('cards').style.display = '';
+  // PATCH: Force dashboard to always remain visible
+  //document.getElementById('balanceBar').style.display = '';
+  //document.getElementById('lastUpdated').style.display = '';
+  //document.getElementById('tabs').style.display = '';
+  //document.getElementById('cards').style.display = '';
   const panels = document.querySelectorAll('.panel');
-  panels.forEach(p => p.style.display = '');
+  //panels.forEach(p => p.style.display = '');
+  // Optionally, remove d-none class if present
+  //panels.forEach(p => p.classList.remove('d-none'));
+  //document.body.classList.remove('d-none');
+  //document.querySelectorAll('main, .cards, .tabs').forEach(e => e.classList.remove('d-none'));
 }
 
 let _pendingSymbolSelect = null;
@@ -4680,7 +4669,7 @@ async function handleBacktestVariantChange(ver, value) {
   if (!activeSym) return;
   backtestSelections[activeSym][ver] = value;
   if (activeMode !== 'backtest') return;
-  loaded[activeSym][ver] = await loadCSV(activeSym, ver);
+  // No CSV loading; trigger dashboard update from DB only
   buildTabs();
   render();
   updateLastUpdated();

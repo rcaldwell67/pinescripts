@@ -44,7 +44,7 @@
         <select id="alpacaSymbolSelect" class="tx-select ml-10 w-140" disabled>
           <option value="">Refresh to load...</option>
         </select>
-        <div id="alpacaTypeFilters" class="d-none ml-8 ai-center gap-10 fs-12 c-muted"></div>
+        <div id="alpacaTypeFilters" class="ml-8 ai-center gap-10 fs-12 c-muted"></div>
         <button id="loadAlpacaSymbolsBtn" class="ml-4 plr-12 br-6 b-accent bg-accent c-white fs-12 cp" title="Refresh available symbols from local cache">Refresh</button>
         <button id="addSymbolBtn" class="ml-4 plr-12 br-6 b-accent bg-accent c-white fs-12 cp">Add</button>
         <button id="removeSymbolBtn" disabled class="ml-4 plr-12 br-6 b-red bg-red c-white fs-12 cp o-4" title="Remove selected symbol from database">Remove</button>
@@ -55,11 +55,11 @@
         <button type="button" class="mode-btn" data-mode="paper-rt">Real-Time Paper Trading</button>
         <button type="button" class="mode-btn" data-mode="live">Live Trading</button>
       </div>
-      <div id="paperSourceBar" class="paper-source-bar d-none" aria-label="Paper data source">
+      <div id="paperSourceBar" class="paper-source-bar" aria-label="Paper data source">
         <span class="fs-12 c-muted fw-600">View:</span>
         <span class="fs-12 c-green fw-700">Simulation (default)</span>
       </div>
-      <div id="simulationScopeBar" class="paper-source-bar d-none" aria-label="Simulation data scope toggle">
+      <div id="simulationScopeBar" class="paper-source-bar" aria-label="Simulation data scope toggle">
         <span class="fs-12 c-muted fw-600">Simulation Scope:</span>
         <button type="button" class="paper-src-btn sim-scope-btn active" data-sim-scope="historical">Historical</button>
         <button type="button" class="paper-src-btn sim-scope-btn" data-sim-scope="same_day">Same Day</button>
@@ -121,10 +121,10 @@
         </div>
       </div>
       <span id="lastUpdated"></span>
-      <button id="dailyValidationBadge" class="mode-btn d-none ml-12 plr-10" type="button" title="Open today's validation summary">Validation: -</button>
+      <button id="dailyValidationBadge" class="mode-btn ml-12 plr-10" type="button" title="Open today's validation summary">Validation: -</button>
       <div id="dailyValidationPopover" class="validation-popover" aria-hidden="true" role="status"></div>
       <span id="workflowStatus" class="ml-24 c-accent fs-13 fw-600"></span>
-      <div id="noDataNotice" class="d-none ml-24 c-orange fs-13 fw-700">
+      <div id="noDataNotice" class="ml-24 c-orange fs-13 fw-700">
         No Data Is Available For That Selection
       </div>
     </div>
@@ -137,7 +137,7 @@
       </div>
       <div class="tx-filters">
         <!-- Version filter hidden for v6-only dashboard -->
-        <select id="txVerFilter" class="tx-select" style="display:none;"><option value="v6">v6 Only</option></select>
+        <select id="txVerFilter" class="tx-select"><option value="v6">v6 Only</option></select>
         <select id="txTfFilter" class="tx-select"><option value="all">All Timeframes</option></select>
         <select id="txActionFilter" class="tx-select"><option value="all">All Actions</option><option value="BUY">BUY</option><option value="SELL">SELL</option></select>
         <select id="txDirFilter" class="tx-select"><option value="all">All Directions</option><option value="long">Long</option><option value="short">Short</option></select>
@@ -196,7 +196,7 @@
       <canvas id="monthlyChart" aria-label="Monthly P&L chart" role="img">Monthly P&amp;L chart. Shows profit and loss by month.</canvas>
     </div>
   </div>
-  <div id="yearSection" style="display:none; margin-bottom:16px;">
+  <div id="yearSection" style="margin-bottom:16px;">
     <div class="panel chart-wrap tall">
       <h2 id="yearChartTitle">Year-by-Year Breakdown</h2>
       <canvas id="yearChart" aria-label="Year-by-year breakdown chart" role="img">Year-by-year breakdown chart. Shows annual performance for selected strategy/version.</canvas>
@@ -206,7 +206,7 @@
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
       <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
         <h2 style="margin-bottom:0;">Trade Log</h2>
-        <span class="tx-count" id="tradeRealtimeStatus" style="display:none;"></span>
+        <span class="tx-count" id="tradeRealtimeStatus"></span>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
         <div class="pg-size">
@@ -324,7 +324,7 @@
       <div id="guidelineAuditContent" class="maxh-640 ovy-auto">
         <p>Loading guideline audit...</p>
       </div>
-      <div id="guidelineCompareContent" class="d-none maxh-640 ovy-auto">
+      <div id="guidelineCompareContent" class="maxh-640 ovy-auto">
         <p class="c-muted">Loading comparison...</p>
       </div>
     </div>
