@@ -221,9 +221,12 @@ function sqliteTableExists(db, tableName) {
   if (!db || !tableName) return false;
   const safeName = String(tableName).replace(/'/g, "''");
   try {
+    console.log('[DB LOG] sqliteTableExists: checking for table', tableName);
     const res = db.exec(`SELECT name FROM sqlite_master WHERE type='table' AND name='${safeName}'`);
+    console.log('[DB LOG] sqliteTableExists result:', res);
     return Boolean(res.length && res[0].values && res[0].values.length);
   } catch (err) {
+    console.error('[DB LOG] sqliteTableExists error:', err);
     return false;
   }
 }
@@ -238,6 +241,7 @@ function getPaperFillStats(sym, monthStartMs = 0) {
   let mtdCount = 0;
   let lastTs = 0;
   try {
+    console.log('[DB LOG] getPaperFillStats: preparing statement for paper_fill_events');
     const stmt = db.prepare(`
       SELECT symbol, transaction_time
       FROM paper_fill_events
@@ -251,7 +255,9 @@ function getPaperFillStats(sym, monthStartMs = 0) {
       if (!monthStartMs || ts >= monthStartMs) mtdCount += 1;
     }
     stmt.free();
+    console.log('[DB LOG] getPaperFillStats: finished statement for paper_fill_events');
   } catch (err) {
+    console.error('[DB LOG] getPaperFillStats error:', err);
     // Table may not exist in older DB snapshots.
   }
 
@@ -326,6 +332,22 @@ function getPaperFillStats(sym, monthStartMs = 0) {
     let symbols = [];
     let db = null;
     let usedFallback = false;
+    let errorBanner = document.getElementById('dbErrorBanner');
+    if (!errorBanner) {
+      errorBanner = document.createElement('div');
+      errorBanner.id = 'dbErrorBanner';
+      errorBanner.style = 'display:none;position:fixed;top:0;left:0;width:100vw;z-index:9999;background:#f85149;color:#fff;padding:10px 20px;font-size:16px;font-weight:600;text-align:center;box-shadow:0 2px 8px #0003;';
+      document.body.prepend(errorBanner);
+    }
+    function showDbError(msg) {
+      errorBanner.textContent = '[DB ERROR] ' + msg;
+      errorBanner.style.display = '';
+    }
+    function hideDbError() {
+      errorBanner.textContent = '';
+      errorBanner.style.display = 'none';
+    }
+    hideDbError();
     try {
       // Fetch the SQLite database file with fallback logic
       const dbPaths = ['data/tradingcopilot.db', 'docs/data/tradingcopilot.db'];
@@ -341,24 +363,49 @@ function getPaperFillStats(sym, monthStartMs = 0) {
           console.log('[DEBUG] Fetch response for', cacheBustedPath + ':', dbReq);
           if (dbReq.ok) {
             dbPathUsed = dbPath;
+            break;
+          } else {
+            showDbError(`Fetch failed for ${cacheBustedPath} (status: ${dbReq.status} ${dbReq.statusText})`);
+            console.error('[ERROR] Fetch failed for', cacheBustedPath, 'status:', dbReq.status, dbReq.statusText);
           }
         } catch (e) {
+          showDbError(`Exception fetching ${dbPath}: ${e}`);
           console.error('[ERROR] Exception fetching', dbPath, e);
         }
       }
-      if (!dbReq || !dbReq.ok) throw new Error('Failed to fetch tradingcopilot.db');
+      if (!dbReq || !dbReq.ok) {
+        showDbError('All DB fetch attempts failed. No tradingcopilot.db could be loaded.');
+        console.error('[ERROR] All DB fetch attempts failed. dbReq:', dbReq);
+        throw new Error('Failed to fetch tradingcopilot.db');
+      }
       const dbBuffer = await dbReq.arrayBuffer();
-      console.log('[DEBUG] DB file loaded from', dbPathUsed, ', initializing sql.js...');
+      console.log('[DB LOG] DB file loaded from', dbPathUsed, ', initializing sql.js...');
       // Initialize sql.js
-      const SQL = await window.initSqlJs({ locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.8.0/dist/${file}` });
-
-      db = new SQL.Database(new Uint8Array(dbBuffer));
-      console.log('[DEBUG] SQL.js initialized, DB instance created:', db);
+      let SQL;
+      try {
+        console.log('[DB LOG] Calling window.initSqlJs...');
+        SQL = await window.initSqlJs({ locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.8.0/dist/${file}` });
+        console.log('[DB LOG] window.initSqlJs resolved:', SQL);
+      } catch (e) {
+        showDbError('Failed to initialize sql.js: ' + e);
+        console.error('[DB LOG] Failed to initialize sql.js:', e);
+        throw new Error('Failed to initialize sql.js');
+      }
+      try {
+        console.log('[DB LOG] Creating SQL.Database instance...');
+        db = new SQL.Database(new Uint8Array(dbBuffer));
+        console.log('[DB LOG] SQL.Database instance created:', db);
+      } catch (e) {
+        showDbError('Failed to create SQL.Database instance: ' + e);
+        console.error('[DB LOG] Failed to create SQL.Database instance:', e);
+        throw new Error('Failed to create SQL.Database instance');
+      }
       // Query the symbols table
       let symbolsData = [];
       try {
+        console.log('[DB LOG] Querying symbols table...');
         const res = db.exec('SELECT symbol, description FROM symbols');
-        console.log('[DEBUG] symbols table query result:', res);
+        console.log('[DB LOG] symbols table query result:', res);
         if (res.length > 0) {
           const cols = res[0].columns;
           const values = res[0].values;
@@ -367,12 +414,14 @@ function getPaperFillStats(sym, monthStartMs = 0) {
             cols.forEach((col, i) => { obj[col] = row[i]; });
             return obj;
           });
-          console.log('[DEBUG] symbolsData array:', symbolsData);
+          console.log('[DB LOG] symbolsData array:', symbolsData);
         } else {
-          console.warn('[DEBUG] symbols table query returned no results');
+          showDbError('symbols table query returned no results');
+          console.warn('[DB LOG] symbols table query returned no results');
         }
       } catch (e) {
-        console.error('[DEBUG] Error querying symbols table:', e);
+        showDbError('Error querying symbols table: ' + e);
+        console.error('[DB LOG] Error querying symbols table:', e);
         throw new Error('Failed to query symbols table');
       }
       symbols = symbolsData.map(obj => obj.symbol);
@@ -380,6 +429,7 @@ function getPaperFillStats(sym, monthStartMs = 0) {
     } catch (err) {
       // Fallback to symbols.json
       usedFallback = true;
+      showDbError('Using fallback symbols.json due to DB error: ' + err);
       console.warn('[FALLBACK] Using symbols.json due to DB error:', err);
       try {
         const resp = await fetch('data/symbols.json?v=' + Date.now());
@@ -387,10 +437,12 @@ function getPaperFillStats(sym, monthStartMs = 0) {
         const json = await resp.json();
         symbols = (json || []).map(obj => obj.symbol).sort((a, b) => a.localeCompare(b));
       } catch (jsonErr) {
+        showDbError('Failed to load symbols.json: ' + jsonErr);
         console.error('[FALLBACK] Failed to load symbols.json:', jsonErr);
         symbols = [];
       }
     }
+    hideDbError();
     window.SYMBOLS = symbols;
     buildSymbolSwitcher(symbols);
 
@@ -666,12 +718,14 @@ function getPaperFillStats(sym, monthStartMs = 0) {
         ${symbolClause}
         ORDER BY datetime(COALESCE(exit_time, entry_time)) DESC, datetime(entry_time) DESC, id DESC
       `;
+      console.log('[DB LOG] Dashboard trades: preparing statement for trades query:', query);
       const stmt = db.prepare(query);
       if (symbolClause) {
         stmt.bind([modeFilter, selectedSymbol]);
       } else {
         stmt.bind([modeFilter]);
       }
+      console.log('[DB LOG] Dashboard trades: statement prepared and bound');
       // If a symbol is selected, just return the single latest event for that symbol (if any)
       if (symbolClause) {
         if (stmt.step()) {
@@ -1984,14 +2038,16 @@ function getPaperFillStats(sym, monthStartMs = 0) {
 
     const symbols = [];
     try {
+      console.log('[DB LOG] loadGuidelineAuditRowsFromDb: preparing statement for symbols');
       const stmt = db.prepare('SELECT symbol FROM symbols ORDER BY symbol');
       while (stmt.step()) {
         const row = stmt.getAsObject();
         symbols.push(String(row.symbol || '').trim());
       }
       stmt.free();
+      console.log('[DB LOG] loadGuidelineAuditRowsFromDb: finished statement for symbols');
     } catch (err) {
-      console.error('Failed loading symbols for guideline audit:', err);
+      console.error('[DB LOG] Failed loading symbols for guideline audit:', err);
       return [];
     }
 
@@ -2463,11 +2519,13 @@ function getPaperFillStats(sym, monthStartMs = 0) {
 
     let hasLiveEnabled = false;
     try {
+      console.log('[DB LOG] loadLiveSymbolControlRows: PRAGMA table_info(symbols)');
       const info = db.exec('PRAGMA table_info(symbols)');
       const cols = (info[0] && info[0].values ? info[0].values : []).map(row => String(row[1] || ''));
       hasLiveEnabled = cols.includes('live_enabled');
+      console.log('[DB LOG] loadLiveSymbolControlRows: PRAGMA result:', info);
     } catch (e) {
-      console.warn('Could not inspect symbols schema:', e);
+      console.warn('[DB LOG] Could not inspect symbols schema:', e);
     }
 
     const query = hasLiveEnabled
@@ -2476,6 +2534,7 @@ function getPaperFillStats(sym, monthStartMs = 0) {
 
     const out = [];
     try {
+      console.log('[DB LOG] loadLiveSymbolControlRows: preparing statement for live symbol control');
       const stmt = db.prepare(query);
       while (stmt.step()) {
         const row = stmt.getAsObject();
@@ -2486,8 +2545,9 @@ function getPaperFillStats(sym, monthStartMs = 0) {
         });
       }
       stmt.free();
+      console.log('[DB LOG] loadLiveSymbolControlRows: finished statement for live symbol control');
     } catch (e) {
-      console.error('Failed loading symbols for live control modal:', e);
+      console.error('[DB LOG] Failed loading symbols for live control modal:', e);
     }
     return out;
   }
@@ -2897,6 +2957,7 @@ function getTotalEquityAllVersionsAllSymbols() {
     return { total: getDatasetInitialCapital(), buckets: 0 };
   }
   try {
+    console.log('[DB LOG] getTotalEquityAllVersionsAllSymbols: preparing statement for total equity');
     const stmt = db.prepare(`
       WITH latest AS (
         SELECT
@@ -2922,9 +2983,10 @@ function getTotalEquityAllVersionsAllSymbols() {
       buckets = Number(row.buckets || 0);
     }
     stmt.free();
+    console.log('[DB LOG] getTotalEquityAllVersionsAllSymbols: finished statement for total equity');
     return { total, buckets };
   } catch (err) {
-    console.error('Error querying total equity across all symbols/versions:', err);
+    console.error('[DB LOG] Error querying total equity across all symbols/versions:', err);
     return null;
   }
 }
