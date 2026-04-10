@@ -19,4 +19,8 @@ export default defineConfig({
       });
     },
   },
+  build: {
+    outDir: '../docs', // Output to top-level docs/ for GitHub Pages
+    emptyOutDir: true,
+  },
 });

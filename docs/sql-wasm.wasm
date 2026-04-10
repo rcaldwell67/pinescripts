@@ -1,3 +1,1 @@
-<attachment startByte=1 endByte=1 totalSize=659730 truncated=false>
-
-</attachment>
+(placeholder for sql.js WASM binary, will be loaded from CDN at runtime)
