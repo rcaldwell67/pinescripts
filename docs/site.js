@@ -4444,7 +4444,7 @@ function handleSymbolSelect(newSym, dbInstance) {
   renderTransactionTicker();
   updateModeButtonStates();
 }
-        const stmt = db.prepare(
+        const stmt = dbInstance.prepare(
           `SELECT metrics, notes, timestamp FROM ${summaryTable}
            WHERE REPLACE(REPLACE(REPLACE(REPLACE(UPPER(symbol), '/', ''), '_', ''), '-', ''), ' ', '') = ?
              ${summaryNotesFilter}
