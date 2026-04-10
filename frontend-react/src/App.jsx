@@ -62,6 +62,21 @@ const DASHBOARD_TABS = [
 export default function App() {
   const [snapshot, setSnapshot] = useState(null);
   const [symbolFilter, setSymbolFilter] = useState("ALL");
+  // Example: Load and compile a WASM module (for demonstration)
+  useEffect(() => {
+    async function loadWasm() {
+      try {
+        const response = await fetch('module.wasm');
+        const buffer = await response.arrayBuffer();
+        const module = await WebAssembly.compile(buffer);
+        // Optionally, do something with the compiled module
+        console.log('WASM module compiled:', module);
+      } catch (err) {
+        console.error('Failed to load/compile WASM:', err);
+      }
+    }
+    loadWasm();
+  }, []);
   const [assetFilter, setAssetFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -89,8 +104,8 @@ export default function App() {
         const dbRes = await fetch(dbPath);
         if (!dbRes.ok) throw new Error("Failed to fetch tradingcopilot.db");
         const dbBuffer = await dbRes.arrayBuffer();
-        // Init sql.js
-        const SQL = await initSqlJs({ locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.8.0/dist/${file}` });
+        // Init sql.js (load WASM from local public/dist directory for dev/prod compatibility)
+        const SQL = await initSqlJs({ locateFile: file => `${import.meta.env.BASE_URL}${file}` });
         const db = new SQL.Database(new Uint8Array(dbBuffer));
         // Query symbols table
         const res = db.exec('SELECT symbol, description, asset_class FROM symbols');

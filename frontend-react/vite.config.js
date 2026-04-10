@@ -8,4 +8,15 @@ const base = "/pinescripts/";
 export default defineConfig({
   plugins: [react()],
   base,
+  server: {
+    middlewareMode: false,
+    configureServer: (server) => {
+      server.middlewares.use((req, res, next) => {
+        if (req.url && req.url.endsWith('.wasm')) {
+          res.setHeader('Content-Type', 'application/wasm');
+        }
+        next();
+      });
+    },
+  },
 });
