@@ -62,17 +62,31 @@ const DASHBOARD_TABS = [
 export default function App() {
   const [snapshot, setSnapshot] = useState(null);
   const [symbolFilter, setSymbolFilter] = useState("ALL");
-  // Example: Load and compile a WASM module (for demonstration)
+  // Example: Load and compile the sql.js WASM module (for demonstration)
+  const [wasmError, setWasmError] = useState("");
   useEffect(() => {
     async function loadWasm() {
       try {
-        const response = await fetch('module.wasm');
+        // Use the correct path for sql-wasm.wasm
+        const wasmPath = `${import.meta.env.BASE_URL}sql-wasm.wasm`;
+        const response = await fetch(wasmPath);
+        // Log response headers for debugging
+        for (const [key, value] of response.headers.entries()) {
+          console.log(`WASM fetch header: ${key}: ${value}`);
+        }
+        if (!response.ok) throw new Error(`Failed to fetch ${wasmPath}: ${response.status}`);
+        const contentType = response.headers.get('content-type') || "";
+        if (!contentType.includes('application/wasm')) {
+          setWasmError(`WASM fetch error: Incorrect Content-Type: ${contentType}`);
+          return;
+        }
         const buffer = await response.arrayBuffer();
         const module = await WebAssembly.compile(buffer);
         // Optionally, do something with the compiled module
-        console.log('WASM module compiled:', module);
+        console.log('sql-wasm.wasm compiled:', module);
       } catch (err) {
-        console.error('Failed to load/compile WASM:', err);
+        setWasmError(`Failed to load/compile sql-wasm.wasm: ${err}`);
+        console.error('Failed to load/compile sql-wasm.wasm:', err);
       }
     }
     loadWasm();
@@ -185,11 +199,16 @@ export default function App() {
       else if (score === "loss") losses += 1;
       else flat += 1;
     }
-    return [
-      { name: "Wins", value: wins },
-      { name: "Losses", value: losses },
-      { name: "Flat", value: flat },
-    ];
+    return (
+      <div className="App">
+        {wasmError && (
+          <div style={{ color: 'red', fontWeight: 'bold', margin: '1em' }}>
+            {wasmError}
+          </div>
+        )}
+        {/* ...existing code... */}
+      </div>
+    );
   }, [filteredTrades]);
 
   const equitySeries = useMemo(() => {
