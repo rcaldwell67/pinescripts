@@ -423,7 +423,9 @@ function getPaperFillStats(sym, monthStartMs = 0) {
       }
       // Attach event handler if not already bound
       if (!symbolSelect.dataset.bound) {
-        symbolSelect.addEventListener('change', handleSymbolSelect);
+        symbolSelect.addEventListener('change', function(e) {
+          handleSymbolSelect(e.target.value, window._SQL_DB);
+        });
         symbolSelect.dataset.bound = '1';
       }
     }
