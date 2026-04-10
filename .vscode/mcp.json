@@ -19,6 +19,11 @@
         "command": "npx",
         "args": ["playwright", "test"],
         "cwd": "${workspaceFolder}/playwright-mcp"
+      },
+      "mcp-sqlite-tool": {
+        "type": "stdio",
+        "command": "node",
+        "args": ["./node_modules/mcp-sqlite-tool/index.js"]
       }
     }
   }
