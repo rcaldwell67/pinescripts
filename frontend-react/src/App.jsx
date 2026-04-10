@@ -94,7 +94,8 @@ export default function App() {
   const [assetFilter, setAssetFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [alpacaSymbols, setAlpacaSymbols] = useState([]);
+  const [activeSymbols, setActiveSymbols] = useState([]); // active=1
+  const [inactiveSymbols, setInactiveSymbols] = useState([]); // active=0
   const [activeTab, setActiveTab] = useState('overview');
   // Filters for All Transactions
   const [filterVersion, setFilterVersion] = useState('');
@@ -113,29 +114,41 @@ export default function App() {
     async function loadSymbolsFromDb() {
       setAlpacaLoading(true);
       try {
-        // Download the SQLite DB file using the correct base URL
         const dbPath = `${import.meta.env.BASE_URL}data/tradingcopilot.db`;
         const dbRes = await fetch(dbPath);
         if (!dbRes.ok) throw new Error("Failed to fetch tradingcopilot.db");
         const dbBuffer = await dbRes.arrayBuffer();
-        // Init sql.js (load WASM from local public/dist directory for dev/prod compatibility)
         const SQL = await initSqlJs({ locateFile: file => `${import.meta.env.BASE_URL}${file}` });
         const db = new SQL.Database(new Uint8Array(dbBuffer));
-        // Query symbols table
-        const res = db.exec('SELECT symbol, description, asset_class FROM symbols');
-        let symbols = [];
-        if (res.length > 0) {
-          const cols = res[0].columns;
-          const values = res[0].values;
-          symbols = values.map(row => {
+        // Query for active=1 (dashboard)
+        const resActive = db.exec('SELECT symbol, description, asset_class FROM symbols WHERE active=1');
+        let activeSyms = [];
+        if (resActive.length > 0) {
+          const cols = resActive[0].columns;
+          const values = resActive[0].values;
+          activeSyms = values.map(row => {
             const obj = {};
             cols.forEach((col, i) => { obj[col] = row[i]; });
             return obj;
           });
         }
-        setAlpacaSymbols(symbols);
+        setActiveSymbols(activeSyms);
+        // Query for active=0 (add-symbol)
+        const resInactive = db.exec('SELECT symbol, description, asset_class FROM symbols WHERE active=0');
+        let inactiveSyms = [];
+        if (resInactive.length > 0) {
+          const cols = resInactive[0].columns;
+          const values = resInactive[0].values;
+          inactiveSyms = values.map(row => {
+            const obj = {};
+            cols.forEach((col, i) => { obj[col] = row[i]; });
+            return obj;
+          });
+        }
+        setInactiveSymbols(inactiveSyms);
       } catch (e) {
-        setAlpacaSymbols([]);
+        setActiveSymbols([]);
+        setInactiveSymbols([]);
       } finally {
         setAlpacaLoading(false);
       }
@@ -161,7 +174,7 @@ export default function App() {
     load();
   }, []);
 
-  const symbols = snapshot?.symbols || [];
+  const symbols = activeSymbols;
   const symbolOptions = ["ALL", ...symbols.map((s) => s.symbol)];
 
   const filteredTrades = useMemo(() => {
@@ -248,10 +261,8 @@ export default function App() {
     return false;
   }
   // Filter Alpaca symbols to only those not already in the dashboard, and by checked types
-  const existingSymbols = new Set(symbols.map(s => s.symbol));
-  const availableAlpacaSymbols = alpacaSymbols
-    .filter(s => !existingSymbols.has(s))
-    .filter(matchesTypeFilters);
+  // Only show inactive symbols (active=0) in the Add Alpaca Symbol dropdown, filtered by type
+  const availableAlpacaSymbols = inactiveSymbols.filter(matchesTypeFilters);
 
   // Handler for Remove Symbol button
   function handleRemoveSymbol() {
@@ -268,18 +279,13 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (alpacaSymbols.length === 0) {
-      console.warn('No Alpaca symbols loaded from DB.');
-    } else {
-      console.log('Alpaca symbols loaded:', alpacaSymbols);
-    }
     if (availableAlpacaSymbols.length === 0) {
       console.warn('No available Alpaca symbols after filtering.');
       console.log('Existing dashboard symbols:', symbols.map(s => s.symbol));
       console.log('Type filters:', typeFilters);
-      console.log('All Alpaca symbols:', alpacaSymbols);
+      console.log('All inactive symbols:', inactiveSymbols);
     }
-  }, [alpacaSymbols, availableAlpacaSymbols, symbols, typeFilters]);
+  }, [availableAlpacaSymbols, symbols, typeFilters, inactiveSymbols]);
 
   return (
     <div className="page-shell">
@@ -310,7 +316,7 @@ export default function App() {
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             {/* Debug: Show number of symbols loaded and error if any */}
             <span style={{ color: '#9bb4c7', fontSize: 13, marginRight: 8 }}>
-              {alpacaLoading ? 'Loading symbols...' : `Loaded: ${alpacaSymbols.length}`}
+              {alpacaLoading ? 'Loading symbols...' : `Loaded: ${inactiveSymbols.length}`}
             </span>
             <select
               value={selectedAlpacaSymbol}
