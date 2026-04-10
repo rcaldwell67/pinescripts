@@ -4423,24 +4423,27 @@ function showDashboardData() {
 }
 
 let _pendingSymbolSelect = null;
-async function handleSymbolSelect(newSym, dbInstance) {
-  // If loaded is not ready, queue the request and retry soon
-  if (typeof loaded === 'undefined' || !loaded) {
-    _pendingSymbolSelect = { newSym, dbInstance };
-    setTimeout(() => {
-      if (_pendingSymbolSelect && typeof loaded !== 'undefined' && loaded) {
-        const { newSym, dbInstance } = _pendingSymbolSelect;
-        _pendingSymbolSelect = null;
-        handleSymbolSelect(newSym, dbInstance);
-      }
-    }, 50);
-    return;
-  }
-  // If another pending request is queued, clear it (only latest matters)
-  _pendingSymbolSelect = null;
-  console.log('[Dropdown] handleSymbolSelect proceeding for', newSym, 'dataset:', activeDataset);
-  if (!newSym) {
+function handleSymbolSelect(newSym, dbInstance) {
+  console.log('[DEBUG] handleSymbolSelect called with:', newSym, dbInstance);
+  console.log('[DEBUG] activeSym:', activeSym, 'loaded:', loaded && loaded[activeSym]);
+  const hasAnyData = Object.values(loaded[activeSym] || {}).some(v => v && v.length > 0);
+  console.log('[DEBUG] hasAnyData:', hasAnyData, 'for symbol:', activeSym);
+  const noDataNotice = document.getElementById('noDataNotice');
+  if (noDataNotice) noDataNotice.style.display = hasAnyData ? 'none' : '';
+  if (hasAnyData) {
+    console.log('[DEBUG] showDashboardData called');
+    showDashboardData();
+  } else {
+    console.log('[DEBUG] hideDashboardData called');
     hideDashboardData();
+    if (noDataNotice) noDataNotice.style.display = '';
+  }
+  buildTabs();
+  render();
+  updateLastUpdated();
+  renderTransactionTicker();
+  updateModeButtonStates();
+}
     updateModeButtonStates();
     const removeBtn = document.getElementById('removeSymbolBtn');
     if (removeBtn) { removeBtn.disabled = true; removeBtn.style.opacity = '0.4'; }
