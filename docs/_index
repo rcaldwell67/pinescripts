@@ -1,12 +1,44 @@
 <!DOCTYPE html>
-<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta http-equiv="refresh" content="0; url=../frontend-react/dist/index.html" />
-  <title>Redirecting to React Dashboard</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>APM Dashboard - Adaptive Pullback Momentum</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js" defer></script>
+  <!-- sql.js for browser-based SQLite access -->
+  <script src="https://cdn.jsdelivr.net/npm/sql.js@1.8.0/dist/sql-wasm.js" defer></script>
+  <!-- <link rel="stylesheet" href="site.css?v=20260405b"> -->
+  <link rel="stylesheet" href="site.css">
+  <link rel="icon" href="data:,">
 </head>
 <body>
-  <p>If you are not redirected automatically, <a href="../frontend-react/dist/index.html">click here to go to the new dashboard</a>.</p>
+<header>
+  <div>
+    <h1>APM Dashboard</h1>
+    <div class="subtitle">Adaptive Pullback Momentum</div>
+  </div>
+</header>
+<main>
+  <div class="tabs" id="tabs"></div>
+  <div class="panel" id="cmpTablePanel">
+    <table id="cmpTable" class="cmp"></table>
+  </div>
+  <div class="cards" id="cards">
+    <div class="card full-width dataViewsCard-debug" id="dataViewsCard">
+      <div class="sym-switcher">
+        <label for="symbolSelect" class="mr-8">Symbol:</label>
+        <select id="symbolSelect" class="tx-select">
+          <option value="">Select...</option>
+          <option value="AAPL">AAPL</option>
+          <option value="BTCUSD">BTCUSD</option>
+          <option value="ETHUSD">ETHUSD</option>
+          <option value="SPY">SPY</option>
           <option value="TSLA">TSLA</option>
         </select>
         <select id="alpacaSymbolSelect" class="tx-select ml-10 w-140" disabled>
