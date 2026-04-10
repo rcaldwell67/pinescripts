@@ -267,6 +267,20 @@ export default function App() {
     window.open(url, "_blank");
   }
 
+  useEffect(() => {
+    if (alpacaSymbols.length === 0) {
+      console.warn('No Alpaca symbols loaded from DB.');
+    } else {
+      console.log('Alpaca symbols loaded:', alpacaSymbols);
+    }
+    if (availableAlpacaSymbols.length === 0) {
+      console.warn('No available Alpaca symbols after filtering.');
+      console.log('Existing dashboard symbols:', symbols.map(s => s.symbol));
+      console.log('Type filters:', typeFilters);
+      console.log('All Alpaca symbols:', alpacaSymbols);
+    }
+  }, [alpacaSymbols, availableAlpacaSymbols, symbols, typeFilters]);
+
   return (
     <div className="page-shell">
       <div className="bg-grid" />
