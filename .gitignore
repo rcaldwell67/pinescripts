@@ -15,3 +15,5 @@ __pycache__/
 
 # Site Backup
 localbackup/
+playwright-mcp/
+test-results/
