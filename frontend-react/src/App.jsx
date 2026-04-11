@@ -323,7 +323,7 @@ function App() {
           <label>Add Alpaca Symbol</label>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <span style={{ color: '#9bb4c7', fontSize: 13, marginRight: 8 }}>
-              {alpacaLoading ? 'Loading symbols...' : `Loaded: ${inactiveSymbols.length}`}
+              {alpacaLoading ? 'Loading symbols...' : `Available: ${availableAlpacaSymbols.length}`}
             </span>
             <select
               value={selectedAlpacaSymbol}
