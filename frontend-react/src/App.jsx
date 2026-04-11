@@ -188,7 +188,9 @@ function App() {
 
   // Use only active dashboard symbols for Symbol combobox
   const symbols = activeSymbols;
-  const symbolOptions = ["ALL", ...Array.from(new Set(symbols.map((s) => s.symbol))).filter(s => s !== "ALL")];
+  // Sort symbol options alphabetically, keeping 'ALL' first
+  const sortedSymbols = Array.from(new Set(symbols.map((s) => s.symbol))).filter(s => s !== "ALL").sort((a, b) => a.localeCompare(b));
+  const symbolOptions = ["ALL", ...sortedSymbols];
 
   const filteredTrades = useMemo(() => {
     const v6trades = trades.filter(t => t.version === 'v6');
