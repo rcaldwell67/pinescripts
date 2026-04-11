@@ -8,6 +8,7 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 BACKEND_DIR = REPO_ROOT / "backend"
 sys.path.insert(0, str(REPO_ROOT))
@@ -18,6 +19,7 @@ import backtest_backtrader_alpaca as backtest  # noqa: E402
 import data.validate_dashboard_data_integrity as dashboard_integrity  # noqa: E402
 import reset_aligned_backtest_paper as aligned_reset  # noqa: E402
 from paper_trading.paper_trade_backtrader_alpaca import _metrics_for_trades  # noqa: E402
+
 
 DEFAULT_SYMBOLS = ("BTC/USDT", "CLM")
 

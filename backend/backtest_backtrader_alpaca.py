@@ -39,7 +39,7 @@ except ImportError:
 ALPACA_API_KEY    = os.getenv("ALPACA_API_KEY")    or os.getenv("ALPACA_PAPER_API_KEY")
 ALPACA_API_SECRET = os.getenv("ALPACA_API_SECRET") or os.getenv("ALPACA_PAPER_API_SECRET")
 
-DB_PATH = REPO_ROOT / "docs" / "data" / "tradingcopilot.db"
+DB_PATH = REPO_ROOT / "frontend-react" / "public" / "data" / "tradingcopilot.db"
 
 VERSION_MAP: dict[str, str] = {
     "v1": "APM v1.0-5m",
