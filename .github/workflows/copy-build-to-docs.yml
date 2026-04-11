@@ -30,10 +30,13 @@ jobs:
           VITE_BASE_PATH: "/${{ github.event.repository.name }}/"
         run: npm run build --prefix frontend-react
 
+
       - name: Copy build output to docs/
         run: |
           rm -rf docs/*
           cp -r frontend-react/dist/* docs/
+          mkdir -p docs/data
+          cp frontend-react/public/data/tradingcopilot.db docs/data/tradingcopilot.db
 
       - name: Commit and push changes
         run: |
