@@ -92,7 +92,7 @@ function App() {
         const dbRes = await fetch(dbPath);
         if (!dbRes.ok) throw new Error("Failed to fetch tradingcopilot.db");
         const dbBuffer = await dbRes.arrayBuffer();
-        const SQL = await initSqlJs({ locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.14.1/dist/sql-wasm.wasm` });
+        const SQL = await initSqlJs({ locateFile: file => `${import.meta.env.BASE_URL}sql-wasm.wasm` });
         const db = new SQL.Database(new Uint8Array(dbBuffer));
         // Query all active symbols from symbols table (active=1)
         const resSymbols = db.exec("SELECT symbol, description, asset_class FROM symbols WHERE active=1");
@@ -246,7 +246,7 @@ function App() {
         const dbRes = await fetch(dbPath);
         if (!dbRes.ok) throw new Error("Failed to fetch tradingcopilot.db");
         const dbBuffer = await dbRes.arrayBuffer();
-        const SQL = await initSqlJs({ locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.14.1/dist/sql-wasm.wasm` });
+        const SQL = await initSqlJs({ locateFile: file => `${import.meta.env.BASE_URL}sql-wasm.wasm` });
         const db = new SQL.Database(new Uint8Array(dbBuffer));
         // Get all symbols from alpaca_symbols
         const resAlpaca = db.exec("SELECT symbol, name as description, type as asset_class FROM alpaca_symbols");
