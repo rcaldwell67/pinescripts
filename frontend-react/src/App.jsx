@@ -1,3 +1,18 @@
+import { useEffect, useMemo, useState } from "react";
+import initSqlJs from 'sql.js';
+import TradeGapAnalysis from "./TradeGapAnalysis";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+
 // Guideline thresholds (should match backend/config/guideline_policy.py)
 const GUIDELINE_THRESHOLDS = {
   minTrades: 10,
@@ -15,22 +30,6 @@ function guidelineStatus(row) {
   if (row.max_drawdown_pct > GUIDELINE_THRESHOLDS.maxDrawdown) fails.push("drawdown");
   return fails.length === 0 ? "PASS" : `FAIL: ${fails.join(", ")}`;
 }
-import { useEffect, useMemo, useState } from "react";
-import initSqlJs from 'sql.js';
-import TradeGapAnalysis from "./TradeGapAnalysis";
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-
-
 
 function fmtCurrency(value) {
   const n = Number(value);
@@ -59,6 +58,8 @@ const DASHBOARD_TABS = [
   { key: 'logs', label: 'Logs' },
 ];
 
+
+function App() {
   // Remove snapshot state, add states for trades, results, and account
   const [trades, setTrades] = useState([]);
   const [results, setResults] = useState({ backtest: [], paper: [], live: [] });
@@ -252,42 +253,6 @@ const DASHBOARD_TABS = [
     return resultsArr;
   }, [results, symbolFilter, assetFilter, symbols]);
 
-  const tradeMix = useMemo(() => {
-    let wins = 0;
-    let losses = 0;
-    let flat = 0;
-    for (const t of filteredTrades) {
-      const score = scoreFromTrade(t);
-      if (score === "win") wins += 1;
-      else if (score === "loss") losses += 1;
-      else flat += 1;
-    }
-    return (
-      <div className="App">
-        {wasmError && (
-          <div style={{ color: 'red', fontWeight: 'bold', margin: '1em' }}>
-            {wasmError}
-          </div>
-        )}
-        {/* ...existing code... */}
-      </div>
-    );
-  }, [filteredTrades]);
-
-  const equitySeries = useMemo(() => {
-    const rows = filteredTrades
-      .filter((t) => Number.isFinite(Number(t.equity)))
-      .slice()
-      .reverse()
-      .map((t, idx) => ({
-        i: idx + 1,
-        equity: Number(t.equity),
-      }));
-    return rows;
-  }, [filteredTrades]);
-
-  // account is now loaded from DB
-
   // Handler for Add Symbol button
   function handleAddSymbol() {
     if (!selectedAlpacaSymbol) {
@@ -337,6 +302,35 @@ const DASHBOARD_TABS = [
     }
   }, [availableAlpacaSymbols, symbols, typeFilters, inactiveSymbols]);
 
+  const tradeMix = useMemo(() => {
+    let wins = 0;
+    let losses = 0;
+    let flat = 0;
+    for (const t of filteredTrades) {
+      const score = scoreFromTrade(t);
+      if (score === "win") wins += 1;
+      else if (score === "loss") losses += 1;
+      else flat += 1;
+    }
+    return [
+      { name: "Win", value: wins },
+      { name: "Loss", value: losses },
+      { name: "Flat", value: flat },
+    ];
+  }, [filteredTrades]);
+
+  const equitySeries = useMemo(() => {
+    const rows = filteredTrades
+      .filter((t) => Number.isFinite(Number(t.equity)))
+      .slice()
+      .reverse()
+      .map((t, idx) => ({
+        i: idx + 1,
+        equity: Number(t.equity),
+      }));
+    return rows;
+  }, [filteredTrades]);
+
   return (
     <div className="page-shell">
       <div className="bg-grid" />
@@ -346,7 +340,7 @@ const DASHBOARD_TABS = [
           <h1>Crypto + ETF Trading Monitor</h1>
           <p className="sub">Unified backtest, paper, and live observability from Alpaca + Backtrader.</p>
         </div>
-        <div className="chip">Snapshot: {snapshot?.generated_at || "-"}</div>
+        <div className="chip">Snapshot: {account?.generated_at || "-"}</div>
       </header>
 
       <section className="controls" style={{ alignItems: 'end', gap: 16 }}>
@@ -358,13 +352,10 @@ const DASHBOARD_TABS = [
               ))}
             </select>
           </label>
-          {/* Refresh button hidden as requested */}
         </div>
-        {/* Asset Class filter hidden as requested */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <label>Add Alpaca Symbol</label>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            {/* Debug: Show number of symbols loaded and error if any */}
             <span style={{ color: '#9bb4c7', fontSize: 13, marginRight: 8 }}>
               {alpacaLoading ? 'Loading symbols...' : `Loaded: ${inactiveSymbols.length}`}
             </span>
@@ -602,3 +593,5 @@ const DASHBOARD_TABS = [
     </div>
   );
 }
+
+export default App;
