@@ -80,8 +80,8 @@ function App() {
   const [pageSize, setPageSize] = useState(50);
   const [selectedAlpacaSymbol, setSelectedAlpacaSymbol] = useState("");
   const [alpacaLoading, setAlpacaLoading] = useState(false);
-  // Alpaca type filters (checkboxes for crypto, stocks)
-  const [typeFilters, setTypeFilters] = useState({ crypto: true, stocks: true });
+  // Only filter by crypto for Add Alpaca Symbol
+  const [cryptoOnly, setCryptoOnly] = useState(false);
 
   // Load active dashboard symbols from 'symbols' table for Symbol combobox
   useEffect(() => {
@@ -232,11 +232,10 @@ function App() {
   }
 
   // Helper: determine if a symbol matches the selected type filters
-  function matchesTypeFilters(sym) {
+  function matchesCryptoFilter(sym) {
     const assetClass = (sym.asset_class || '').toLowerCase();
-    if (typeFilters.crypto && assetClass === 'crypto') return true;
-    if (typeFilters.stocks && (assetClass === 'us_equity' || assetClass === 'etf')) return true;
-    return false;
+    if (cryptoOnly) return assetClass === 'crypto';
+    return true;
   }
   // Load all Alpaca symbols and filter to only those not active in the dashboard
   const [allAlpacaSymbols, setAllAlpacaSymbols] = useState([]);
@@ -271,7 +270,16 @@ function App() {
 
   // Only show Alpaca symbols not already active in dashboard, filtered by type
   const dashboardSymbolsSet = new Set(symbols.map(s => s.symbol));
-  const availableAlpacaSymbols = allAlpacaSymbols.filter(sym => !dashboardSymbolsSet.has(sym.symbol) && matchesTypeFilters(sym));
+  // Sort: crypto first, then non-crypto, both alphabetically
+  const availableAlpacaSymbols = allAlpacaSymbols
+    .filter(sym => !dashboardSymbolsSet.has(sym.symbol) && matchesCryptoFilter(sym))
+    .sort((a, b) => {
+      const aCrypto = (a.asset_class || '').toLowerCase() === 'crypto';
+      const bCrypto = (b.asset_class || '').toLowerCase() === 'crypto';
+      if (aCrypto && !bCrypto) return -1;
+      if (!aCrypto && bCrypto) return 1;
+      return a.symbol.localeCompare(b.symbol);
+    });
 
   // Handler for Remove Symbol button
   function handleRemoveSymbol() {
@@ -381,16 +389,9 @@ function App() {
               <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}>
                 <input
                   type="checkbox"
-                  checked={typeFilters.crypto}
-                  onChange={e => setTypeFilters(f => ({ ...f, crypto: e.target.checked }))}
-                /> Crypto
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}>
-                <input
-                  type="checkbox"
-                  checked={typeFilters.stocks}
-                  onChange={e => setTypeFilters(f => ({ ...f, stocks: e.target.checked }))}
-                /> Stocks
+                  checked={cryptoOnly}
+                  onChange={e => setCryptoOnly(e.target.checked)}
+                /> Crypto only
               </label>
             </div>
             {alpacaLoading && <span style={{ color: '#ffa657', fontSize: 13 }}>Loading symbols...</span>}
