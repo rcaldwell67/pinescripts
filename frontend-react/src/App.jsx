@@ -83,34 +83,31 @@ function App() {
   // Alpaca type filters (checkboxes for crypto, stocks)
   const [typeFilters, setTypeFilters] = useState({ crypto: true, stocks: true });
 
-  // Load Alpaca symbols from SQLite DB using sql.js WASM
+  // Load active dashboard symbols from 'symbols' table for Symbol combobox
   useEffect(() => {
-    async function loadSymbolsFromDb() {
+    async function loadActiveSymbols() {
       setAlpacaLoading(true);
       try {
         const dbPath = `${import.meta.env.BASE_URL}data/tradingcopilot.db`;
         const dbRes = await fetch(dbPath);
         if (!dbRes.ok) throw new Error("Failed to fetch tradingcopilot.db");
         const dbBuffer = await dbRes.arrayBuffer();
-        // Use CDN for sql.js WASM (correct file name)
         const SQL = await initSqlJs({ locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.14.1/dist/sql-wasm.wasm` });
         const db = new SQL.Database(new Uint8Array(dbBuffer));
-        // Query all Alpaca symbols from alpaca_symbols table
-        const resAlpaca = db.exec("SELECT symbol, name as description, type as asset_class FROM alpaca_symbols");
-        let allAlpacaSyms = [];
-        if (resAlpaca.length > 0) {
-          const cols = resAlpaca[0].columns;
-          const values = resAlpaca[0].values;
-          allAlpacaSyms = values.map(row => {
+        // Query all active symbols from symbols table (active=1)
+        const resSymbols = db.exec("SELECT symbol, description, asset_class FROM symbols WHERE active=1");
+        let dashboardSyms = [];
+        if (resSymbols.length > 0) {
+          const cols = resSymbols[0].columns;
+          const values = resSymbols[0].values;
+          dashboardSyms = values.map(row => {
             const obj = {};
             cols.forEach((col, i) => { obj[col] = row[i]; });
             return obj;
           });
         }
-        setActiveSymbols(allAlpacaSyms);
+        setActiveSymbols(dashboardSyms);
         setInactiveSymbols([]);
-        // Also store allAlpacaSyms in a ref for Add Symbol dropdown
-        window._allAlpacaSyms = allAlpacaSyms;
       } catch (e) {
         setActiveSymbols([]);
         setInactiveSymbols([]);
@@ -118,7 +115,7 @@ function App() {
         setAlpacaLoading(false);
       }
     }
-    loadSymbolsFromDb();
+    loadActiveSymbols();
   }, []);
 
   // Load all dashboard data from tradingcopilot.db
@@ -189,8 +186,8 @@ function App() {
     loadDashboardData();
   }, []);
 
+  // Use only active dashboard symbols for Symbol combobox
   const symbols = activeSymbols;
-  // Deduplicate symbolOptions and ensure 'ALL' only appears once
   const symbolOptions = ["ALL", ...Array.from(new Set(symbols.map((s) => s.symbol))).filter(s => s !== "ALL")];
 
   const filteredTrades = useMemo(() => {
