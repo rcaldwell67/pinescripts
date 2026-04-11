@@ -92,7 +92,7 @@ function App() {
         const dbRes = await fetch(dbPath);
         if (!dbRes.ok) throw new Error("Failed to fetch tradingcopilot.db");
         const dbBuffer = await dbRes.arrayBuffer();
-        // Use CDN for sql.js WASM
+        // Use CDN for sql.js WASM (correct file name)
         const SQL = await initSqlJs({ locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.14.1/dist/sql-wasm.wasm` });
         const db = new SQL.Database(new Uint8Array(dbBuffer));
         // Query all Alpaca symbols from alpaca_symbols table
