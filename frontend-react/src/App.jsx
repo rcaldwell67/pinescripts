@@ -92,8 +92,8 @@ function App() {
         const dbRes = await fetch(dbPath);
         if (!dbRes.ok) throw new Error("Failed to fetch tradingcopilot.db");
         const dbBuffer = await dbRes.arrayBuffer();
-        // Use correct WASM path for GitHub Pages deployment
-        const SQL = await initSqlJs({ locateFile: file => `${import.meta.env.BASE_URL}sql-wasm.wasm` });
+        // Use CDN for sql.js WASM
+        const SQL = await initSqlJs({ locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.14.1/dist/sql-wasm.wasm` });
         const db = new SQL.Database(new Uint8Array(dbBuffer));
         // Query for active=1 (dashboard)
         const resActive = db.exec("SELECT symbol, description, asset_class FROM symbols WHERE active=1");
