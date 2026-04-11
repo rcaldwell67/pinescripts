@@ -65,35 +65,6 @@ function App() {
   const [results, setResults] = useState({ backtest: [], paper: [], live: [] });
   const [account, setAccount] = useState({});
   const [symbolFilter, setSymbolFilter] = useState("ALL");
-  // Example: Load and compile the sql.js WASM module (for demonstration)
-  const [wasmError, setWasmError] = useState("");
-  useEffect(() => {
-    async function loadWasm() {
-      try {
-        // Use the correct path for sql-wasm.wasm
-        const wasmPath = `${import.meta.env.BASE_URL}sql-wasm.wasm`;
-        const response = await fetch(wasmPath);
-        // Log response headers for debugging
-        for (const [key, value] of response.headers.entries()) {
-          console.log(`WASM fetch header: ${key}: ${value}`);
-        }
-        if (!response.ok) throw new Error(`Failed to fetch ${wasmPath}: ${response.status}`);
-        const contentType = response.headers.get('content-type') || "";
-        if (!contentType.includes('application/wasm')) {
-          setWasmError(`WASM fetch error: Incorrect Content-Type: ${contentType}`);
-          return;
-        }
-        const buffer = await response.arrayBuffer();
-        const module = await WebAssembly.compile(buffer);
-        // Optionally, do something with the compiled module
-        console.log('sql-wasm.wasm compiled:', module);
-      } catch (err) {
-        setWasmError(`Failed to load/compile sql-wasm.wasm: ${err}`);
-        console.error('Failed to load/compile sql-wasm.wasm:', err);
-      }
-    }
-    loadWasm();
-  }, []);
   const [assetFilter, setAssetFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
