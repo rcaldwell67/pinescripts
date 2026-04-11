@@ -79,11 +79,11 @@ jobs:
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
-          git add docs/data/tradingcopilot.db
+          git add frontend-react/public/data/tradingcopilot.db
           git diff --cached --quiet && echo 'No changes to commit' || git commit -m "Toggle live trading for ${{ steps.parse.outputs.symbol }} -> ${{ steps.parse.outputs.enabled }} via issue #${{ github.event.issue.number }}"
           git push
 
       - name: Comment and close issue
         uses: peter-evans/close-issue@v3
         with:
-          comment: "Updated `${{ steps.parse.outputs.symbol }}` live trading flag to `${{ steps.parse.outputs.enabled }}` in docs/data/tradingcopilot.db."
+          comment: "Updated `${{ steps.parse.outputs.symbol }}` live trading flag to `${{ steps.parse.outputs.enabled }}` in frontend-react/public/data/tradingcopilot.db."

@@ -6,7 +6,7 @@ on:
     paths:
       - "frontend-react/**"
       - "backend/data/export_dashboard_snapshot.py"
-      - "docs/data/tradingcopilot.db"
+      - "frontend-react/public/data/tradingcopilot.db"
       - ".github/workflows/dashboard-pages.yml"
   workflow_dispatch:
 

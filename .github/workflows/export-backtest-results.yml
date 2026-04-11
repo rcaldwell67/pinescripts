@@ -3,7 +3,7 @@ name: Export Dashboard Results to JSON
 on:
   push:
     paths:
-      - 'docs/data/tradingcopilot.db'
+      - 'frontend-react/public/data/tradingcopilot.db'
       - 'backend/data/create_tradingcopilot_db.py'
       - 'backend/data/add_symbol_to_db.py'
       - 'backend/strategy_generator/save_apm_v1_summary_to_db.py'
@@ -25,7 +25,7 @@ jobs:
           python3 <<EOF
           import sqlite3, json
           from collections import defaultdict
-          conn = sqlite3.connect('docs/data/tradingcopilot.db')
+          conn = sqlite3.connect('frontend-react/public/data/tradingcopilot.db')
           c = conn.cursor()
           c.execute('SELECT symbol, metrics FROM backtest_results')
           rows = c.fetchall()

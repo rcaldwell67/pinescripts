@@ -171,7 +171,7 @@ jobs:
             if no_slash and no_slash not in candidates:
               candidates.append(no_slash)
 
-          conn = sqlite3.connect('docs/data/tradingcopilot.db')
+          conn = sqlite3.connect('frontend-react/public/data/tradingcopilot.db')
           cur = conn.cursor()
           row = None
           for cand in candidates:
@@ -253,7 +253,7 @@ jobs:
           set -euo pipefail
 
           SYMBOL="${{ steps.validate_add.outputs.resolved_symbol }}"
-          DB_PATH="docs/data/tradingcopilot.db"
+          DB_PATH="frontend-react/public/data/tradingcopilot.db"
 
           detect_failures() {
             python backend/data/check_symbol_backtest_health.py --symbol "$SYMBOL" --db "$DB_PATH"
@@ -329,7 +329,7 @@ jobs:
           git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
 
           FILES=(
-            docs/data/tradingcopilot.db
+            frontend-react/public/data/tradingcopilot.db
             backend/strategy_generator/configs/v1_runtime.json
             backend/strategy_generator/configs/v2_runtime.json
             backend/strategy_generator/configs/v3_runtime.json
@@ -350,7 +350,7 @@ jobs:
 
           SNAPSHOT_DIR="$(mktemp -d)"
           mkdir -p "$SNAPSHOT_DIR/docs/data" "$SNAPSHOT_DIR/backend/strategy_generator/configs"
-          cp docs/data/tradingcopilot.db "$SNAPSHOT_DIR/docs/data/tradingcopilot.db"
+          cp frontend-react/public/data/tradingcopilot.db "$SNAPSHOT_DIR/frontend-react/public/data/tradingcopilot.db"
           cp backend/strategy_generator/configs/v1_runtime.json "$SNAPSHOT_DIR/backend/strategy_generator/configs/v1_runtime.json"
           cp backend/strategy_generator/configs/v2_runtime.json "$SNAPSHOT_DIR/backend/strategy_generator/configs/v2_runtime.json"
           cp backend/strategy_generator/configs/v3_runtime.json "$SNAPSHOT_DIR/backend/strategy_generator/configs/v3_runtime.json"
@@ -364,7 +364,7 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
-            cp "$SNAPSHOT_DIR/docs/data/tradingcopilot.db" docs/data/tradingcopilot.db
+            cp "$SNAPSHOT_DIR/frontend-react/public/data/tradingcopilot.db" frontend-react/public/data/tradingcopilot.db
             cp "$SNAPSHOT_DIR/backend/strategy_generator/configs/v1_runtime.json" backend/strategy_generator/configs/v1_runtime.json
             cp "$SNAPSHOT_DIR/backend/strategy_generator/configs/v2_runtime.json" backend/strategy_generator/configs/v2_runtime.json
             cp "$SNAPSHOT_DIR/backend/strategy_generator/configs/v3_runtime.json" backend/strategy_generator/configs/v3_runtime.json
@@ -393,7 +393,7 @@ jobs:
         uses: peter-evans/close-issue@v3
         with:
           comment: |
-            Symbol request `${{ steps.validate_add.outputs.requested_symbol }}` was validated as `${{ steps.validate_add.outputs.resolved_symbol }}`, added to docs/data/tradingcopilot.db, received v1-v6 symbol-specific runtime tuning, and both backtest and paper-trading runs completed.
+            Symbol request `${{ steps.validate_add.outputs.requested_symbol }}` was validated as `${{ steps.validate_add.outputs.resolved_symbol }}`, added to frontend-react/public/data/tradingcopilot.db, received v1-v6 symbol-specific runtime tuning, and both backtest and paper-trading runs completed.
 
             Backtest repair status: `${{ steps.backtest_repair.outputs.repair_status }}`
             Remaining weak/incomplete versions after repair: `${{ steps.backtest_repair.outputs.remaining_failures || 'none' }}`

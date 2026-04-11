@@ -47,5 +47,5 @@ jobs:
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
-          git add docs/data/tradingcopilot.db
+          git add frontend-react/public/data/tradingcopilot.db
           git diff --cached --quiet && echo 'No changes to commit' || (git commit -m "Sync Alpaca symbols to database" && git push)

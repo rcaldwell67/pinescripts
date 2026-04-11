@@ -1,0 +1,34 @@
+name: Sync tradingcopilot.db to React App
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/data/tradingcopilot.db'
+      - 'backend/docs/data/tradingcopilot.db'
+      - 'frontend-react/public/data/tradingcopilot.db'
+
+jobs:
+  sync-db:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Copy tradingcopilot.db to React public/data
+        run: |
+          mkdir -p frontend-react/public/data
+          if [ -f backend/data/tradingcopilot.db ]; then
+            cp backend/data/tradingcopilot.db frontend-react/public/data/tradingcopilot.db
+          elif [ -f backend/docs/data/tradingcopilot.db ]; then
+            cp backend/docs/data/tradingcopilot.db frontend-react/public/data/tradingcopilot.db
+          fi
+
+      - name: Commit and push if changed
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add frontend-react/public/data/tradingcopilot.db
+          git diff --cached --quiet || git commit -m 'Sync tradingcopilot.db to React public/data [skip ci]'
+          git push

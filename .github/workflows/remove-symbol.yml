@@ -55,11 +55,11 @@ jobs:
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
-          git add docs/data/tradingcopilot.db
+          git add frontend-react/public/data/tradingcopilot.db
           git diff --cached --quiet && echo 'No changes to commit' || git commit -m "Remove symbol ${{ steps.parse.outputs.symbol }} via issue #${{ github.event.issue.number }}"
           git push
 
       - name: Comment and close issue
         uses: peter-evans/close-issue@v3
         with:
-          comment: "Symbol ${{ steps.parse.outputs.symbol }} has been removed from docs/data/tradingcopilot.db successfully."
+          comment: "Symbol ${{ steps.parse.outputs.symbol }} has been removed from frontend-react/public/data/tradingcopilot.db successfully."

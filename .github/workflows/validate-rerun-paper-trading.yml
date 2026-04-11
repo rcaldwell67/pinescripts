@@ -7,7 +7,7 @@ on:
     paths:
       - 'backend/**'
       - 'requirements.txt'
-      - 'docs/data/tradingcopilot.db'
+      - 'frontend-react/public/data/tradingcopilot.db'
       - '.github/workflows/rerun-paper-trade-issue.yml'
       - '.github/workflows/validate-rerun-paper-trading.yml'
 

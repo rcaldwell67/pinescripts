@@ -23,7 +23,7 @@ on:
       - 'backend/**'
       - 'reset_aligned_backtest_paper.py'
       - 'requirements.txt'
-      - 'docs/data/tradingcopilot.db'
+      - 'frontend-react/public/data/tradingcopilot.db'
       - '.github/workflows/rerun-backtest-issue.yml'
       - '.github/workflows/validate-rerun-backtests.yml'
 

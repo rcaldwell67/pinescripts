@@ -103,22 +103,22 @@ jobs:
           set -euo pipefail
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/data/tradingcopilot.db
+          git add frontend-react/public/data/tradingcopilot.db
           if git diff --cached --quiet; then
             echo "No DB changes to commit."
             exit 0
           fi
           COMMIT_MSG="chore: manual alpaca paper trading $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           SNAPSHOT_DB="$(mktemp)"
-          cp docs/data/tradingcopilot.db "$SNAPSHOT_DB"
+          cp frontend-react/public/data/tradingcopilot.db "$SNAPSHOT_DB"
 
           for attempt in 1 2 3; do
             echo "Push attempt ${attempt}/3"
             git fetch origin main
             git reset --hard origin/main
-            cp "$SNAPSHOT_DB" docs/data/tradingcopilot.db
+            cp "$SNAPSHOT_DB" frontend-react/public/data/tradingcopilot.db
 
-            git add docs/data/tradingcopilot.db
+            git add frontend-react/public/data/tradingcopilot.db
             if git diff --cached --quiet; then
               echo "No effective DB changes remain after syncing with origin/main."
               exit 0
