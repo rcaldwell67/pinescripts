@@ -1,3 +1,5 @@
+
+})
 var re;async function ae(y){if(!C)try{var x=await S(y);return new Uint8Array(x)}catch{}if(y==re&&C)y=new Uint8Array(C);else if(w)y=w(y);else throw"both async and sync fetching of the wasm failed";return y}async function Q(y,x){try{var A=await ae(y);return await WebAssembly.instantiate(A,x)}catch(M){T(`failed to asynchronously prepare wasm: ${M}`),W(M)}}
 async function oe(y){var x=re;if(!C)try{var A=fetch(x,{credentials:"same-origin"});return await WebAssembly.instantiateStreaming(A,y)}catch{T(`wasm streaming compile failed: ${M}`),T("falling back to ArrayBuffer instantiation")}return Q(x,y)}
 class ie{constructor(x){Bi(this,"name","ExitStatus");this.message=`Program terminated with exit(${x})`,this.status=x}}
