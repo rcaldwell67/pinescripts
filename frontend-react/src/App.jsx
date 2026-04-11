@@ -299,10 +299,10 @@ function App() {
     if (availableAlpacaSymbols.length === 0) {
       console.warn('No available Alpaca symbols after filtering.');
       console.log('Existing dashboard symbols:', symbols.map(s => s.symbol));
-      console.log('Type filters:', typeFilters);
+      console.log('Crypto only:', cryptoOnly);
       console.log('All inactive symbols:', inactiveSymbols);
     }
-  }, [availableAlpacaSymbols, symbols, typeFilters, inactiveSymbols]);
+  }, [availableAlpacaSymbols, symbols, cryptoOnly, inactiveSymbols]);
 
   const tradeMix = useMemo(() => {
     let wins = 0;
