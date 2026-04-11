@@ -240,7 +240,6 @@ function App() {
   }
   // Filter Alpaca symbols to only those not already in the dashboard, and by checked types
   // Only show inactive symbols (active=0) in the Add Alpaca Symbol dropdown, filtered by type
-  const availableAlpacaSymbols = inactiveSymbols.filter(matchesTypeFilters);
   // Fix: Show all Alpaca symbols not already in dashboard, filtered by type
   const dashboardSymbolsSet = new Set(symbols.map(s => s.symbol));
   const allAlpacaSyms = window._allAlpacaSyms || [];
