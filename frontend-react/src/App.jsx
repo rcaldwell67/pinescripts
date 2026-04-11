@@ -1,3 +1,18 @@
+import { useEffect, useMemo, useState } from "react";
+import initSqlJs from 'sql.js';
+import TradeGapAnalysis from "./TradeGapAnalysis";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+
 // Guideline thresholds (should match backend/config/guideline_policy.py)
 const GUIDELINE_THRESHOLDS = {
   minTrades: 10,
@@ -15,22 +30,6 @@ function guidelineStatus(row) {
   if (row.max_drawdown_pct > GUIDELINE_THRESHOLDS.maxDrawdown) fails.push("drawdown");
   return fails.length === 0 ? "PASS" : `FAIL: ${fails.join(", ")}`;
 }
-import { useEffect, useMemo, useState } from "react";
-import initSqlJs from 'sql.js';
-import TradeGapAnalysis from "./TradeGapAnalysis";
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-
-const dataUrl = `${import.meta.env.BASE_URL}data/dashboard_snapshot.json`;
 
 function fmtCurrency(value) {
   const n = Number(value);
@@ -59,13 +58,18 @@ const DASHBOARD_TABS = [
   { key: 'logs', label: 'Logs' },
 ];
 
-export default function App() {
-  const [snapshot, setSnapshot] = useState(null);
+
+function App() {
+  // Remove snapshot state, add states for trades, results, and account
+  const [trades, setTrades] = useState([]);
+  const [results, setResults] = useState({ backtest: [], paper: [], live: [] });
+  const [account, setAccount] = useState({});
   const [symbolFilter, setSymbolFilter] = useState("ALL");
   const [assetFilter, setAssetFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [alpacaSymbols, setAlpacaSymbols] = useState([]);
+  const [activeSymbols, setActiveSymbols] = useState([]); // active=1
+  const [inactiveSymbols, setInactiveSymbols] = useState([]); // active=0
   const [activeTab, setActiveTab] = useState('overview');
   // Filters for All Transactions
   const [filterVersion, setFilterVersion] = useState('');
@@ -84,29 +88,41 @@ export default function App() {
     async function loadSymbolsFromDb() {
       setAlpacaLoading(true);
       try {
-        // Download the SQLite DB file using the correct base URL
         const dbPath = `${import.meta.env.BASE_URL}data/tradingcopilot.db`;
         const dbRes = await fetch(dbPath);
         if (!dbRes.ok) throw new Error("Failed to fetch tradingcopilot.db");
         const dbBuffer = await dbRes.arrayBuffer();
-        // Init sql.js
-        const SQL = await initSqlJs({ locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.8.0/dist/${file}` });
+        const SQL = await initSqlJs({ locateFile: file => `${import.meta.env.BASE_URL}${file}` });
         const db = new SQL.Database(new Uint8Array(dbBuffer));
-        // Query symbols table
-        const res = db.exec('SELECT symbol, description, asset_class FROM symbols');
-        let symbols = [];
-        if (res.length > 0) {
-          const cols = res[0].columns;
-          const values = res[0].values;
-          symbols = values.map(row => {
+        // Query for active=1 (dashboard)
+        const resActive = db.exec("SELECT symbol, description, asset_class FROM symbols WHERE active=1");
+        let activeSyms = [];
+        if (resActive.length > 0) {
+          const cols = resActive[0].columns;
+          const values = resActive[0].values;
+          activeSyms = values.map(row => {
             const obj = {};
             cols.forEach((col, i) => { obj[col] = row[i]; });
             return obj;
           });
         }
-        setAlpacaSymbols(symbols);
+        setActiveSymbols(activeSyms);
+        // Query for active=0 (add-symbol)
+        const resInactive = db.exec("SELECT symbol, description, asset_class FROM symbols WHERE active=0");
+        let inactiveSyms = [];
+        if (resInactive.length > 0) {
+          const cols = resInactive[0].columns;
+          const values = resInactive[0].values;
+          inactiveSyms = values.map(row => {
+            const obj = {};
+            cols.forEach((col, i) => { obj[col] = row[i]; });
+            return obj;
+          });
+        }
+        setInactiveSymbols(inactiveSyms);
       } catch (e) {
-        setAlpacaSymbols([]);
+        setActiveSymbols([]);
+        setInactiveSymbols([]);
       } finally {
         setAlpacaLoading(false);
       }
@@ -114,82 +130,99 @@ export default function App() {
     loadSymbolsFromDb();
   }, []);
 
+  // Load all dashboard data from tradingcopilot.db
   useEffect(() => {
-    const load = async () => {
+    async function loadDashboardData() {
       setLoading(true);
       setError("");
       try {
-        const res = await fetch(dataUrl, { cache: "no-store" });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = await res.json();
-        setSnapshot(json);
+        const dbPath = `${import.meta.env.BASE_URL}data/tradingcopilot.db`;
+        const dbRes = await fetch(dbPath);
+        if (!dbRes.ok) throw new Error("Failed to fetch tradingcopilot.db");
+        const dbBuffer = await dbRes.arrayBuffer();
+        const SQL = await initSqlJs({ locateFile: file => `${import.meta.env.BASE_URL}${file}` });
+        const db = new SQL.Database(new Uint8Array(dbBuffer));
+
+        // Trades table
+        const resTrades = db.exec("SELECT * FROM trades");
+        let tradesArr = [];
+        if (resTrades.length > 0) {
+          const cols = resTrades[0].columns;
+          const values = resTrades[0].values;
+          tradesArr = values.map(row => {
+            const obj = {};
+            cols.forEach((col, i) => { obj[col] = row[i]; });
+            return obj;
+          });
+        }
+        setTrades(tradesArr);
+
+        // Results table (assume a 'results' table with mode column)
+        const resResults = db.exec("SELECT * FROM results");
+        let resultsObj = { backtest: [], paper: [], live: [] };
+        if (resResults.length > 0) {
+          const cols = resResults[0].columns;
+          const values = resResults[0].values;
+          const allResults = values.map(row => {
+            const obj = {};
+            cols.forEach((col, i) => { obj[col] = row[i]; });
+            return obj;
+          });
+          resultsObj.backtest = allResults.filter(r => r.mode === 'backtest');
+          resultsObj.paper = allResults.filter(r => r.mode === 'paper');
+          resultsObj.live = allResults.filter(r => r.mode === 'live');
+        }
+        setResults(resultsObj);
+
+        // Account table (assume only one row)
+        const resAccount = db.exec("SELECT * FROM account LIMIT 1");
+        let accountObj = {};
+        if (resAccount.length > 0) {
+          const cols = resAccount[0].columns;
+          const values = resAccount[0].values;
+          if (values.length > 0) {
+            cols.forEach((col, i) => { accountObj[col] = values[0][i]; });
+          }
+        }
+        setAccount(accountObj);
       } catch (err) {
-        setError(`Failed to load snapshot: ${String(err?.message || err)}`);
+        setError(`Failed to load dashboard data: ${String(err?.message || err)}`);
+        setTrades([]);
+        setResults({ backtest: [], paper: [], live: [] });
+        setAccount({});
       } finally {
         setLoading(false);
       }
-    };
-    load();
+    }
+    loadDashboardData();
   }, []);
 
-  const symbols = snapshot?.symbols || [];
+  const symbols = activeSymbols;
   const symbolOptions = ["ALL", ...symbols.map((s) => s.symbol)];
 
   const filteredTrades = useMemo(() => {
-    const trades = (snapshot?.trades || []).filter(t => t.version === 'v6');
-    return trades.filter((t) => {
+    const v6trades = trades.filter(t => t.version === 'v6');
+    return v6trades.filter((t) => {
       const symbolOk = symbolFilter === "ALL" || t.symbol === symbolFilter;
       const assetOk = assetFilter === "all" || t.asset_class === assetFilter;
       return symbolOk && assetOk;
     });
-  }, [snapshot, symbolFilter, assetFilter]);
+  }, [trades, symbolFilter, assetFilter]);
 
   const latestResults = useMemo(() => {
-    const results = [];
-    const groups = snapshot?.results || {};
+    const resultsArr = [];
     for (const mode of ["backtest", "paper", "live"]) {
-      for (const row of (groups[mode] || []).filter(r => r.version === 'v6')) {
+      for (const row of (results[mode] || []).filter(r => r.version === 'v6')) {
         const symbolOk = symbolFilter === "ALL" || row.symbol === symbolFilter;
         const asset = symbols.find((s) => s.symbol === row.symbol)?.asset_class || "etf";
         const assetOk = assetFilter === "all" || asset === assetFilter;
         if (symbolOk && assetOk) {
-          results.push({ ...row, asset_class: asset });
+          resultsArr.push({ ...row, asset_class: asset });
         }
       }
     }
-    return results;
-  }, [snapshot, symbolFilter, assetFilter, symbols]);
-
-  const tradeMix = useMemo(() => {
-    let wins = 0;
-    let losses = 0;
-    let flat = 0;
-    for (const t of filteredTrades) {
-      const score = scoreFromTrade(t);
-      if (score === "win") wins += 1;
-      else if (score === "loss") losses += 1;
-      else flat += 1;
-    }
-    return [
-      { name: "Wins", value: wins },
-      { name: "Losses", value: losses },
-      { name: "Flat", value: flat },
-    ];
-  }, [filteredTrades]);
-
-  const equitySeries = useMemo(() => {
-    const rows = filteredTrades
-      .filter((t) => Number.isFinite(Number(t.equity)))
-      .slice()
-      .reverse()
-      .map((t, idx) => ({
-        i: idx + 1,
-        equity: Number(t.equity),
-      }));
-    return rows;
-  }, [filteredTrades]);
-
-  const account = snapshot?.account || {};
+    return resultsArr;
+  }, [results, symbolFilter, assetFilter, symbols]);
 
   // Handler for Add Symbol button
   function handleAddSymbol() {
@@ -214,10 +247,8 @@ export default function App() {
     return false;
   }
   // Filter Alpaca symbols to only those not already in the dashboard, and by checked types
-  const existingSymbols = new Set(symbols.map(s => s.symbol));
-  const availableAlpacaSymbols = alpacaSymbols
-    .filter(s => !existingSymbols.has(s))
-    .filter(matchesTypeFilters);
+  // Only show inactive symbols (active=0) in the Add Alpaca Symbol dropdown, filtered by type
+  const availableAlpacaSymbols = inactiveSymbols.filter(matchesTypeFilters);
 
   // Handler for Remove Symbol button
   function handleRemoveSymbol() {
@@ -233,6 +264,44 @@ export default function App() {
     window.open(url, "_blank");
   }
 
+  useEffect(() => {
+    if (availableAlpacaSymbols.length === 0) {
+      console.warn('No available Alpaca symbols after filtering.');
+      console.log('Existing dashboard symbols:', symbols.map(s => s.symbol));
+      console.log('Type filters:', typeFilters);
+      console.log('All inactive symbols:', inactiveSymbols);
+    }
+  }, [availableAlpacaSymbols, symbols, typeFilters, inactiveSymbols]);
+
+  const tradeMix = useMemo(() => {
+    let wins = 0;
+    let losses = 0;
+    let flat = 0;
+    for (const t of filteredTrades) {
+      const score = scoreFromTrade(t);
+      if (score === "win") wins += 1;
+      else if (score === "loss") losses += 1;
+      else flat += 1;
+    }
+    return [
+      { name: "Win", value: wins },
+      { name: "Loss", value: losses },
+      { name: "Flat", value: flat },
+    ];
+  }, [filteredTrades]);
+
+  const equitySeries = useMemo(() => {
+    const rows = filteredTrades
+      .filter((t) => Number.isFinite(Number(t.equity)))
+      .slice()
+      .reverse()
+      .map((t, idx) => ({
+        i: idx + 1,
+        equity: Number(t.equity),
+      }));
+    return rows;
+  }, [filteredTrades]);
+
   return (
     <div className="page-shell">
       <div className="bg-grid" />
@@ -242,7 +311,7 @@ export default function App() {
           <h1>Crypto + ETF Trading Monitor</h1>
           <p className="sub">Unified backtest, paper, and live observability from Alpaca + Backtrader.</p>
         </div>
-        <div className="chip">Snapshot: {snapshot?.generated_at || "-"}</div>
+        <div className="chip">Snapshot: {account?.generated_at || "-"}</div>
       </header>
 
       <section className="controls" style={{ alignItems: 'end', gap: 16 }}>
@@ -254,15 +323,12 @@ export default function App() {
               ))}
             </select>
           </label>
-          {/* Refresh button hidden as requested */}
         </div>
-        {/* Asset Class filter hidden as requested */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <label>Add Alpaca Symbol</label>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            {/* Debug: Show number of symbols loaded and error if any */}
             <span style={{ color: '#9bb4c7', fontSize: 13, marginRight: 8 }}>
-              {alpacaLoading ? 'Loading symbols...' : `Loaded: ${alpacaSymbols.length}`}
+              {alpacaLoading ? 'Loading symbols...' : `Loaded: ${inactiveSymbols.length}`}
             </span>
             <select
               value={selectedAlpacaSymbol}
@@ -314,7 +380,7 @@ export default function App() {
         </div>
       </section>
 
-      {loading && <div className="panel">Loading snapshot...</div>}
+      {loading && <div className="panel">Loading dashboard data...</div>}
       {error && <div className="panel error">{error}</div>}
 
       {!loading && !error && (
@@ -498,3 +564,5 @@ export default function App() {
     </div>
   );
 }
+
+export default App;

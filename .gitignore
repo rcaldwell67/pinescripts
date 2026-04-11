@@ -14,4 +14,10 @@ __pycache__/
 *.db-shm
 
 # Site Backup
+<<<<<<< HEAD
 localbackup/
+=======
+localbackup/
+playwright-mcp/
+test-results/
+>>>>>>> 73eb110a3a815bd20f63ea50adc329cffbc23119
