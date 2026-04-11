@@ -95,32 +95,20 @@ function App() {
         // Use CDN for sql.js WASM
         const SQL = await initSqlJs({ locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.14.1/dist/sql-wasm.wasm` });
         const db = new SQL.Database(new Uint8Array(dbBuffer));
-        // Query for active=1 (dashboard)
-        const resActive = db.exec("SELECT symbol, description, asset_class FROM symbols WHERE active=1");
-        let activeSyms = [];
-        if (resActive.length > 0) {
-          const cols = resActive[0].columns;
-          const values = resActive[0].values;
-          activeSyms = values.map(row => {
+        // Query all Alpaca symbols from alpaca_symbols table
+        const resAlpaca = db.exec("SELECT symbol, name as description, type as asset_class FROM alpaca_symbols");
+        let allAlpacaSyms = [];
+        if (resAlpaca.length > 0) {
+          const cols = resAlpaca[0].columns;
+          const values = resAlpaca[0].values;
+          allAlpacaSyms = values.map(row => {
             const obj = {};
             cols.forEach((col, i) => { obj[col] = row[i]; });
             return obj;
           });
         }
-        setActiveSymbols(activeSyms);
-        // Query for active=0 (add-symbol)
-        const resInactive = db.exec("SELECT symbol, description, asset_class FROM symbols WHERE active=0");
-        let inactiveSyms = [];
-        if (resInactive.length > 0) {
-          const cols = resInactive[0].columns;
-          const values = resInactive[0].values;
-          inactiveSyms = values.map(row => {
-            const obj = {};
-            cols.forEach((col, i) => { obj[col] = row[i]; });
-            return obj;
-          });
-        }
-        setInactiveSymbols(inactiveSyms);
+        setActiveSymbols(allAlpacaSyms);
+        setInactiveSymbols([]);
       } catch (e) {
         setActiveSymbols([]);
         setInactiveSymbols([]);
