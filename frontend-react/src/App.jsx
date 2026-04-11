@@ -190,7 +190,8 @@ function App() {
   }, []);
 
   const symbols = activeSymbols;
-  const symbolOptions = ["ALL", ...symbols.map((s) => s.symbol)];
+  // Deduplicate symbolOptions to avoid duplicate keys
+  const symbolOptions = ["ALL", ...Array.from(new Set(symbols.map((s) => s.symbol)))];
 
   const filteredTrades = useMemo(() => {
     const v6trades = trades.filter(t => t.version === 'v6');
@@ -313,8 +314,8 @@ function App() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <label>Symbol
             <select value={symbolFilter} onChange={(e) => setSymbolFilter(e.target.value)}>
-              {symbolOptions.map((symbol) => (
-                <option key={symbol} value={symbol}>{symbol}</option>
+              {symbolOptions.map((symbol, idx) => (
+                <option key={symbol === "ALL" ? "ALL" : symbol} value={symbol}>{symbol}</option>
               ))}
             </select>
           </label>
@@ -368,7 +369,7 @@ function App() {
             {alpacaLoading && <span style={{ color: '#ffa657', fontSize: 13 }}>Loading symbols...</span>}
             {!alpacaLoading && availableAlpacaSymbols.length === 0 && (
               <span style={{ color: '#ffa657', fontSize: 13, marginLeft: 8 }}>
-                No symbols available. Check your filters or data source.
+                All Alpaca symbols are already in the dashboard or filtered out.
               </span>
             )}
           </div>
