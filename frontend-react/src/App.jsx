@@ -92,7 +92,8 @@ function App() {
         const dbRes = await fetch(dbPath);
         if (!dbRes.ok) throw new Error("Failed to fetch tradingcopilot.db");
         const dbBuffer = await dbRes.arrayBuffer();
-        const SQL = await initSqlJs({ locateFile: file => `${import.meta.env.BASE_URL}${file}` });
+        // Use correct WASM path for GitHub Pages deployment
+        const SQL = await initSqlJs({ locateFile: file => `${import.meta.env.BASE_URL}sql-wasm.wasm` });
         const db = new SQL.Database(new Uint8Array(dbBuffer));
         // Query for active=1 (dashboard)
         const resActive = db.exec("SELECT symbol, description, asset_class FROM symbols WHERE active=1");
@@ -140,7 +141,8 @@ function App() {
         const dbRes = await fetch(dbPath);
         if (!dbRes.ok) throw new Error("Failed to fetch tradingcopilot.db");
         const dbBuffer = await dbRes.arrayBuffer();
-        const SQL = await initSqlJs({ locateFile: file => `${import.meta.env.BASE_URL}${file}` });
+        // Use correct WASM path for GitHub Pages deployment
+        const SQL = await initSqlJs({ locateFile: file => `${import.meta.env.BASE_URL}sql-wasm.wasm` });
         const db = new SQL.Database(new Uint8Array(dbBuffer));
 
         // Trades table
