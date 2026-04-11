@@ -238,12 +238,40 @@ function App() {
     if (typeFilters.stocks && (assetClass === 'us_equity' || assetClass === 'etf')) return true;
     return false;
   }
-  // Filter Alpaca symbols to only those not already in the dashboard, and by checked types
-  // Only show inactive symbols (active=0) in the Add Alpaca Symbol dropdown, filtered by type
-  // Fix: Show all Alpaca symbols not already in dashboard, filtered by type
+  // Load all Alpaca symbols and filter to only those not active in the dashboard
+  const [allAlpacaSymbols, setAllAlpacaSymbols] = useState([]);
+  useEffect(() => {
+    async function loadAllAlpacaSymbols() {
+      try {
+        const dbPath = `${import.meta.env.BASE_URL}data/tradingcopilot.db`;
+        const dbRes = await fetch(dbPath);
+        if (!dbRes.ok) throw new Error("Failed to fetch tradingcopilot.db");
+        const dbBuffer = await dbRes.arrayBuffer();
+        const SQL = await initSqlJs({ locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.14.1/dist/sql-wasm.wasm` });
+        const db = new SQL.Database(new Uint8Array(dbBuffer));
+        // Get all symbols from alpaca_symbols
+        const resAlpaca = db.exec("SELECT symbol, name as description, type as asset_class FROM alpaca_symbols");
+        let allSyms = [];
+        if (resAlpaca.length > 0) {
+          const cols = resAlpaca[0].columns;
+          const values = resAlpaca[0].values;
+          allSyms = values.map(row => {
+            const obj = {};
+            cols.forEach((col, i) => { obj[col] = row[i]; });
+            return obj;
+          });
+        }
+        setAllAlpacaSymbols(allSyms);
+      } catch (e) {
+        setAllAlpacaSymbols([]);
+      }
+    }
+    loadAllAlpacaSymbols();
+  }, []);
+
+  // Only show Alpaca symbols not already active in dashboard, filtered by type
   const dashboardSymbolsSet = new Set(symbols.map(s => s.symbol));
-  const allAlpacaSyms = window._allAlpacaSyms || [];
-  const availableAlpacaSymbols = allAlpacaSyms.filter(sym => !dashboardSymbolsSet.has(sym.symbol) && matchesTypeFilters(sym));
+  const availableAlpacaSymbols = allAlpacaSymbols.filter(sym => !dashboardSymbolsSet.has(sym.symbol) && matchesTypeFilters(sym));
 
   // Handler for Remove Symbol button
   function handleRemoveSymbol() {
