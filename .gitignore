@@ -4,6 +4,7 @@
 .venv
 .env
 .env.example
+.github
 
 node_modules
 __pycache__/
@@ -14,10 +15,8 @@ __pycache__/
 *.db-shm
 
 # Site Backup
-<<<<<<< HEAD
 localbackup/
-=======
-localbackup/
+
 playwright-mcp/
 test-results/
->>>>>>> 73eb110a3a815bd20f63ea50adc329cffbc23119
+
