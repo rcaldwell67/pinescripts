@@ -94,8 +94,8 @@ function App() {
         const dbBuffer = await dbRes.arrayBuffer();
         const SQL = await initSqlJs({ locateFile: file => `${import.meta.env.BASE_URL}${file}` });
         const db = new SQL.Database(new Uint8Array(dbBuffer));
-        // Query for active='1' (dashboard)
-        const resActive = db.exec("SELECT symbol, description, asset_class FROM symbols WHERE active='1'");
+        // Query for active=1 (dashboard)
+        const resActive = db.exec("SELECT symbol, description, asset_class FROM symbols WHERE active=1");
         let activeSyms = [];
         if (resActive.length > 0) {
           const cols = resActive[0].columns;
@@ -107,8 +107,8 @@ function App() {
           });
         }
         setActiveSymbols(activeSyms);
-        // Query for active='0' (add-symbol)
-        const resInactive = db.exec("SELECT symbol, description, asset_class FROM symbols WHERE active='0'");
+        // Query for active=0 (add-symbol)
+        const resInactive = db.exec("SELECT symbol, description, asset_class FROM symbols WHERE active=0");
         let inactiveSyms = [];
         if (resInactive.length > 0) {
           const cols = resInactive[0].columns;
