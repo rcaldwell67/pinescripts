@@ -190,8 +190,8 @@ function App() {
   }, []);
 
   const symbols = activeSymbols;
-  // Deduplicate symbolOptions to avoid duplicate keys
-  const symbolOptions = ["ALL", ...Array.from(new Set(symbols.map((s) => s.symbol)))];
+  // Deduplicate symbolOptions and ensure 'ALL' only appears once
+  const symbolOptions = ["ALL", ...Array.from(new Set(symbols.map((s) => s.symbol))).filter(s => s !== "ALL")];
 
   const filteredTrades = useMemo(() => {
     const v6trades = trades.filter(t => t.version === 'v6');
