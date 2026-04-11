@@ -30,7 +30,7 @@ import {
   YAxis,
 } from "recharts";
 
-const dataUrl = `${import.meta.env.BASE_URL}data/dashboard_snapshot.json`;
+
 
 function fmtCurrency(value) {
   const n = Number(value);
@@ -59,8 +59,10 @@ const DASHBOARD_TABS = [
   { key: 'logs', label: 'Logs' },
 ];
 
-export default function App() {
-  const [snapshot, setSnapshot] = useState(null);
+  // Remove snapshot state, add states for trades, results, and account
+  const [trades, setTrades] = useState([]);
+  const [results, setResults] = useState({ backtest: [], paper: [], live: [] });
+  const [account, setAccount] = useState({});
   const [symbolFilter, setSymbolFilter] = useState("ALL");
   // Example: Load and compile the sql.js WASM module (for demonstration)
   const [wasmError, setWasmError] = useState("");
@@ -156,51 +158,99 @@ export default function App() {
     loadSymbolsFromDb();
   }, []);
 
+  // Load all dashboard data from tradingcopilot.db
   useEffect(() => {
-    const load = async () => {
+    async function loadDashboardData() {
       setLoading(true);
       setError("");
       try {
-        const res = await fetch(dataUrl, { cache: "no-store" });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = await res.json();
-        setSnapshot(json);
+        const dbPath = `${import.meta.env.BASE_URL}data/tradingcopilot.db`;
+        const dbRes = await fetch(dbPath);
+        if (!dbRes.ok) throw new Error("Failed to fetch tradingcopilot.db");
+        const dbBuffer = await dbRes.arrayBuffer();
+        const SQL = await initSqlJs({ locateFile: file => `${import.meta.env.BASE_URL}${file}` });
+        const db = new SQL.Database(new Uint8Array(dbBuffer));
+
+        // Trades table
+        const resTrades = db.exec("SELECT * FROM trades");
+        let tradesArr = [];
+        if (resTrades.length > 0) {
+          const cols = resTrades[0].columns;
+          const values = resTrades[0].values;
+          tradesArr = values.map(row => {
+            const obj = {};
+            cols.forEach((col, i) => { obj[col] = row[i]; });
+            return obj;
+          });
+        }
+        setTrades(tradesArr);
+
+        // Results table (assume a 'results' table with mode column)
+        const resResults = db.exec("SELECT * FROM results");
+        let resultsObj = { backtest: [], paper: [], live: [] };
+        if (resResults.length > 0) {
+          const cols = resResults[0].columns;
+          const values = resResults[0].values;
+          const allResults = values.map(row => {
+            const obj = {};
+            cols.forEach((col, i) => { obj[col] = row[i]; });
+            return obj;
+          });
+          resultsObj.backtest = allResults.filter(r => r.mode === 'backtest');
+          resultsObj.paper = allResults.filter(r => r.mode === 'paper');
+          resultsObj.live = allResults.filter(r => r.mode === 'live');
+        }
+        setResults(resultsObj);
+
+        // Account table (assume only one row)
+        const resAccount = db.exec("SELECT * FROM account LIMIT 1");
+        let accountObj = {};
+        if (resAccount.length > 0) {
+          const cols = resAccount[0].columns;
+          const values = resAccount[0].values;
+          if (values.length > 0) {
+            cols.forEach((col, i) => { accountObj[col] = values[0][i]; });
+          }
+        }
+        setAccount(accountObj);
       } catch (err) {
-        setError(`Failed to load snapshot: ${String(err?.message || err)}`);
+        setError(`Failed to load dashboard data: ${String(err?.message || err)}`);
+        setTrades([]);
+        setResults({ backtest: [], paper: [], live: [] });
+        setAccount({});
       } finally {
         setLoading(false);
       }
-    };
-    load();
+    }
+    loadDashboardData();
   }, []);
 
   const symbols = activeSymbols;
   const symbolOptions = ["ALL", ...symbols.map((s) => s.symbol)];
 
   const filteredTrades = useMemo(() => {
-    const trades = (snapshot?.trades || []).filter(t => t.version === 'v6');
-    return trades.filter((t) => {
+    const v6trades = trades.filter(t => t.version === 'v6');
+    return v6trades.filter((t) => {
       const symbolOk = symbolFilter === "ALL" || t.symbol === symbolFilter;
       const assetOk = assetFilter === "all" || t.asset_class === assetFilter;
       return symbolOk && assetOk;
     });
-  }, [snapshot, symbolFilter, assetFilter]);
+  }, [trades, symbolFilter, assetFilter]);
 
   const latestResults = useMemo(() => {
-    const results = [];
-    const groups = snapshot?.results || {};
+    const resultsArr = [];
     for (const mode of ["backtest", "paper", "live"]) {
-      for (const row of (groups[mode] || []).filter(r => r.version === 'v6')) {
+      for (const row of (results[mode] || []).filter(r => r.version === 'v6')) {
         const symbolOk = symbolFilter === "ALL" || row.symbol === symbolFilter;
         const asset = symbols.find((s) => s.symbol === row.symbol)?.asset_class || "etf";
         const assetOk = assetFilter === "all" || asset === assetFilter;
         if (symbolOk && assetOk) {
-          results.push({ ...row, asset_class: asset });
+          resultsArr.push({ ...row, asset_class: asset });
         }
       }
     }
-    return results;
-  }, [snapshot, symbolFilter, assetFilter, symbols]);
+    return resultsArr;
+  }, [results, symbolFilter, assetFilter, symbols]);
 
   const tradeMix = useMemo(() => {
     let wins = 0;
@@ -236,7 +286,7 @@ export default function App() {
     return rows;
   }, [filteredTrades]);
 
-  const account = snapshot?.account || {};
+  // account is now loaded from DB
 
   // Handler for Add Symbol button
   function handleAddSymbol() {
@@ -368,7 +418,7 @@ export default function App() {
         </div>
       </section>
 
-      {loading && <div className="panel">Loading snapshot...</div>}
+      {loading && <div className="panel">Loading dashboard data...</div>}
       {error && <div className="panel error">{error}</div>}
 
       {!loading && !error && (
