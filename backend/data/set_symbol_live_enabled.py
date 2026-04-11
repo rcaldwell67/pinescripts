@@ -20,6 +20,7 @@ def _parse_bool(value: str) -> bool:
 
 
 def set_symbol_live_enabled(symbol: str, live_enabled: bool) -> int:
+    import shutil
     conn = sqlite3.connect(DB_PATH)
     try:
         conn.execute(
@@ -34,6 +35,14 @@ def set_symbol_live_enabled(symbol: str, live_enabled: bool) -> int:
         (1 if live_enabled else 0, symbol),
     )
     conn.commit()
+    conn.close()
+    # Copy to frontend-react/public/data
+    public_db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../frontend-react/public/data/tradingcopilot.db'))
+    try:
+        shutil.copyfile(DB_PATH, public_db_path)
+        print(f"Copied DB to {public_db_path}")
+    except Exception as e:
+        print(f"Warning: Failed to copy DB to frontend-react/public/data: {e}")
     return cur.rowcount
 
 

@@ -11,7 +11,9 @@ def sync_alpaca_symbols():
         print("Error: requests library not found. Install with: pip install requests")
         sys.exit(1)
     
-    db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../docs/data/tradingcopilot.db'))
+    import shutil
+    db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../frontend-react/public/data/tradingcopilot.db'))
+    docs_db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../docs/data/tradingcopilot.db'))
 
     key = os.getenv('ALPACA_PAPER_API_KEY') or os.getenv('ALPACA_API_KEY')
     secret = os.getenv('ALPACA_PAPER_API_SECRET') or os.getenv('ALPACA_API_SECRET')
@@ -99,6 +101,12 @@ def sync_alpaca_symbols():
         sys.exit(1)
     finally:
         conn.close()
+        # Copy updated DB to docs/data location
+        try:
+            shutil.copyfile(db_path, docs_db_path)
+            print(f"Copied updated DB to {docs_db_path}")
+        except Exception as e:
+            print(f"Warning: Failed to copy DB to docs/data: {e}")
 
 if __name__ == '__main__':
     sync_alpaca_symbols()

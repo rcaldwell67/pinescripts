@@ -197,6 +197,14 @@ def create_database(db_path):
     conn.close()
 
 if __name__ == "__main__":
+    import shutil
     db_path = os.path.join(os.path.dirname(__file__), "..", "docs", "data", "tradingcopilot.db")
+    public_db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../frontend-react/public/data/tradingcopilot.db'))
     create_database(db_path)
     print(f"Database created at {db_path}")
+    # Copy to frontend-react/public/data
+    try:
+        shutil.copyfile(db_path, public_db_path)
+        print(f"Copied DB to {public_db_path}")
+    except Exception as e:
+        print(f"Warning: Failed to copy DB to frontend-react/public/data: {e}")

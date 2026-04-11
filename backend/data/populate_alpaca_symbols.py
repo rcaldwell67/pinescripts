@@ -24,6 +24,7 @@ def fetch_alpaca_symbols():
     return resp.json()
 
 def insert_symbols(symbols):
+    import shutil
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
     for asset in symbols:
@@ -42,6 +43,13 @@ def insert_symbols(symbols):
             cur.execute('UPDATE symbols SET live_enabled = ? WHERE symbol = ?', (live_enabled, symbol))
     conn.commit()
     conn.close()
+    # Copy updated DB to docs/data location
+    docs_db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../docs/data/tradingcopilot.db'))
+    try:
+        shutil.copyfile(DB_PATH, docs_db_path)
+        print(f"Copied updated DB to {docs_db_path}")
+    except Exception as e:
+        print(f"Warning: Failed to copy DB to docs/data: {e}")
 
 def main():
     print('Fetching Alpaca symbols...')

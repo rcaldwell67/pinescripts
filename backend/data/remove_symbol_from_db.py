@@ -39,6 +39,14 @@ def main():
     conn.commit()
     conn.close()
     print(f"Symbol {symbol} removed from database.")
+    # Copy to frontend-react/public/data
+    import shutil
+    public_db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../frontend-react/public/data/tradingcopilot.db'))
+    try:
+        shutil.copyfile(db_path, public_db_path)
+        print(f"Copied DB to {public_db_path}")
+    except Exception as e:
+        print(f"Warning: Failed to copy DB to frontend-react/public/data: {e}")
 
 if __name__ == '__main__':
     main()
