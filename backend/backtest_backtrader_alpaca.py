@@ -508,40 +508,59 @@ def save_to_db(symbol: str, version: str,
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 def main() -> int:
+
     parser = argparse.ArgumentParser(description="Run an APM backtest and save results to the DB.")
-    parser.add_argument("--symbol",  required=True, help="Trading symbol, e.g. BTC/USD")
+    parser.add_argument("--symbol", help="Trading symbol, e.g. BTC/USD")
     parser.add_argument("--version", required=True, help="Strategy version (v1-v6)")
     parser.add_argument("--profile", help="Optional runtime profile override, e.g. eth_focus")
+    parser.add_argument("--all-symbols", action="store_true", help="Run for every symbol in the DB")
     args = parser.parse_args()
 
-    symbol  = args.symbol.strip()
     version = args.version.strip().lower()
-
     if version not in VERSION_MAP:
-        print(f"ERROR: version {version!r} is not implemented. Valid: {list(VERSION_MAP)}",
-              file=sys.stderr)
+        print(f"ERROR: version {version!r} is not implemented. Valid: {list(VERSION_MAP)}", file=sys.stderr)
         return 1
 
-    print(f"Fetching YTD OHLCV for {symbol}...")
-    try:
-        df = fetch_ohlcv(symbol)
-    except Exception as e:
-        print(f"ERROR: Failed to fetch data for {symbol}: {e}", file=sys.stderr)
-        return 1
-    
-    print(f"  {len(df):,} bars fetched ({df['timestamp'].iloc[0]} → {df['timestamp'].iloc[-1]})")
-
-    profile = args.profile.strip() if args.profile else None
-
-    if profile:
-        print(f"Running backtest {version} (profile={profile})...")
+    # Determine symbols to process
+    if args.all_symbols:
+        # Load all symbols from DB
+        conn = sqlite3.connect(str(DB_PATH), timeout=30)
+        try:
+            rows = conn.execute("SELECT symbol FROM symbols WHERE active=1").fetchall()
+            symbols = [row[0] for row in rows]
+        finally:
+            conn.close()
+    elif args.symbol:
+        symbols = [args.symbol.strip()]
     else:
-        print(f"Running backtest {version}...")
+        print("ERROR: Must specify --symbol or --all-symbols", file=sys.stderr)
+        return 1
 
-    trades = run_backtest(df, version, symbol=symbol, profile=profile)
-    print(f"  {len(trades)} trades generated")
+    failures = []
+    for symbol in symbols:
+        print(f"\n[RUN] {symbol} {version}")
+        try:
+            print(f"Fetching YTD OHLCV for {symbol}...")
+            df = fetch_ohlcv(symbol)
+            print(f"  {len(df):,} bars fetched ({df['timestamp'].iloc[0]} → {df['timestamp'].iloc[-1]})")
 
-    save_to_db(symbol, version, trades, df)
+            profile = args.profile.strip() if args.profile else None
+            if profile:
+                print(f"Running backtest {version} (profile={profile})...")
+            else:
+                print(f"Running backtest {version}...")
+
+            trades = run_backtest(df, version, symbol=symbol, profile=profile)
+            print(f"  {len(trades)} trades generated")
+
+            save_to_db(symbol, version, trades, df)
+        except Exception as e:
+            print(f"ERROR: Failed to process {symbol}: {e}", file=sys.stderr)
+            failures.append(symbol)
+
+    if failures:
+        print(f"\nBacktest completed with errors for: {', '.join(failures)}", file=sys.stderr)
+        return 1
     return 0
 
 
