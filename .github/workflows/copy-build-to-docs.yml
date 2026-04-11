@@ -37,6 +37,7 @@ jobs:
           cp -r frontend-react/dist/* docs/
           mkdir -p docs/data
           cp frontend-react/public/data/tradingcopilot.db docs/data/tradingcopilot.db
+          cp frontend-react/public/sql-wasm.wasm docs/sql-wasm.wasm
 
       - name: Commit and push changes
         run: |
