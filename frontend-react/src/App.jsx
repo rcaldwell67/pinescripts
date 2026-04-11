@@ -268,18 +268,20 @@ function App() {
     loadAllAlpacaSymbols();
   }, []);
 
-  // Only show Alpaca symbols not already active in dashboard, filtered by type
+  // Only show Alpaca symbols not already active in dashboard, filtered by cryptoOnly
   const dashboardSymbolsSet = new Set(symbols.map(s => s.symbol));
-  // Sort: crypto first, then non-crypto, both alphabetically
-  const availableAlpacaSymbols = allAlpacaSymbols
-    .filter(sym => !dashboardSymbolsSet.has(sym.symbol) && matchesCryptoFilter(sym))
-    .sort((a, b) => {
-      const aCrypto = (a.asset_class || '').toLowerCase() === 'crypto';
-      const bCrypto = (b.asset_class || '').toLowerCase() === 'crypto';
-      if (aCrypto && !bCrypto) return -1;
-      if (!aCrypto && bCrypto) return 1;
-      return a.symbol.localeCompare(b.symbol);
-    });
+  let availableAlpacaSymbols = [];
+  if (cryptoOnly) {
+    // Only crypto symbols
+    availableAlpacaSymbols = allAlpacaSymbols
+      .filter(sym => !dashboardSymbolsSet.has(sym.symbol) && (sym.asset_class || '').toLowerCase() === 'crypto')
+      .sort((a, b) => a.symbol.localeCompare(b.symbol));
+  } else {
+    // Only non-crypto symbols
+    availableAlpacaSymbols = allAlpacaSymbols
+      .filter(sym => !dashboardSymbolsSet.has(sym.symbol) && (sym.asset_class || '').toLowerCase() !== 'crypto')
+      .sort((a, b) => a.symbol.localeCompare(b.symbol));
+  }
 
   // Handler for Remove Symbol button
   function handleRemoveSymbol() {
