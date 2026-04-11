@@ -109,6 +109,8 @@ function App() {
         }
         setActiveSymbols(allAlpacaSyms);
         setInactiveSymbols([]);
+        // Also store allAlpacaSyms in a ref for Add Symbol dropdown
+        window._allAlpacaSyms = allAlpacaSyms;
       } catch (e) {
         setActiveSymbols([]);
         setInactiveSymbols([]);
@@ -239,6 +241,10 @@ function App() {
   // Filter Alpaca symbols to only those not already in the dashboard, and by checked types
   // Only show inactive symbols (active=0) in the Add Alpaca Symbol dropdown, filtered by type
   const availableAlpacaSymbols = inactiveSymbols.filter(matchesTypeFilters);
+  // Fix: Show all Alpaca symbols not already in dashboard, filtered by type
+  const dashboardSymbolsSet = new Set(symbols.map(s => s.symbol));
+  const allAlpacaSyms = window._allAlpacaSyms || [];
+  const availableAlpacaSymbols = allAlpacaSyms.filter(sym => !dashboardSymbolsSet.has(sym.symbol) && matchesTypeFilters(sym));
 
   // Handler for Remove Symbol button
   function handleRemoveSymbol() {
