@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_DB = REPO_ROOT / "docs" / "data" / "tradingcopilot.db"
+DEFAULT_DB = REPO_ROOT / "frontend-react" / "public" / "data" / "tradingcopilot.db"
 DEFAULT_OUTPUTS = [
     REPO_ROOT / "docs" / "data" / "dashboard_snapshot.json",
     REPO_ROOT / "frontend-react" / "public" / "data" / "dashboard_snapshot.json",
