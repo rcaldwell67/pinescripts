@@ -297,14 +297,8 @@ function App() {
     window.open(url, "_blank");
   }
 
-  useEffect(() => {
-    if (availableAlpacaSymbols.length === 0) {
-      console.warn('No available Alpaca symbols after filtering.');
-      console.log('Existing dashboard symbols:', symbols.map(s => s.symbol));
-      console.log('Crypto only:', cryptoOnly);
-      console.log('All inactive symbols:', inactiveSymbols);
-    }
-  }, [availableAlpacaSymbols, symbols, cryptoOnly, inactiveSymbols]);
+  // Remove noisy console warnings for empty Alpaca symbol list
+  useEffect(() => {}, [availableAlpacaSymbols, symbols, cryptoOnly, inactiveSymbols]);
 
   const tradeMix = useMemo(() => {
     let wins = 0;
