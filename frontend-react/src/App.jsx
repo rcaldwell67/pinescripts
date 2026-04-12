@@ -66,6 +66,7 @@ function App() {
   const [trades, setTrades] = useState([]);
   const [results, setResults] = useState({ backtest: [], paper: [], live: [] });
   const [account, setAccount] = useState({});
+  const [snapshotGeneratedAt, setSnapshotGeneratedAt] = useState("");
   const [symbolFilter, setSymbolFilter] = useState("ALL");
   const [assetFilter, setAssetFilter] = useState("all");
   const [loading, setLoading] = useState(true);
@@ -126,6 +127,14 @@ function App() {
       setLoading(true);
       setError("");
       try {
+        // Fetch dashboard_snapshot.json for generated_at
+        try {
+          const snapRes = await fetch(`${import.meta.env.BASE_URL}data/dashboard_snapshot.json`);
+          if (snapRes.ok) {
+            const snapJson = await snapRes.json();
+            setSnapshotGeneratedAt(snapJson.generated_at || "");
+          }
+        } catch {}
         const dbPath = `${import.meta.env.BASE_URL}data/tradingcopilot.db`;
         const dbRes = await fetch(dbPath);
         if (!dbRes.ok) throw new Error("Failed to fetch tradingcopilot.db");
@@ -338,7 +347,7 @@ function App() {
           <h1>Crypto + ETF Trading Monitor</h1>
           <p className="sub">Unified backtest, paper, and live observability from Alpaca + Backtrader.</p>
         </div>
-        <div className="chip">Snapshot: {account?.generated_at || "-"}</div>
+        <div className="chip">Snapshot: {snapshotGeneratedAt || "-"}</div>
       </header>
 
       <section className="controls" style={{ alignItems: 'end', gap: 16 }}>
