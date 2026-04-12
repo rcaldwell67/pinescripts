@@ -60,7 +60,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: frontend-react/dist
+          path: docs
 
   deploy:
     needs: build
