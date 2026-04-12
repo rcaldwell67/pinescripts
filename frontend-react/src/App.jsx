@@ -278,147 +278,117 @@ function App() {
   }, []);
 
   // Only show Alpaca symbols not already active in dashboard, filtered by cryptoOnly
-  const dashboardSymbolsSet = new Set(symbols.map(s => s.symbol));
-  let availableAlpacaSymbols = [];
-  if (cryptoOnly) {
-    // Only crypto symbols
-    availableAlpacaSymbols = allAlpacaSymbols
-      .filter(sym => !dashboardSymbolsSet.has(sym.symbol) && (sym.asset_class || '').toLowerCase() === 'crypto')
-      .sort((a, b) => a.symbol.localeCompare(b.symbol));
-  } else {
-    // Only non-crypto symbols
-    availableAlpacaSymbols = allAlpacaSymbols
-      .filter(sym => !dashboardSymbolsSet.has(sym.symbol) && (sym.asset_class || '').toLowerCase() !== 'crypto')
-      .sort((a, b) => a.symbol.localeCompare(b.symbol));
-  }
+  // Refactored: Load tradingcopilot.db ONCE and distribute data
+  const [allAlpacaSymbols, setAllAlpacaSymbols] = useState([]);
+  useEffect(() => {
+    let isMounted = true;
+    async function loadAllDashboardData() {
+      setLoading(true);
+      setAlpacaLoading(true);
+      setError("");
+      try {
+        // Fetch dashboard_snapshot.json for generated_at
+        try {
+          const snapRes = await fetch(`${import.meta.env.BASE_URL}data/dashboard_snapshot.json`);
+          if (snapRes.ok) {
+            const snapJson = await snapRes.json();
+            if (isMounted) setSnapshotGeneratedAt(snapJson.generated_at || "");
+          }
+        } catch {}
+        const dbPath = `${import.meta.env.BASE_URL}data/tradingcopilot.db`;
+        const dbRes = await fetch(dbPath);
+        if (!dbRes.ok) throw new Error("Failed to fetch tradingcopilot.db");
+        const dbBuffer = await dbRes.arrayBuffer();
+        const SQL = await initSqlJs({ locateFile: file => `${import.meta.env.BASE_URL}sql-wasm.wasm` });
+        const db = new SQL.Database(new Uint8Array(dbBuffer));
 
-  // Handler for Remove Symbol button
-  function handleRemoveSymbol() {
-    if (!symbolFilter || symbolFilter === "ALL") {
-      alert("Please select a symbol to remove.");
-      return;
+        // Active symbols
+        const resSymbols = db.exec("SELECT symbol, description, asset_class FROM symbols WHERE active=1");
+        let dashboardSyms = [];
+        if (resSymbols.length > 0) {
+          const cols = resSymbols[0].columns;
+          const values = resSymbols[0].values;
+          dashboardSyms = values.map(row => {
+            const obj = {};
+            cols.forEach((col, i) => { obj[col] = row[i]; });
+            return obj;
+          });
+        }
+        if (isMounted) setActiveSymbols(dashboardSyms);
+        if (isMounted) setInactiveSymbols([]);
+
+        // Trades table
+        const resTrades = db.exec("SELECT * FROM trades");
+        let tradesArr = [];
+        if (resTrades.length > 0) {
+          const cols = resTrades[0].columns;
+          const values = resTrades[0].values;
+          tradesArr = values.map(row => {
+            const obj = {};
+            cols.forEach((col, i) => { obj[col] = row[i]; });
+            return obj;
+          });
+        }
+        if (isMounted) setTrades(tradesArr);
+
+        // Results table
+        const resResults = db.exec("SELECT * FROM results");
+        let resultsObj = { backtest: [], paper: [], live: [] };
+        if (resResults.length > 0) {
+          const cols = resResults[0].columns;
+          const values = resResults[0].values;
+          const allResults = values.map(row => {
+            const obj = {};
+            cols.forEach((col, i) => { obj[col] = row[i]; });
+            return obj;
+          });
+          resultsObj.backtest = allResults.filter(r => r.mode === 'backtest');
+          resultsObj.paper = allResults.filter(r => r.mode === 'paper');
+          resultsObj.live = allResults.filter(r => r.mode === 'live');
+        }
+        if (isMounted) setResults(resultsObj);
+
+        // Account table
+        const resAccount = db.exec("SELECT * FROM account LIMIT 1");
+        let accountObj = {};
+        if (resAccount.length > 0) {
+          const cols = resAccount[0].columns;
+          const values = resAccount[0].values;
+          if (values.length > 0) {
+            cols.forEach((col, i) => { accountObj[col] = values[0][i]; });
+          }
+        }
+        if (isMounted) setAccount(accountObj);
+
+        // All Alpaca symbols
+        const resAlpaca = db.exec("SELECT symbol, name as description, type as asset_class FROM alpaca_symbols");
+        let allSyms = [];
+        if (resAlpaca.length > 0) {
+          const cols = resAlpaca[0].columns;
+          const values = resAlpaca[0].values;
+          allSyms = values.map(row => {
+            const obj = {};
+            cols.forEach((col, i) => { obj[col] = row[i]; });
+            return obj;
+          });
+        }
+        if (isMounted) setAllAlpacaSymbols(allSyms);
+      } catch (err) {
+        if (isMounted) setError(`Failed to load dashboard data: ${String(err?.message || err)}`);
+        if (isMounted) setTrades([]);
+        if (isMounted) setResults({ backtest: [], paper: [], live: [] });
+        if (isMounted) setAccount({});
+        if (isMounted) setActiveSymbols([]);
+        if (isMounted) setInactiveSymbols([]);
+        if (isMounted) setAllAlpacaSymbols([]);
+      } finally {
+        if (isMounted) setLoading(false);
+        if (isMounted) setAlpacaLoading(false);
+      }
     }
-    const confirmRemove = window.confirm(`Are you sure you want to request removal of symbol: ${symbolFilter}?`);
-    if (!confirmRemove) return;
-    const title = encodeURIComponent("Remove symbol: " + symbolFilter);
-    const body = encodeURIComponent(`Symbol: ${symbolFilter}\n\n_Request to remove symbol from dashboard via React app._`);
-    const url = `https://github.com/rcaldwell67/pinescripts/issues/new?title=${title}&body=${body}&labels=remove-symbol`;
-    window.open(url, "_blank");
-  }
-
-  // Remove noisy console warnings for empty Alpaca symbol list
-  useEffect(() => {}, [availableAlpacaSymbols, symbols, cryptoOnly, inactiveSymbols]);
-
-  const tradeMix = useMemo(() => {
-    let wins = 0;
-    let losses = 0;
-    let flat = 0;
-    for (const t of filteredTrades) {
-      const score = scoreFromTrade(t);
-      if (score === "win") wins += 1;
-      else if (score === "loss") losses += 1;
-      else flat += 1;
-    }
-    return [
-      { name: "Win", value: wins },
-      { name: "Loss", value: losses },
-      { name: "Flat", value: flat },
-    ];
-  }, [filteredTrades]);
-
-  const equitySeries = useMemo(() => {
-    const rows = filteredTrades
-      .filter((t) => Number.isFinite(Number(t.equity)))
-      .slice()
-      .reverse()
-      .map((t, idx) => ({
-        i: idx + 1,
-        equity: Number(t.equity),
-      }));
-    return rows;
-  }, [filteredTrades]);
-
-  return (
-    <div className="page-shell">
-      <div className="bg-grid" />
-      <header className="topbar">
-        <div>
-          <p className="eyebrow">PulseBoard</p>
-          <h1>Crypto + ETF Trading Monitor</h1>
-          <p className="sub">Unified backtest, paper, and live observability from Alpaca + Backtrader.</p>
-        </div>
-        <div className="chip">Snapshot: {snapshotGeneratedAt || "-"}</div>
-      </header>
-
-      <section className="controls" style={{ alignItems: 'end', gap: 16 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <label>Symbol
-            <select value={symbolFilter} onChange={(e) => setSymbolFilter(e.target.value)}>
-              {symbolOptions.map((symbol, idx) => (
-                <option key={symbol === "ALL" ? "ALL" : symbol} value={symbol}>{symbol}</option>
-              ))}
-            </select>
-          </label>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <label>Add Alpaca Symbol</label>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <span style={{ color: '#9bb4c7', fontSize: 13, marginRight: 8 }}>
-              {alpacaLoading ? 'Loading symbols...' : `Available: ${availableAlpacaSymbols.length}`}
-            </span>
-            <select
-              value={selectedAlpacaSymbol}
-              onChange={e => setSelectedAlpacaSymbol(e.target.value)}
-              disabled={alpacaLoading || availableAlpacaSymbols.length === 0}
-              style={{ minWidth: 120 }}
-            >
-              <option value="">{alpacaLoading ? "Loading..." : availableAlpacaSymbols.length === 0 ? "No symbols available" : "Select..."}</option>
-              {availableAlpacaSymbols.map(sym => (
-                <option key={sym.symbol} value={sym.symbol}>{sym.symbol}</option>
-              ))}
-            </select>
-            <button
-              type="button"
-              style={{ padding: '8px 16px', borderRadius: 6, border: '1px solid var(--edge)', background: 'var(--aqua)', color: '#181c20', fontWeight: 600, cursor: 'pointer' }}
-              onClick={handleAddSymbol}
-              disabled={!selectedAlpacaSymbol}
-            >Add</button>
-            <button
-              type="button"
-              style={{ padding: '8px 16px', borderRadius: 6, border: '1px solid #f85149', background: '#f85149', color: '#fff', fontWeight: 600, cursor: symbolFilter && symbolFilter !== 'ALL' ? 'pointer' : 'not-allowed', opacity: symbolFilter && symbolFilter !== 'ALL' ? 1 : 0.4, marginLeft: 0 }}
-              onClick={handleRemoveSymbol}
-              disabled={!symbolFilter || symbolFilter === 'ALL'}
-              title="Request removal of selected symbol from dashboard"
-            >Remove</button>
-            <div style={{ display: 'flex', gap: 8, marginLeft: 8 }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}>
-                <input
-                  type="checkbox"
-                  checked={cryptoOnly}
-                  onChange={e => setCryptoOnly(e.target.checked)}
-                /> Crypto only
-              </label>
-            </div>
-            {alpacaLoading && <span style={{ color: '#ffa657', fontSize: 13 }}>Loading symbols...</span>}
-            {!alpacaLoading && availableAlpacaSymbols.length === 0 && (
-              <span style={{ color: '#ffa657', fontSize: 13, marginLeft: 8 }}>
-                All Alpaca symbols are already in the dashboard or filtered out.
-              </span>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {loading && <div className="panel">Loading dashboard data...</div>}
-      {error && <div className="panel error">{error}</div>}
-
-      {!loading && !error && (
-        <>
-          {/* Dashboard Tabs */}
-          <nav style={{ display: 'flex', gap: 12, marginBottom: 18 }}>
-            {DASHBOARD_TABS.map(tab => (
-              <button
-                key={tab.key}
+    loadAllDashboardData();
+    return () => { isMounted = false; };
+  }, []);
                 className={activeTab === tab.key ? 'mode-btn active' : 'mode-btn'}
                 style={{ fontWeight: activeTab === tab.key ? 700 : 400, fontSize: 15, padding: '8px 18px', borderRadius: 8, border: '1px solid var(--edge)', background: activeTab === tab.key ? 'var(--aqua)' : 'rgba(0,0,0,0.12)', color: activeTab === tab.key ? '#181c20' : 'var(--text)', cursor: 'pointer' }}
                 onClick={() => setActiveTab(tab.key)}
