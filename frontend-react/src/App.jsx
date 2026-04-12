@@ -1,5 +1,6 @@
 
-import React, { useState } from "react";
+
+import BacktestsTable from "./BacktestsTable";
 
 
 // Demo/mock data from backend/data/print_account_info.py output
