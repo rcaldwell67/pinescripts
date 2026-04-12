@@ -26,6 +26,28 @@ body {
     linear-gradient(155deg, var(--bg-top), var(--bg-mid) 48%, var(--bg-bottom));
 }
 
+.app-header {
+  width: 100%;
+  background: var(--bg-mid);
+  border-bottom: 1px solid var(--edge);
+  padding: 18px 0 14px 0;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.app-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--aqua);
+  letter-spacing: 0.03em;
+}
+
+main {
+  padding: 24px 0 0 0;
+}
+
 .page-shell {
   position: relative;
   max-width: 1200px;
