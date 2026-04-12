@@ -248,34 +248,6 @@ function App() {
   }
   // Load all Alpaca symbols and filter to only those not active in the dashboard
   const [allAlpacaSymbols, setAllAlpacaSymbols] = useState([]);
-  useEffect(() => {
-    async function loadAllAlpacaSymbols() {
-      try {
-        const dbPath = `${import.meta.env.BASE_URL}data/tradingcopilot.db`;
-        const dbRes = await fetch(dbPath);
-        if (!dbRes.ok) throw new Error("Failed to fetch tradingcopilot.db");
-        const dbBuffer = await dbRes.arrayBuffer();
-        const SQL = await initSqlJs({ locateFile: file => `${import.meta.env.BASE_URL}sql-wasm.wasm` });
-        const db = new SQL.Database(new Uint8Array(dbBuffer));
-        // Get all symbols from alpaca_symbols
-        const resAlpaca = db.exec("SELECT symbol, name as description, type as asset_class FROM alpaca_symbols");
-        let allSyms = [];
-        if (resAlpaca.length > 0) {
-          const cols = resAlpaca[0].columns;
-          const values = resAlpaca[0].values;
-          allSyms = values.map(row => {
-            const obj = {};
-            cols.forEach((col, i) => { obj[col] = row[i]; });
-            return obj;
-          });
-        }
-        setAllAlpacaSymbols(allSyms);
-      } catch (e) {
-        setAllAlpacaSymbols([]);
-      }
-    }
-    loadAllAlpacaSymbols();
-  }, []);
 
   // Only show Alpaca symbols not already active in dashboard, filtered by cryptoOnly
   // Refactored: Load tradingcopilot.db ONCE and distribute data
