@@ -284,16 +284,15 @@ def fetch_ohlcv(
     When prefer_realtime_bar=True, attempts to append the latest Alpaca realtime
     bar if it is newer than the last historical bar.
     """
-    # Try Alpaca first
-    df = fetch_ohlcv_alpaca(symbol)
-    if df is None:
-        if alpaca_only:
-            raise RuntimeError(
-                f"Alpaca market data unavailable for {symbol}; alpaca_only=True disables fallback sources"
-            )
-        # Fall back to Yahoo Finance
-        print(f"  Falling back to Yahoo Finance for {symbol}...", file=sys.stderr)
-        df = fetch_ohlcv_yfinance(symbol)
+        # Use Alpaca for crypto, Yahoo Finance for non-crypto
+        if "/" in symbol:
+            print(f"  Using Alpaca for crypto symbol {symbol}...", file=sys.stderr)
+            df = fetch_ohlcv_alpaca(symbol)
+            if df is None:
+                raise RuntimeError(f"No data returned from Alpaca for {symbol}")
+        else:
+            print(f"  Using Yahoo Finance for non-crypto symbol {symbol}...", file=sys.stderr)
+            df = fetch_ohlcv_yfinance(symbol)
     
     if prefer_realtime_bar:
         df = _append_latest_realtime_bar(df, symbol)
@@ -555,6 +554,11 @@ def main() -> int:
 
             save_to_db(symbol, version, trades, df)
         except Exception as e:
+            # Skip symbol if Alpaca API access denied or subscription error
+            err_str = str(e).lower()
+            if ("alpaca api access denied" in err_str or "subscription does not permit" in err_str or "alpaca market data unavailable" in err_str):
+                print(f"SKIP: {symbol} - Alpaca API access denied or subscription required. Skipping symbol.", file=sys.stderr)
+                continue
             print(f"ERROR: Failed to process {symbol}: {e}", file=sys.stderr)
             failures.append(symbol)
 
