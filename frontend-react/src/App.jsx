@@ -1,5 +1,6 @@
 
 import React, { useState } from "react";
+import dashboardSnapshot from '../frontend-react/public/data/dashboard_snapshot.json';
 
 // Demo/mock data from backend/data/print_account_info.py output
 const MOCK_ACCOUNTS = [
@@ -115,20 +116,8 @@ function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {[
-                      { symbol: "BTC/USD", symbol_key: "BTCUSD" },
-                      { symbol: "BTC/USDC", symbol_key: "BTCUSDC" },
-                      { symbol: "BTC/USDT", symbol_key: "BTCUSDT" },
-                      { symbol: "CLM", symbol_key: "CLM" },
-                      { symbol: "CRF", symbol_key: "CRF" },
-                      { symbol: "ETH/BTC", symbol_key: "ETHBTC" },
-                      { symbol: "ETH/USD", symbol_key: "ETHUSD" },
-                      { symbol: "ETH/USDC", symbol_key: "ETHUSDC" },
-                      { symbol: "ETH/USDT", symbol_key: "ETHUSDT" },
-                      { symbol: "QQQ", symbol_key: "QQQ" },
-                      { symbol: "SPY", symbol_key: "SPY" },
-                    ].map(sym => {
-                      const result = require('../frontend-react/public/data/dashboard_snapshot.json').results.backtest.find(r => r.symbol_key === sym.symbol_key);
+                    {dashboardSnapshot.symbols.map(sym => {
+                      const result = dashboardSnapshot.results.backtest.find(r => r.symbol_key === sym.symbol_key);
                       return (
                         <tr key={sym.symbol_key}>
                           <td style={{padding: '8px 12px'}}>{sym.symbol}</td>
