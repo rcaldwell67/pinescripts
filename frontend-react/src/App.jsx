@@ -459,6 +459,7 @@ function App() {
                     <tr>
                       <th>Mode</th>
                       <th>Symbol</th>
+                      <th>Date</th>
                       <th>Net Return</th>
                       <th>Win Rate</th>
                       <th>Max DD</th>
@@ -471,6 +472,7 @@ function App() {
                       <tr key={`${row.mode}-${row.symbol}-${idx}`}>
                         <td><span className={`badge ${row.mode}`}>{row.mode}</span></td>
                         <td>{row.symbol}</td>
+                        <td>{row.timestamp ? new Date(row.timestamp).toLocaleString() : '-'}</td>
                         <td>{fmtPct(row.net_return_pct)}</td>
                         <td>{fmtPct(row.win_rate)}</td>
                         <td>{fmtPct(row.max_drawdown_pct)}</td>
