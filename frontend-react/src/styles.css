@@ -1,3 +1,17 @@
+/* Footer styles */
+.app-footer {
+  width: 100%;
+  background: var(--bg-mid);
+  border-top: 1px solid var(--edge);
+  color: var(--muted);
+  text-align: center;
+  padding: 14px 0 16px 0;
+  font-size: 1rem;
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  z-index: 10;
+}
 :root {
   --bg-top: #041019;
   --bg-mid: #081d2b;

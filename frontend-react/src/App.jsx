@@ -10,6 +10,9 @@ function App() {
       <main>
         <p>The app is now restored to a minimal, valid state. You can re-add dashboard features incrementally.</p>
       </main>
+      <footer className="app-footer">
+        <span>© {new Date().getFullYear()} Trading Dashboard</span>
+      </footer>
     </div>
   );
 }
