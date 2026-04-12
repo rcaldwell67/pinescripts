@@ -60,6 +60,8 @@ const DASHBOARD_TABS = [
 
 
 function App() {
+    // Guideline audit mode: backtest, paper, or live
+    const [auditMode, setAuditMode] = useState('backtest');
   // Remove snapshot state, add states for trades, results, and account
   const [trades, setTrades] = useState([]);
   const [results, setResults] = useState({ backtest: [], paper: [], live: [] });
@@ -203,18 +205,16 @@ function App() {
 
   const latestResults = useMemo(() => {
     const resultsArr = [];
-    for (const mode of ["backtest", "paper", "live"]) {
-      for (const row of (results[mode] || []).filter(r => r.version === 'v6')) {
-        const symbolOk = symbolFilter === "ALL" || row.symbol === symbolFilter;
-        const asset = symbols.find((s) => s.symbol === row.symbol)?.asset_class || "etf";
-        const assetOk = assetFilter === "all" || asset === assetFilter;
-        if (symbolOk && assetOk) {
-          resultsArr.push({ ...row, asset_class: asset });
-        }
+    for (const row of (results[auditMode] || []).filter(r => r.version === 'v6')) {
+      const symbolOk = symbolFilter === "ALL" || row.symbol === symbolFilter;
+      const asset = symbols.find((s) => s.symbol === row.symbol)?.asset_class || "etf";
+      const assetOk = assetFilter === "all" || asset === assetFilter;
+      if (symbolOk && assetOk) {
+        resultsArr.push({ ...row, asset_class: asset });
       }
     }
     return resultsArr;
-  }, [results, symbolFilter, assetFilter, symbols]);
+  }, [results, symbolFilter, assetFilter, symbols, auditMode]);
 
   // Handler for Add Symbol button
   function handleAddSymbol() {
@@ -442,6 +442,18 @@ function App() {
               </section>
               <section className="panel">
                 <h2>Guideline Audit</h2>
+                <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+                  {['backtest', 'paper', 'live'].map(mode => (
+                    <button
+                      key={mode}
+                      className={auditMode === mode ? 'mode-btn active' : 'mode-btn'}
+                      style={{ fontWeight: auditMode === mode ? 700 : 400, fontSize: 14, padding: '6px 16px', borderRadius: 8, border: '1px solid var(--edge)', background: auditMode === mode ? 'var(--aqua)' : 'rgba(0,0,0,0.12)', color: auditMode === mode ? '#181c20' : 'var(--text)', cursor: 'pointer' }}
+                      onClick={() => setAuditMode(mode)}
+                    >
+                      {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                    </button>
+                  ))}
+                </div>
                 <table>
                   <thead>
                     <tr>
