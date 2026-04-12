@@ -1,3 +1,59 @@
+/* App shell and sidebar layout */
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 210px;
+  background: var(--bg-top);
+  border-right: 1px solid var(--edge);
+  padding: 32px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 20;
+}
+
+.sidebar nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+}
+
+.sidebar nav ul li {
+  margin: 0 0 18px 0;
+  width: 100%;
+}
+
+.sidebar nav ul li a {
+  display: block;
+  padding: 12px 24px;
+  color: var(--aqua);
+  text-decoration: none;
+  font-weight: 500;
+  border-radius: 8px 0 0 8px;
+  transition: background 0.18s;
+}
+
+.sidebar nav ul li a:hover,
+.sidebar nav ul li a:focus {
+  background: var(--bg-mid);
+  color: var(--text);
+}
+
+.main-content {
+  margin-left: 210px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
 /* Footer styles */
 .app-footer {
   width: 100%;
