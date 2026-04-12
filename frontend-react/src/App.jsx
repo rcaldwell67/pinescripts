@@ -99,6 +99,51 @@ function App() {
                 })}
               </div>
             </section>
+          ) : activePage === "Backtests" ? (
+            <section style={{ padding: 24 }}>
+              <h2>Backtests (v6) - Active Symbols</h2>
+              <div style={{overflowX: 'auto'}}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 16 }}>
+                  <thead>
+                    <tr style={{background: 'var(--bg-mid)'}}>
+                      <th style={{padding: '8px 12px', textAlign: 'left'}}>Symbol</th>
+                      <th style={{padding: '8px 12px', textAlign: 'right'}}>Current Equity</th>
+                      <th style={{padding: '8px 12px', textAlign: 'right'}}>Net Return %</th>
+                      <th style={{padding: '8px 12px', textAlign: 'right'}}>Win Rate</th>
+                      <th style={{padding: '8px 12px', textAlign: 'right'}}>Total Trades</th>
+                      <th style={{padding: '8px 12px', textAlign: 'right'}}>Last Updated</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { symbol: "BTC/USD", symbol_key: "BTCUSD" },
+                      { symbol: "BTC/USDC", symbol_key: "BTCUSDC" },
+                      { symbol: "BTC/USDT", symbol_key: "BTCUSDT" },
+                      { symbol: "CLM", symbol_key: "CLM" },
+                      { symbol: "CRF", symbol_key: "CRF" },
+                      { symbol: "ETH/BTC", symbol_key: "ETHBTC" },
+                      { symbol: "ETH/USD", symbol_key: "ETHUSD" },
+                      { symbol: "ETH/USDC", symbol_key: "ETHUSDC" },
+                      { symbol: "ETH/USDT", symbol_key: "ETHUSDT" },
+                      { symbol: "QQQ", symbol_key: "QQQ" },
+                      { symbol: "SPY", symbol_key: "SPY" },
+                    ].map(sym => {
+                      const result = require('../frontend-react/public/data/dashboard_snapshot.json').results.backtest.find(r => r.symbol_key === sym.symbol_key);
+                      return (
+                        <tr key={sym.symbol_key}>
+                          <td style={{padding: '8px 12px'}}>{sym.symbol}</td>
+                          <td style={{padding: '8px 12px', textAlign: 'right'}}>{result?.current_equity ?? '-'}</td>
+                          <td style={{padding: '8px 12px', textAlign: 'right'}}>{result?.net_return_pct != null ? result.net_return_pct.toFixed(2) + '%' : '-'}</td>
+                          <td style={{padding: '8px 12px', textAlign: 'right'}}>{result?.win_rate != null ? result.win_rate.toFixed(1) + '%' : '-'}</td>
+                          <td style={{padding: '8px 12px', textAlign: 'right'}}>{result?.total_trades ?? '-'}</td>
+                          <td style={{padding: '8px 12px', textAlign: 'right'}}>{result?.timestamp ?? '-'}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </section>
           ) : (
             <section style={{ padding: 24 }}>
               <h2>Account Overview</h2>
