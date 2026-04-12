@@ -4,9 +4,9 @@ import { render, screen } from '@testing-library/react';
 import App from './App';
 
 describe('App', () => {
-  it('renders dashboard heading and message', () => {
+  it('renders dashboard heading and account overview', () => {
     render(<App />);
     expect(screen.getByText('Dashboard App')).toBeInTheDocument();
-    expect(screen.getByText(/restored to a minimal, valid state/i)).toBeInTheDocument();
+    expect(screen.getByText('Account Overview')).toBeInTheDocument();
   });
 });
