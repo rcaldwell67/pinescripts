@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-04-07T22:18:45.142420+00:00",
+  "generated_at": "2026-04-12T01:56:44.570667+00:00",
   "account": {
     "mode": "paper",
     "beginning_balance": 100000.0,
     "current_balance": 100000.0,
     "buying_power": 200000.0,
     "cash": 100000.0,
-    "updated_at": "2026-04-07T22:04:11.157304+00:00"
+    "updated_at": "2026-04-08T17:55:32.503574+00:00"
   },
   "symbols": [
     {
@@ -53,6 +53,16 @@
       "symbol": "ETH/USDT",
       "symbol_key": "ETHUSDT",
       "asset_class": "crypto"
+    },
+    {
+      "symbol": "QQQ",
+      "symbol_key": "QQQ",
+      "asset_class": "etf"
+    },
+    {
+      "symbol": "SPY",
+      "symbol_key": "SPY",
+      "asset_class": "etf"
     }
   ],
   "results": {
@@ -61,12 +71,12 @@
         "mode": "backtest",
         "symbol": "BTC/USD",
         "symbol_key": "BTCUSD",
-        "timestamp": "2026-04-05 17:35:13",
-        "current_equity": null,
-        "net_return_pct": 29.37129878097584,
-        "win_rate": 77.77777777777779,
+        "timestamp": "2026-04-10 15:17:22",
+        "current_equity": 1160.463239449991,
+        "net_return_pct": 16.04632394499911,
+        "win_rate": 81.81818181818183,
         "max_drawdown_pct": null,
-        "total_trades": 18
+        "total_trades": 11
       },
       {
         "mode": "backtest",
@@ -155,6 +165,28 @@
         "win_rate": 60.0,
         "max_drawdown_pct": null,
         "total_trades": 115
+      },
+      {
+        "mode": "backtest",
+        "symbol": "QQQ",
+        "symbol_key": "QQQ",
+        "timestamp": "2026-04-08 18:27:59",
+        "current_equity": 1052.0710787280127,
+        "net_return_pct": 5.207107872801271,
+        "win_rate": 60.0,
+        "max_drawdown_pct": null,
+        "total_trades": 5
+      },
+      {
+        "mode": "backtest",
+        "symbol": "SPY",
+        "symbol_key": "SPY",
+        "timestamp": "2026-04-08 18:54:23",
+        "current_equity": 1099.758417759595,
+        "net_return_pct": 9.975841775959497,
+        "win_rate": 100.0,
+        "max_drawdown_pct": null,
+        "total_trades": 6
       }
     ],
     "paper": [
@@ -162,7 +194,7 @@
         "mode": "paper",
         "symbol": "BTC/USD",
         "symbol_key": "BTCUSD",
-        "timestamp": "2026-04-07 22:04:14",
+        "timestamp": "2026-04-08 17:55:35",
         "current_equity": 100000.0,
         "net_return_pct": null,
         "win_rate": null,
@@ -173,7 +205,7 @@
         "mode": "paper",
         "symbol": "BTC/USDC",
         "symbol_key": "BTCUSDC",
-        "timestamp": "2026-04-07 22:04:15",
+        "timestamp": "2026-04-08 17:55:38",
         "current_equity": 100000.0,
         "net_return_pct": null,
         "win_rate": null,
@@ -184,7 +216,7 @@
         "mode": "paper",
         "symbol": "BTC/USDT",
         "symbol_key": "BTCUSDT",
-        "timestamp": "2026-04-07 22:04:17",
+        "timestamp": "2026-04-08 17:55:40",
         "current_equity": 100000.0,
         "net_return_pct": null,
         "win_rate": null,
@@ -195,7 +227,7 @@
         "mode": "paper",
         "symbol": "CLM",
         "symbol_key": "CLM",
-        "timestamp": "2026-04-07 22:04:17",
+        "timestamp": "2026-04-08 17:55:41",
         "current_equity": 100000.0,
         "net_return_pct": null,
         "win_rate": null,
@@ -206,7 +238,7 @@
         "mode": "paper",
         "symbol": "CRF",
         "symbol_key": "CRF",
-        "timestamp": "2026-04-07 22:04:18",
+        "timestamp": "2026-04-08 17:55:42",
         "current_equity": 100000.0,
         "net_return_pct": null,
         "win_rate": null,
@@ -217,7 +249,7 @@
         "mode": "paper",
         "symbol": "ETH/BTC",
         "symbol_key": "ETHBTC",
-        "timestamp": "2026-04-07 22:04:19",
+        "timestamp": "2026-04-08 17:55:43",
         "current_equity": 100000.0,
         "net_return_pct": null,
         "win_rate": null,
@@ -228,7 +260,7 @@
         "mode": "paper",
         "symbol": "ETH/USD",
         "symbol_key": "ETHUSD",
-        "timestamp": "2026-04-07 22:04:21",
+        "timestamp": "2026-04-08 17:55:46",
         "current_equity": 100000.0,
         "net_return_pct": null,
         "win_rate": null,
@@ -239,7 +271,7 @@
         "mode": "paper",
         "symbol": "ETH/USDC",
         "symbol_key": "ETHUSDC",
-        "timestamp": "2026-04-07 22:04:23",
+        "timestamp": "2026-04-08 17:55:49",
         "current_equity": 100000.0,
         "net_return_pct": null,
         "win_rate": null,
@@ -250,12 +282,34 @@
         "mode": "paper",
         "symbol": "ETH/USDT",
         "symbol_key": "ETHUSDT",
-        "timestamp": "2026-04-07 22:04:25",
+        "timestamp": "2026-04-08 17:55:51",
         "current_equity": 100000.0,
         "net_return_pct": null,
         "win_rate": null,
         "max_drawdown_pct": null,
         "total_trades": null
+      },
+      {
+        "mode": "paper",
+        "symbol": "QQQ",
+        "symbol_key": "QQQ",
+        "timestamp": "2026-04-08 18:28:00",
+        "current_equity": 1052.0710787280127,
+        "net_return_pct": 5.207107872801271,
+        "win_rate": 60.0,
+        "max_drawdown_pct": null,
+        "total_trades": 5
+      },
+      {
+        "mode": "paper",
+        "symbol": "SPY",
+        "symbol_key": "SPY",
+        "timestamp": "2026-04-08 18:54:24",
+        "current_equity": 1099.758417759595,
+        "net_return_pct": 9.975841775959497,
+        "win_rate": 100.0,
+        "max_drawdown_pct": null,
+        "total_trades": 6
       },
       {
         "mode": "paper",
@@ -295,6 +349,23 @@
     ]
   },
   "trades": [
+    {
+      "symbol": "BTC/USD",
+      "symbol_key": "BTCUSD",
+      "asset_class": "crypto",
+      "version": "v6",
+      "mode": "backtest",
+      "direction": "long",
+      "entry_time": "2026-04-10 12:55:00+00:00",
+      "exit_time": "2026-04-10 14:20:00+00:00",
+      "entry_price": 72270.64,
+      "exit_price": 73000.81809067492,
+      "result": "TP",
+      "pnl_pct": 3.3333333333333557,
+      "dollar_pnl": 37.434298046774146,
+      "equity": 1160.463239449991,
+      "source": "simulation"
+    },
     {
       "symbol": "BTC/USDC",
       "symbol_key": "BTCUSDC",
@@ -344,6 +415,23 @@
       "pnl_pct": -3.0,
       "dollar_pnl": -56.297423708414925,
       "equity": 1820.2833665720825,
+      "source": "simulation"
+    },
+    {
+      "symbol": "BTC/USD",
+      "symbol_key": "BTCUSD",
+      "asset_class": "crypto",
+      "version": "v6",
+      "mode": "backtest",
+      "direction": "long",
+      "entry_time": "2026-04-06 15:25:00+00:00",
+      "exit_time": "2026-04-06 16:50:00+00:00",
+      "entry_price": 69752.667,
+      "exit_price": 70224.63616609178,
+      "result": "TRAIL",
+      "pnl_pct": 1.741523323019982,
+      "dollar_pnl": 19.223037261499595,
+      "equity": 1123.028941403217,
       "source": "simulation"
     },
     {
@@ -3659,40 +3747,6 @@
       "pnl_pct": 0.37029602193989886,
       "dollar_pnl": 5.291372084398179,
       "equity": 1434.2486848521273,
-      "source": "simulation"
-    },
-    {
-      "symbol": "ETH/USDC",
-      "symbol_key": "ETHUSDC",
-      "asset_class": "crypto",
-      "version": "v2",
-      "mode": "paper",
-      "direction": "short",
-      "entry_time": "2026-03-27 16:00:00+00:00",
-      "exit_time": "2026-03-27 18:25:00+00:00",
-      "entry_price": 1985.3215,
-      "exit_price": 1978.955,
-      "result": "MB",
-      "pnl_pct": 1.6720695018465852,
-      "dollar_pnl": 36.9029254141244,
-      "equity": 2243.9239477681517,
-      "source": null
-    },
-    {
-      "symbol": "ETH/USDC",
-      "symbol_key": "ETHUSDC",
-      "asset_class": "crypto",
-      "version": "v2",
-      "mode": "backtest",
-      "direction": "short",
-      "entry_time": "2026-03-27 16:00:00+00:00",
-      "exit_time": "2026-03-27 18:25:00+00:00",
-      "entry_price": 1985.3215,
-      "exit_price": 1978.955,
-      "result": "MAX_BARS_EXIT",
-      "pnl_pct": 1.6720695018465852,
-      "dollar_pnl": 36.9029254141244,
-      "equity": 2243.9239477681517,
       "source": "simulation"
     }
   ]
