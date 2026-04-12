@@ -315,6 +315,7 @@ def fetch_ohlcv(
     alpaca_only: bool = False,
     data_scope: str = "historical",
 ) -> "pd.DataFrame":
+
     """
     Fetch OHLCV data, trying Alpaca first, then Yahoo Finance as fallback.
     When prefer_realtime_bar=True, attempts to append the latest Alpaca realtime
@@ -327,16 +328,16 @@ def fetch_ohlcv(
     Returns:
         DataFrame with OHLCV data.
     """
-        # Use Alpaca for crypto, Yahoo Finance for non-crypto
-        if "/" in symbol:
-            print(f"  Using Alpaca for crypto symbol {symbol}...", file=sys.stderr)
-            df = fetch_ohlcv_alpaca(symbol)
-            if df is None:
-                raise RuntimeError(f"No data returned from Alpaca for {symbol}")
-        else:
-            print(f"  Using Yahoo Finance for non-crypto symbol {symbol}...", file=sys.stderr)
-            df = fetch_ohlcv_yfinance(symbol)
-    
+    # Use Alpaca for crypto, Yahoo Finance for non-crypto
+    if "/" in symbol:
+        print(f"  Using Alpaca for crypto symbol {symbol}...", file=sys.stderr)
+        df = fetch_ohlcv_alpaca(symbol)
+        if df is None:
+            raise RuntimeError(f"No data returned from Alpaca for {symbol}")
+    else:
+        print(f"  Using Yahoo Finance for non-crypto symbol {symbol}...", file=sys.stderr)
+        df = fetch_ohlcv_yfinance(symbol)
+
     if prefer_realtime_bar:
         df = _append_latest_realtime_bar(df, symbol)
 
