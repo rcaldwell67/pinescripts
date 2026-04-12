@@ -350,6 +350,7 @@ jobs:
 
           SNAPSHOT_DIR="$(mktemp -d)"
           mkdir -p "$SNAPSHOT_DIR/docs/data" "$SNAPSHOT_DIR/backend/strategy_generator/configs"
+          mkdir -p "$SNAPSHOT_DIR/frontend-react/public/data"
           cp frontend-react/public/data/tradingcopilot.db "$SNAPSHOT_DIR/frontend-react/public/data/tradingcopilot.db"
           cp backend/strategy_generator/configs/v1_runtime.json "$SNAPSHOT_DIR/backend/strategy_generator/configs/v1_runtime.json"
           cp backend/strategy_generator/configs/v2_runtime.json "$SNAPSHOT_DIR/backend/strategy_generator/configs/v2_runtime.json"
