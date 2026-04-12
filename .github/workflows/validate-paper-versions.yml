@@ -24,4 +24,4 @@ jobs:
 
       - name: Validate v1-v6 paper DB writes
         run: |
-          python backend/paper_trading/validate_paper_versions_db.py
+          python backend/paper_trading/validate_paper_versions_db.py --version v6

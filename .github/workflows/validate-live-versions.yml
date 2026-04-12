@@ -24,4 +24,4 @@ jobs:
 
       - name: Validate v1-v6 live dry order generation
         run: |
-          python backend/live_trading/validate_live_versions_dry.py
+          python backend/live_trading/validate_live_versions_dry.py --version v6

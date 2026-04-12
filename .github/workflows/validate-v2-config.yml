@@ -20,3 +20,4 @@ jobs:
       - name: Validate shared v2 parameter usage
         run: |
           python backend/strategy_generator/validate_v2_config_usage.py
+// File removed: Only version 6 is supported
