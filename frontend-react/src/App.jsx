@@ -9,7 +9,9 @@ function App() {
           <ul>
             <li><a href="#">Dashboard</a></li>
             <li><a href="#">Backtests</a></li>
+            <li><a href="#">Paper Trading</a></li>
             <li><a href="#">Live Trading</a></li>
+            <li><a href="#">Charts</a></li>
             <li><a href="#">Settings</a></li>
           </ul>
         </nav>
