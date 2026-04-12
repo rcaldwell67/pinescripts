@@ -44,6 +44,7 @@ This instruction set ensures all code in this repository adheres to project codi
 
 ## Documentation
 - Update README and relevant docs for any user-facing or API changes
+- Clearly document the purpose of any backup, legacy, or parallel folders (e.g., localbackup) in the README to avoid confusion and accidental edits
 - Document all environment variables and configuration options
 - Keep changelogs up to date
 

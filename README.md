@@ -1,4 +1,8 @@
 ﻿# Tradingview
+## Important: About the `localbackup` Folder
+
+This repository contains a `localbackup` directory, which is a backup copy of the main project structure. **Do not edit files in `localbackup` unless you are intentionally restoring or comparing versions.** All development should occur in the main project directories. If you are unsure about the purpose of a file or folder, consult the project maintainer before making changes.
+
 
 ## APM Dashboard (GitHub Pages)
 

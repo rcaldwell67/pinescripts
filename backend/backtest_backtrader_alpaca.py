@@ -52,7 +52,12 @@ VERSION_MAP: dict[str, str] = {
 
 
 def ensure_result_tables_have_current_equity(conn: sqlite3.Connection) -> None:
-    """Ensure summary tables expose an explicit current_equity column."""
+    """
+    Ensure summary tables expose an explicit current_equity column.
+    Adds the 'current_equity' column to result tables if not present.
+    Args:
+        conn: SQLite connection object.
+    """
     for table in ("backtest_results", "paper_trading_results", "live_trading_results"):
         try:
             conn.execute(f"ALTER TABLE {table} ADD COLUMN current_equity REAL")
@@ -64,7 +69,14 @@ def ensure_result_tables_have_current_equity(conn: sqlite3.Connection) -> None:
 # ── Data fetch ─────────────────────────────────────────────────────────────────
 
 def fetch_ohlcv_alpaca(symbol: str) -> "pd.DataFrame | None":
-    """Fetch from Alpaca. Returns None if subscription/access denied."""
+    """
+    Fetch OHLCV data from Alpaca for a given symbol.
+    Returns None if subscription/access denied.
+    Args:
+        symbol: Trading symbol (e.g., 'BTC/USD').
+    Returns:
+        DataFrame with OHLCV data or None.
+    """
     import pandas as pd
     from alpaca.data.historical import CryptoHistoricalDataClient, StockHistoricalDataClient
     from alpaca.data.requests import CryptoBarsRequest, StockBarsRequest
@@ -113,7 +125,13 @@ def fetch_ohlcv_alpaca(symbol: str) -> "pd.DataFrame | None":
 
 
 def fetch_ohlcv_yfinance(symbol: str) -> "pd.DataFrame":
-    """Fetch from Yahoo Finance as fallback (1h bars instead of 5m)."""
+    """
+    Fetch OHLCV data from Yahoo Finance as a fallback (1h bars instead of 5m).
+    Args:
+        symbol: Trading symbol.
+    Returns:
+        DataFrame with OHLCV data.
+    """
     import pandas as pd
     import yfinance as yf
 
@@ -165,9 +183,13 @@ def fetch_ohlcv_yfinance(symbol: str) -> "pd.DataFrame":
 
 
 def _fetch_latest_realtime_bar(symbol: str) -> dict[str, Any] | None:
-    """Best-effort fetch of the latest Alpaca bar for a symbol.
-
+    """
+    Best-effort fetch of the latest Alpaca bar for a symbol.
     Returns a dict with timestamp/Open/High/Low/Close/Volume fields, or None.
+    Args:
+        symbol: Trading symbol.
+    Returns:
+        Dict with bar data or None.
     """
     key = ALPACA_API_KEY
     secret = ALPACA_API_SECRET
@@ -226,7 +248,14 @@ def _fetch_latest_realtime_bar(symbol: str) -> dict[str, Any] | None:
 
 
 def _append_latest_realtime_bar(df: "pd.DataFrame", symbol: str) -> "pd.DataFrame":
-    """Append latest Alpaca realtime bar when it is newer than the last loaded bar."""
+    """
+    Append latest Alpaca realtime bar when it is newer than the last loaded bar.
+    Args:
+        df: DataFrame of OHLCV data.
+        symbol: Trading symbol.
+    Returns:
+        DataFrame with latest bar appended if newer.
+    """
     latest = _fetch_latest_realtime_bar(symbol)
     if not latest:
         return df
@@ -250,7 +279,14 @@ def _append_latest_realtime_bar(df: "pd.DataFrame", symbol: str) -> "pd.DataFram
 
 
 def _apply_data_scope(df: "pd.DataFrame", scope: str) -> "pd.DataFrame":
-    """Filter OHLCV rows to the configured simulation scope."""
+    """
+    Filter OHLCV rows to the configured simulation scope.
+    Args:
+        df: DataFrame of OHLCV data.
+        scope: 'historical' or 'same_day'.
+    Returns:
+        Filtered DataFrame.
+    """
     if scope == "historical":
         return df
 
@@ -279,10 +315,17 @@ def fetch_ohlcv(
     alpaca_only: bool = False,
     data_scope: str = "historical",
 ) -> "pd.DataFrame":
-    """Fetch OHLCV data, trying Alpaca first, then Yahoo Finance as fallback.
-
+    """
+    Fetch OHLCV data, trying Alpaca first, then Yahoo Finance as fallback.
     When prefer_realtime_bar=True, attempts to append the latest Alpaca realtime
     bar if it is newer than the last historical bar.
+    Args:
+        symbol: Trading symbol.
+        prefer_realtime_bar: If True, append latest realtime bar if newer.
+        alpaca_only: If True, only use Alpaca.
+        data_scope: 'historical' or 'same_day'.
+    Returns:
+        DataFrame with OHLCV data.
     """
         # Use Alpaca for crypto, Yahoo Finance for non-crypto
         if "/" in symbol:
@@ -308,6 +351,16 @@ def run_backtest(
     symbol: str | None = None,
     profile: str | None = None,
 ) -> "pd.DataFrame":
+    """
+    Run the backtest for the given DataFrame and strategy version.
+    Args:
+        df: DataFrame of OHLCV data.
+        version: Strategy version (v1-v6).
+        symbol: Optional trading symbol.
+        profile: Optional runtime profile.
+    Returns:
+        DataFrame of trades.
+    """
     if version == "v1":
         from apm_v1_backtest import backtest_apm_v1
         from v1_params import get_v1_params
@@ -344,6 +397,13 @@ def run_backtest(
 # ── Persist results ────────────────────────────────────────────────────────────
 
 def _to_native(val):
+    """
+    Convert numpy or pandas types to native Python types for serialization.
+    Args:
+        val: Value to convert.
+    Returns:
+        Native Python type.
+    """
     if hasattr(val, "item"):
         return val.item()
     if hasattr(val, "to_pydatetime"):
@@ -352,6 +412,14 @@ def _to_native(val):
 
 
 def _timestamp_at(df, idx):
+    """
+    Get the timestamp at a given index in the DataFrame.
+    Args:
+        df: DataFrame with 'timestamp' column.
+        idx: Index to retrieve.
+    Returns:
+        Timestamp string or None.
+    """
     try:
         i = int(idx)
     except (TypeError, ValueError):
@@ -367,6 +435,13 @@ def _timestamp_at(df, idx):
 
 
 def _result_label(exit_type):
+    """
+    Normalize exit type/result label for trade rows.
+    Args:
+        exit_type: Raw exit type or result.
+    Returns:
+        Normalized label string or None.
+    """
     raw = str(exit_type or "").strip().upper()
     if raw in {"TP", "TAKE_PROFIT"}:
         return "TP"
@@ -381,6 +456,14 @@ def _result_label(exit_type):
 
 def save_to_db(symbol: str, version: str,
                trades: "pd.DataFrame", df: "pd.DataFrame") -> None:
+    """
+    Save backtest results and trades to the SQLite database.
+    Args:
+        symbol: Trading symbol.
+        version: Strategy version.
+        trades: DataFrame of trades.
+        df: DataFrame of OHLCV data.
+    """
     if trades.empty:
         print("No trades generated — skipping DB write.")
         return
@@ -507,6 +590,11 @@ def save_to_db(symbol: str, version: str,
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 def main() -> int:
+    """
+    CLI entry point for running a backtest and saving results to the DB.
+    Returns:
+        Exit code (0 for success, 1 for error).
+    """
 
     parser = argparse.ArgumentParser(description="Run an APM backtest and save results to the DB.")
     parser.add_argument("--symbol", help="Trading symbol, e.g. BTC/USD")
