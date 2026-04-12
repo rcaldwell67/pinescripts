@@ -100,7 +100,29 @@ function App() {
               </div>
             </section>
           ) : (
-            <p>The app is now restored to a minimal, valid state. You can re-add dashboard features incrementally.</p>
+            <section style={{ padding: 24 }}>
+              <h2>Account Overview</h2>
+              <div className="account-info-grid">
+                {['paper', 'live'].map((mode) => {
+                  const acc = MOCK_ACCOUNTS.find(a => a.account_mode === mode);
+                  return (
+                    <div className="account-card" key={mode}>
+                      <h3>{mode === 'paper' ? 'Paper Trading' : 'Live Trading'}</h3>
+                      {acc ? (
+                        <table style={{ width: '100%', fontSize: '1.1em', marginTop: 8 }}>
+                          <tbody>
+                            <tr><td><b>Current Balance</b></td><td>{acc.current_balance}</td></tr>
+                            <tr><td><b>Buying Power</b></td><td>{acc.buying_power}</td></tr>
+                          </tbody>
+                        </table>
+                      ) : (
+                        <p>No account info found.</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
           )}
         </main>
         <footer className="app-footer">
