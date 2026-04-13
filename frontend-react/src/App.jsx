@@ -35,14 +35,18 @@ const MOCK_ACCOUNTS = [
 ];
 
 function App() {
+
   const [activePage, setActivePage] = useState("Dashboard");
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [paperTradingOpen, setPaperTradingOpen] = useState(false);
 
   const handleNav = (page) => {
     if (page === "Settings") setSettingsOpen((v) => !v);
+    else if (page === "Paper Trading") setPaperTradingOpen((v) => !v);
     else {
       setActivePage(page);
       setSettingsOpen(false);
+      setPaperTradingOpen(false);
     }
   };
 
@@ -53,7 +57,15 @@ function App() {
           <ul>
             <li><a href="#" onClick={() => handleNav("Dashboard")}>Dashboard</a></li>
             <li><a href="#" onClick={() => handleNav("Backtests")}>Backtests</a></li>
-            <li><a href="#" onClick={() => handleNav("Paper Trading")}>Paper Trading</a></li>
+            <li>
+              <a href="#" onClick={() => handleNav("Paper Trading")}>Paper Trading</a>
+              {paperTradingOpen && (
+                <ul className="submenu">
+                  <li><a href="#" onClick={() => setActivePage("Real-Time")}>Real-Time</a></li>
+                  <li><a href="#" onClick={() => setActivePage("Simulated")}>Simulated</a></li>
+                </ul>
+              )}
+            </li>
             <li><a href="#" onClick={() => handleNav("Live Trading")}>Live Trading</a></li>
             <li><a href="#" onClick={() => handleNav("Charts")}>Charts</a></li>
             <li>
@@ -104,18 +116,36 @@ function App() {
             </section>
           ) : activePage === "Backtests" ? (
             <BacktestsTable />
-          ) : activePage === "Paper Trading" ? (
+          ) : activePage === "Real-Time" ? (
             <section style={{ padding: 24 }}>
-              <h2>Paper Trading</h2>
-              <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap', marginTop: 24 }}>
-                <div style={{ flex: 1, minWidth: 320, background: '#f8f8fa', borderRadius: 8, boxShadow: '0 1px 4px #0001', padding: 20 }}>
-                  <h3>Real-Time</h3>
-                  <p>Live paper trading with real-time market data and simulated order execution. (Coming soon)</p>
-                </div>
-                <div style={{ flex: 1, minWidth: 320, background: '#f8f8fa', borderRadius: 8, boxShadow: '0 1px 4px #0001', padding: 20 }}>
-                  <h3>Simulated</h3>
-                  <p>Historical or scenario-based paper trading for strategy testing. (Coming soon)</p>
-                </div>
+              <h2>Paper Trading &ndash; Real-Time</h2>
+              <div style={{ background: '#f8f8fa', borderRadius: 8, boxShadow: '0 1px 4px #0001', padding: 20, maxWidth: 600 }}>
+                <h3>Live Paper Trading</h3>
+                <p>Live paper trading with real-time market data and simulated order execution.</p>
+                <table style={{ width: '100%', marginTop: 16 }}>
+                  <tbody>
+                    <tr><td><b>Status</b></td><td>Active</td></tr>
+                    <tr><td><b>Current Balance</b></td><td>100,000 USD</td></tr>
+                    <tr><td><b>Open Positions</b></td><td>3</td></tr>
+                    <tr><td><b>Last Trade</b></td><td>2026-04-12 14:22:10</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          ) : activePage === "Simulated" ? (
+            <section style={{ padding: 24 }}>
+              <h2>Paper Trading &ndash; Simulated</h2>
+              <div style={{ background: '#f8f8fa', borderRadius: 8, boxShadow: '0 1px 4px #0001', padding: 20, maxWidth: 600 }}>
+                <h3>Simulated Backtest</h3>
+                <p>Historical or scenario-based paper trading for strategy testing.</p>
+                <table style={{ width: '100%', marginTop: 16 }}>
+                  <tbody>
+                    <tr><td><b>Scenario</b></td><td>2023 Q1 Crypto Volatility</td></tr>
+                    <tr><td><b>Net Return</b></td><td>+12.5%</td></tr>
+                    <tr><td><b>Trades Simulated</b></td><td>42</td></tr>
+                    <tr><td><b>Max Drawdown</b></td><td>3.2%</td></tr>
+                  </tbody>
+                </table>
               </div>
             </section>
           ) : (
