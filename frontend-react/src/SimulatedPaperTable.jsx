@@ -49,7 +49,7 @@ export default function SimulatedPaperTable() {
                 <td>{row.net_return_pct != null ? row.net_return_pct.toFixed(2) + '%' : '-'}</td>
                 <td>{row.win_rate != null ? row.win_rate.toFixed(1) + '%' : '-'}</td>
                 <td>{row.total_trades ?? '-'}</td>
-                <td>{row.max_drawdown != null ? row.max_drawdown.toFixed(2) : '-'}</td>
+                <td>{row.max_drawdown != null ? row.max_drawdown.toFixed(2) + '%' : '-'}</td>
                 <td>{row.first_trade_date ?? '-'}</td>
                 <td>{row.last_trade_date ?? '-'}</td>
               </tr>
