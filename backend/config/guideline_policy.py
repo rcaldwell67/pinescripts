@@ -15,7 +15,7 @@ from typing import Any
 class GuidelineThresholds:
     """Default guideline thresholds for all strategies."""
 
-    min_trades: int = 10
+    min_trades: int = 2
     min_win_rate_pct: float = 65.0
     min_net_return_pct: float = 15.0
     max_drawdown_pct: float = 4.5
