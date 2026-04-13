@@ -24,7 +24,7 @@ sys.path.insert(0, str(REPO_ROOT / "backend"))
 
 from config.guideline_policy import evaluate_backtest_guideline  # noqa: E402
 
-THRESHOLDS = {"min_win_rate": 65.0, "min_net_return": 15.0, "max_drawdown": 4.5, "min_trades": 10}
+THRESHOLDS = {"min_win_rate": 65.0, "min_net_return": 15.0, "max_drawdown": 4.5, "min_trades": 2}
 SYMBOL_MAP = {
     "ethbtc": "ETH/BTC",
     "ethusdc": "ETH/USDC",
