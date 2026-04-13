@@ -30,7 +30,7 @@ class GuidelineOverride:
 
 # Default thresholds applied to all symbols/versions unless overridden.
 DEFAULT_THRESHOLDS = GuidelineThresholds(
-    min_trades=10,
+    min_trades=2,
     min_win_rate_pct=65.0,
     min_net_return_pct=15.0,
     max_drawdown_pct=4.5,

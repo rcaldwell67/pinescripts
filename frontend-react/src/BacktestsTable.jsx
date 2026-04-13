@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 
 // Guideline thresholds (sync with backend/config/guideline_policy.py)
 const DEFAULT_THRESHOLDS = {
-  min_trades: 10,
+  min_trades: 2,
   min_win_rate_pct: 65.0,
   min_net_return_pct: 15.0,
   max_drawdown_pct: 4.5,

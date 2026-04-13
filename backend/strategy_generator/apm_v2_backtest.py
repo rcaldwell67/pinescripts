@@ -19,17 +19,38 @@ def backtest_apm_v2(df, params=None):
     equity = float(risk["initial_equity"])
     trades = []
     open_until = -1
-
     sl_mult = float(risk["sl_atr_mult"])
     tp_mult = float(risk["tp_atr_mult"])
     trail_activate_mult = float(risk["trail_activate_atr_mult"])
     trail_dist_mult = float(risk["trail_dist_atr_mult"])
-    risk_pct = float(risk["risk_pct"])
     max_bars = int(risk["max_bars_in_trade"])
+
+    # Drawdown-aware circuit breaker parameters
+    max_dd_percent = 4.5
+    max_equity = equity
+    circuit_breaker = False
 
     for i in range(len(df)):
         if i <= open_until:
             continue
+
+        # Update equity peak and drawdown
+        max_equity = max(max_equity, equity)
+        current_dd = ((max_equity - equity) / max_equity) * 100 if max_equity > 0 else 0
+        # Drawdown ladder for risk adjustment
+        if current_dd < 1.5:
+            risk_pct = 0.5
+        elif current_dd < 3.0:
+            risk_pct = 0.25
+        elif current_dd < 4.0:
+            risk_pct = 0.1
+        else:
+            risk_pct = 0.0
+        # Circuit breaker: halt trading if drawdown exceeds max
+        if current_dd >= max_dd_percent:
+            circuit_breaker = True
+        if circuit_breaker:
+            break
 
         if i in long_entries:
             side = "long"
@@ -52,7 +73,7 @@ def backtest_apm_v2(df, params=None):
             tp = entry_price - tp_mult * atr
             risk_per_unit = sl - entry_price
 
-        if risk_per_unit <= 0:
+        if risk_per_unit <= 0 or risk_pct == 0.0:
             continue
 
         qty = equity * risk_pct / 100.0 / risk_per_unit
@@ -123,6 +144,8 @@ def backtest_apm_v2(df, params=None):
                 "pnl": pnl,
                 "exit_type": exit_type,
                 "equity": equity,
+                "drawdown": current_dd,
+                "risk_pct": risk_pct,
             }
         )
 

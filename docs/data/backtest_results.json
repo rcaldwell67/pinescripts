@@ -424,18 +424,18 @@
     "v6": [
       {
         "version": "v6",
-        "beginning_equity": 1000.0000000000001,
-        "final_equity": 1508.6799674220103,
-        "current_equity": 1508.6799674220103,
+        "beginning_equity": 1000.0,
+        "final_equity": 1055.7865477870153,
+        "current_equity": 1055.7865477870153,
         "total_trades": 74,
         "winning_trades": 37,
         "losing_trades": 37,
         "win_rate": 50.0,
-        "average_pnl": 6.874053613810943,
-        "total_pnl": 508.6799674220098,
-        "max_drawdown": 280.38801815766556,
-        "max_drawdown_pct": 28.03880181576655,
-        "net_return_pct": 50.867996742201015,
+        "average_pnl": 0.7538722673920952,
+        "total_pnl": 55.786547787015046,
+        "max_drawdown": 31.265678450420978,
+        "max_drawdown_pct": 3.1265678450420977,
+        "net_return_pct": 5.578654778701525,
         "first_trade_date": "2026-01-05 18:45:00+00:00",
         "last_trade_date": "2026-04-13 16:55:00+00:00"
       }
