@@ -88,10 +88,10 @@ export default function BacktestsTable() {
               <th style={{padding: '8px 12px', textAlign: 'right'}}>Current Equity</th>
               <th style={{padding: '8px 12px', textAlign: 'right'}}>Net Return %</th>
               <th style={{padding: '8px 12px', textAlign: 'right'}}>Win Rate</th>
+              <th style={{padding: '8px 12px', textAlign: 'right'}}>Max Drawdown %</th>
               <th style={{padding: '8px 12px', textAlign: 'right'}}>Total Trades</th>
               <th style={{padding: '8px 12px', textAlign: 'right'}}>Last Updated</th>
               <th style={{padding: '8px 12px', textAlign: 'center'}}>Guideline Audit</th>
-               <th style={{padding: '8px 12px', textAlign: 'right'}}>Max Drawdown %</th>
             </tr>
           </thead>
           <tbody>
@@ -111,6 +111,7 @@ export default function BacktestsTable() {
                   <td style={{padding: '8px 12px', textAlign: 'right'}}>{result?.current_equity ?? '-'}</td>
                   <td style={{padding: '8px 12px', textAlign: 'right'}}>{result?.net_return_pct != null ? result.net_return_pct.toFixed(2) + '%' : '-'}</td>
                   <td style={{padding: '8px 12px', textAlign: 'right'}}>{result?.win_rate != null ? result.win_rate.toFixed(1) + '%' : '-'}</td>
+                  <td style={{padding: '8px 12px', textAlign: 'right'}}>{result?.max_drawdown_pct != null ? result.max_drawdown_pct.toFixed(2) + '%' : '-'}</td>
                   <td style={{padding: '8px 12px', textAlign: 'right'}}>{result?.total_trades ?? '-'}</td>
                   <td style={{padding: '8px 12px', textAlign: 'right'}}>{result?.timestamp ?? '-'}</td>
                   <td style={{padding: '8px 12px', textAlign: 'center'}}>
@@ -127,7 +128,6 @@ export default function BacktestsTable() {
                       )
                     ) : '-'}
                   </td>
-                   <td style={{padding: '8px 12px', textAlign: 'right'}}>{result?.max_drawdown_pct != null ? result.max_drawdown_pct.toFixed(2) + '%' : '-'}</td>
                 </tr>
               );
             })}
