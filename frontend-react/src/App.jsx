@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import BacktestsTable from "./BacktestsTable";
+import SimulatedPaperTable from "./SimulatedPaperTable";
 
 
 // Demo/mock data from backend/data/print_account_info.py output
@@ -135,18 +136,8 @@ function App() {
           ) : activePage === "Simulated" ? (
             <section style={{ padding: 24 }}>
               <h2>Paper Trading &ndash; Simulated</h2>
-              <div style={{ background: '#f8f8fa', borderRadius: 8, boxShadow: '0 1px 4px #0001', padding: 20, maxWidth: 600 }}>
-                <h3>Simulated Backtest</h3>
-                <p>Historical or scenario-based paper trading for strategy testing.</p>
-                <table style={{ width: '100%', marginTop: 16 }}>
-                  <tbody>
-                    <tr><td><b>Scenario</b></td><td>2023 Q1 Crypto Volatility</td></tr>
-                    <tr><td><b>Net Return</b></td><td>+12.5%</td></tr>
-                    <tr><td><b>Trades Simulated</b></td><td>42</td></tr>
-                    <tr><td><b>Max Drawdown</b></td><td>3.2%</td></tr>
-                  </tbody>
-                </table>
-              </div>
+              <p>Historical or scenario-based paper trading for strategy testing.</p>
+              <SimulatedPaperTable />
             </section>
           ) : (
             <section style={{ padding: 24 }}>
