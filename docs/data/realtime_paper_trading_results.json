@@ -1,0 +1,174 @@
+{
+  "BTC/USD": [
+    {
+      "symbol": "BTC/USD",
+      "version": "v1",
+      "status": "near_miss",
+      "detail": "long: failed rsi_rising: rsi must be higher than prior bar | short: failed bearish_stack: ema21 < ema50 < ema200 required",
+      "equity": 100000.0,
+      "logged_at": "2026-04-08T17:55:35.966639+00:00"
+    },
+    {
+      "symbol": "BTC/USD",
+      "version": "v2",
+      "status": "near_miss",
+      "detail": "long: long side disabled in v2 params | short: failed pullback_break: pullback touch and bearish break conditions not met",
+      "equity": 100000.0,
+      "logged_at": "2026-04-02T01:39:01.610014+00:00"
+    }
+  ],
+  "BTC/USDC": [
+    {
+      "symbol": "BTC/USDC",
+      "version": "v1",
+      "status": "near_miss",
+      "detail": "long: failed rsi_rising: rsi must be higher than prior bar | short: failed bearish_stack: ema21 < ema50 < ema200 required",
+      "equity": 100000.0,
+      "logged_at": "2026-04-08T17:55:38.334684+00:00"
+    }
+  ],
+  "BTC/USDT": [
+    {
+      "symbol": "BTC/USDT",
+      "version": "v1",
+      "status": "near_miss",
+      "detail": "long: failed adx: adx must exceed 22 | short: failed bearish_stack: ema21 < ema50 < ema200 required",
+      "equity": 100000.0,
+      "logged_at": "2026-04-08T17:55:40.800499+00:00"
+    },
+    {
+      "symbol": "BTC/USDT",
+      "version": "v2",
+      "status": "near_miss",
+      "detail": "long: failed adx_slope: adx must be rising | short: failed bearish_stack: ema21 < ema50 < ema200 required",
+      "equity": 100000.0,
+      "logged_at": "2026-04-05T19:41:07.039248+00:00"
+    },
+    {
+      "symbol": "BTC/USDT",
+      "version": "v3",
+      "status": "near_miss",
+      "detail": "long: failed adx_slope: adx must be rising | short: failed bearish_stack: ema21 < ema50 < ema200 required",
+      "equity": 100000.0,
+      "logged_at": "2026-04-05T19:41:17.916308+00:00"
+    },
+    {
+      "symbol": "BTC/USDT",
+      "version": "v4",
+      "status": "idle",
+      "detail": "long: long side disabled in v4 params | short: failed bearish_stack: ema21 < ema50 < ema200 required",
+      "equity": 100000.0,
+      "logged_at": "2026-04-05T19:41:23.911041+00:00"
+    },
+    {
+      "symbol": "BTC/USDT",
+      "version": "v5",
+      "status": "idle",
+      "detail": "long: long side disabled in v5 params | short: failed bearish_stack: ema21 < ema50 < ema200 required",
+      "equity": 100000.0,
+      "logged_at": "2026-04-05T19:41:30.024431+00:00"
+    },
+    {
+      "symbol": "BTC/USDT",
+      "version": "v6",
+      "status": "idle",
+      "detail": "long: long side disabled in v6 params | short: failed bearish_stack: ema21 < ema50 < ema200 required",
+      "equity": 100000.0,
+      "logged_at": "2026-04-05T19:41:40.927797+00:00"
+    }
+  ],
+  "CLM": [
+    {
+      "symbol": "CLM",
+      "version": "v1",
+      "status": "idle",
+      "detail": "long: failed bullish_stack: ema21 > ema50 > ema200 required | short: failed bearish_stack: ema21 < ema50 < ema200 required",
+      "equity": 100000.0,
+      "logged_at": "2026-04-08T17:55:41.702481+00:00"
+    },
+    {
+      "symbol": "CLM",
+      "version": "v2",
+      "status": "idle",
+      "detail": "long: long side disabled in v2 params | short: failed bearish_stack: ema21 < ema50 < ema200 required",
+      "equity": 100000.0,
+      "logged_at": "2026-04-02T01:39:03.758789+00:00"
+    }
+  ],
+  "CRF": [
+    {
+      "symbol": "CRF",
+      "version": "v1",
+      "status": "idle",
+      "detail": "long: failed bullish_stack: ema21 > ema50 > ema200 required | short: failed bearish_stack: ema21 < ema50 < ema200 required",
+      "equity": 100000.0,
+      "logged_at": "2026-04-08T17:55:42.245292+00:00"
+    },
+    {
+      "symbol": "CRF",
+      "version": "v2",
+      "status": "idle",
+      "detail": "long: long side disabled in v2 params | short: failed bearish_stack: ema21 < ema50 < ema200 required",
+      "equity": 100000.0,
+      "logged_at": "2026-04-02T01:39:05.207231+00:00"
+    }
+  ],
+  "ETH/BTC": [
+    {
+      "symbol": "ETH/BTC",
+      "version": "v1",
+      "status": "near_miss",
+      "detail": "long: failed bullish_stack: ema21 > ema50 > ema200 required | short: failed ema_slope: ema21 must be falling over lookback",
+      "equity": 100000.0,
+      "logged_at": "2026-04-08T17:55:43.986068+00:00"
+    }
+  ],
+  "ETH/USD": [
+    {
+      "symbol": "ETH/USD",
+      "version": "v1",
+      "status": "idle",
+      "detail": "long: failed bullish_stack: ema21 > ema50 > ema200 required | short: failed bearish_stack: ema21 < ema50 < ema200 required",
+      "equity": 100000.0,
+      "logged_at": "2026-04-08T17:55:46.877687+00:00"
+    },
+    {
+      "symbol": "ETH/USD",
+      "version": "v2",
+      "status": "idle",
+      "detail": "long: long side disabled in v2 params | short: failed bearish_stack: ema21 < ema50 < ema200 required",
+      "equity": 100000.0,
+      "logged_at": "2026-04-02T01:39:09.307106+00:00"
+    }
+  ],
+  "ETH/USDC": [
+    {
+      "symbol": "ETH/USDC",
+      "version": "v1",
+      "status": "idle",
+      "detail": "long: failed bullish_stack: ema21 > ema50 > ema200 required | short: failed bearish_stack: ema21 < ema50 < ema200 required",
+      "equity": 100000.0,
+      "logged_at": "2026-04-08T17:55:49.196364+00:00"
+    }
+  ],
+  "ETH/USDT": [
+    {
+      "symbol": "ETH/USDT",
+      "version": "v1",
+      "status": "idle",
+      "detail": "long: failed bullish_stack: ema21 > ema50 > ema200 required | short: failed bearish_stack: ema21 < ema50 < ema200 required",
+      "equity": 100000.0,
+      "logged_at": "2026-04-08T17:55:51.645492+00:00"
+    }
+  ],
+  "ZZZZZ": [
+    {
+      "symbol": "ZZZZZ",
+      "version": "v1",
+      "status": "error",
+      "detail": "No data returned from Yahoo Finance for ZZZZZ",
+      "equity": 100000.0,
+      "logged_at": "2026-04-03T00:29:21.781501+00:00"
+    }
+  ]
+}
