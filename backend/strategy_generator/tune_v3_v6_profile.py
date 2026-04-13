@@ -131,7 +131,7 @@ def apply_candidate(base_params: dict[str, Any], candidate: dict[str, Any]) -> d
 
 def rank_key(
     result: EvalResult,
-    min_trades: int,
+    min_trades: int = 2,
     min_win_rate: float,
     min_net_return: float,
     max_drawdown: float,
