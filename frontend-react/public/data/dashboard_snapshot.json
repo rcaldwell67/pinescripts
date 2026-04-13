@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-12T22:21:14.893502+00:00",
+  "generated_at": "2026-04-13T02:27:38.180959+00:00",
   "account": {
     "mode": "paper",
     "beginning_balance": 100000.0,
@@ -75,7 +75,7 @@
         "current_equity": 1160.463239449991,
         "net_return_pct": 16.04632394499911,
         "win_rate": 81.81818181818183,
-        "max_drawdown_pct": null,
+        "max_drawdown_pct": 2.001984434190149,
         "total_trades": 11
       },
       {
@@ -86,7 +86,7 @@
         "current_equity": 1762.957781817955,
         "net_return_pct": 76.2957781817955,
         "win_rate": 59.79381443298969,
-        "max_drawdown_pct": null,
+        "max_drawdown_pct": 14.056818192142941,
         "total_trades": 97
       },
       {
@@ -97,7 +97,7 @@
         "current_equity": 1421.4387075789525,
         "net_return_pct": 42.143870757895236,
         "win_rate": 62.06896551724138,
-        "max_drawdown_pct": null,
+        "max_drawdown_pct": 11.955124967690539,
         "total_trades": 29
       },
       {
@@ -108,7 +108,7 @@
         "current_equity": null,
         "net_return_pct": 21.484500511123013,
         "win_rate": 100.0,
-        "max_drawdown_pct": null,
+        "max_drawdown_pct": 0.0,
         "total_trades": 4
       },
       {
@@ -119,7 +119,7 @@
         "current_equity": null,
         "net_return_pct": 34.37160812663297,
         "win_rate": 100.0,
-        "max_drawdown_pct": null,
+        "max_drawdown_pct": 0.0,
         "total_trades": 4
       },
       {
@@ -130,7 +130,7 @@
         "current_equity": 1139.7502653942877,
         "net_return_pct": 13.975026539428766,
         "win_rate": 48.214285714285715,
-        "max_drawdown_pct": null,
+        "max_drawdown_pct": 27.418901548210624,
         "total_trades": 56
       },
       {
@@ -141,7 +141,7 @@
         "current_equity": 1211.8375151602768,
         "net_return_pct": 21.183751516027677,
         "win_rate": 71.875,
-        "max_drawdown_pct": null,
+        "max_drawdown_pct": 3.39737426871784,
         "total_trades": 32
       },
       {
@@ -152,7 +152,7 @@
         "current_equity": 1377.7432424417213,
         "net_return_pct": 37.774324244172135,
         "win_rate": 60.0,
-        "max_drawdown_pct": null,
+        "max_drawdown_pct": 7.791661063891593,
         "total_trades": 15
       },
       {
@@ -163,7 +163,7 @@
         "current_equity": 2990.8824308616704,
         "net_return_pct": 199.08824308616704,
         "win_rate": 60.0,
-        "max_drawdown_pct": null,
+        "max_drawdown_pct": 38.85556845758693,
         "total_trades": 115
       },
       {
@@ -174,7 +174,7 @@
         "current_equity": 1052.0710787280127,
         "net_return_pct": 5.207107872801271,
         "win_rate": 60.0,
-        "max_drawdown_pct": null,
+        "max_drawdown_pct": 1.0488614501781057,
         "total_trades": 5
       },
       {
@@ -185,7 +185,7 @@
         "current_equity": 1099.758417759595,
         "net_return_pct": 9.975841775959497,
         "win_rate": 100.0,
-        "max_drawdown_pct": null,
+        "max_drawdown_pct": 0.0,
         "total_trades": 6
       }
     ],
@@ -297,7 +297,7 @@
         "current_equity": 1052.0710787280127,
         "net_return_pct": 5.207107872801271,
         "win_rate": 60.0,
-        "max_drawdown_pct": null,
+        "max_drawdown_pct": 1.0488614501781057,
         "total_trades": 5
       },
       {
@@ -308,7 +308,7 @@
         "current_equity": 1099.758417759595,
         "net_return_pct": 9.975841775959497,
         "win_rate": 100.0,
-        "max_drawdown_pct": null,
+        "max_drawdown_pct": 0.0,
         "total_trades": 6
       },
       {

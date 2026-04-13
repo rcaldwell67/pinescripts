@@ -104,6 +104,16 @@ def _latest_results(conn: sqlite3.Connection, table: str, mode_name: str) -> lis
     out: list[dict[str, Any]] = []
     for row in rows:
         metrics = _parse_metrics(row["metrics"])
+        # Compute max_drawdown_pct if missing and possible
+        max_drawdown_pct = metrics.get("max_drawdown_pct")
+        if max_drawdown_pct is None:
+            max_drawdown = metrics.get("max_drawdown")
+            beginning_equity = metrics.get("beginning_equity")
+            if max_drawdown is not None and beginning_equity:
+                try:
+                    max_drawdown_pct = float(max_drawdown) / float(beginning_equity) * 100.0
+                except Exception:
+                    max_drawdown_pct = None
         out.append(
             {
                 "mode": mode_name,
@@ -113,7 +123,7 @@ def _latest_results(conn: sqlite3.Connection, table: str, mode_name: str) -> lis
                 "current_equity": row["current_equity"],
                 "net_return_pct": metrics.get("net_return_pct"),
                 "win_rate": metrics.get("win_rate") or metrics.get("win_rate_pct"),
-                "max_drawdown_pct": metrics.get("max_drawdown_pct"),
+                "max_drawdown_pct": max_drawdown_pct,
                 "total_trades": metrics.get("total_trades") or metrics.get("trades"),
             }
         )
