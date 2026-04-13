@@ -104,6 +104,20 @@ function App() {
             </section>
           ) : activePage === "Backtests" ? (
             <BacktestsTable />
+          ) : activePage === "Paper Trading" ? (
+            <section style={{ padding: 24 }}>
+              <h2>Paper Trading</h2>
+              <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap', marginTop: 24 }}>
+                <div style={{ flex: 1, minWidth: 320, background: '#f8f8fa', borderRadius: 8, boxShadow: '0 1px 4px #0001', padding: 20 }}>
+                  <h3>Real-Time</h3>
+                  <p>Live paper trading with real-time market data and simulated order execution. (Coming soon)</p>
+                </div>
+                <div style={{ flex: 1, minWidth: 320, background: '#f8f8fa', borderRadius: 8, boxShadow: '0 1px 4px #0001', padding: 20 }}>
+                  <h3>Simulated</h3>
+                  <p>Historical or scenario-based paper trading for strategy testing. (Coming soon)</p>
+                </div>
+              </div>
+            </section>
           ) : (
             <section style={{ padding: 24 }}>
               <h2>Account Overview</h2>
