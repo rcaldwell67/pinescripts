@@ -91,6 +91,7 @@ export default function BacktestsTable() {
               <th style={{padding: '8px 12px', textAlign: 'right'}}>Total Trades</th>
               <th style={{padding: '8px 12px', textAlign: 'right'}}>Last Updated</th>
               <th style={{padding: '8px 12px', textAlign: 'center'}}>Guideline Audit</th>
+               <th style={{padding: '8px 12px', textAlign: 'right'}}>Max Drawdown %</th>
             </tr>
           </thead>
           <tbody>
@@ -126,6 +127,7 @@ export default function BacktestsTable() {
                       )
                     ) : '-'}
                   </td>
+                   <td style={{padding: '8px 12px', textAlign: 'right'}}>{result?.max_drawdown_pct != null ? result.max_drawdown_pct.toFixed(2) + '%' : '-'}</td>
                 </tr>
               );
             })}
