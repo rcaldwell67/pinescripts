@@ -209,9 +209,7 @@
       "net_return_pct": 30.40971426145188,
       "max_drawdown_pct": 0.0,
       "pass_all": true,
-      "reasons": [
-        "trades<10 (advisory)"
-      ]
+      "reasons": []
     },
     {
       "version": "v2",
@@ -222,9 +220,7 @@
       "net_return_pct": 21.484500511123013,
       "max_drawdown_pct": 0.0,
       "pass_all": true,
-      "reasons": [
-        "trades<10 (advisory)"
-      ]
+      "reasons": []
     },
     {
       "version": "v3",
@@ -235,9 +231,7 @@
       "net_return_pct": 21.484500511123013,
       "max_drawdown_pct": 0.0,
       "pass_all": true,
-      "reasons": [
-        "trades<10 (advisory)"
-      ]
+      "reasons": []
     },
     {
       "version": "v4",
@@ -248,9 +242,7 @@
       "net_return_pct": 21.484500511123013,
       "max_drawdown_pct": 0.0,
       "pass_all": true,
-      "reasons": [
-        "trades<10 (advisory)"
-      ]
+      "reasons": []
     },
     {
       "version": "v5",
@@ -261,9 +253,7 @@
       "net_return_pct": 21.484500511123013,
       "max_drawdown_pct": 0.0,
       "pass_all": true,
-      "reasons": [
-        "trades<10 (advisory)"
-      ]
+      "reasons": []
     },
     {
       "version": "v6",
@@ -274,9 +264,7 @@
       "net_return_pct": 21.484500511123013,
       "max_drawdown_pct": 0.0,
       "pass_all": true,
-      "reasons": [
-        "trades<10 (advisory)"
-      ]
+      "reasons": []
     },
     {
       "version": "v1",
@@ -287,9 +275,7 @@
       "net_return_pct": 20.468718210675174,
       "max_drawdown_pct": 0.0,
       "pass_all": true,
-      "reasons": [
-        "trades<10 (advisory)"
-      ]
+      "reasons": []
     },
     {
       "version": "v2",
@@ -300,9 +286,7 @@
       "net_return_pct": 20.832715925723928,
       "max_drawdown_pct": 0.0,
       "pass_all": true,
-      "reasons": [
-        "trades<10 (advisory)"
-      ]
+      "reasons": []
     },
     {
       "version": "v3",
@@ -313,9 +297,7 @@
       "net_return_pct": 34.29632289780514,
       "max_drawdown_pct": 0.0,
       "pass_all": true,
-      "reasons": [
-        "trades<10 (advisory)"
-      ]
+      "reasons": []
     },
     {
       "version": "v4",
@@ -326,9 +308,7 @@
       "net_return_pct": 34.37160812663297,
       "max_drawdown_pct": 0.0,
       "pass_all": true,
-      "reasons": [
-        "trades<10 (advisory)"
-      ]
+      "reasons": []
     },
     {
       "version": "v5",
@@ -339,9 +319,7 @@
       "net_return_pct": 34.29632289780514,
       "max_drawdown_pct": 0.0,
       "pass_all": true,
-      "reasons": [
-        "trades<10 (advisory)"
-      ]
+      "reasons": []
     },
     {
       "version": "v6",
@@ -352,9 +330,7 @@
       "net_return_pct": 34.29632289780514,
       "max_drawdown_pct": 0.0,
       "pass_all": true,
-      "reasons": [
-        "trades<10 (advisory)"
-      ]
+      "reasons": []
     },
     {
       "version": "v1",
@@ -519,9 +495,7 @@
       "net_return_pct": 27.15483145977091,
       "max_drawdown_pct": 0.0,
       "pass_all": true,
-      "reasons": [
-        "trades<10 (advisory)"
-      ]
+      "reasons": []
     },
     {
       "version": "v4",
