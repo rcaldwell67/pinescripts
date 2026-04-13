@@ -71,6 +71,10 @@
         "min_risk_pct": 0.05,
         "base_risk_pct": 0.1,
         "atr_vol_threshold": 0.025
+        ,"multi_factor_enabled": true
+        ,"min_factors_required": 2
+        ,"volatility_regime_enabled": true
+        ,"max_atr_pct": 0.03
       },
       "risk": {
         "sl_atr_mult": 1.0,
