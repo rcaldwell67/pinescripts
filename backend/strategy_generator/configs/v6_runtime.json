@@ -50,8 +50,8 @@
         "adx_threshold": 20,
         "di_spread": 4.0,
         "session_filter_enabled": true,
-        "session_start_hour_et": 9,
-        "session_end_hour_et": 15,
+        "session_start_hour_et": 10,
+        "session_end_hour_et": 14,
         "volume_mult_min": 1.0,
         "min_body_atr_mult": 0.2,
         "atr_floor_pct": 0.15,
@@ -66,6 +66,11 @@
         "ema_trend_filter_enabled": true,
         "ema_trend_lookback": 10,
         "ema_trend_type": "ema21"
+        ,"dynamic_position_sizing_enabled": true,
+        "max_loss_streak": 2,
+        "min_risk_pct": 0.05,
+        "base_risk_pct": 0.1,
+        "atr_vol_threshold": 0.025
       },
       "risk": {
         "sl_atr_mult": 1.0,

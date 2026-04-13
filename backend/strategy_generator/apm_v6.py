@@ -49,10 +49,37 @@ def apm_v6_signals(df, side: str = "short", params: dict[str, Any] | None = None
         donchian_break = price > df['donchian_high'].iloc[i-1] if side == "long" else price < df['donchian_low'].iloc[i-1]
         bb_break = price > df['bb_upper'].iloc[i-1] if side == "long" else price < df['bb_lower'].iloc[i-1]
         rsi = df['rsi'].iloc[i] if 'rsi' in df.columns else None
+            # --- Time-of-day/session filter parameters ---
+            session_filter_enabled = bool(signal.get("session_filter_enabled", False))
+            session_start_hour = int(signal.get("session_start_hour_et", 0))
+            session_end_hour = int(signal.get("session_end_hour_et", 23))
+
+            # --- Dynamic position sizing parameters ---
+            dynamic_position_sizing_enabled = bool(signal.get("dynamic_position_sizing_enabled", True))
+            max_loss_streak = int(signal.get("max_loss_streak", 2))
+            min_risk_pct = float(signal.get("min_risk_pct", 0.05))
+            base_risk_pct = float(signal.get("base_risk_pct", 0.1))
+            atr_vol_threshold = float(signal.get("atr_vol_threshold", 0.02))
+
+            # Track loss streak for dynamic sizing
+            loss_streak = 0
         mr_entry = False
         if side == "long" and rsi is not None:
             mr_entry = rsi < 55
         elif side == "short" and rsi is not None:
+                # --- Time-of-day/session filter ---
+                if session_filter_enabled and "timestamp" in df.columns:
+                    ts = df["timestamp"].iloc[i]
+                    if hasattr(ts, "hour"):
+                        hour = ts.hour
+                    else:
+                        # Try to parse string timestamp
+                        try:
+                            hour = pd.to_datetime(ts).hour
+                        except Exception:
+                            hour = None
+                    if hour is not None and not (session_start_hour <= hour <= session_end_hour):
+                        continue
             mr_entry = rsi > 45
 
         # --- Regime filter: require minimum market regime score ---
@@ -95,8 +122,20 @@ def apm_v6_dynamic_trailing_stop(entry_price, current_price, atr, base_trail=2.0
     Dynamic trailing stop: base_trail ATR below entry, tightens to profit_trail ATR below current price if in profit.
     """
     stop = entry_price - base_trail * atr
+                    # --- Dynamic position sizing: reduce risk after loss streak or high ATR ---
+                    risk_pct = base_risk_pct
+                    if dynamic_position_sizing_enabled:
+                        if loss_streak >= max_loss_streak:
+                            risk_pct = min_risk_pct
+                        elif 'atr' in df.columns and df['atr'].iloc[i] / price > atr_vol_threshold:
+                            risk_pct = min_risk_pct
+                    # Store risk_pct in DataFrame for use by backtest logic (if needed)
+                    df.loc[df.index[i], 'risk_pct'] = risk_pct
+
     if current_price > entry_price:
         stop = max(stop, current_price - profit_trail * atr)
+                    # Simulate loss streak increment (for demonstration; real streak tracking should be in backtest logic)
+                    # loss_streak = ... (update based on trade outcome)
     return stop
 
 
