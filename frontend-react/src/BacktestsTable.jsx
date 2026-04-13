@@ -134,6 +134,9 @@ export default function BacktestsTable() {
           </tbody>
         </table>
       </div>
+      <footer style={{marginTop: 24, textAlign: 'right', color: '#888', fontSize: '0.95em'}}>
+        Dashboard snapshot generated at: {snapshot.generated_at ? new Date(snapshot.generated_at).toLocaleString() : '-'}
+      </footer>
     </section>
   );
 }
