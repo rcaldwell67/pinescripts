@@ -1,58 +1,7 @@
-{
-  "version": "v6",
-  "symbol": "BTC/USD",
-  "targets": {
-    "min_trades": 10,
-    "win_rate_min": 45.0,
-    "net_return_min": 0.0,
-    "max_drawdown_max": 6.0
-  },
-  "base": {
-    "trades": 27,
-    "win_rate": 44.44444444444444,
-    "net_return_pct": 9.948205269678812,
-    "max_drawdown_pct": 10.60519754414481,
-    "pass_all": false
-  },
-  "best_candidate": {
-    "signal.enable_longs": true,
-    "signal.enable_shorts": true,
-    "signal.pullback_tolerance_pct": 0.25,
-    "signal.momentum_bars": 4,
-    "signal.rsi_long_min": 40,
-    "signal.rsi_long_max": 60,
-    "signal.rsi_short_min": 28,
-    "signal.rsi_short_max": 50,
-    "signal.adx_slope_bars": 2,
-    "signal.adx_threshold": 18,
-    "signal.di_spread": 0.0,
-    "signal.session_filter_enabled": false,
-    "signal.session_start_hour_et": 9,
-    "signal.session_end_hour_et": 14,
-    "signal.volume_mult_min": 0.5,
-    "signal.min_body_atr_mult": 0.2,
-    "signal.atr_floor_pct": 0.08,
-    "signal.panic_suppression_mult": 1.5,
-    "risk.sl_atr_mult": 3.5,
-    "risk.tp_atr_mult": 8.0,
-    "risk.trail_activate_atr_mult": 2.0,
-    "risk.trail_dist_atr_mult": 0.12,
-    "risk.risk_pct": 1.2,
-    "risk.max_bars_in_trade": 20,
-    "signal.bb_filter_enabled": true,
-    "signal.bb_width_pct_min": 1.25,
-    "signal.donchian_filter_enabled": false,
-    "signal.donchian_len": 20,
-    "trades": 17,
-    "win_rate": 35.294117647058826,
-    "net_return_pct": -4.636128377746518,
-    "max_drawdown_pct": 5.096246890735015,
-    "pass_trades": true,
-    "pass_win_rate": false,
-    "pass_net_return": false,
-    "pass_drawdown": true,
-    "pass_all": false
-  },
-  "evaluations": 1,
-  "seed": 42
-}
+
+[RUN] BTC/USDT v6
+Fetching YTD OHLCV for BTC/USDT...
+  26,480 bars fetched (2026-01-01 00:00:00+00:00 -> 2026-04-13 20:05:00+00:00)
+Running backtest v6...
+  74 trades generated
+Results saved to DB: BTC/USDT v6  trades=74  net=50.9%

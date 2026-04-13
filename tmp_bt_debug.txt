@@ -1,0 +1,9 @@
+  Using Alpaca for crypto symbol BTC/USD...
+ERROR: Failed to process BTC/USD: Extra data: line 1 column 26 (char 25)
+
+Backtest completed with errors for: BTC/USD
+
+[RUN] BTC/USD v6
+Fetching YTD OHLCV for BTC/USD...
+  29,592 bars fetched (2026-01-01 00:00:00+00:00 -> 2026-04-13 20:40:00+00:00)
+Running backtest v6...

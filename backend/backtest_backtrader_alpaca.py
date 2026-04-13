@@ -483,7 +483,7 @@ def save_to_db(symbol: str, version: str,
     max_drawdown   = float((trades[equity_col].cummax() - trades[equity_col]).max())
     net_return_pct = (final_equity - initial_equity) / initial_equity * 100 if initial_equity else 0
 
-    # Map entry_idx → timestamp if available
+    # Map entry_idx -> timestamp if available
     first_trade_date = last_trade_date = None
     if "entry_idx" in trades.columns and "timestamp" in df.columns:
         try:
@@ -504,10 +504,12 @@ def save_to_db(symbol: str, version: str,
         "average_pnl":      _to_native(avg_pnl),
         "total_pnl":        _to_native(total_pnl),
         "max_drawdown":     _to_native(max_drawdown),
+        "max_drawdown_pct": _to_native((max_drawdown / initial_equity * 100) if initial_equity else 0),
         "net_return_pct":   _to_native(net_return_pct),
         "first_trade_date": first_trade_date,
         "last_trade_date":  last_trade_date,
     }
+    print("[DEBUG] Metrics to serialize:", metrics)
 
     conn = sqlite3.connect(str(DB_PATH), timeout=30)
     conn.execute("PRAGMA journal_mode=DELETE")
@@ -630,7 +632,7 @@ def main() -> int:
         try:
             print(f"Fetching YTD OHLCV for {symbol}...")
             df = fetch_ohlcv(symbol)
-            print(f"  {len(df):,} bars fetched ({df['timestamp'].iloc[0]} → {df['timestamp'].iloc[-1]})")
+            print(f"  {len(df):,} bars fetched ({df['timestamp'].iloc[0]} -> {df['timestamp'].iloc[-1]})")
 
             profile = args.profile.strip() if args.profile else None
             if profile:
