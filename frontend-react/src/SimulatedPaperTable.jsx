@@ -42,7 +42,7 @@ export default function SimulatedPaperTable() {
         </thead>
         <tbody>
           {Object.entries(data).flatMap(([symbol, results]) =>
-            results.map((row, i) => (
+            results.filter(row => row.version === 'v6').map((row, i) => (
               <tr key={symbol + row.version}>
                 <td>{symbol}</td>
                 <td>{row.version}</td>
