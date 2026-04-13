@@ -8,10 +8,10 @@
     "max_drawdown_max": 4.5
   },
   "base": {
-    "trades": 28,
-    "win_rate": 60.71428571428571,
-    "net_return_pct": 5.086536253816298,
-    "max_drawdown_pct": 1.540113310152871,
+    "trades": 21,
+    "win_rate": 47.61904761904761,
+    "net_return_pct": -2.9670386886928135,
+    "max_drawdown_pct": 3.0488285106493263,
     "pass_all": false
   },
   "best_candidate": {
