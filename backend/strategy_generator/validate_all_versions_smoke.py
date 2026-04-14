@@ -24,34 +24,12 @@ def fail(message: str) -> int:
 
 
 def _load_sample() -> pd.DataFrame:
-    if not SAMPLE_CSV.exists():
-        raise FileNotFoundError(f"Missing sample CSV: {SAMPLE_CSV}")
-
-    df = pd.read_csv(SAMPLE_CSV)
-    if len(df) < 400:
-        raise RuntimeError(f"Sample CSV has insufficient rows: {len(df)}")
-
-    df = df.rename(
-        columns={
-            "open": "Open",
-            "high": "High",
-            "low": "Low",
-            "close": "Close",
-            "volume": "Volume",
-        }
-    )
-    required = {"timestamp", "Open", "High", "Low", "Close", "Volume"}
-    missing = sorted(required - set(df.columns))
-    if missing:
-        raise RuntimeError(f"Sample CSV missing required columns: {missing}")
-    return df
+    raise RuntimeError("Sample CSV loading is no longer supported. Please provide a valid DataFrame source.")
 
 
 def main() -> int:
-    try:
-        df = _load_sample()
-    except Exception as exc:
-        return fail(str(exc))
+    print("ERROR: This script requires a sample DataFrame, but sample CSV loading is no longer supported.", file=sys.stderr)
+    return 1
 
     backtest_df = df.head(1500).copy()
     realtime_df = df.head(400).copy()
