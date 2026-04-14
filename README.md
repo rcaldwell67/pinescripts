@@ -209,7 +209,7 @@ By default it validates the aligned-reset branch and the direct-backtest branch 
 
 Run this utility to validate the issue-driven realtime paper rerun path against a temporary DB copy and a fake paper broker:
 
-- `python backend/paper_trading/validate_rerun_paper_trading.py`
+  
 
 It validates actual versioned paper analysis/exit dispatch on local sample data, then dry-runs representative crypto and non-crypto paper reruns through the realtime runner without placing broker orders.
 
