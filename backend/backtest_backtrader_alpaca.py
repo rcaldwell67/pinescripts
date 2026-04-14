@@ -21,6 +21,7 @@ import os
 import sqlite3
 import sys
 import logging
+from backend.telegram_notify import send_telegram_message
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -115,12 +116,15 @@ def fetch_ohlcv_alpaca(symbol: str) -> "pd.DataFrame | None":
         # 403 = subscription/access denied (e.g., no market data subscription for stocks)
         if "403" in str(e) or "subscription" in str(e).lower():
             logger.warning(f"Alpaca API access denied (subscription required): {e}")
+            send_telegram_message(f"[Trading System] Alpaca API access denied: {e}")
             return None
         logger.error(f"Alpaca API error: {e}")
+        send_telegram_message(f"[Trading System] Alpaca API error: {e}")
         raise
 
     if df.empty:
         logger.error(f"No data returned from Alpaca for {symbol}")
+        send_telegram_message(f"[Trading System] No data returned from Alpaca for {symbol}")
         raise RuntimeError(f"No data returned from Alpaca for {symbol}")
 
     df = df.reset_index()
@@ -160,6 +164,7 @@ def fetch_ohlcv_yfinance(symbol: str) -> "pd.DataFrame":
 
     if df.empty:
         logger.error(f"No data returned from Yahoo Finance for {symbol}")
+        send_telegram_message(f"[Trading System] No data returned from Yahoo Finance for {symbol}")
         raise RuntimeError(f"No data returned from Yahoo Finance for {symbol}")
 
     # Reset index to convert Date from index to column
@@ -179,6 +184,7 @@ def fetch_ohlcv_yfinance(symbol: str) -> "pd.DataFrame":
     ts_col = next((c for c in ("date", "datetime", "timestamp", "index") if c in df.columns), None)
     if ts_col is None:
         logger.error(f"Yahoo Finance data missing timestamp column. Columns: {list(df.columns)}")
+        send_telegram_message(f"[Trading System] Yahoo Finance data missing timestamp column. Columns: {list(df.columns)}")
         raise RuntimeError(f"Yahoo Finance data missing timestamp column. Columns: {list(df.columns)}")
     df = df.rename(columns={ts_col: "timestamp"})
     
@@ -186,6 +192,7 @@ def fetch_ohlcv_yfinance(symbol: str) -> "pd.DataFrame":
     required = {"timestamp", "open", "high", "low", "close", "volume"}
     if not required.issubset(set(df.columns)):
         logger.error(f"Yahoo Finance data missing columns: {required - set(df.columns)}")
+        send_telegram_message(f"[Trading System] Yahoo Finance data missing columns: {required - set(df.columns)}")
         raise RuntimeError(f"Yahoo Finance data missing columns: {required - set(df.columns)}")
     
     df["timestamp"] = pd.to_datetime(df["timestamp"])
@@ -264,6 +271,7 @@ def _fetch_latest_realtime_bar(symbol: str) -> dict[str, Any] | None:
         }
     except Exception as e:
         logger.warning(f"Failed to fetch latest realtime bar for {symbol}: {e}")
+        send_telegram_message(f"[Trading System] Failed to fetch latest realtime bar for {symbol}: {e}")
         return None
 
 

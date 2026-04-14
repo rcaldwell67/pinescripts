@@ -75,7 +75,7 @@ This document outlines the requirements for building a robust, automated trading
 ## 4. Nice-to-Haves
 
 - Role-based access control for dashboard (admin, read-only)
-- Real-time notifications (e.g., Discord, Slack) for trade events or errors
+- Real-time notifications (e.g., Discord, Slack, Telegram) for trade events or errors
 - Downloadable reports (CSV, JSON) from dashboard
 - Strategy parameter tuning and optimization tools
 - Visualization of trade signals and order flow
