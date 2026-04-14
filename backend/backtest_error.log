@@ -1,0 +1,12 @@
+2026-04-14 12:02:32,555 ERROR HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: BTCUSDT"}}}
+2026-04-14 12:02:33,446 ERROR $BTCUSDT: possibly delisted; no timezone found
+2026-04-14 12:02:33,451 ERROR 
+1 Failed download:
+2026-04-14 12:02:33,451 ERROR ['BTCUSDT']: possibly delisted; no timezone found
+2026-04-14 12:02:33,466 ERROR No data returned from Yahoo Finance for BTCUSDT
+2026-04-14 12:02:48,202 ERROR HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: BTCUSDT"}}}
+2026-04-14 12:02:48,421 ERROR $BTCUSDT: possibly delisted; no timezone found
+2026-04-14 12:02:48,429 ERROR 
+1 Failed download:
+2026-04-14 12:02:48,430 ERROR ['BTCUSDT']: possibly delisted; no timezone found
+2026-04-14 12:02:48,435 ERROR No data returned from Yahoo Finance for BTCUSDT
