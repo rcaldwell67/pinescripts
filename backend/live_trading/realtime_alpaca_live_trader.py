@@ -12,11 +12,13 @@ Usage:
 
 from __future__ import annotations
 
+
 import argparse
 import json
 import os
 import sqlite3
 import sys
+import logging
 from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
@@ -24,11 +26,24 @@ from typing import Any
 
 import requests
 
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 BACKEND_DIR = REPO_ROOT / "backend"
 SG_DIR = BACKEND_DIR / "strategy_generator"
 sys.path.insert(0, str(BACKEND_DIR))
 sys.path.insert(0, str(SG_DIR))
+
+# ── Logging setup ─────────────────────────────────────────────────────────────
+LOG_PATH = REPO_ROOT / "backend" / "live_trading_error.log"
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s",
+    handlers=[
+        logging.FileHandler(LOG_PATH, mode="a", encoding="utf-8"),
+        logging.StreamHandler(sys.stderr)
+    ]
+)
+logger = logging.getLogger("live_trading")
 
 try:
     from dotenv import load_dotenv
@@ -103,12 +118,17 @@ class AlpacaLiveAPI:
 
     def _request(self, method: str, path: str, *, params: dict[str, Any] | None = None, payload: dict[str, Any] | None = None) -> Any:
         url = f"{ALPACA_LIVE_BASE}{path}"
-        resp = requests.request(method, url, headers=self.headers, params=params, json=payload, timeout=30)
-        if not resp.ok:
-            raise RuntimeError(f"Alpaca LIVE {method} {path} failed: {resp.status_code} {resp.text}")
-        if not resp.text:
-            return None
-        return resp.json()
+        try:
+            resp = requests.request(method, url, headers=self.headers, params=params, json=payload, timeout=30)
+            if not resp.ok:
+                logger.error(f"Alpaca LIVE {method} {path} failed: {resp.status_code} {resp.text}")
+                raise RuntimeError(f"Alpaca LIVE {method} {path} failed: {resp.status_code} {resp.text}")
+            if not resp.text:
+                return None
+            return resp.json()
+        except Exception as e:
+            logger.error(f"Exception during Alpaca LIVE {method} {path}: {e}", exc_info=True)
+            raise
 
     def get_account(self) -> dict[str, Any]:
         return self._request("GET", "/v2/account")

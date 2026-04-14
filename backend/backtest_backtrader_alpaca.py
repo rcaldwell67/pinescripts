@@ -14,21 +14,36 @@ Requires env vars (or a .env file):
 
 from __future__ import annotations
 
+
 import argparse
 import json
 import os
 import sqlite3
 import sys
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 import requests
 
+
 # ── Bootstrap path so strategy_generator imports work ─────────────────────────
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SG_DIR    = REPO_ROOT / "backend" / "strategy_generator"
 sys.path.insert(0, str(SG_DIR))
+
+# ── Logging setup ─────────────────────────────────────────────────────────────
+LOG_PATH = REPO_ROOT / "backend" / "backtest_error.log"
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s",
+    handlers=[
+        logging.FileHandler(LOG_PATH, mode="a", encoding="utf-8"),
+        logging.StreamHandler(sys.stderr)
+    ]
+)
+logger = logging.getLogger("backtest")
 
 try:
     from dotenv import load_dotenv
@@ -61,9 +76,8 @@ def ensure_result_tables_have_current_equity(conn: sqlite3.Connection) -> None:
     for table in ("backtest_results", "paper_trading_results", "live_trading_results"):
         try:
             conn.execute(f"ALTER TABLE {table} ADD COLUMN current_equity REAL")
-        except sqlite3.OperationalError:
-            # Column already exists.
-            pass
+        except sqlite3.OperationalError as e:
+            logger.debug(f"Column current_equity may already exist in {table}: {e}")
 
 
 # ── Data fetch ─────────────────────────────────────────────────────────────────
@@ -100,11 +114,13 @@ def fetch_ohlcv_alpaca(symbol: str) -> "pd.DataFrame | None":
     except APIError as e:
         # 403 = subscription/access denied (e.g., no market data subscription for stocks)
         if "403" in str(e) or "subscription" in str(e).lower():
-            print(f"  Alpaca API access denied (subscription required): {e}", file=sys.stderr)
+            logger.warning(f"Alpaca API access denied (subscription required): {e}")
             return None
+        logger.error(f"Alpaca API error: {e}")
         raise
 
     if df.empty:
+        logger.error(f"No data returned from Alpaca for {symbol}")
         raise RuntimeError(f"No data returned from Alpaca for {symbol}")
 
     df = df.reset_index()
@@ -143,6 +159,7 @@ def fetch_ohlcv_yfinance(symbol: str) -> "pd.DataFrame":
     df = yf.download(symbol, start=start, end=now, interval="1h", progress=False)
 
     if df.empty:
+        logger.error(f"No data returned from Yahoo Finance for {symbol}")
         raise RuntimeError(f"No data returned from Yahoo Finance for {symbol}")
 
     # Reset index to convert Date from index to column
@@ -161,12 +178,14 @@ def fetch_ohlcv_yfinance(symbol: str) -> "pd.DataFrame":
     # Accept common timestamp column variants from different providers/versions
     ts_col = next((c for c in ("date", "datetime", "timestamp", "index") if c in df.columns), None)
     if ts_col is None:
+        logger.error(f"Yahoo Finance data missing timestamp column. Columns: {list(df.columns)}")
         raise RuntimeError(f"Yahoo Finance data missing timestamp column. Columns: {list(df.columns)}")
     df = df.rename(columns={ts_col: "timestamp"})
     
     # Ensure required columns exist
     required = {"timestamp", "open", "high", "low", "close", "volume"}
     if not required.issubset(set(df.columns)):
+        logger.error(f"Yahoo Finance data missing columns: {required - set(df.columns)}")
         raise RuntimeError(f"Yahoo Finance data missing columns: {required - set(df.columns)}")
     
     df["timestamp"] = pd.to_datetime(df["timestamp"])
@@ -243,7 +262,8 @@ def _fetch_latest_realtime_bar(symbol: str) -> dict[str, Any] | None:
             "Close": float(c),
             "Volume": float(v),
         }
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Failed to fetch latest realtime bar for {symbol}: {e}")
         return None
 
 

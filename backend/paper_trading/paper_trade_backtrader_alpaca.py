@@ -12,15 +12,29 @@ Usage:
 
 from __future__ import annotations
 
+
 import argparse
 import json
 import sqlite3
 import sys
+import logging
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 BACKEND_DIR = REPO_ROOT / "backend"
 sys.path.insert(0, str(BACKEND_DIR))
+
+# ── Logging setup ─────────────────────────────────────────────────────────────
+LOG_PATH = REPO_ROOT / "backend" / "paper_trade_error.log"
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s",
+    handlers=[
+        logging.FileHandler(LOG_PATH, mode="a", encoding="utf-8"),
+        logging.StreamHandler(sys.stderr)
+    ]
+)
+logger = logging.getLogger("paper_trade")
 
 from backtest_backtrader_alpaca import (
     DB_PATH,
@@ -51,7 +65,8 @@ def _timestamp_at(df, idx: object) -> str | None:
         if pos < 0 or pos >= len(df):
             return None
         return str(df["timestamp"].iloc[pos])
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Failed to get timestamp at index {idx}: {e}")
         return None
 
 
@@ -93,92 +108,95 @@ def _metrics_for_trades(symbol: str, version: str, trades, df) -> dict[str, obje
 
 
 def save_paper_to_db(symbol: str, version: str, trades, df, *, force_reset: bool = False) -> None:
-    conn = sqlite3.connect(str(DB_PATH), timeout=30)
-    conn.execute("PRAGMA journal_mode=DELETE")
-    ensure_result_tables_have_current_equity(conn)
     try:
-        conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
-    except sqlite3.OperationalError:
-        pass
+        conn = sqlite3.connect(str(DB_PATH), timeout=30)
+        conn.execute("PRAGMA journal_mode=DELETE")
+        ensure_result_tables_have_current_equity(conn)
+        try:
+            conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        except sqlite3.OperationalError as e:
+            logger.debug(f"WAL checkpoint error: {e}")
 
-    notes = f"{VERSION_MAP.get(version, version)} paper trading summary"
+        notes = f"{VERSION_MAP.get(version, version)} paper trading summary"
 
-    if force_reset:
+        if force_reset:
+            conn.execute(
+                "DELETE FROM trades WHERE symbol = ? AND version = ? AND mode = 'paper'",
+                (symbol, version),
+            )
+            last_exit_time = None
+        else:
+            row = conn.execute(
+                "SELECT MAX(exit_time) FROM trades WHERE symbol = ? AND version = ? AND mode = 'paper'",
+                (symbol, version),
+            ).fetchone()
+            last_exit_time = row[0] if row else None
+
+        # Build new trade rows, skipping any already stored
+        new_rows: list[tuple] = []
+        skipped = 0
+
+        if not trades.empty:
+            for _, trade in trades.iterrows():
+                entry_time = _timestamp_at(df, trade.get("entry_idx"))
+                exit_time = _timestamp_at(df, trade.get("exit_idx"))
+
+                if last_exit_time and entry_time and entry_time <= last_exit_time:
+                    skipped += 1
+                    continue
+
+                dollar_pnl = float(trade.get("pnl", trade.get("dollar_pnl", 0.0)) or 0.0)
+                equity = float(trade.get("equity", 0.0) or 0.0)
+                beginning_equity = equity - dollar_pnl
+                pnl_pct = (dollar_pnl / beginning_equity * 100.0) if beginning_equity else None
+                direction = str(trade.get("side", "short") or "short").strip().lower()
+                if direction not in {"long", "short"}:
+                    direction = "short"
+
+                new_rows.append((
+                    symbol,
+                    version,
+                    entry_time,
+                    exit_time,
+                    direction,
+                    float(trade.get("entry", 0.0) or 0.0),
+                    float(trade.get("exit", 0.0) or 0.0),
+                    _result_label(trade.get("exit_type")),
+                    pnl_pct,
+                    dollar_pnl,
+                    equity,
+                ))
+
+        if new_rows:
+            conn.executemany(
+                """
+                INSERT INTO trades (
+                    symbol, version, mode, entry_time, exit_time, direction,
+                    entry_price, exit_price, result, pnl_pct, dollar_pnl, equity
+                ) VALUES (?, ?, 'paper', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                new_rows,
+            )
+
+        # Always refresh the summary metrics from the full simulation run
+        metrics = _metrics_for_trades(symbol, version, trades, df)
         conn.execute(
-            "DELETE FROM trades WHERE symbol = ? AND version = ? AND mode = 'paper'",
-            (symbol, version),
+            "DELETE FROM paper_trading_results WHERE symbol = ? AND notes LIKE ?",
+            (symbol, f"%{VERSION_MAP.get(version, version)}%"),
         )
-        last_exit_time = None
-    else:
-        row = conn.execute(
-            "SELECT MAX(exit_time) FROM trades WHERE symbol = ? AND version = ? AND mode = 'paper'",
-            (symbol, version),
-        ).fetchone()
-        last_exit_time = row[0] if row else None
-
-    # Build new trade rows, skipping any already stored
-    new_rows: list[tuple] = []
-    skipped = 0
-
-    if not trades.empty:
-        for _, trade in trades.iterrows():
-            entry_time = _timestamp_at(df, trade.get("entry_idx"))
-            exit_time = _timestamp_at(df, trade.get("exit_idx"))
-
-            if last_exit_time and entry_time and entry_time <= last_exit_time:
-                skipped += 1
-                continue
-
-            dollar_pnl = float(trade.get("pnl", trade.get("dollar_pnl", 0.0)) or 0.0)
-            equity = float(trade.get("equity", 0.0) or 0.0)
-            beginning_equity = equity - dollar_pnl
-            pnl_pct = (dollar_pnl / beginning_equity * 100.0) if beginning_equity else None
-            direction = str(trade.get("side", "short") or "short").strip().lower()
-            if direction not in {"long", "short"}:
-                direction = "short"
-
-            new_rows.append((
-                symbol,
-                version,
-                entry_time,
-                exit_time,
-                direction,
-                float(trade.get("entry", 0.0) or 0.0),
-                float(trade.get("exit", 0.0) or 0.0),
-                _result_label(trade.get("exit_type")),
-                pnl_pct,
-                dollar_pnl,
-                equity,
-            ))
-
-    if new_rows:
-        conn.executemany(
-            """
-            INSERT INTO trades (
-                symbol, version, mode, entry_time, exit_time, direction,
-                entry_price, exit_price, result, pnl_pct, dollar_pnl, equity
-            ) VALUES (?, ?, 'paper', ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            new_rows,
+        conn.execute(
+            "INSERT INTO paper_trading_results (symbol, metrics, notes, current_equity) VALUES (?, ?, ?, ?)",
+            (symbol, json.dumps(metrics), notes, float(metrics.get("current_equity") or metrics.get("final_equity") or 0.0)),
         )
 
-    # Always refresh the summary metrics from the full simulation run
-    metrics = _metrics_for_trades(symbol, version, trades, df)
-    conn.execute(
-        "DELETE FROM paper_trading_results WHERE symbol = ? AND notes LIKE ?",
-        (symbol, f"%{VERSION_MAP.get(version, version)}%"),
-    )
-    conn.execute(
-        "INSERT INTO paper_trading_results (symbol, metrics, notes, current_equity) VALUES (?, ?, ?, ?)",
-        (symbol, json.dumps(metrics), notes, float(metrics.get("current_equity") or metrics.get("final_equity") or 0.0)),
-    )
-
-    conn.commit()
-    conn.close()
-    print(
-        f"Paper results saved: {symbol} {version} "
-        f"new={len(new_rows)} skipped={skipped} net={metrics['net_return_pct']:.1f}%"
-    )
+        conn.commit()
+        conn.close()
+        logger.info(
+            f"Paper results saved: {symbol} {version} "
+            f"new={len(new_rows)} skipped={skipped} net={metrics['net_return_pct']:.1f}%"
+        )
+    except Exception as e:
+        logger.error(f"Error saving paper trading results for {symbol} {version}: {e}", exc_info=True)
 
 
 def load_symbols_from_db() -> list[str]:

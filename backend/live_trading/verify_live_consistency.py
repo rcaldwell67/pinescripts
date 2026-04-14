@@ -13,14 +13,28 @@ Usage:
 
 from __future__ import annotations
 
+
 import argparse
 import sqlite3
 import sys
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DB = REPO_ROOT / "docs" / "data" / "tradingcopilot.db"
+
+# ── Logging setup ─────────────────────────────────────────────────────────────
+LOG_PATH = REPO_ROOT / "backend" / "live_consistency_error.log"
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s",
+    handlers=[
+        logging.FileHandler(LOG_PATH, mode="a", encoding="utf-8"),
+        logging.StreamHandler(sys.stderr)
+    ]
+)
+logger = logging.getLogger("live_consistency")
 
 
 @dataclass
@@ -141,6 +155,7 @@ def _print_report(results: list[SymbolConsistencyResult]) -> None:
             print(f"  - {msg}")
 
 
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate live fill/trade consistency.")
     parser.add_argument("--db", default=str(DEFAULT_DB), help="Path to tradingcopilot.db")
@@ -150,6 +165,7 @@ def main() -> int:
 
     db_path = Path(args.db)
     if not db_path.exists():
+        logger.error(f"DB not found: {db_path}")
         print(f"ERROR: DB not found: {db_path}", file=sys.stderr)
         return 2
 
@@ -157,17 +173,25 @@ def main() -> int:
     try:
         symbols = args.symbol if args.symbol else _all_symbols(conn, args.version)
         if not symbols:
+            logger.info("No live symbols found for consistency check.")
             print("No live symbols found for consistency check.")
             return 0
 
-        results = [_compare_symbol(conn, symbol, args.version) for symbol in symbols]
+        results = []
+        for symbol in symbols:
+            try:
+                results.append(_compare_symbol(conn, symbol, args.version))
+            except Exception as e:
+                logger.error(f"Error comparing symbol {symbol}: {e}", exc_info=True)
         _print_report(results)
 
         failures = [r for r in results if r.mismatches]
         if failures:
+            logger.warning(f"Consistency FAILED for {len(failures)} symbol(s).")
             print(f"\nConsistency FAILED for {len(failures)} symbol(s).", file=sys.stderr)
             return 1
 
+        logger.info("Consistency PASSED for all compared symbols.")
         print("\nConsistency PASSED for all compared symbols.")
         return 0
     finally:

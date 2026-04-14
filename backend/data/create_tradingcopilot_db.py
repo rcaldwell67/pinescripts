@@ -9,46 +9,62 @@ def create_database(db_path):
     # and can be loaded by sql.js in the browser without needing -wal/-shm files.
     conn.execute("PRAGMA journal_mode=DELETE")
     c = conn.cursor()
-    # Backtest Results Table
+    # Backtest Results Table (add version)
     c.execute('''
         CREATE TABLE IF NOT EXISTS backtest_results (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             symbol TEXT NOT NULL,
+            version TEXT NOT NULL DEFAULT 'v6',
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
             metrics TEXT,
             notes TEXT,
             current_equity REAL
         )
     ''')
-    # Paper Trading Results Table
+    # Paper Trading Results Table (add version)
     c.execute('''
         CREATE TABLE IF NOT EXISTS paper_trading_results (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             symbol TEXT NOT NULL,
+            version TEXT NOT NULL DEFAULT 'v6',
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
             metrics TEXT,
             notes TEXT,
             current_equity REAL
         )
     ''')
-    # Live Trading Results Table
+    # Live Trading Results Table (add version)
     c.execute('''
         CREATE TABLE IF NOT EXISTS live_trading_results (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             symbol TEXT NOT NULL,
+            version TEXT NOT NULL DEFAULT 'v6',
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
             metrics TEXT,
             notes TEXT,
             current_equity REAL
         )
     ''')
-    # Symbols Table
+    # Symbols Table (add asset_type)
     c.execute('''
         CREATE TABLE IF NOT EXISTS symbols (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             symbol TEXT NOT NULL UNIQUE,
             description TEXT,
+            asset_type TEXT DEFAULT 'crypto',
             live_enabled INTEGER NOT NULL DEFAULT 1
+        )
+    ''')
+    # Audit Log Table
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS audit_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            event_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+            user TEXT,
+            action TEXT NOT NULL,
+            target_table TEXT,
+            target_id INTEGER,
+            details TEXT
         )
     ''')
     conn.commit()

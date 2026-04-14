@@ -56,6 +56,9 @@ export default function BacktestsTable() {
   const [snapshot, setSnapshot] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [assetTypeFilter, setAssetTypeFilter] = useState('');
+  const [symbolFilter, setSymbolFilter] = useState('');
+  const [guidelineStatus, setGuidelineStatus] = useState('');
 
   useEffect(() => {
     async function loadSnapshot() {
@@ -82,14 +85,64 @@ export default function BacktestsTable() {
   if (error) return <section style={{ padding: 24, color: 'red' }}>Error: {error}</section>;
   if (!snapshot) return null;
 
+  // Collect unique asset types for filter dropdown
+  const assetTypes = Array.from(new Set(snapshot.symbols.map(s => s.asset_type || ''))).filter(Boolean);
+  // Collect unique symbols for filter dropdown
+  const symbols = Array.from(new Set(snapshot.symbols.map(s => s.symbol)));
+
+  // Filtering logic
+  const filteredSymbols = snapshot.symbols.filter(sym => {
+    if (assetTypeFilter && sym.asset_type !== assetTypeFilter) return false;
+    if (symbolFilter && sym.symbol !== symbolFilter) return false;
+    const result = snapshot.results.backtest.find(r => r.symbol_key === sym.symbol_key);
+    if (guidelineStatus) {
+      const audit = result ? evaluateBacktestGuideline({
+        symbol: sym.symbol,
+        version: 'v6',
+        trades: result.total_trades,
+        win_rate_pct: result.win_rate,
+        net_return_pct: result.net_return_pct,
+        max_drawdown_pct: result.max_drawdown_pct,
+      }) : null;
+      if (guidelineStatus === 'pass' && !(audit && audit.passed)) return false;
+      if (guidelineStatus === 'fail' && !(audit && !audit.passed)) return false;
+    }
+    return true;
+  });
+
   return (
     <section style={{ padding: 24 }}>
       <h2>Backtests (v6) - Active Symbols</h2>
+      <div style={{ marginBottom: 16, display: 'flex', gap: 16, alignItems: 'center' }}>
+        <label>
+          Asset Type:
+          <select value={assetTypeFilter} onChange={e => setAssetTypeFilter(e.target.value)} style={{ marginLeft: 8 }}>
+            <option value="">All</option>
+            {assetTypes.map(type => <option key={type} value={type}>{type}</option>)}
+          </select>
+        </label>
+        <label>
+          Symbol:
+          <select value={symbolFilter} onChange={e => setSymbolFilter(e.target.value)} style={{ marginLeft: 8 }}>
+            <option value="">All</option>
+            {symbols.map(sym => <option key={sym} value={sym}>{sym}</option>)}
+          </select>
+        </label>
+        <label>
+          Guideline Status:
+          <select value={guidelineStatus} onChange={e => setGuidelineStatus(e.target.value)} style={{ marginLeft: 8 }}>
+            <option value="">All</option>
+            <option value="pass">Pass</option>
+            <option value="fail">Fail</option>
+          </select>
+        </label>
+      </div>
       <div style={{overflowX: 'auto'}}>
         <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 16 }}>
           <thead>
             <tr style={{background: 'var(--bg-mid)'}}>
               <th style={{padding: '8px 12px', textAlign: 'left'}}>Symbol</th>
+              <th style={{padding: '8px 12px', textAlign: 'left'}}>Asset Type</th>
               <th style={{padding: '8px 12px', textAlign: 'right'}}>Current Equity</th>
               <th style={{padding: '8px 12px', textAlign: 'right'}}>Net Return %</th>
               <th style={{padding: '8px 12px', textAlign: 'right'}}>Win Rate</th>
@@ -100,7 +153,7 @@ export default function BacktestsTable() {
             </tr>
           </thead>
           <tbody>
-            {snapshot.symbols.map(sym => {
+            {filteredSymbols.map(sym => {
               const result = snapshot.results.backtest.find(r => r.symbol_key === sym.symbol_key);
               const audit = result ? evaluateBacktestGuideline({
                 symbol: sym.symbol,
@@ -113,6 +166,7 @@ export default function BacktestsTable() {
               return (
                 <tr key={sym.symbol_key}>
                   <td style={{padding: '8px 12px'}}>{sym.symbol}</td>
+                  <td style={{padding: '8px 12px'}}>{sym.asset_type || '-'}</td>
                   <td style={{padding: '8px 12px', textAlign: 'right'}}>{result?.current_equity ?? '-'}</td>
                   <td style={{padding: '8px 12px', textAlign: 'right'}}>{result?.net_return_pct != null ? result.net_return_pct.toFixed(2) + '%' : '-'}</td>
                   <td style={{padding: '8px 12px', textAlign: 'right'}}>{result?.win_rate != null ? result.win_rate.toFixed(1) + '%' : '-'}</td>
