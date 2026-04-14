@@ -131,10 +131,10 @@ def apply_candidate(base_params: dict[str, Any], candidate: dict[str, Any]) -> d
 
 def rank_key(
     result: EvalResult,
-    min_trades: int = 2,
     min_win_rate: float,
     min_net_return: float,
     max_drawdown: float,
+    min_trades: int = 2,
 ) -> tuple[int, int, int, float, float, int]:
     pass_trades = int(result.trades >= min_trades)
     pass_wr = int(result.win_rate >= min_win_rate)
