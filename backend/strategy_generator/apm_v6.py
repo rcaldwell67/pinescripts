@@ -130,20 +130,21 @@ def apm_v6_dynamic_trailing_stop(entry_price, current_price, atr, base_trail=2.0
     Dynamic trailing stop: base_trail ATR below entry, tightens to profit_trail ATR below current price if in profit.
     """
     stop = entry_price - base_trail * atr
-                    # --- Dynamic position sizing: reduce risk after loss streak or high ATR ---
-                    risk_pct = base_risk_pct
-                    if dynamic_position_sizing_enabled:
-                        if loss_streak >= max_loss_streak:
-                            risk_pct = min_risk_pct
-                        elif 'atr' in df.columns and df['atr'].iloc[i] / price > atr_vol_threshold:
-                            risk_pct = min_risk_pct
-                    # Store risk_pct in DataFrame for use by backtest logic (if needed)
-                    df.loc[df.index[i], 'risk_pct'] = risk_pct
+    # --- Dynamic position sizing: reduce risk after loss streak or high ATR ---
+    # Placeholder: risk_pct logic would be handled elsewhere in real backtest logic
+    # risk_pct = base_risk_pct
+    # if dynamic_position_sizing_enabled:
+    #     if loss_streak >= max_loss_streak:
+    #         risk_pct = min_risk_pct
+    #     elif 'atr' in df.columns and df['atr'].iloc[i] / price > atr_vol_threshold:
+    #         risk_pct = min_risk_pct
+    #     # Store risk_pct in DataFrame for use by backtest logic (if needed)
+    #     df.loc[df.index[i], 'risk_pct'] = risk_pct
 
     if current_price > entry_price:
         stop = max(stop, current_price - profit_trail * atr)
-                    # Simulate loss streak increment (for demonstration; real streak tracking should be in backtest logic)
-                    # loss_streak = ... (update based on trade outcome)
+    # Simulate loss streak increment (for demonstration; real streak tracking should be in backtest logic)
+    # loss_streak = ... (update based on trade outcome)
     return stop
 
 
