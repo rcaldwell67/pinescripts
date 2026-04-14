@@ -26,27 +26,7 @@ def fail(message: str) -> int:
 
 
 def load_sample_df() -> pd.DataFrame:
-    if not SAMPLE_CSV.exists():
-        raise FileNotFoundError(f"Missing sample CSV: {SAMPLE_CSV}")
-
-    df = pd.read_csv(SAMPLE_CSV).head(1500)
-    if len(df) < 400:
-        raise RuntimeError(f"Sample CSV has insufficient rows: {len(df)}")
-
-    df = df.rename(
-        columns={
-            "open": "Open",
-            "high": "High",
-            "low": "Low",
-            "close": "Close",
-            "volume": "Volume",
-        }
-    )
-    required = {"timestamp", "Open", "High", "Low", "Close", "Volume"}
-    missing = sorted(required - set(df.columns))
-    if missing:
-        raise RuntimeError(f"Sample CSV missing required columns: {missing}")
-    return df
+    raise RuntimeError("Sample CSV loading is no longer supported. Please provide a valid DataFrame source.")
 
 
 def _normalized_symbol(symbol: str) -> str:
@@ -57,10 +37,8 @@ def main() -> int:
     if not BASE_DB.exists():
         return fail(f"Missing base DB: {BASE_DB}")
 
-    try:
-        df = load_sample_df()
-    except Exception as exc:
-        return fail(str(exc))
+    print("ERROR: This script requires a sample DataFrame, but sample CSV loading is no longer supported.", file=sys.stderr)
+    return 1
 
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_db = Path(temp_dir) / "tradingcopilot_temp.db"
