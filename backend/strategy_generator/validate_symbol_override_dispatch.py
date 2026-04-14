@@ -45,26 +45,7 @@ def fail(message: str) -> int:
 
 
 def _load_sample() -> pd.DataFrame:
-    if not SAMPLE_CSV.exists():
-        raise FileNotFoundError(f"Missing sample CSV: {SAMPLE_CSV}")
-
-    df = pd.read_csv(SAMPLE_CSV)
-    df = df.rename(
-        columns={
-            "open": "Open",
-            "high": "High",
-            "low": "Low",
-            "close": "Close",
-            "volume": "Volume",
-        }
-    )
-    required = {"timestamp", "Open", "High", "Low", "Close", "Volume"}
-    missing = sorted(required - set(df.columns))
-    if missing:
-        raise RuntimeError(f"Sample CSV missing required columns: {missing}")
-    if len(df) < 400:
-        raise RuntimeError(f"Sample CSV has insufficient rows: {len(df)}")
-    return df.head(400).copy()
+    raise RuntimeError("Sample CSV loading is no longer supported. Please provide a valid DataFrame source.")
 
 
 def _flatten_paths(data: dict[str, Any], prefix: str = "") -> list[tuple[str, Any]]:
@@ -111,10 +92,8 @@ def _shared_enabled_side(baseline_params: dict[str, Any], override_params: dict[
 
 
 def main() -> int:
-    try:
-        df = _load_sample()
-    except Exception as exc:
-        return fail(str(exc))
+    print("ERROR: This script requires a sample DataFrame, but sample CSV loading is no longer supported.", file=sys.stderr)
+    return 1
 
     checked_versions = 0
 
