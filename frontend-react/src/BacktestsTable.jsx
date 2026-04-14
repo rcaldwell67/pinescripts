@@ -58,19 +58,24 @@ export default function BacktestsTable() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch("/pinescripts/data/dashboard_snapshot.json")
-      .then((res) => {
+    async function loadSnapshot() {
+      try {
+        const res = await fetch("/pinescripts/data/dashboard_snapshot.json");
         if (!res.ok) throw new Error("Failed to load dashboard_snapshot.json");
-        return res.json();
-      })
-      .then((data) => {
+        let data;
+        try {
+          data = await res.json();
+        } catch (jsonErr) {
+          throw new Error("Invalid JSON in dashboard_snapshot.json");
+        }
         setSnapshot(data);
+      } catch (err) {
+        setError(err.message || "Unknown error");
+      } finally {
         setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message);
-        setLoading(false);
-      });
+      }
+    }
+    loadSnapshot();
   }, []);
 
   if (loading) return <section style={{ padding: 24 }}>Loading backtest data...</section>;
