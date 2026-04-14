@@ -14,7 +14,6 @@ sys.path.insert(0, str(SG_DIR))
 from live_trading import realtime_alpaca_live_trader as live  # noqa: E402
 from portfolio_system import evaluate_trade  # noqa: E402
 
-SAMPLE_CSV = REPO_ROOT / "backend" / "data" / "btc_usd_5m_ytd.csv"
 VERSIONS = ("v1", "v2", "v3", "v4", "v5", "v6")
 ACCOUNT_EQUITY = 100000.0
 

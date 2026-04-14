@@ -15,7 +15,6 @@ sys.path.insert(0, str(BACKEND_DIR))
 from backtest_backtrader_alpaca import VERSION_MAP, run_backtest  # noqa: E402
 from paper_trading import paper_trade_backtrader_alpaca as paper_runner  # noqa: E402
 
-SAMPLE_CSV = REPO_ROOT / "backend" / "data" / "btc_usd_5m_ytd.csv"
 BASE_DB = REPO_ROOT / "frontend-react" / "public" / "data" / "tradingcopilot.db"
 VERSIONS = ("v1", "v2", "v3", "v4", "v5", "v6")
 SYMBOL = "BTC/USD"

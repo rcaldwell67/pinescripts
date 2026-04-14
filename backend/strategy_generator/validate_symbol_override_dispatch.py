@@ -23,7 +23,6 @@ from v4_params import get_v4_params  # noqa: E402
 from v5_params import get_v5_params  # noqa: E402
 from v6_params import get_v6_params  # noqa: E402
 
-SAMPLE_CSV = REPO_ROOT / "backend" / "data" / "btc_usd_5m_ytd.csv"
 ACCOUNT_EQUITY = 100000.0
 VERSIONS = ("v1", "v2", "v3", "v4", "v5", "v6")
 PARAM_LOADERS = {

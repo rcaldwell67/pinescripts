@@ -20,7 +20,6 @@ sys.path.insert(0, str(SG_DIR))
 from paper_trading import realtime_alpaca_paper_trader as paper  # noqa: E402
 from portfolio_system import PortfolioDecision  # noqa: E402
 
-SAMPLE_CSV = REPO_ROOT / "backend" / "data" / "btc_usd_5m_ytd.csv"
 BASE_DB = REPO_ROOT / "frontend-react" / "public" / "data" / "tradingcopilot.db"
 ACCOUNT_EQUITY = 100000.0
 

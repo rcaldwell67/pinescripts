@@ -16,7 +16,6 @@ from live_trading import realtime_alpaca_live_trader as live  # noqa: E402
 from paper_trading import realtime_alpaca_paper_trader as paper  # noqa: E402
 
 VERSIONS = ("v6",)
-SAMPLE_CSV = REPO_ROOT / "backend" / "data" / "btc_usd_5m_ytd.csv"
 
 
 def fail(message: str) -> int:
