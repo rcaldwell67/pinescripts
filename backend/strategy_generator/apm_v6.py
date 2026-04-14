@@ -32,19 +32,15 @@ def apm_v6_signals(df, side: str = "short", params: dict[str, Any] | None = None
     df['bb_lower'] = df['bb_mid'] - (bb_std_mult * bb_std)
     entries = []
     last_entry_idx = -1000
-        # --- Multi-factor confirmation and volatility regime filter ---
-        multi_factor_enabled = bool(signal.get("multi_factor_enabled", True))
-        min_factors_required = int(signal.get("min_factors_required", 2))
-        volatility_regime_enabled = bool(signal.get("volatility_regime_enabled", True))
-        max_atr_pct = float(signal.get("max_atr_pct", 0.04))
+    # --- Multi-factor confirmation and volatility regime filter ---
+    multi_factor_enabled = bool(signal.get("multi_factor_enabled", True))
+    min_factors_required = int(signal.get("min_factors_required", 2))
+    volatility_regime_enabled = bool(signal.get("volatility_regime_enabled", True))
+    max_atr_pct = float(signal.get("max_atr_pct", 0.04))
     cooldown_bars = 10
     # --- Volatility filter parameters ---
     atr_percentile_filter_enabled = bool(signal.get("atr_percentile_filter_enabled", False))
     atr_percentile_min = float(signal.get("atr_percentile_min", 0.0))
-            # --- Volatility regime filter: block trades if ATR/price too high ---
-            if volatility_regime_enabled and 'atr' in df.columns:
-                if df['atr'].iloc[i] / df['Close'].iloc[i] > max_atr_pct:
-                    continue
     atr_percentile_max = float(signal.get("atr_percentile_max", 100.0))
     # --- Trend filter parameters ---
     ema_trend_filter_enabled = bool(signal.get("ema_trend_filter_enabled", False))
@@ -57,43 +53,41 @@ def apm_v6_signals(df, side: str = "short", params: dict[str, Any] | None = None
         price = df['Close'].iloc[i]
         donchian_break = price > df['donchian_high'].iloc[i-1] if side == "long" else price < df['donchian_low'].iloc[i-1]
         bb_break = price > df['bb_upper'].iloc[i-1] if side == "long" else price < df['bb_lower'].iloc[i-1]
-            # --- Multi-factor confirmation: require at least N signals to align ---
-            if multi_factor_enabled:
-                factors = [donchian_break, bb_break, mr_entry]
-                if sum(factors) < min_factors_required:
-                    continue
-        rsi = df['rsi'].iloc[i] if 'rsi' in df.columns else None
-            # --- Time-of-day/session filter parameters ---
-            session_filter_enabled = bool(signal.get("session_filter_enabled", False))
-            session_start_hour = int(signal.get("session_start_hour_et", 0))
-            session_end_hour = int(signal.get("session_end_hour_et", 23))
-
-            # --- Dynamic position sizing parameters ---
-            dynamic_position_sizing_enabled = bool(signal.get("dynamic_position_sizing_enabled", True))
-            max_loss_streak = int(signal.get("max_loss_streak", 2))
-            min_risk_pct = float(signal.get("min_risk_pct", 0.05))
-            base_risk_pct = float(signal.get("base_risk_pct", 0.1))
-            atr_vol_threshold = float(signal.get("atr_vol_threshold", 0.02))
-
-            # Track loss streak for dynamic sizing
-            loss_streak = 0
         mr_entry = False
+        rsi = df['rsi'].iloc[i] if 'rsi' in df.columns else None
+        # --- Multi-factor confirmation: require at least N signals to align ---
+        if multi_factor_enabled:
+            factors = [donchian_break, bb_break, mr_entry]
+            if sum(factors) < min_factors_required:
+                continue
+        # --- Time-of-day/session filter parameters ---
+        session_filter_enabled = bool(signal.get("session_filter_enabled", False))
+        session_start_hour = int(signal.get("session_start_hour_et", 0))
+        session_end_hour = int(signal.get("session_end_hour_et", 23))
+        # --- Dynamic position sizing parameters ---
+        dynamic_position_sizing_enabled = bool(signal.get("dynamic_position_sizing_enabled", True))
+        max_loss_streak = int(signal.get("max_loss_streak", 2))
+        min_risk_pct = float(signal.get("min_risk_pct", 0.05))
+        base_risk_pct = float(signal.get("base_risk_pct", 0.1))
+        atr_vol_threshold = float(signal.get("atr_vol_threshold", 0.02))
+        # Track loss streak for dynamic sizing
+        loss_streak = 0
         if side == "long" and rsi is not None:
             mr_entry = rsi < 55
         elif side == "short" and rsi is not None:
-                # --- Time-of-day/session filter ---
-                if session_filter_enabled and "timestamp" in df.columns:
-                    ts = df["timestamp"].iloc[i]
-                    if hasattr(ts, "hour"):
-                        hour = ts.hour
-                    else:
-                        # Try to parse string timestamp
-                        try:
-                            hour = pd.to_datetime(ts).hour
-                        except Exception:
-                            hour = None
-                    if hour is not None and not (session_start_hour <= hour <= session_end_hour):
-                        continue
+            # --- Time-of-day/session filter ---
+            if session_filter_enabled and "timestamp" in df.columns:
+                ts = df["timestamp"].iloc[i]
+                if hasattr(ts, "hour"):
+                    hour = ts.hour
+                else:
+                    # Try to parse string timestamp
+                    try:
+                        hour = pd.to_datetime(ts).hour
+                    except Exception:
+                        hour = None
+                if hour is not None and not (session_start_hour <= hour <= session_end_hour):
+                    continue
             mr_entry = rsi > 45
 
         # --- Regime filter: require minimum market regime score ---
