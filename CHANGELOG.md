@@ -66,7 +66,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - `backtrader-backtest.yml` now runs a deterministic local-data smoke validator across v1-v6 instead of scanning arbitrary `backtest_*.py` files.
   - Added `validate-paper-versions.yml` to verify v1-v6 paper simulation writes against a temporary SQLite copy during CI.
   - Added `validate-live-versions.yml` to verify v1-v6 live-side analysis and dry order generation without broker submission during CI.
-- Added `backend/live_trading/validate_live_versions_dry.py` to validate v1-v6 live analysis, portfolio gating, and bracket order parameter generation on local sample data.
+- Removed `backend/live_trading/validate_live_versions_dry.py` (deprecated, depended on missing sample CSV logic, no longer functional or referenced).
 - Fixed paper simulation trade-direction persistence for multi-direction versions.
   - `backend/paper_trading/paper_trade_backtrader_alpaca.py` now stores `direction` from each trade row (`side`) instead of hardcoding `short`, enabling correct v4-v6 long/both-mode paper rows.
 - Implemented a portfolio-level trade gate and risk scaler in `backend/strategy_generator/portfolio_system.py` and wired it into both realtime runners.
