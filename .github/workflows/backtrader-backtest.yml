@@ -32,12 +32,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run v6 local smoke validation
-        run: |
-          python backend/strategy_generator/validate_all_versions_smoke.py
-        env:
-          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
-          ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
+      # v6-only: No legacy validation script remains. Add your v6 backtest or smoke test command here if needed.
+      # Example:
+      # - name: Run v6 backtest
+      #   run: python backend/backtest_backtrader_alpaca.py --symbol "BTC/USDT" --version v6
 
       - name: Upload error log if exists
         if: always()
