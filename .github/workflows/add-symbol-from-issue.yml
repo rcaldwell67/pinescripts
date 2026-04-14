@@ -218,35 +218,25 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Tune symbol-specific runtime overrides (v1/v2)
+      - name: Tune symbol-specific runtime override (v6 only)
         run: |
           SYMBOL="${{ steps.validate_add.outputs.resolved_symbol }}"
-          echo "Tuning v1 runtime override for $SYMBOL"
-          python backend/strategy_generator/tune_v1_profile.py --symbol "$SYMBOL" --max-evals 24 --out /tmp/v1_symbol_tuning.json --apply --apply-top-level
-          echo "Tuning v2 runtime override for $SYMBOL"
-          python backend/strategy_generator/tune_v2_profile.py --symbol "$SYMBOL" --max-evals 48 --out /tmp/v2_symbol_tuning.json --apply
-          for VERSION in v3 v4 v5 v6; do
-            echo "Tuning $VERSION runtime override for $SYMBOL"
-            python backend/strategy_generator/tune_v3_v6_profile.py --version "$VERSION" --symbol "$SYMBOL" --max-evals 40 --out "/tmp/${VERSION}_symbol_tuning.json" --apply
-          done
+          echo "Tuning v6 runtime override for $SYMBOL"
+          python backend/strategy_generator/tune_v3_v6_profile.py --version v6 --symbol "$SYMBOL" --max-evals 40 --out "/tmp/v6_symbol_tuning.json" --apply
 
-      - name: Run backtest for new symbol
+      - name: Run backtest for new symbol (v6 only)
         run: |
           SYMBOL="${{ steps.validate_add.outputs.resolved_symbol }}"
-          for VERSION in v1 v2 v3 v4 v5 v6; do
-            echo "Running backtest for symbol: $SYMBOL (version: $VERSION)"
-            python backend/backtest_backtrader_alpaca.py --symbol "$SYMBOL" --version "$VERSION"
-          done
+          echo "Running backtest for symbol: $SYMBOL (version: v6)"
+          python backend/backtest_backtrader_alpaca.py --symbol "$SYMBOL" --version v6
 
-      - name: Run paper trading for new symbol
+      - name: Run paper trading for new symbol (v6 only)
         run: |
           SYMBOL="${{ steps.validate_add.outputs.resolved_symbol }}"
-          for VERSION in v1 v2 v3 v4 v5 v6; do
-            echo "Running paper trading for symbol: $SYMBOL (version: $VERSION)"
-            python backend/paper_trading/paper_trade_backtrader_alpaca.py --symbol "$SYMBOL" --version "$VERSION"
-          done
+          echo "Running paper trading for symbol: $SYMBOL (version: v6)"
+          python backend/paper_trading/paper_trade_backtrader_alpaca.py --symbol "$SYMBOL" --version v6
 
-      - name: Auto-repair weak/incomplete backtest versions
+      - name: Auto-repair weak/incomplete backtest version (v6 only)
         id: backtest_repair
         shell: bash
         run: |
@@ -259,70 +249,55 @@ jobs:
             python backend/data/check_symbol_backtest_health.py --symbol "$SYMBOL" --db "$DB_PATH"
           }
 
-          FAIL_VERSIONS="$(detect_failures)"
-          if [ -z "$FAIL_VERSIONS" ]; then
-            echo "All versions passed initial backtest quality checks."
+          FAIL_VERSION="v6"
+          if [ -z "$(detect_failures)" ]; then
+            echo "v6 passed initial backtest quality checks."
             echo "repair_status=passed" >> "$GITHUB_OUTPUT"
             echo "remaining_failures=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          echo "Initial failing versions for $SYMBOL: $FAIL_VERSIONS"
-
           for attempt in 1 2; do
-            echo "Repair pass ${attempt}/2 for versions: $FAIL_VERSIONS"
-            for VERSION in $FAIL_VERSIONS; do
-              case "$VERSION" in
-                v1)
-                  python backend/strategy_generator/tune_v1_profile.py --symbol "$SYMBOL" --max-evals 24 --out /tmp/v1_symbol_tuning_repair.json --apply --apply-top-level
-                  ;;
-                v2)
-                  python backend/strategy_generator/tune_v2_profile.py --symbol "$SYMBOL" --max-evals 48 --out /tmp/v2_symbol_tuning_repair.json --apply
-                  ;;
-                v3|v4|v5|v6)
-                  if [ "$attempt" -eq 1 ]; then
-                    EVALS=120
-                    SEED=101
-                  else
-                    EVALS=180
-                    SEED=202
-                  fi
-                  python backend/strategy_generator/tune_v3_v6_profile.py \
-                    --version "$VERSION" \
-                    --symbol "$SYMBOL" \
-                    --max-evals "$EVALS" \
-                    --seed "$SEED" \
-                    --min-win-rate 55 \
-                    --min-net-return 0 \
-                    --max-drawdown 12 \
-                    --out "/tmp/${VERSION}_symbol_tuning_repair.json" \
-                    --apply \
-                    --apply-best-available
-                  ;;
-              esac
+            echo "Repair pass ${attempt}/2 for v6"
+            if [ "$attempt" -eq 1 ]; then
+              EVALS=120
+              SEED=101
+            else
+              EVALS=180
+              SEED=202
+            fi
+            python backend/strategy_generator/tune_v3_v6_profile.py \
+              --version v6 \
+              --symbol "$SYMBOL" \
+              --max-evals "$EVALS" \
+              --seed "$SEED" \
+              --min-win-rate 55 \
+              --min-net-return 0 \
+              --max-drawdown 12 \
+              --out "/tmp/v6_symbol_tuning_repair.json" \
+              --apply \
+              --apply-best-available
 
-              echo "Re-running backtest/paper for $SYMBOL $VERSION"
-              python backend/backtest_backtrader_alpaca.py --symbol "$SYMBOL" --version "$VERSION"
-              python backend/paper_trading/paper_trade_backtrader_alpaca.py --symbol "$SYMBOL" --version "$VERSION"
-            done
+            echo "Re-running backtest/paper for $SYMBOL v6"
+            python backend/backtest_backtrader_alpaca.py --symbol "$SYMBOL" --version v6
+            python backend/paper_trading/paper_trade_backtrader_alpaca.py --symbol "$SYMBOL" --version v6
 
-            FAIL_VERSIONS="$(detect_failures)"
-            if [ -z "$FAIL_VERSIONS" ]; then
-              echo "All versions passed after repair pass $attempt."
+            if [ -z "$(detect_failures)" ]; then
+              echo "v6 passed after repair pass $attempt."
               echo "repair_status=passed_after_repair" >> "$GITHUB_OUTPUT"
               echo "remaining_failures=" >> "$GITHUB_OUTPUT"
               exit 0
             fi
-            echo "Still failing after pass $attempt: $FAIL_VERSIONS"
+            echo "Still failing after pass $attempt: v6"
           done
 
           echo "repair_status=warning" >> "$GITHUB_OUTPUT"
-          echo "remaining_failures=$FAIL_VERSIONS" >> "$GITHUB_OUTPUT"
-          echo "::warning::Backtest quality still below thresholds for $SYMBOL after repair attempts: $FAIL_VERSIONS"
+          echo "remaining_failures=v6" >> "$GITHUB_OUTPUT"
+          echo "::warning::Backtest quality still below thresholds for $SYMBOL after repair attempts: v6"
           echo "Proceeding with onboarding commit so reruns are not required."
           exit 0
 
-      - name: Commit DB changes
+      - name: Commit DB changes (v6 only)
         run: |
           set -euo pipefail
           git config --global user.name 'github-actions[bot]'
@@ -330,11 +305,6 @@ jobs:
 
           FILES=(
             frontend-react/public/data/tradingcopilot.db
-            backend/strategy_generator/configs/v1_runtime.json
-            backend/strategy_generator/configs/v2_runtime.json
-            backend/strategy_generator/configs/v3_runtime.json
-            backend/strategy_generator/configs/v4_runtime.json
-            backend/strategy_generator/configs/v5_runtime.json
             backend/strategy_generator/configs/v6_runtime.json
           )
 
@@ -352,12 +322,15 @@ jobs:
           mkdir -p "$SNAPSHOT_DIR/docs/data" "$SNAPSHOT_DIR/backend/strategy_generator/configs"
           mkdir -p "$SNAPSHOT_DIR/frontend-react/public/data"
           cp frontend-react/public/data/tradingcopilot.db "$SNAPSHOT_DIR/frontend-react/public/data/tradingcopilot.db"
-          cp backend/strategy_generator/configs/v1_runtime.json "$SNAPSHOT_DIR/backend/strategy_generator/configs/v1_runtime.json"
-          cp backend/strategy_generator/configs/v2_runtime.json "$SNAPSHOT_DIR/backend/strategy_generator/configs/v2_runtime.json"
-          cp backend/strategy_generator/configs/v3_runtime.json "$SNAPSHOT_DIR/backend/strategy_generator/configs/v3_runtime.json"
-          cp backend/strategy_generator/configs/v4_runtime.json "$SNAPSHOT_DIR/backend/strategy_generator/configs/v4_runtime.json"
-          cp backend/strategy_generator/configs/v5_runtime.json "$SNAPSHOT_DIR/backend/strategy_generator/configs/v5_runtime.json"
           cp backend/strategy_generator/configs/v6_runtime.json "$SNAPSHOT_DIR/backend/strategy_generator/configs/v6_runtime.json"
+
+          git add "${FILES[@]}"
+          if git diff --cached --quiet; then
+            echo "No effective changes remain after syncing with origin/main."
+            exit 0
+          fi
+
+          git commit -m "$COMMIT_MSG"
 
           for attempt in 1 2 3; do
             echo "Push attempt ${attempt}/3"
@@ -366,11 +339,6 @@ jobs:
             git reset --hard origin/main
 
             cp "$SNAPSHOT_DIR/frontend-react/public/data/tradingcopilot.db" frontend-react/public/data/tradingcopilot.db
-            cp "$SNAPSHOT_DIR/backend/strategy_generator/configs/v1_runtime.json" backend/strategy_generator/configs/v1_runtime.json
-            cp "$SNAPSHOT_DIR/backend/strategy_generator/configs/v2_runtime.json" backend/strategy_generator/configs/v2_runtime.json
-            cp "$SNAPSHOT_DIR/backend/strategy_generator/configs/v3_runtime.json" backend/strategy_generator/configs/v3_runtime.json
-            cp "$SNAPSHOT_DIR/backend/strategy_generator/configs/v4_runtime.json" backend/strategy_generator/configs/v4_runtime.json
-            cp "$SNAPSHOT_DIR/backend/strategy_generator/configs/v5_runtime.json" backend/strategy_generator/configs/v5_runtime.json
             cp "$SNAPSHOT_DIR/backend/strategy_generator/configs/v6_runtime.json" backend/strategy_generator/configs/v6_runtime.json
 
             git add "${FILES[@]}"
@@ -394,7 +362,7 @@ jobs:
         uses: peter-evans/close-issue@v3
         with:
           comment: |
-            Symbol request `${{ steps.validate_add.outputs.requested_symbol }}` was validated as `${{ steps.validate_add.outputs.resolved_symbol }}`, added to frontend-react/public/data/tradingcopilot.db, received v1-v6 symbol-specific runtime tuning, and both backtest and paper-trading runs completed.
+            Symbol request `${{ steps.validate_add.outputs.requested_symbol }}` was validated as `${{ steps.validate_add.outputs.resolved_symbol }}`, added to frontend-react/public/data/tradingcopilot.db, received v6 symbol-specific runtime tuning, and both backtest and paper-trading runs completed.
 
             Backtest repair status: `${{ steps.backtest_repair.outputs.repair_status }}`
             Remaining weak/incomplete versions after repair: `${{ steps.backtest_repair.outputs.remaining_failures || 'none' }}`

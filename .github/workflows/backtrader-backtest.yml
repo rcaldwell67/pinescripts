@@ -32,9 +32,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run v1-v6 local smoke validation
+      - name: Run v6 local smoke validation
         run: |
-          python backend/strategy_generator/validate_all_versions_smoke.py
+          python backend/strategy_generator/validate_v6_smoke.py
         env:
           ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
           ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}

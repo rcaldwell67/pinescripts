@@ -8,9 +8,9 @@ on:
         required: false
         type: string
       version:
-        description: "Strategy version to run (v1-v6 or all)"
+        description: "Strategy version to run (v6 only)"
         required: false
-        default: "v1"
+        default: "v6"
         type: string
       max_open_positions:
         description: "Max simultaneous open positions"
@@ -61,17 +61,13 @@ jobs:
           ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
         run: |
           set -euo pipefail
-          VERSION_INPUT="${{ github.event.inputs.version || 'v1' }}"
+          VERSION_INPUT="${{ github.event.inputs.version || 'v6' }}"
           SYMBOL="${{ github.event.inputs.symbol || '' }}"
           MAX_OPEN_POSITIONS="${{ github.event.inputs.max_open_positions || '8' }}"
           CLOSE_ON_SIGNAL="${{ github.event.inputs.close_on_signal || 'false' }}"
           STREAM_BARS="${{ github.event.inputs.stream_bars || 'false' }}"
 
-          if [[ "${VERSION_INPUT,,}" == "all" ]]; then
-            VERSIONS=(v1 v2 v3 v4 v5 v6)
-          else
-            VERSIONS=("${VERSION_INPUT,,}")
-          fi
+          VERSIONS=(v6)
 
           EXTRA_FLAGS="--max-open-positions ${MAX_OPEN_POSITIONS}"
           if [[ "${CLOSE_ON_SIGNAL,,}" == "true" || "${CLOSE_ON_SIGNAL}" == "1" || "${CLOSE_ON_SIGNAL,,}" == "yes" ]]; then
@@ -82,14 +78,10 @@ jobs:
           fi
 
           for VERSION in "${VERSIONS[@]}"; do
-            case "$VERSION" in
-              v1|v2|v3|v4|v5|v6) ;;
-              *)
-                echo "Unsupported version: $VERSION (expected v1-v6 or all)" >&2
-                exit 1
-                ;;
-            esac
-
+            if [[ "$VERSION" != "v6" ]]; then
+              echo "Unsupported version: $VERSION (only v6 is allowed)" >&2
+              exit 1
+            fi
             if [[ -n "$SYMBOL" ]]; then
               python backend/paper_trading/realtime_alpaca_paper_trader.py --symbol "$SYMBOL" --version "$VERSION" $EXTRA_FLAGS
             else
