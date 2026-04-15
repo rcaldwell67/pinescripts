@@ -13,4 +13,4 @@
 
 - [X] Remove the 'ID' column from the Sybmols section in the Dashboard
 
-- [ ] Add functionality to add a Symbol to the Symbols Table of the Symbols Dashboard item. Provide filter for Crypto and Non-Crypto Symbols. When the Symbol is added, mark the Symbol isActive
+- [X] Add functionality to add a Symbol to the Symbols Table of the Symbols Dashboard item. Provide filter for Crypto and Non-Crypto Symbols. When the Symbol is added, mark the Symbol isActive - almost done, need to list the filtered symbols in the Symbol: selection box and add the description to the text box. 

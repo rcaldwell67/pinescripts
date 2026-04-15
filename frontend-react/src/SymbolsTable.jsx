@@ -13,6 +13,13 @@ export default function SymbolsTable() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
 
+  // Compute available symbols for dropdown based on filter
+  const availableSymbols = symbols.filter(sym => {
+    if (filter === "all") return true;
+    const type = sym.asset_type || sym.asset_class || "";
+    return type.toLowerCase() === filter;
+  });
+
   useEffect(() => {
     async function fetchSymbols() {
       try {
@@ -35,20 +42,27 @@ export default function SymbolsTable() {
     return type.toLowerCase() === filter;
   });
 
+  // When symbol changes, auto-fill description if available
+  useEffect(() => {
+    const found = availableSymbols.find(s => s.symbol === newSymbol);
+    if (found && found.description) {
+      setNewDescription(found.description);
+    } else {
+      setNewDescription("");
+    }
+  }, [newSymbol, availableSymbols]);
+
   async function handleAddSymbol(e) {
     e.preventDefault();
     setSubmitting(true);
     setSubmitError(null);
-    // TODO: Replace with backend call (API or script)
     try {
       // Placeholder: simulate success
-      // await fetch('/api/add_symbol', { method: 'POST', body: ... })
       alert(`Symbol '${newSymbol}' (${assetType}) would be added and marked active.`);
       setShowForm(false);
       setNewSymbol("");
       setNewDescription("");
       setAssetType("crypto");
-      // Optionally, refresh symbols from backend
     } catch (err) {
       setSubmitError("Failed to add symbol");
     } finally {
@@ -76,10 +90,17 @@ export default function SymbolsTable() {
       {showForm && (
         <form onSubmit={handleAddSymbol} style={{ marginBottom: 20, background: 'var(--bg-mid)', padding: 16, borderRadius: 8, maxWidth: 420 }}>
           <div style={{ marginBottom: 8 }}>
-            <label>Symbol: <input value={newSymbol} onChange={e => setNewSymbol(e.target.value)} required style={{ marginLeft: 8 }}/></label>
+            <label>Symbol: 
+              <select value={newSymbol} onChange={e => setNewSymbol(e.target.value)} required style={{ marginLeft: 8, minWidth: 120 }}>
+                <option value="">-- Select Symbol --</option>
+                {availableSymbols.map(sym => (
+                  <option key={sym.symbol} value={sym.symbol}>{sym.symbol}</option>
+                ))}
+              </select>
+            </label>
           </div>
           <div style={{ marginBottom: 8 }}>
-            <label>Description: <input value={newDescription} onChange={e => setNewDescription(e.target.value)} style={{ marginLeft: 8 }}/></label>
+            <label>Description: <input value={newDescription} onChange={e => setNewDescription(e.target.value)} style={{ marginLeft: 8, minWidth: 180 }}/></label>
           </div>
           <div style={{ marginBottom: 8 }}>
             <label>Asset Type: </label>
@@ -88,7 +109,7 @@ export default function SymbolsTable() {
               <option value="etf">Non-Crypto</option>
             </select>
           </div>
-          <button type="submit" disabled={submitting}>{submitting ? "Adding..." : "Add Symbol"}</button>
+          <button type="submit" disabled={submitting || !newSymbol}>{submitting ? "Adding..." : "Add Symbol"}</button>
           {submitError && <span style={{ color: 'red', marginLeft: 12 }}>{submitError}</span>}
         </form>
       )}
