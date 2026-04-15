@@ -6,7 +6,7 @@ import sys
 
 
 DB_PATH = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "../../docs/data/tradingcopilot.db")
+    os.path.join(os.path.dirname(__file__), "../../frontend-react/public/data/tradingcopilot.db")
 )
 
 
@@ -36,13 +36,7 @@ def set_symbol_live_enabled(symbol: str, live_enabled: bool) -> int:
     )
     conn.commit()
     conn.close()
-    # Copy to frontend-react/public/data
-    public_db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../frontend-react/public/data/tradingcopilot.db'))
-    try:
-        shutil.copyfile(DB_PATH, public_db_path)
-        print(f"Copied DB to {public_db_path}")
-    except Exception as e:
-        print(f"Warning: Failed to copy DB to frontend-react/public/data: {e}")
+    # No need to copy DB, canonical location is already used
     return cur.rowcount
 
 

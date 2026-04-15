@@ -3,7 +3,7 @@ import os
 import sys
 
 def add_symbol(symbol, description=None):
-    db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../docs/data/tradingcopilot.db'))
+    db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../frontend-react/public/data/tradingcopilot.db'))
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
     try:

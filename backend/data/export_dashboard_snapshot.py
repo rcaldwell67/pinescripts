@@ -1,8 +1,7 @@
 """Export a lightweight dashboard snapshot for the React monitor.
 
-Reads trading data from docs/data/tradingcopilot.db and writes JSON to:
-- docs/data/dashboard_snapshot.json
-- frontend-react/public/data/dashboard_snapshot.json
+Reads trading data from frontend-react/public/data/tradingcopilot.db and writes JSON to:
+frontend-react/public/data/dashboard_snapshot.json
 """
 
 from __future__ import annotations
@@ -17,7 +16,6 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DB = REPO_ROOT / "frontend-react" / "public" / "data" / "tradingcopilot.db"
 DEFAULT_OUTPUTS = [
-    REPO_ROOT / "docs" / "data" / "dashboard_snapshot.json",
     REPO_ROOT / "frontend-react" / "public" / "data" / "dashboard_snapshot.json",
 ]
 

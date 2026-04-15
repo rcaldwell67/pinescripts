@@ -11,7 +11,7 @@ import csv
 import sqlite3
 import os
 
-DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../docs/data/tradingcopilot.db'))
+DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../frontend-react/public/data/tradingcopilot.db'))
 
 # Each entry maps a CSV file to symbol + version + mode.
 # Uses root-level naming convention apm_v*_trades.csv for BTC_USD.
