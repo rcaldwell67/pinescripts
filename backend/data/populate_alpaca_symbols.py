@@ -1,8 +1,10 @@
 import requests
 import sqlite3
 import os
+
 from dotenv import load_dotenv
-load_dotenv()
+import os
+load_dotenv(os.path.join(os.path.dirname(__file__), '../../.env'))
 
 # Set your Alpaca API credentials here or use environment variables
 ALPACA_API_KEY = os.getenv('ALPACA_API_KEY', 'YOUR_API_KEY')

@@ -1,7 +1,10 @@
+
 import requests
 import os
 import sqlite3
 import json
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(__file__), '../../.env'))
 
 # Set Alpaca API credentials
 ALPACA_API_KEY = os.getenv('ALPACA_PAPER_API_KEY', 'PKA6JVXS7FYDSO7RWFUCLBVZPD')
