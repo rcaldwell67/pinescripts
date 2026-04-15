@@ -1,7 +1,9 @@
 """Fetch and cache active US equity symbols from Alpaca into the database."""
+
 import sqlite3
 import os
 import sys
+from dotenv import load_dotenv
 
 def sync_alpaca_symbols():
     """Fetch active Alpaca assets and store in alpaca_symbols table with type metadata."""
@@ -15,6 +17,8 @@ def sync_alpaca_symbols():
     db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../frontend-react/public/data/tradingcopilot.db'))
     docs_db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../docs/data/tradingcopilot.db'))
 
+    # Load environment variables from .env file in project root
+    load_dotenv(os.path.join(os.path.dirname(__file__), '../../.env'))
     key = os.getenv('ALPACA_PAPER_API_KEY') or os.getenv('ALPACA_API_KEY')
     secret = os.getenv('ALPACA_PAPER_API_SECRET') or os.getenv('ALPACA_API_SECRET')
     if not key or not secret:

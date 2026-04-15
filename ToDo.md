@@ -4,4 +4,3 @@
 - GitHub Actions workflow now runs every 12 hours to keep Alpaca symbols and data in sync automatically.
 - Task complete.
 
-Make sure above Alpaca symbols data has a github workflow schedule that runs every 12 hours
