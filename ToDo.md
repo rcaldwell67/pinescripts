@@ -2,3 +2,5 @@
 - All Alpaca data headers/columns (description, asset_type, live_enabled, isactive) are now present in the symbols table.
 - Scripts were run in the correct order and the database schema was updated as needed.
 - Task complete.
+
+Make sure above Alpaca symbols data has a github workflow schedule that runs every 12 hours

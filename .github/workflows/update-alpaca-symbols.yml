@@ -2,7 +2,7 @@ name: Update Alpaca Symbols
 
 on:
   schedule:
-    - cron: '0 3 * * 1' # Every Monday at 03:00 UTC
+    - cron: '0 */12 * * *' # Every 12 hours
   workflow_dispatch:
 
 jobs:
@@ -22,12 +22,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests
 
-      - name: Run populate_alpaca_symbols.py
+      - name: Run update_symbols_with_alpaca_data.py
         env:
-          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
-          ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
+          ALPACA_PAPER_API_KEY: ${{ secrets.ALPACA_PAPER_API_KEY }}
+          ALPACA_PAPER_API_SECRET: ${{ secrets.ALPACA_PAPER_API_SECRET }}
         run: |
-          python populate_alpaca_symbols.py
+          python backend/data/update_symbols_with_alpaca_data.py
 
       - name: Commit and push updated DB
         run: |
