@@ -30,18 +30,17 @@ def insert_symbols(symbols):
     for asset in symbols:
         symbol = asset['symbol']
         description = asset.get('name', '')
-        asset_class = asset.get('class', '')
-        # Always set live_enabled and isactive to 0
+        asset_type = asset.get('class', '')
         live_enabled = 0
         isactive = 0
         # Insert only if not already present
         cur.execute('SELECT COUNT(*) FROM symbols WHERE symbol = ?', (symbol,))
         if cur.fetchone()[0] == 0:
-            cur.execute('INSERT INTO symbols (symbol, description, asset_class, live_enabled, isactive) VALUES (?, ?, ?, ?, ?)',
-                        (symbol, description, asset_class, live_enabled, isactive))
+            cur.execute('INSERT INTO symbols (symbol, description, asset_type, live_enabled, isactive) VALUES (?, ?, ?, ?, ?)',
+                        (symbol, description, asset_type, live_enabled, isactive))
         else:
             # Update live_enabled and isactive if symbol already exists
-            cur.execute('UPDATE symbols SET live_enabled = ?, isactive = ? WHERE symbol = ?', (live_enabled, isactive, symbol))
+            cur.execute('UPDATE symbols SET live_enabled = ?, isactive = ?, asset_type = ? WHERE symbol = ?', (live_enabled, isactive, asset_type, symbol))
     conn.commit()
     conn.close()
     # Copy updated DB to docs/data location
