@@ -50,11 +50,15 @@ def _rows(conn: sqlite3.Connection, query: str, params: tuple[Any, ...] = ()) ->
 
 def _load_symbols(conn: sqlite3.Connection) -> list[dict[str, str]]:
     data: list[dict[str, str]] = []
-    for row in _rows(conn, "SELECT symbol FROM symbols ORDER BY symbol"):
+    for row in _rows(conn, "SELECT symbol, description, asset_type, isactive, live_enabled FROM symbols ORDER BY symbol"):
         symbol = str(row["symbol"])
         data.append({
             "symbol": symbol,
             "symbol_key": _norm_symbol(symbol),
+            "description": row["description"] if "description" in row.keys() else "",
+            "asset_type": row["asset_type"] if "asset_type" in row.keys() else None,
+            "isactive": row["isactive"] if "isactive" in row.keys() else None,
+            "live_enabled": row["live_enabled"] if "live_enabled" in row.keys() else None,
             "asset_class": _asset_class(symbol),
         })
     return data

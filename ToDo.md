@@ -11,4 +11,6 @@
 - [X] Check for any failing scripts or workflows
 - [X] Refactor error handling for symbol update scripts
 
-- [ ] Remove the 'ID' column from the Sybmols section in the Dashboard
+- [X] Remove the 'ID' column from the Sybmols section in the Dashboard
+
+- [ ] Add functionality to add a Symbol to the Symbols Table of the Symbols Dashboard item. Provide filter for Crypto and Non-Crypto Symbols. When the Symbol is added, mark the Symbol isActive
