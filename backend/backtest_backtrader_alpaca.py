@@ -643,7 +643,7 @@ def main() -> int:
         # Load all symbols from DB
         conn = sqlite3.connect(str(DB_PATH), timeout=30)
         try:
-            rows = conn.execute("SELECT symbol FROM symbols WHERE active=1").fetchall()
+            rows = conn.execute("SELECT symbol FROM symbols WHERE live_enabled=1").fetchall()
             symbols = [row[0] for row in rows]
         finally:
             conn.close()
