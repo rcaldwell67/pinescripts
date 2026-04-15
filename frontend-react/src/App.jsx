@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import BacktestsTable from "./BacktestsTable";
 import SimulatedPaperTable from "./SimulatedPaperTable";
+import SymbolsTable from "./SymbolsTable";
 
 
 // Demo/mock data from backend/data/print_account_info.py output
@@ -58,6 +59,7 @@ function App() {
           <ul>
             <li><a href="#" onClick={() => handleNav("Dashboard")}>Dashboard</a></li>
             <li><a href="#" onClick={() => handleNav("Backtests")}>Backtests</a></li>
+            <li><a href="#" onClick={() => handleNav("Symbols")}>Symbols</a></li>
             <li>
               <a href="#" onClick={() => handleNav("Paper Trading")}>Paper Trading</a>
               {paperTradingOpen && (
@@ -117,6 +119,8 @@ function App() {
             </section>
           ) : activePage === "Backtests" ? (
             <BacktestsTable />
+          ) : activePage === "Symbols" ? (
+            <SymbolsTable />
           ) : activePage === "Real-Time" ? (
             <section style={{ padding: 24 }}>
               <h2>Paper Trading &ndash; Real-Time</h2>
