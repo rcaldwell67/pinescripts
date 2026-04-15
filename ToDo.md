@@ -1,1 +1,4 @@
-add all alpaca symbols to symbols table and add all alpaca data headers/columns
+- All Alpaca symbols have been added to the symbols table.
+- All Alpaca data headers/columns (description, asset_type, live_enabled, isactive) are now present in the symbols table.
+- Scripts were run in the correct order and the database schema was updated as needed.
+- Task complete.
