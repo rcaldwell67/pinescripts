@@ -60,3 +60,7 @@ Add user settings or theme toggling.
 Let me know which feature you’d like to enable next, or if you want suggestions based on your previous dashboard functionality!
 
 Backtest Section - add DropDownList for 'Timespan' - options are: YTD, MTD, WTD, 1D, 4H; with YTD as the default selection
+
+Add Symbols to db, when a symbol is added - mark is active but not live
+  run backtest and paper trading simulation, enable real-time paper trading
+  
