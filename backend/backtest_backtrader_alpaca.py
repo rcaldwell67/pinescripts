@@ -21,7 +21,13 @@ import os
 import sqlite3
 import sys
 import logging
-from backend.telegram_notify import send_telegram_message
+try:
+    from backend.telegram_notify import send_telegram_message
+except ModuleNotFoundError:
+    # Allow running as __main__ from backend dir
+    import sys, os
+    sys.path.insert(0, os.path.dirname(__file__))
+    from telegram_notify import send_telegram_message
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any

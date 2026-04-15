@@ -15,7 +15,7 @@ from collections import defaultdict
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_DB = REPO_ROOT / "docs" / "data" / "tradingcopilot.db"
+DEFAULT_DB = REPO_ROOT / "frontend-react" / "public" / "data" / "tradingcopilot.db"
 DEFAULT_OUT = REPO_ROOT / "docs" / "data" / "realtime_paper_trading_results.json"
 
 def export(db_path: Path = DEFAULT_DB, out_path: Path = DEFAULT_OUT) -> None:

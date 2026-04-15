@@ -7,28 +7,24 @@ from dotenv import load_dotenv
 
 def sync_alpaca_symbols():
     """Fetch active Alpaca assets and store in alpaca_symbols table with type metadata."""
+    import logging
+    import shutil
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+    logger = logging.getLogger("sync_alpaca_symbols")
     try:
         import requests
     except ImportError:
-        print("Error: requests library not found. Install with: pip install requests")
+        logger.error("Error: requests library not found. Install with: pip install requests")
         sys.exit(1)
-    
-    import shutil
     db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../frontend-react/public/data/tradingcopilot.db'))
     docs_db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../docs/data/tradingcopilot.db'))
-
-    # Load environment variables from .env file in project root
     load_dotenv(os.path.join(os.path.dirname(__file__), '../../.env'))
     key = os.getenv('ALPACA_PAPER_API_KEY') or os.getenv('ALPACA_API_KEY')
     secret = os.getenv('ALPACA_PAPER_API_SECRET') or os.getenv('ALPACA_API_SECRET')
     if not key or not secret:
-        print(
-            'Error: Alpaca credentials are required. Set ALPACA_PAPER_API_KEY and '
-            'ALPACA_PAPER_API_SECRET (or ALPACA_API_KEY/ALPACA_API_SECRET).'
-        )
+        logger.error('Error: Alpaca credentials are required. Set ALPACA_PAPER_API_KEY and ALPACA_PAPER_API_SECRET (or ALPACA_API_KEY/ALPACA_API_SECRET).')
         sys.exit(1)
-    
-    print("Fetching Alpaca symbols from paper-api.alpaca.markets...")
+    logger.info("Fetching Alpaca symbols from paper-api.alpaca.markets...")
     try:
         headers = {
             'APCA-API-KEY-ID': key,
@@ -39,7 +35,6 @@ def sync_alpaca_symbols():
             ('https://paper-api.alpaca.markets/v2/assets?status=active&asset_class=us_equity', 'stock'),
             ('https://paper-api.alpaca.markets/v2/assets?status=active&asset_class=crypto', 'crypto'),
         ]
-
         assets = []
         for url, forced_type in endpoints:
             response = requests.get(url, headers=headers, timeout=30)
@@ -54,11 +49,10 @@ def sync_alpaca_symbols():
                 symbol_type = 'crypto' if (forced_type == 'crypto' or asset_class == 'crypto') else 'stock'
                 assets.append((symbol, name, symbol_type))
     except Exception as e:
-        print(f"Error fetching from Alpaca: {e}")
+        logger.error(f"Error fetching from Alpaca: {e}")
         sys.exit(1)
-    
     if not assets:
-        print("No assets returned from Alpaca.")
+        logger.error("No assets returned from Alpaca.")
         sys.exit(1)
     
     # De-duplicate by symbol while preserving latest encountered metadata.
@@ -70,11 +64,10 @@ def sync_alpaca_symbols():
     print(f"Fetched {len(symbols_data)} symbols from Alpaca.")
     
     # Connect to DB and create/populate table
-    conn = sqlite3.connect(db_path)
-    c = conn.cursor()
-    
+    conn = None
     try:
-        # Create table if it doesn't exist
+        conn = sqlite3.connect(db_path)
+        c = conn.cursor()
         c.execute('''
             CREATE TABLE IF NOT EXISTS alpaca_symbols (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -84,33 +77,28 @@ def sync_alpaca_symbols():
                 synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
-
-        # Lightweight migration for older DBs that do not have the type column yet.
         existing_cols = {row[1] for row in c.execute('PRAGMA table_info(alpaca_symbols)').fetchall()}
         if 'type' not in existing_cols:
             c.execute("ALTER TABLE alpaca_symbols ADD COLUMN type TEXT DEFAULT 'stock'")
-        
-        # Clear existing data and insert fresh symbols
         c.execute('DELETE FROM alpaca_symbols')
         c.executemany(
             'INSERT INTO alpaca_symbols (symbol, name, type) VALUES (?, ?, ?)',
             symbols_data
         )
-        
         conn.commit()
         synced_count = c.execute('SELECT COUNT(*) FROM alpaca_symbols').fetchone()[0]
-        print(f"Synced {synced_count} symbols to database.")
-    except Exception as e:
-        print(f"Error updating database: {e}")
-        sys.exit(1)
-    finally:
-        conn.close()
-        # Copy updated DB to docs/data location
+        logger.info(f"Synced {synced_count} symbols to database.")
         try:
             shutil.copyfile(db_path, docs_db_path)
-            print(f"Copied updated DB to {docs_db_path}")
+            logger.info(f"Copied updated DB to {docs_db_path}")
         except Exception as e:
-            print(f"Warning: Failed to copy DB to docs/data: {e}")
+            logger.warning(f"Warning: Failed to copy DB to docs/data: {e}")
+    except Exception as e:
+        logger.error(f"Error updating database: {e}")
+        sys.exit(1)
+    finally:
+        if conn:
+            conn.close()
 
 if __name__ == '__main__':
     sync_alpaca_symbols()

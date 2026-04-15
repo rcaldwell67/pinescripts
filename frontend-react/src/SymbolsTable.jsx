@@ -31,7 +31,6 @@ export default function SymbolsTable() {
         <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 16 }}>
           <thead>
             <tr style={{background: 'var(--bg-mid)'}}>
-              <th style={{padding: '8px 12px', textAlign: 'left'}}>ID</th>
               <th style={{padding: '8px 12px', textAlign: 'left'}}>Symbol</th>
               <th style={{padding: '8px 12px', textAlign: 'left'}}>Description</th>
               <th style={{padding: '8px 12px', textAlign: 'left'}}>Asset Type</th>
@@ -42,7 +41,6 @@ export default function SymbolsTable() {
           <tbody>
             {symbols.map(sym => (
               <tr key={sym.symbol_key || sym.symbol}>
-                <td style={{padding: '8px 12px'}}>{sym.id !== undefined ? sym.id : '-'}</td>
                 <td style={{padding: '8px 12px'}}>{sym.symbol}</td>
                 <td style={{padding: '8px 12px'}}>{sym.description || '-'}</td>
                 <td style={{padding: '8px 12px'}}>{sym.asset_type || sym.asset_class || '-'}</td>
