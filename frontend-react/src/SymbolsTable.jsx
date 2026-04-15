@@ -31,17 +31,23 @@ export default function SymbolsTable() {
         <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 16 }}>
           <thead>
             <tr style={{background: 'var(--bg-mid)'}}>
+              <th style={{padding: '8px 12px', textAlign: 'left'}}>ID</th>
               <th style={{padding: '8px 12px', textAlign: 'left'}}>Symbol</th>
-              <th style={{padding: '8px 12px', textAlign: 'left'}}>Asset Type</th>
               <th style={{padding: '8px 12px', textAlign: 'left'}}>Description</th>
+              <th style={{padding: '8px 12px', textAlign: 'left'}}>Asset Type</th>
+              <th style={{padding: '8px 12px', textAlign: 'left'}}>Live Enabled</th>
+              <th style={{padding: '8px 12px', textAlign: 'left'}}>Is Active</th>
             </tr>
           </thead>
           <tbody>
             {symbols.map(sym => (
-              <tr key={sym.symbol_key}>
+              <tr key={sym.symbol_key || sym.symbol}>
+                <td style={{padding: '8px 12px'}}>{sym.id !== undefined ? sym.id : '-'}</td>
                 <td style={{padding: '8px 12px'}}>{sym.symbol}</td>
-                <td style={{padding: '8px 12px'}}>{sym.asset_type || sym.asset_class || '-'}</td>
                 <td style={{padding: '8px 12px'}}>{sym.description || '-'}</td>
+                <td style={{padding: '8px 12px'}}>{sym.asset_type || sym.asset_class || '-'}</td>
+                <td style={{padding: '8px 12px'}}>{sym.live_enabled !== undefined ? String(sym.live_enabled) : '-'}</td>
+                <td style={{padding: '8px 12px'}}>{sym.isactive !== undefined ? String(sym.isactive) : '-'}</td>
               </tr>
             ))}
           </tbody>
