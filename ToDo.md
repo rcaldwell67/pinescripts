@@ -58,3 +58,5 @@ Integrate API/data fetching for live or backtest results.
 Improve responsiveness and mobile layout.
 Add user settings or theme toggling.
 Let me know which feature you’d like to enable next, or if you want suggestions based on your previous dashboard functionality!
+
+Backtest Section - add DropDownList for 'Timespan' - options are: YTD, MTD, WTD, 1D, 4H; with YTD as the default selection
