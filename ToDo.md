@@ -14,3 +14,8 @@
 - [X] Remove the 'ID' column from the Sybmols section in the Dashboard
 
 - [X] Add functionality to add a Symbol to the Symbols Table of the Symbols Dashboard item. Provide filter for Crypto and Non-Crypto Symbols. When the Symbol is added, mark the Symbol isActive - almost done, need to list the filtered symbols in the Symbol: selection box and add the description to the text box. 
+
+- [X] Add all symbols and symbol data from Alpaca to the Dashboard
+
+- [X] Modify all Database syncing/replicating scripts and workflows to only Update Existing Records and Insert New Records. Do Not Delete Existing Records
+

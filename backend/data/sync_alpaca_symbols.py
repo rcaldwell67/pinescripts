@@ -80,11 +80,15 @@ def sync_alpaca_symbols():
         existing_cols = {row[1] for row in c.execute('PRAGMA table_info(alpaca_symbols)').fetchall()}
         if 'type' not in existing_cols:
             c.execute("ALTER TABLE alpaca_symbols ADD COLUMN type TEXT DEFAULT 'stock'")
-        c.execute('DELETE FROM alpaca_symbols')
-        c.executemany(
-            'INSERT INTO alpaca_symbols (symbol, name, type) VALUES (?, ?, ?)',
-            symbols_data
-        )
+        # Upsert: insert new, update existing
+        for symbol, name, symbol_type in symbols_data:
+            c.execute('''
+                INSERT INTO alpaca_symbols (symbol, name, type)
+                VALUES (?, ?, ?)
+                ON CONFLICT(symbol) DO UPDATE SET
+                  name=excluded.name,
+                  type=excluded.type
+            ''', (symbol, name, symbol_type))
         conn.commit()
         synced_count = c.execute('SELECT COUNT(*) FROM alpaca_symbols').fetchone()[0]
         logger.info(f"Synced {synced_count} symbols to database.")

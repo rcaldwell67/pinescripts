@@ -23,10 +23,13 @@ def copy_alpaca_symbols_to_symbols():
         rows = c.fetchall()
         added = 0
         for symbol, name in rows:
-            # Insert if not already present
+            # Upsert: insert new, update existing
             c.execute('''
-                INSERT OR IGNORE INTO symbols (symbol, description, live_enabled)
+                INSERT INTO symbols (symbol, description, live_enabled)
                 VALUES (?, ?, 0)
+                ON CONFLICT(symbol) DO UPDATE SET
+                  description=excluded.description,
+                  live_enabled=excluded.live_enabled
             ''', (symbol, name))
             if c.rowcount:
                 added += 1

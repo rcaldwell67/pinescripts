@@ -34,26 +34,42 @@ def insert_symbols(symbols):
     try:
         conn = sqlite3.connect(DB_PATH)
         cur = conn.cursor()
+        # Upsert into alpaca_symbols table
+        for asset in symbols:
+            symbol = asset['symbol']
+            name = asset.get('name', '')
+            asset_type = asset.get('class', '')
+            try:
+                cur.execute('''
+                    INSERT INTO alpaca_symbols (symbol, name, type)
+                    VALUES (?, ?, ?)
+                    ON CONFLICT(symbol) DO UPDATE SET
+                        name=excluded.name,
+                        type=excluded.type
+                ''', (symbol, name, asset_type))
+            except Exception as e:
+                logger.warning(f'Could not upsert {symbol} into alpaca_symbols: {e}')
+        # Upsert into symbols table
         for asset in symbols:
             symbol = asset['symbol']
             description = asset.get('name', '')
             asset_type = asset.get('class', '')
             live_enabled = 0
             isactive = 0
-            cur.execute('SELECT COUNT(*) FROM symbols WHERE symbol = ?', (symbol,))
-            if cur.fetchone()[0] == 0:
-                try:
-                    cur.execute('INSERT INTO symbols (symbol, description, asset_type, live_enabled, isactive) VALUES (?, ?, ?, ?, ?)',
-                                (symbol, description, asset_type, live_enabled, isactive))
-                except Exception as e:
-                    logger.warning(f'Could not insert {symbol}: {e}')
-            else:
-                try:
-                    cur.execute('UPDATE symbols SET live_enabled = ?, isactive = ?, asset_type = ? WHERE symbol = ?', (live_enabled, isactive, asset_type, symbol))
-                except Exception as e:
-                    logger.warning(f'Could not update {symbol}: {e}')
+            try:
+                cur.execute('''
+                    INSERT INTO symbols (symbol, description, asset_type, live_enabled, isactive)
+                    VALUES (?, ?, ?, ?, ?)
+                    ON CONFLICT(symbol) DO UPDATE SET
+                        description=excluded.description,
+                        asset_type=excluded.asset_type,
+                        live_enabled=excluded.live_enabled,
+                        isactive=excluded.isactive
+                ''', (symbol, description, asset_type, live_enabled, isactive))
+            except Exception as e:
+                logger.warning(f'Could not upsert {symbol} into symbols: {e}')
         conn.commit()
-        logger.info(f'Inserted/updated {len(symbols)} symbols.')
+        logger.info(f'Inserted/updated {len(symbols)} symbols and populated alpaca_symbols.')
         # Copy updated DB to docs/data location
         docs_db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../docs/data/tradingcopilot.db'))
         try:

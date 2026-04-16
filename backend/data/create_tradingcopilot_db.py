@@ -9,11 +9,25 @@ def create_database(db_path):
     # and can be loaded by sql.js in the browser without needing -wal/-shm files.
     conn.execute("PRAGMA journal_mode=DELETE")
     c = conn.cursor()
-    # Alpaca Symbols Table (for sync and migration)
+    # Drop and recreate Alpaca Symbols Table (for sync and migration)
+    c.execute('DROP TABLE IF EXISTS alpaca_symbols')
     c.execute('''
-        CREATE TABLE IF NOT EXISTS alpaca_symbols (
+        CREATE TABLE alpaca_symbols (
             symbol TEXT PRIMARY KEY,
+            id TEXT,
+            class TEXT,
+            exchange TEXT,
             name TEXT,
+            status TEXT,
+            tradable BOOLEAN,
+            marginable BOOLEAN,
+            maintenance_margin_requirement INTEGER,
+            margin_requirement_long TEXT,
+            margin_requirement_short TEXT,
+            shortable BOOLEAN,
+            easy_to_borrow BOOLEAN,
+            fractionable BOOLEAN,
+            attributes TEXT,
             type TEXT DEFAULT 'stock'
         )
     ''')
@@ -53,14 +67,29 @@ def create_database(db_path):
             current_equity REAL
         )
     ''')
-    # Symbols Table (add asset_type)
+    # Drop and recreate Symbols Table (add all Alpaca columns)
+    c.execute('DROP TABLE IF EXISTS symbols')
     c.execute('''
-        CREATE TABLE IF NOT EXISTS symbols (
+        CREATE TABLE symbols (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             symbol TEXT NOT NULL UNIQUE,
             description TEXT,
             asset_type TEXT DEFAULT 'crypto',
-            live_enabled INTEGER NOT NULL DEFAULT 1
+            live_enabled INTEGER NOT NULL DEFAULT 1,
+            alpaca_id TEXT,
+            class TEXT,
+            exchange TEXT,
+            name TEXT,
+            status TEXT,
+            tradable BOOLEAN,
+            marginable BOOLEAN,
+            maintenance_margin_requirement INTEGER,
+            margin_requirement_long TEXT,
+            margin_requirement_short TEXT,
+            shortable BOOLEAN,
+            easy_to_borrow BOOLEAN,
+            fractionable BOOLEAN,
+            attributes TEXT
         )
     ''')
     # Audit Log Table
@@ -224,9 +253,12 @@ if __name__ == "__main__":
     import shutil
     db_path = os.path.join(os.path.dirname(__file__), "..", "docs", "data", "tradingcopilot.db")
     public_db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../frontend-react/public/data/tradingcopilot.db'))
+    # Ensure both directories exist
+    os.makedirs(os.path.dirname(db_path), exist_ok=True)
+    os.makedirs(os.path.dirname(public_db_path), exist_ok=True)
     create_database(db_path)
     print(f"Database created at {db_path}")
-    # Copy to frontend-react/public/data
+    # Copy to frontend-react/public/data after DB is fully created
     try:
         shutil.copyfile(db_path, public_db_path)
         print(f"Copied DB to {public_db_path}")
