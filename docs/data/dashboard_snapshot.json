@@ -1,39 +1,27 @@
 {
-  "generated_at": "2026-04-15T22:12:04.265387+00:00",
-  "account": {
-    "mode": "paper",
-    "beginning_balance": 100000.0,
-    "current_balance": 100000.0,
-    "buying_power": 200000.0,
-    "cash": 100000.0,
-    "updated_at": "2026-04-15T20:53:13.748932+00:00"
-  },
+  "generated_at": "2026-04-16T12:53:34.292284+00:00",
+  "account": {},
   "symbols": [
+    {
+      "symbol": "AAPL",
+      "symbol_key": "AAPL",
+      "description": "Apple Inc.",
+      "asset_type": "etf",
+      "live_enabled": 1,
+      "asset_class": "etf"
+    },
     {
       "symbol": "BTCUSD",
       "symbol_key": "BTCUSD",
-      "description": "Bitcoin",
+      "description": "Bitcoin / USD",
       "asset_type": "crypto",
-      "isactive": 1,
-      "live_enabled": 0,
+      "live_enabled": 1,
       "asset_class": "crypto"
     }
   ],
   "results": {
     "backtest": [],
-    "paper": [
-      {
-        "mode": "paper",
-        "symbol": "AAPL",
-        "symbol_key": "AAPL",
-        "timestamp": "2026-04-15 20:53:15",
-        "current_equity": 100000.0,
-        "net_return_pct": null,
-        "win_rate": null,
-        "max_drawdown_pct": null,
-        "total_trades": null
-      }
-    ],
+    "paper": [],
     "live": []
   },
   "trades": []
