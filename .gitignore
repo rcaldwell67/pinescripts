@@ -13,6 +13,9 @@ __pycache__/
 # SQLite WAL and shared-memory sidecar files — never commit these
 *.db-wal
 *.db-shm
+tradingcopilot.db
+docs/data/tradingcopilot.db
+frontend-react/public/data/tradingcopilot.db
 
 # Site Backup
 localbackup/

@@ -9,6 +9,14 @@ def create_database(db_path):
     # and can be loaded by sql.js in the browser without needing -wal/-shm files.
     conn.execute("PRAGMA journal_mode=DELETE")
     c = conn.cursor()
+    # Alpaca Symbols Table (for sync and migration)
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS alpaca_symbols (
+            symbol TEXT PRIMARY KEY,
+            name TEXT,
+            type TEXT DEFAULT 'stock'
+        )
+    ''')
     # Backtest Results Table (add version)
     c.execute('''
         CREATE TABLE IF NOT EXISTS backtest_results (
