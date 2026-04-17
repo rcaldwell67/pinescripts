@@ -19,3 +19,6 @@
 
 - [X] Modify all Database syncing/replicating scripts and workflows to only Update Existing Records and Insert New Records. Do Not Delete Existing Records
 
+- [X] Connect to MariaDB tradingcopilot
+- [ ] Create tables from sqlite schema
+- [ ] Set Connection String in App(encrypt/salt credentials)
