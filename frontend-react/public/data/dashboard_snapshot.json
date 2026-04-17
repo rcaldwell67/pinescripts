@@ -1,24 +1,7 @@
 {
-  "generated_at": "2026-04-16T12:53:34.292284+00:00",
+  "generated_at": "2026-04-17T17:31:15.514948+00:00",
   "account": {},
-  "symbols": [
-    {
-      "symbol": "AAPL",
-      "symbol_key": "AAPL",
-      "description": "Apple Inc.",
-      "asset_type": "etf",
-      "live_enabled": 1,
-      "asset_class": "etf"
-    },
-    {
-      "symbol": "BTCUSD",
-      "symbol_key": "BTCUSD",
-      "description": "Bitcoin / USD",
-      "asset_type": "crypto",
-      "live_enabled": 1,
-      "asset_class": "crypto"
-    }
-  ],
+  "symbols": [],
   "results": {
     "backtest": [],
     "paper": [],
