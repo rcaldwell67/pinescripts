@@ -70,12 +70,17 @@ export default function SymbolsTable() {
     }
   }
 
+
   if (loading) return <section style={{ padding: 24 }}>Loading symbols...</section>;
-  if (error) return <section style={{ padding: 24, color: 'red' }}>Error: {error}</section>;
+
+  function renderError() {
+    return error ? <div style={{ color: 'red', marginBottom: 16 }}>Error: {error}</div> : null;
+  }
 
   return (
     <section style={{ padding: 24 }}>
       <h2>Symbols Table</h2>
+      {renderError()}
       <div style={{ marginBottom: 16 }}>
         <button onClick={() => setShowForm(v => !v)} style={{ marginRight: 12 }}>
           {showForm ? "Cancel" : "Add Symbol"}
@@ -91,12 +96,7 @@ export default function SymbolsTable() {
         <form onSubmit={handleAddSymbol} style={{ marginBottom: 20, background: 'var(--bg-mid)', padding: 16, borderRadius: 8, maxWidth: 420 }}>
           <div style={{ marginBottom: 8 }}>
             <label>Symbol: 
-              <select value={newSymbol} onChange={e => setNewSymbol(e.target.value)} required style={{ marginLeft: 8, minWidth: 120 }}>
-                <option value="">-- Select Symbol --</option>
-                {availableSymbols.map(sym => (
-                  <option key={sym.symbol} value={sym.symbol}>{sym.symbol}</option>
-                ))}
-              </select>
+              <input value={newSymbol} onChange={e => setNewSymbol(e.target.value)} required style={{ marginLeft: 8, minWidth: 120 }} placeholder="Enter symbol" />
             </label>
           </div>
           <div style={{ marginBottom: 8 }}>
