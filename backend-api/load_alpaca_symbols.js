@@ -26,6 +26,10 @@ async function fetchAlpacaSymbols() {
   return res.json();
 }
 
+function safe(v) {
+  return v === undefined ? null : v;
+}
+
 async function insertSymbols(symbols) {
   const conn = await mysql.createConnection(dbConfig);
   const sql = `REPLACE INTO alpaca_symbols (
@@ -33,22 +37,22 @@ async function insertSymbols(symbols) {
   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
   for (const s of symbols) {
     await conn.execute(sql, [
-      s.id,
-      s.symbol,
-      s.name,
-      s.status,
+      safe(s.id),
+      safe(s.symbol),
+      safe(s.name),
+      safe(s.status),
       s.tradable ? 1 : 0,
       s.marginable ? 1 : 0,
       s.shortable ? 1 : 0,
       s.easy_to_borrow ? 1 : 0,
       s.fractionable ? 1 : 0,
-      s.asset_class,
-      s.exchange,
+      safe(s.class), // Alpaca API uses 'class' not 'asset_class'
+      safe(s.exchange),
       s.last_trade_time ? s.last_trade_time.replace('T', ' ').replace('Z', '') : null,
-      s.maintenance_margin_requirement || null,
-      s.min_order_size || null,
-      s.min_trade_increment || null,
-      s.min_trade_price_increment || null,
+      safe(s.maintenance_margin_requirement),
+      safe(s.min_order_size),
+      safe(s.min_trade_increment),
+      safe(s.min_trade_price_increment),
       s.attributes ? JSON.stringify(s.attributes) : null,
     ]);
   }

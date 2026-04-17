@@ -1,9 +1,10 @@
-  Using Alpaca for crypto symbol BTC/USD...
-ERROR: Failed to process BTC/USD: Extra data: line 1 column 26 (char 25)
-
-Backtest completed with errors for: BTC/USD
-
-[RUN] BTC/USD v6
-Fetching YTD OHLCV for BTC/USD...
-  29,592 bars fetched (2026-01-01 00:00:00+00:00 -> 2026-04-13 20:40:00+00:00)
-Running backtest v6...
+TypeError: Bind parameters must not contain undefined. To pass SQL NULL specify JS null
+    at D:\OneDrive\codebase\pinescripts-1\backend-api\node_modules\mysql2\lib\base\connection.js:787:17
+    at Array.forEach (<anonymous>)
+    at Connection.execute (D:\OneDrive\codebase\pinescripts-1\backend-api\node_modules\mysql2\lib\base\connection.js:779:22)
+    at D:\OneDrive\codebase\pinescripts-1\backend-api\node_modules\mysql2\lib\promise\connection.js:56:11
+    at new Promise (<anonymous>)
+    at PromiseConnection.execute (D:\OneDrive\codebase\pinescripts-1\backend-api\node_modules\mysql2\lib\promise\connection.js:53:12)
+    at insertSymbols (file:///D:/OneDrive/codebase/pinescripts-1/backend-api/load_alpaca_symbols.js:35:16)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///D:/OneDrive/codebase/pinescripts-1/backend-api/load_alpaca_symbols.js:61:5
