@@ -23,10 +23,10 @@ export default function SymbolsTable() {
   useEffect(() => {
     async function fetchSymbols() {
       try {
-        const res = await fetch("/pinescripts/data/dashboard_snapshot.json");
-        if (!res.ok) throw new Error("Failed to load dashboard_snapshot.json");
+        const res = await fetch("http://localhost:4000/api/symbols");
+        if (!res.ok) throw new Error("Failed to load symbols from backend API");
         const data = await res.json();
-        setSymbols(data.symbols || []);
+        setSymbols(data || []);
       } catch (err) {
         setError(err.message || "Unknown error");
       } finally {
