@@ -7,6 +7,7 @@
   "dependencies": {
     "alpaca-mcp": "^1.0.2",
     "mcp-server-pinescript": "github:iamrichardD/mcp-server-pinescript",
+    "mysql2": "^3.22.1",
     "node-fetch": "^3.3.2",
     "sql.js": "^1.14.1"
   },
