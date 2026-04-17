@@ -1,15 +1,12 @@
-"""
-Validate trade-level parity between backtest and paper modes in tradingcopilot.db.
 
-This script compares rows in the `trades` table for mode='backtest' and mode='paper'
-for the same symbol/version. It is designed as a CI gate and returns non-zero when
-material mismatches are found.
-
-Usage:
-    python backend/paper_trading/verify_v2_parity.py --version v2
-    python backend/paper_trading/verify_v2_parity.py --version v6 --symbol BTC/USD
-    python backend/paper_trading/verify_v2_parity.py --version v4 --max-row-diffs 20
 """
+DEPRECATED: This script used SQLite (tradingcopilot.db) and is no longer supported.
+Please use the MariaDB-based tools and workflows for parity validation.
+"""
+
+import sys
+print("[DEPRECATED] verify_v2_parity.py is no longer supported. Use MariaDB-based validation.", file=sys.stderr)
+sys.exit(1)
 
 from __future__ import annotations
 

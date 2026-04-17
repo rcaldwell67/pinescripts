@@ -1,19 +1,12 @@
-"""
-Validate symbol pipeline completeness across backtest, simulated paper, and realtime paper.
 
-This script is intended as a post-onboarding check for newly added symbols.
-It verifies, per version:
-  - backtest trades exist
-  - simulated paper trades exist
-  - backtest/paper trade counts match
-  - summary rows exist for backtest and simulated paper
-  - realtime paper log rows exist (optional)
-  - realtime summary rows exist (optional)
-
-Usage:
-    python backend/paper_trading/validate_symbol_pipeline.py --symbol BTC/USDT
-    python backend/paper_trading/validate_symbol_pipeline.py --symbol BTC/USDT --skip-realtime
 """
+DEPRECATED: This script used SQLite (tradingcopilot.db) and is no longer supported.
+Please use the MariaDB-based tools and workflows for pipeline validation.
+"""
+
+import sys
+print("[DEPRECATED] validate_symbol_pipeline.py is no longer supported. Use MariaDB-based validation.", file=sys.stderr)
+sys.exit(1)
 
 from __future__ import annotations
 
