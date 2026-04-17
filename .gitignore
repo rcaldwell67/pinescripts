@@ -3,6 +3,7 @@
 .nvm
 .venv
 .env
+.backend-api/.env
 .env.example
 .github
 
