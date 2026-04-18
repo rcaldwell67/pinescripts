@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 
+export default function SymbolsTable() {
   const [symbols, setSymbols] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -18,6 +19,7 @@ import React, { useEffect, useState } from "react";
   const [editLiveEnabled, setEditLiveEnabled] = useState(0);
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [editError, setEditError] = useState(null);
+
 
   // Compute available symbols for dropdown based on filter
   const availableSymbols = symbols.filter(sym => {
@@ -57,6 +59,9 @@ import React, { useEffect, useState } from "react";
       setNewDescription("");
     }
   }, [newSymbol, availableSymbols]);
+
+  // ...rest of the component logic and return...
+
 
   async function handleAddSymbol(e) {
     e.preventDefault();
@@ -144,7 +149,6 @@ import React, { useEffect, useState } from "react";
       alert("Failed to deactivate symbol");
     }
   }
-
 
   if (loading) return <section style={{ padding: 24 }}>Loading symbols...</section>;
 
