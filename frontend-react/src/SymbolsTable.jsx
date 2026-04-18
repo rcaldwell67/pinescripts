@@ -8,7 +8,6 @@ function SymbolsTable() {
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [newSymbol, setNewSymbol] = useState("");
-  const [newDescription, setNewDescription] = useState("");
   const [assetType, setAssetType] = useState("crypto");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
@@ -51,20 +50,16 @@ function SymbolsTable() {
     fetchAlpacaSymbols();
   }, []);
 
+  // Filter for add-symbol dropdown
   const availableSymbols = alpacaSymbols.filter(sym => {
     if (assetType === "all") return true;
-    const type = sym.asset_class || sym.type || "";
-    return type.toLowerCase() === assetType;
+    const type = (sym.asset_class || sym.type || "").toLowerCase();
+    if (assetType === "crypto") return type === "crypto";
+    if (assetType === "etf") return type !== "crypto";
+    return true;
   });
 
-  useEffect(() => {
-    const found = availableSymbols.find(s => s.symbol === newSymbol);
-    if (found && found.name) {
-      setNewDescription(found.name);
-    } else {
-      setNewDescription("");
-    }
-  }, [newSymbol, availableSymbols]);
+  // No auto-description logic needed
 
   async function handleAddSymbol(e) {
     e.preventDefault();
@@ -74,12 +69,11 @@ function SymbolsTable() {
       const res = await fetch("http://localhost:4000/api/symbols", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ symbol: newSymbol, description: newDescription, asset_type: assetType })
+        body: JSON.stringify({ symbol: newSymbol })
       });
       if (!res.ok) throw new Error("Failed to add symbol");
       setShowForm(false);
       setNewSymbol("");
-      setNewDescription("");
       setAssetType("crypto");
       // Refresh symbols
       const symbolsRes = await fetch("http://localhost:4000/api/symbols");
@@ -147,6 +141,13 @@ function SymbolsTable() {
     return error ? <div style={{ color: 'red', marginBottom: 16 }}>Error: {error}</div> : null;
   }
 
+  // Filter symbols for table based on assetType
+  const filteredSymbols = symbols.filter(sym => {
+    if (assetType === "all") return true;
+    const type = sym.asset_type || sym.asset_class || "";
+    return type.toLowerCase() === assetType;
+  });
+
   return (
     <section style={{ padding: 24 }}>
       <h2>Symbols Table</h2>
@@ -176,17 +177,6 @@ function SymbolsTable() {
               </select>
             </label>
           </div>
-          <div style={{ marginBottom: 8 }}>
-            <label>Description: <input value={newDescription} onChange={e => setNewDescription(e.target.value)} style={{ marginLeft: 8, minWidth: 180 }}/></label>
-          </div>
-          <div style={{ marginBottom: 8 }}>
-            <label>Asset Type: 
-              <select value={assetType} onChange={e => setAssetType(e.target.value)} style={{ marginLeft: 8 }}>
-                <option value="crypto">Crypto</option>
-                <option value="etf">Non-Crypto</option>
-              </select>
-            </label>
-          </div>
           <button type="submit" disabled={submitting}>{submitting ? "Adding..." : "Add Symbol"}</button>
           {submitError && <div style={{ color: 'red', marginTop: 8 }}>{submitError}</div>}
         </form>
@@ -202,7 +192,7 @@ function SymbolsTable() {
           </tr>
         </thead>
         <tbody>
-          {symbols.map(sym => (
+          {filteredSymbols.map(sym => (
             editSymbol === sym.symbol ? (
               <tr key={sym.symbol} style={{ background: '#f5f5f5' }}>
                 <td>{sym.symbol}</td>
