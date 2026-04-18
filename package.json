@@ -2,7 +2,8 @@
   "scripts": {
     "dashboard:export": "python backend/data/export_dashboard_snapshot.py",
     "dashboard:dev": "npm --prefix frontend-react run dev",
-    "dashboard:build": "npm --prefix frontend-react run build"
+    "dashboard:build": "npm --prefix frontend-react run build",
+    "api:server": "node backend-api/index.js"
   },
   "dependencies": {
     "alpaca-mcp": "^1.0.2",
