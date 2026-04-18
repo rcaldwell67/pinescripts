@@ -1,3 +1,16 @@
+// GET active and tradable Alpaca symbols for dropdown
+app.get('/api/alpaca-symbols', async (req, res) => {
+  let conn;
+  try {
+    conn = await mysql.createConnection(dbConfig);
+    const [rows] = await conn.execute("SELECT symbol, name, asset_class, exchange FROM alpaca_symbols WHERE status='active' AND tradable=1 ORDER BY symbol ASC");
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    if (conn) await conn.end();
+  }
+});
 
 import dotenv from 'dotenv';
 dotenv.config();

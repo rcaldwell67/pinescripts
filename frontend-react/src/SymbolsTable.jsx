@@ -1,9 +1,10 @@
 
 
+
 import React, { useEffect, useState } from "react";
 
-export default function SymbolsTable() {
   const [symbols, setSymbols] = useState([]);
+  const [alpacaSymbols, setAlpacaSymbols] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -21,13 +22,16 @@ export default function SymbolsTable() {
   const [editError, setEditError] = useState(null);
 
 
-  // Compute available symbols for dropdown based on filter
-  const availableSymbols = symbols.filter(sym => {
+
+  // Compute available Alpaca symbols for dropdown based on filter
+  const availableSymbols = alpacaSymbols.filter(sym => {
     if (filter === "all") return true;
-    const type = sym.asset_type || sym.asset_class || "";
+    const type = sym.asset_class || sym.type || "";
     return type.toLowerCase() === filter;
   });
 
+
+  // Fetch symbols for table
   useEffect(() => {
     async function fetchSymbols() {
       try {
@@ -44,6 +48,21 @@ export default function SymbolsTable() {
     fetchSymbols();
   }, []);
 
+  // Fetch Alpaca symbols for add-symbol dropdown
+  useEffect(() => {
+    async function fetchAlpacaSymbols() {
+      try {
+        const res = await fetch("http://localhost:4000/api/alpaca-symbols");
+        if (!res.ok) throw new Error("Failed to load Alpaca symbols");
+        const data = await res.json();
+        setAlpacaSymbols(data || []);
+      } catch (err) {
+        /* Don't block UI if this fails */
+      }
+    }
+    fetchAlpacaSymbols();
+  }, []);
+
   const filteredSymbols = symbols.filter(sym => {
     if (filter === "all") return true;
     const type = sym.asset_type || sym.asset_class || "";
@@ -51,10 +70,11 @@ export default function SymbolsTable() {
   });
 
   // When symbol changes, auto-fill description if available
+
   useEffect(() => {
     const found = availableSymbols.find(s => s.symbol === newSymbol);
-    if (found && found.description) {
-      setNewDescription(found.description);
+    if (found && found.name) {
+      setNewDescription(found.name);
     } else {
       setNewDescription("");
     }
@@ -175,7 +195,14 @@ export default function SymbolsTable() {
         <form onSubmit={handleAddSymbol} style={{ marginBottom: 20, background: 'var(--bg-mid)', padding: 16, borderRadius: 8, maxWidth: 420 }}>
           <div style={{ marginBottom: 8 }}>
             <label>Symbol: 
-              <input value={newSymbol} onChange={e => setNewSymbol(e.target.value)} required style={{ marginLeft: 8, minWidth: 120 }} placeholder="Enter symbol" />
+              <select value={newSymbol} onChange={e => setNewSymbol(e.target.value)} required style={{ marginLeft: 8, minWidth: 120 }}>
+                <option value="">Select symbol...</option>
+                {availableSymbols.map(sym => (
+                  <option key={sym.symbol} value={sym.symbol}>
+                    {sym.symbol} - {sym.name || sym.exchange || sym.asset_class || sym.type}
+                  </option>
+                ))}
+              </select>
             </label>
           </div>
           <div style={{ marginBottom: 8 }}>

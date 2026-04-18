@@ -26,4 +26,4 @@
 - [X] Frontend Integration with MariaDB via backend-api
 this may require hosting on ionos server
 
-- [] Fix Symbols Section - should not load symbols that are not active
+- [X] Fix Symbols Section - should not load symbols that are not active
