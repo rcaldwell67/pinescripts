@@ -30,6 +30,12 @@ export default function SimulatedPaperTable() {
   if (error) return <div style={{ color: 'red' }}>Error: {error}</div>;
   if (!data) return null;
 
+  // Only show rows for v6, and only if there is at least one row
+  const v6Rows = Object.entries(data).flatMap(([symbol, results]) =>
+    results.filter(row => row.version === 'v6').map((row, i) => ({ symbol, ...row }))
+  );
+  if (v6Rows.length === 0) return <div>No simulated paper trading data available.</div>;
+
   return (
     <div style={{overflowX: 'auto'}}>
       <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 16 }}>
@@ -46,20 +52,18 @@ export default function SimulatedPaperTable() {
           </tr>
         </thead>
         <tbody>
-          {Object.entries(data).flatMap(([symbol, results]) =>
-            results.filter(row => row.version === 'v6').map((row, i) => (
-              <tr key={symbol + row.version}>
-                <td>{symbol}</td>
-                <td>{row.version}</td>
-                <td>{row.net_return_pct != null ? row.net_return_pct.toFixed(2) + '%' : '-'}</td>
-                <td>{row.win_rate != null ? row.win_rate.toFixed(1) + '%' : '-'}</td>
-                <td>{row.total_trades ?? '-'}</td>
-                <td>{row.max_drawdown != null ? row.max_drawdown.toFixed(2) + '%' : '-'}</td>
-                <td>{row.first_trade_date ?? '-'}</td>
-                <td>{row.last_trade_date ?? '-'}</td>
-              </tr>
-            ))
-          )}
+          {v6Rows.map((row, i) => (
+            <tr key={row.symbol + row.version}>
+              <td>{row.symbol}</td>
+              <td>{row.version}</td>
+              <td>{row.net_return_pct != null ? row.net_return_pct.toFixed(2) + '%' : '-'}</td>
+              <td>{row.win_rate != null ? row.win_rate.toFixed(1) + '%' : '-'}</td>
+              <td>{row.total_trades ?? '-'}</td>
+              <td>{row.max_drawdown != null ? row.max_drawdown.toFixed(2) + '%' : '-'}</td>
+              <td>{row.first_trade_date ?? '-'}</td>
+              <td>{row.last_trade_date ?? '-'}</td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>
