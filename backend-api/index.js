@@ -21,7 +21,7 @@ app.get('/api/symbols', async (req, res) => {
   let conn;
   try {
     conn = await mysql.createConnection(dbConfig);
-    const [rows] = await conn.execute('SELECT * FROM alpaca_symbols');
+    const [rows] = await conn.execute('SELECT * FROM alpaca_symbols WHERE isactive = 1');
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });

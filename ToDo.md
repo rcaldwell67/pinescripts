@@ -23,5 +23,7 @@
 - [X] Create tables from sqlite schema
 - [X] Set Connection String in App(encrypt/salt credentials)
 
-- [] Frontend Integration with MariaDB via backend-api
+- [X] Frontend Integration with MariaDB via backend-api
 this may require hosting on ionos server
+
+- [] Fix Symbols Section - should not load symbols that are not active
