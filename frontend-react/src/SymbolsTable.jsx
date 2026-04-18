@@ -66,10 +66,18 @@ function SymbolsTable() {
     setSubmitting(true);
     setSubmitError(null);
     try {
+      // Find the selected Alpaca symbol to get its asset_class
+      const selectedAlpaca = alpacaSymbols.find(sym => sym.symbol === newSymbol);
+      let asset_type = "";
+      if (selectedAlpaca) {
+        asset_type = (selectedAlpaca.asset_class || "").toLowerCase();
+        // Optionally map 'us_equity' to 'etf' if needed for filter
+        if (asset_type === "us_equity") asset_type = "etf";
+      }
       const res = await fetch("http://localhost:4000/api/symbols", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ symbol: newSymbol })
+        body: JSON.stringify({ symbol: newSymbol, asset_type })
       });
       if (!res.ok) throw new Error("Failed to add symbol");
       setShowForm(false);
