@@ -125,15 +125,23 @@ export default function SymbolsTable() {
             </tr>
           </thead>
           <tbody>
-            {filteredSymbols.map(sym => (
-              <tr key={sym.symbol_key || sym.symbol}>
-                <td style={{padding: '8px 12px'}}>{sym.symbol}</td>
-                <td style={{padding: '8px 12px'}}>{sym.description || '-'}</td>
-                <td style={{padding: '8px 12px'}}>{sym.asset_type || sym.asset_class || '-'}</td>
-                <td style={{padding: '8px 12px'}}>{sym.live_enabled !== undefined ? String(sym.live_enabled) : '-'}</td>
-                <td style={{padding: '8px 12px'}}>{sym.isactive !== undefined ? String(sym.isactive) : '-'}</td>
+            {filteredSymbols.length === 0 ? (
+              <tr>
+                <td colSpan={5} style={{ textAlign: 'center', padding: '16px', color: '#888' }}>
+                  No symbols found.
+                </td>
               </tr>
-            ))}
+            ) : (
+              filteredSymbols.map(sym => (
+                <tr key={sym.symbol_key || sym.symbol}>
+                  <td style={{padding: '8px 12px'}}>{sym.symbol}</td>
+                  <td style={{padding: '8px 12px'}}>{sym.description || '-'}</td>
+                  <td style={{padding: '8px 12px'}}>{sym.asset_type || sym.asset_class || '-'}</td>
+                  <td style={{padding: '8px 12px'}}>{sym.live_enabled !== undefined ? String(sym.live_enabled) : '-'}</td>
+                  <td style={{padding: '8px 12px'}}>{sym.isactive !== undefined ? String(sym.isactive) : '-'}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
