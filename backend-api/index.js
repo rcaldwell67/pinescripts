@@ -33,8 +33,11 @@ app.get('/api/alpaca-symbols', async (req, res) => {
 
 // CREATE symbol
 app.post('/api/symbols', async (req, res) => {
-  const { symbol, description, asset_type, live_enabled = 0 } = req.body;
+  let { symbol, description, asset_type, live_enabled = 0 } = req.body;
   if (!symbol) return res.status(400).json({ error: 'Symbol is required' });
+  // Provide defaults if not present
+  if (typeof description !== 'string') description = '';
+  if (typeof asset_type !== 'string') asset_type = '';
   let conn;
   try {
     conn = await mysql.createConnection(dbConfig);
