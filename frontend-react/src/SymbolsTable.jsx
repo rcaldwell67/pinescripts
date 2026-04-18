@@ -144,7 +144,9 @@ function SymbolsTable() {
     }
   }
 
-  if (loading) return <section style={{ padding: 24 }}>Loading symbols...</section>;
+  if (loading) {
+    return <section style={{ padding: 24 }}>Loading symbols...</section>;
+  }
 
   function renderError() {
     return error ? <div style={{ color: 'red', marginBottom: 16 }}>Error: {error}</div> : null;
