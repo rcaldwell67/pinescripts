@@ -8,13 +8,14 @@ export default function SimulatedPaperTable() {
   useEffect(() => {
     async function loadData() {
       try {
-        const res = await fetch("/pinescripts/data/paper_trading_results.json");
-        if (!res.ok) throw new Error("Failed to load paper_trading_results.json");
+        // Fetch from backend API endpoint (to be implemented)
+        const res = await fetch("http://localhost:4000/api/paper-trading-results");
+        if (!res.ok) throw new Error("Failed to load paper trading results from API");
         let json;
         try {
           json = await res.json();
         } catch (jsonErr) {
-          throw new Error("Invalid JSON in paper_trading_results.json");
+          throw new Error("Invalid JSON from paper trading results API");
         }
         setData(json);
       } catch (err) {

@@ -1,3 +1,22 @@
+// GET paper trading results (for SimulatedPaperTable)
+app.get('/api/paper-trading-results', async (req, res) => {
+  let conn;
+  try {
+    conn = await mysql.createConnection(dbConfig);
+    // Group results by symbol, return as { symbol: [ { ...row } ] }
+    const [rows] = await conn.execute("SELECT * FROM paper_trading_results ORDER BY symbol, version DESC, id DESC");
+    const grouped = {};
+    for (const row of rows) {
+      if (!grouped[row.symbol]) grouped[row.symbol] = [];
+      grouped[row.symbol].push(row);
+    }
+    res.json(grouped);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    if (conn) await conn.end();
+  }
+});
 
 import dotenv from 'dotenv';
 dotenv.config();
