@@ -17,6 +17,59 @@ const dbConfig = {
   port: process.env.MARIADB_PORT || 3306,
 };
 
+// CREATE symbol
+app.post('/api/symbols', async (req, res) => {
+  const { symbol, description, asset_type, live_enabled = 0 } = req.body;
+  if (!symbol) return res.status(400).json({ error: 'Symbol is required' });
+  let conn;
+  try {
+    conn = await mysql.createConnection(dbConfig);
+    await conn.execute(
+      'INSERT INTO symbols (symbol, description, asset_type, live_enabled, isactive) VALUES (?, ?, ?, ?, 1) ON DUPLICATE KEY UPDATE description=VALUES(description), asset_type=VALUES(asset_type), live_enabled=VALUES(live_enabled), isactive=1',
+      [symbol, description, asset_type, live_enabled]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    if (conn) await conn.end();
+  }
+});
+
+// UPDATE symbol (edit description, asset_type, live_enabled)
+app.put('/api/symbols/:symbol', async (req, res) => {
+  const { symbol } = req.params;
+  const { description, asset_type, live_enabled } = req.body;
+  let conn;
+  try {
+    conn = await mysql.createConnection(dbConfig);
+    await conn.execute(
+      'UPDATE symbols SET description=?, asset_type=?, live_enabled=? WHERE symbol=?',
+      [description, asset_type, live_enabled, symbol]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    if (conn) await conn.end();
+  }
+});
+
+// DEACTIVATE symbol (set isactive=0 instead of delete)
+app.patch('/api/symbols/:symbol/deactivate', async (req, res) => {
+  const { symbol } = req.params;
+  let conn;
+  try {
+    conn = await mysql.createConnection(dbConfig);
+    await conn.execute('UPDATE symbols SET isactive=0 WHERE symbol=?', [symbol]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    if (conn) await conn.end();
+  }
+});
+
 app.get('/api/symbols', async (req, res) => {
   let conn;
   try {
