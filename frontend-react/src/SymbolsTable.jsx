@@ -242,13 +242,3 @@ function SymbolsTable() {
 }
 
 export default SymbolsTable;
-              useEffect(() => {
-                const found = availableSymbols.find(s => s.symbol === newSymbol);
-                if (found && found.name) {
-                  setNewDescription(found.name);
-                } else {
-                  setNewDescription("");
-                }
-              }, [newSymbol, availableSymbols]);
-
-              // ...rest of the component logic and return...
