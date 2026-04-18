@@ -1,8 +1,7 @@
 
-
-
 import React, { useEffect, useState } from "react";
 
+function SymbolsTable() {
   const [symbols, setSymbols] = useState([]);
   const [alpacaSymbols, setAlpacaSymbols] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -11,30 +10,20 @@ import React, { useEffect, useState } from "react";
   const [newSymbol, setNewSymbol] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [assetType, setAssetType] = useState("crypto");
-  const [filter, setFilter] = useState("all");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
-  const [editSymbol, setEditSymbol] = useState(null); // symbol string
+  const [editSymbol, setEditSymbol] = useState(null);
   const [editDescription, setEditDescription] = useState("");
   const [editAssetType, setEditAssetType] = useState("");
   const [editLiveEnabled, setEditLiveEnabled] = useState(0);
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [editError, setEditError] = useState(null);
 
-
-
-  // Compute available Alpaca symbols for dropdown based on filter
-  const availableSymbols = alpacaSymbols.filter(sym => {
-    if (filter === "all") return true;
-    const type = sym.asset_class || sym.type || "";
-    return type.toLowerCase() === filter;
-  });
-
-
-  // Fetch symbols for table
   useEffect(() => {
     async function fetchSymbols() {
       try {
+        setLoading(true);
+        setError(null);
         const res = await fetch("http://localhost:4000/api/symbols");
         if (!res.ok) throw new Error("Failed to load symbols from backend API");
         const data = await res.json();
@@ -48,7 +37,6 @@ import React, { useEffect, useState } from "react";
     fetchSymbols();
   }, []);
 
-  // Fetch Alpaca symbols for add-symbol dropdown
   useEffect(() => {
     async function fetchAlpacaSymbols() {
       try {
@@ -57,19 +45,17 @@ import React, { useEffect, useState } from "react";
         const data = await res.json();
         setAlpacaSymbols(data || []);
       } catch (err) {
-        /* Don't block UI if this fails */
+        // Don't block UI if this fails
       }
     }
     fetchAlpacaSymbols();
   }, []);
 
-  const filteredSymbols = symbols.filter(sym => {
-    if (filter === "all") return true;
-    const type = sym.asset_type || sym.asset_class || "";
-    return type.toLowerCase() === filter;
+  const availableSymbols = alpacaSymbols.filter(sym => {
+    if (assetType === "all") return true;
+    const type = sym.asset_class || sym.type || "";
+    return type.toLowerCase() === assetType;
   });
-
-  // When symbol changes, auto-fill description if available
 
   useEffect(() => {
     const found = availableSymbols.find(s => s.symbol === newSymbol);
@@ -79,9 +65,6 @@ import React, { useEffect, useState } from "react";
       setNewDescription("");
     }
   }, [newSymbol, availableSymbols]);
-
-  // ...rest of the component logic and return...
-
 
   async function handleAddSymbol(e) {
     e.preventDefault();
@@ -99,26 +82,12 @@ import React, { useEffect, useState } from "react";
       setNewDescription("");
       setAssetType("crypto");
       // Refresh symbols
-      await fetchSymbols();
+      const symbolsRes = await fetch("http://localhost:4000/api/symbols");
+      setSymbols(await symbolsRes.json());
     } catch (err) {
       setSubmitError("Failed to add symbol");
     } finally {
       setSubmitting(false);
-    }
-  }
-
-  async function fetchSymbols() {
-    try {
-      setLoading(true);
-      setError(null);
-      const res = await fetch("http://localhost:4000/api/symbols");
-      if (!res.ok) throw new Error("Failed to load symbols from backend API");
-      const data = await res.json();
-      setSymbols(data || []);
-    } catch (err) {
-      setError(err.message || "Unknown error");
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -150,7 +119,8 @@ import React, { useEffect, useState } from "react";
       });
       if (!res.ok) throw new Error("Failed to update symbol");
       cancelEdit();
-      await fetchSymbols();
+      const symbolsRes = await fetch("http://localhost:4000/api/symbols");
+      setSymbols(await symbolsRes.json());
     } catch (err) {
       setEditError("Failed to update symbol");
     } finally {
@@ -164,7 +134,8 @@ import React, { useEffect, useState } from "react";
       await fetch(`http://localhost:4000/api/symbols/${encodeURIComponent(sym.symbol)}/deactivate`, {
         method: "PATCH"
       });
-      await fetchSymbols();
+      const symbolsRes = await fetch("http://localhost:4000/api/symbols");
+      setSymbols(await symbolsRes.json());
     } catch (err) {
       alert("Failed to deactivate symbol");
     }
@@ -185,7 +156,7 @@ import React, { useEffect, useState } from "react";
           {showForm ? "Cancel" : "Add Symbol"}
         </button>
         <span>Filter: </span>
-        <select value={filter} onChange={e => setFilter(e.target.value)} style={{ marginLeft: 8 }}>
+        <select value={assetType} onChange={e => setAssetType(e.target.value)} style={{ marginLeft: 8 }}>
           <option value="all">All</option>
           <option value="crypto">Crypto</option>
           <option value="etf">Non-Crypto</option>
@@ -209,80 +180,75 @@ import React, { useEffect, useState } from "react";
             <label>Description: <input value={newDescription} onChange={e => setNewDescription(e.target.value)} style={{ marginLeft: 8, minWidth: 180 }}/></label>
           </div>
           <div style={{ marginBottom: 8 }}>
-            <label>Asset Type: </label>
-            <select value={assetType} onChange={e => setAssetType(e.target.value)} style={{ marginLeft: 8 }}>
-              <option value="crypto">Crypto</option>
-              <option value="etf">Non-Crypto</option>
-            </select>
+            <label>Asset Type: 
+              <select value={assetType} onChange={e => setAssetType(e.target.value)} style={{ marginLeft: 8 }}>
+                <option value="crypto">Crypto</option>
+                <option value="etf">Non-Crypto</option>
+              </select>
+            </label>
           </div>
-          <button type="submit" disabled={submitting || !newSymbol}>{submitting ? "Adding..." : "Add Symbol"}</button>
-          {submitError && <span style={{ color: 'red', marginLeft: 12 }}>{submitError}</span>}
+          <button type="submit" disabled={submitting}>{submitting ? "Adding..." : "Add Symbol"}</button>
+          {submitError && <div style={{ color: 'red', marginTop: 8 }}>{submitError}</div>}
         </form>
       )}
-
-      {editSymbol && (
-        <form onSubmit={handleEditSubmit} style={{ marginBottom: 20, background: '#f7f7f7', padding: 16, borderRadius: 8, maxWidth: 420 }}>
-          <h4>Edit Symbol: {editSymbol}</h4>
-          <div style={{ marginBottom: 8 }}>
-            <label>Description: <input value={editDescription} onChange={e => setEditDescription(e.target.value)} style={{ marginLeft: 8, minWidth: 180 }}/></label>
-          </div>
-          <div style={{ marginBottom: 8 }}>
-            <label>Asset Type: </label>
-            <select value={editAssetType} onChange={e => setEditAssetType(e.target.value)} style={{ marginLeft: 8 }}>
-              <option value="crypto">Crypto</option>
-              <option value="etf">Non-Crypto</option>
-            </select>
-          </div>
-          <div style={{ marginBottom: 8 }}>
-            <label>Live Enabled: </label>
-            <select value={editLiveEnabled} onChange={e => setEditLiveEnabled(Number(e.target.value))} style={{ marginLeft: 8 }}>
-              <option value={0}>No</option>
-              <option value={1}>Yes</option>
-            </select>
-          </div>
-          <button type="submit" disabled={editSubmitting}>{editSubmitting ? "Saving..." : "Save"}</button>
-          <button type="button" onClick={cancelEdit} style={{ marginLeft: 12 }}>Cancel</button>
-          {editError && <span style={{ color: 'red', marginLeft: 12 }}>{editError}</span>}
-        </form>
-      )}
-
-      <div style={{overflowX: 'auto'}}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 16 }}>
-          <thead>
-            <tr style={{background: 'var(--bg-mid)'}}>
-              <th style={{padding: '8px 12px', textAlign: 'left'}}>Symbol</th>
-              <th style={{padding: '8px 12px', textAlign: 'left'}}>Description</th>
-              <th style={{padding: '8px 12px', textAlign: 'left'}}>Asset Type</th>
-              <th style={{padding: '8px 12px', textAlign: 'left'}}>Live Enabled</th>
-              <th style={{padding: '8px 12px', textAlign: 'left'}}>Is Active</th>
-              <th style={{padding: '8px 12px', textAlign: 'left'}}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredSymbols.length === 0 ? (
-              <tr>
-                <td colSpan={6} style={{ textAlign: 'center', padding: '16px', color: '#888' }}>
-                  No symbols found.
+      <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 16 }}>
+        <thead>
+          <tr>
+            <th>Symbol</th>
+            <th>Description</th>
+            <th>Asset Type</th>
+            <th>Live Enabled</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {symbols.map(sym => (
+            editSymbol === sym.symbol ? (
+              <tr key={sym.symbol} style={{ background: '#f5f5f5' }}>
+                <td>{sym.symbol}</td>
+                <td><input value={editDescription} onChange={e => setEditDescription(e.target.value)} /></td>
+                <td>
+                  <select value={editAssetType} onChange={e => setEditAssetType(e.target.value)}>
+                    <option value="crypto">Crypto</option>
+                    <option value="etf">Non-Crypto</option>
+                  </select>
+                </td>
+                <td>
+                  <input type="checkbox" checked={!!editLiveEnabled} onChange={e => setEditLiveEnabled(e.target.checked ? 1 : 0)} />
+                </td>
+                <td>
+                  <button onClick={handleEditSubmit} disabled={editSubmitting}>Save</button>
+                  <button onClick={cancelEdit} style={{ marginLeft: 8 }}>Cancel</button>
+                  {editError && <div style={{ color: 'red' }}>{editError}</div>}
                 </td>
               </tr>
             ) : (
-              filteredSymbols.map(sym => (
-                <tr key={sym.symbol_key || sym.symbol}>
-                  <td style={{padding: '8px 12px'}}>{sym.symbol}</td>
-                  <td style={{padding: '8px 12px'}}>{sym.description || '-'}</td>
-                  <td style={{padding: '8px 12px'}}>{sym.asset_type || sym.asset_class || '-'}</td>
-                  <td style={{padding: '8px 12px'}}>{sym.live_enabled !== undefined ? String(sym.live_enabled) : '-'}</td>
-                  <td style={{padding: '8px 12px'}}>{sym.isactive !== undefined ? String(sym.isactive) : '-'}</td>
-                  <td style={{padding: '8px 12px'}}>
-                    <button onClick={() => startEditSymbol(sym)} style={{ marginRight: 8 }}>Edit</button>
-                    <button onClick={() => handleDeactivate(sym)} disabled={sym.isactive === 0} style={{ color: sym.isactive === 0 ? '#aaa' : '#a00' }}>Deactivate</button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              <tr key={sym.symbol}>
+                <td>{sym.symbol}</td>
+                <td>{sym.description}</td>
+                <td>{sym.asset_type || sym.asset_class}</td>
+                <td>{sym.live_enabled ? "Yes" : "No"}</td>
+                <td>
+                  <button onClick={() => startEditSymbol(sym)}>Edit</button>
+                  <button onClick={() => handleDeactivate(sym)} style={{ marginLeft: 8 }}>Deactivate</button>
+                </td>
+              </tr>
+            )
+          ))}
+        </tbody>
+      </table>
     </section>
   );
 }
+
+export default SymbolsTable;
+              useEffect(() => {
+                const found = availableSymbols.find(s => s.symbol === newSymbol);
+                if (found && found.name) {
+                  setNewDescription(found.name);
+                } else {
+                  setNewDescription("");
+                }
+              }, [newSymbol, availableSymbols]);
+
+              // ...rest of the component logic and return...
