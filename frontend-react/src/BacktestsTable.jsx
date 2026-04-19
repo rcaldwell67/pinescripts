@@ -59,7 +59,8 @@ export default function BacktestsTable() {
   const [assetTypeFilter, setAssetTypeFilter] = useState('');
   const [symbolFilter, setSymbolFilter] = useState('');
   const [guidelineStatus, setGuidelineStatus] = useState('');
-  const [timespan, setTimespan] = useState('YTD');
+  // Add 'All' as the default timespan
+  const [timespan, setTimespan] = useState('All');
 
   useEffect(() => {
     async function loadSnapshot() {
@@ -108,6 +109,8 @@ export default function BacktestsTable() {
       if (guidelineStatus === 'pass' && !(audit && audit.passed)) return false;
       if (guidelineStatus === 'fail' && !(audit && !audit.passed)) return false;
     }
+    // Timespan filter: if 'All', show all, else filter by timespan if available in result
+    if (timespan !== 'All' && result && result.timespan && result.timespan !== timespan) return false;
     return true;
   });
 
@@ -118,6 +121,7 @@ export default function BacktestsTable() {
         <label>
           Timespan:
           <select value={timespan} onChange={e => setTimespan(e.target.value)} style={{ marginLeft: 8 }}>
+            <option value="All">All</option>
             <option value="YTD">YTD</option>
             <option value="MTD">MTD</option>
             <option value="WTD">WTD</option>

@@ -18,7 +18,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import sqlite3
+import mysql.connector
 import sys
 import logging
 try:
@@ -61,7 +61,19 @@ except ImportError:
 ALPACA_API_KEY    = os.getenv("ALPACA_API_KEY")    or os.getenv("ALPACA_PAPER_API_KEY")
 ALPACA_API_SECRET = os.getenv("ALPACA_API_SECRET") or os.getenv("ALPACA_PAPER_API_SECRET")
 
-DB_PATH = REPO_ROOT / "frontend-react" / "public" / "data" / "tradingcopilot.db"
+
+# MariaDB connection helper
+def get_db_conn():
+    import dotenv
+    dotenv.load_dotenv(REPO_ROOT / ".env")
+    import os
+    return mysql.connector.connect(
+        host=os.environ.get("MARIADB_HOST", "localhost"),
+        user=os.environ.get("MARIADB_USER", "root"),
+        password=os.environ.get("MARIADB_PASSWORD", ""),
+        database=os.environ.get("MARIADB_DATABASE", "tradingcopilot"),
+        port=int(os.environ.get("MARIADB_PORT", 3306)),
+    )
 
 VERSION_MAP: dict[str, str] = {
     "v1": "APM v1.0-5m",
@@ -498,6 +510,7 @@ def save_to_db(symbol: str, version: str,
         trades: DataFrame of trades.
         df: DataFrame of OHLCV data.
     """
+
     if trades.empty:
         print("No trades generated — skipping DB write.")
         return
@@ -544,31 +557,27 @@ def save_to_db(symbol: str, version: str,
     }
     print("[DEBUG] Metrics to serialize:", metrics)
 
-    conn = sqlite3.connect(str(DB_PATH), timeout=30)
-    conn.execute("PRAGMA journal_mode=DELETE")
-    ensure_result_tables_have_current_equity(conn)
-    try:
-        conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
-    except sqlite3.OperationalError:
-        pass
+    # Use MariaDB for persistence
+    conn = get_db_conn()
+    cur = conn.cursor()
 
     # Replace the existing summary row for this symbol+version (if any)
     notes = f"{VERSION_MAP.get(version, version)} backtest summary"
-    conn.execute(
-        "DELETE FROM backtest_results WHERE symbol = ? AND notes LIKE ?",
+    cur.execute(
+        "DELETE FROM backtest_results WHERE symbol = %s AND notes LIKE %s",
         (symbol, f"%{VERSION_MAP.get(version, version)}%"),
     )
-    conn.execute(
-        "INSERT INTO backtest_results (symbol, metrics, notes, current_equity) VALUES (?, ?, ?, ?)",
+    cur.execute(
+        "INSERT INTO backtest_results (symbol, metrics, notes, current_equity) VALUES (%s, %s, %s, %s)",
         (symbol, json.dumps(metrics), notes, float(final_equity)),
     )
 
     norm_symbol = "".join(ch for ch in symbol.upper() if ch.isalnum())
-    conn.execute(
+    cur.execute(
         """
         DELETE FROM trades
-        WHERE REPLACE(REPLACE(REPLACE(REPLACE(UPPER(symbol), '/', ''), '_', ''), '-', ''), ' ', '') = ?
-          AND LOWER(version) = ?
+        WHERE REPLACE(REPLACE(REPLACE(REPLACE(UPPER(symbol), '/', ''), '_', ''), '-', ''), ' ', '') = %s
+          AND LOWER(version) = %s
           AND mode = 'backtest'
         """,
         (norm_symbol, version),
@@ -578,6 +587,13 @@ def save_to_db(symbol: str, version: str,
     for _, trade in trades.iterrows():
         entry_time = _timestamp_at(df, trade.get("entry_idx"))
         exit_time = _timestamp_at(df, trade.get("exit_idx"))
+        # MariaDB DATETIME does not accept timezone info, so strip it if present
+        def strip_tz(dt):
+            if dt and isinstance(dt, str) and "+" in dt:
+                return dt.split("+")[0].strip()
+            return dt
+        entry_time = strip_tz(entry_time)
+        exit_time = strip_tz(exit_time)
         entry_price = float(trade.get("entry", trade.get("entry_price", 0.0)) or 0.0)
         exit_price = float(trade.get("exit", trade.get("exit_price", 0.0)) or 0.0)
         dollar_pnl = float(trade.get("pnl", trade.get("dollar_pnl", 0.0)) or 0.0)
@@ -607,12 +623,12 @@ def save_to_db(symbol: str, version: str,
         )
 
     if trade_rows:
-        conn.executemany(
+        cur.executemany(
             """
             INSERT INTO trades (
                 symbol, version, mode, entry_time, exit_time, direction,
                 entry_price, exit_price, result, pnl_pct, dollar_pnl, equity, source
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
             trade_rows,
         )
@@ -644,12 +660,15 @@ def main() -> int:
         print(f"ERROR: version {version!r} is not implemented. Valid: {list(VERSION_MAP)}", file=sys.stderr)
         return 1
 
+
     # Determine symbols to process
     if args.all_symbols:
-        # Load all active symbols from DB
-        conn = sqlite3.connect(str(DB_PATH), timeout=30)
+        # Load all active symbols from MariaDB
+        conn = get_db_conn()
         try:
-            rows = conn.execute("SELECT symbol FROM symbols WHERE isactive=1").fetchall()
+            cur = conn.cursor()
+            cur.execute("SELECT symbol FROM symbols WHERE isactive=1")
+            rows = cur.fetchall()
             symbols = [row[0] for row in rows]
         finally:
             conn.close()
