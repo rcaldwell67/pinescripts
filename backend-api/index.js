@@ -1,3 +1,22 @@
+
+import dotenv from 'dotenv';
+dotenv.config();
+import express from 'express';
+import mysql from 'mysql2/promise';
+import cors from 'cors';
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+const dbConfig = {
+  host: process.env.MARIADB_HOST || 'localhost',
+  user: process.env.MARIADB_USER || 'root',
+  password: process.env.MARIADB_PASSWORD || '',
+  database: process.env.MARIADB_DATABASE || 'tradingcopilot',
+  port: process.env.MARIADB_PORT || 3306,
+};
+
 // GET paper trading results (for SimulatedPaperTable)
 app.get('/api/paper-trading-results', async (req, res) => {
   let conn;
@@ -17,24 +36,6 @@ app.get('/api/paper-trading-results', async (req, res) => {
     if (conn) await conn.end();
   }
 });
-
-import dotenv from 'dotenv';
-dotenv.config();
-import express from 'express';
-import mysql from 'mysql2/promise';
-import cors from 'cors';
-
-const app = express();
-app.use(cors());
-app.use(express.json());
-
-const dbConfig = {
-  host: process.env.MARIADB_HOST || 'localhost',
-  user: process.env.MARIADB_USER || 'root',
-  password: process.env.MARIADB_PASSWORD || '',
-  database: process.env.MARIADB_DATABASE || 'tradingcopilot',
-  port: process.env.MARIADB_PORT || 3306,
-};
 
 // GET active and tradable Alpaca symbols for dropdown
 app.get('/api/alpaca-symbols', async (req, res) => {
