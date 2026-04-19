@@ -1,7 +1,11 @@
 """Remove a symbol from the symbols table in tradingcopilot.db."""
+
 import sys
 import os
-import sqlite3
+import mysql.connector
+from dotenv import load_dotenv
+
+load_dotenv(os.path.join(os.path.dirname(__file__), '../../.env'))
 
 def main():
     if len(sys.argv) < 2:
@@ -10,21 +14,27 @@ def main():
 
     symbol = sys.argv[1].upper().strip()
 
-    db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../frontend-react/public/data/tradingcopilot.db'))
-    if not os.path.exists(db_path):
-        print(f"Error: tradingcopilot.db not found at {db_path}.")
-        sys.exit(1)
-    conn = sqlite3.connect(db_path)
+
+    def get_db_conn():
+        return mysql.connector.connect(
+            host=os.environ.get("MARIADB_HOST", "localhost"),
+            user=os.environ.get("MARIADB_USER", "root"),
+            password=os.environ.get("MARIADB_PASSWORD", ""),
+            database=os.environ.get("MARIADB_DATABASE", "tradingcopilot"),
+            port=int(os.environ.get("MARIADB_PORT", 3306)),
+        )
+
+    conn = get_db_conn()
     c = conn.cursor()
 
-    c.execute('SELECT symbol FROM symbols WHERE symbol = ?', (symbol,))
+    c.execute('SELECT symbol FROM symbols WHERE symbol = %s', (symbol,))
     row = c.fetchone()
     if not row:
         print(f"Symbol {symbol} not found in database.")
         conn.close()
         sys.exit(1)
 
-    c.execute('DELETE FROM symbols WHERE symbol = ?', (symbol,))
+    c.execute('DELETE FROM symbols WHERE symbol = %s', (symbol,))
     conn.commit()
     conn.close()
     print(f"Symbol {symbol} removed from database.")

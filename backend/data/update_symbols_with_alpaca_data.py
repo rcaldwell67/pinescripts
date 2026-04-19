@@ -2,7 +2,7 @@
 
 import requests
 import os
-import sqlite3
+import mysql.connector
 import json
 import logging
 from dotenv import load_dotenv
@@ -20,7 +20,15 @@ HEADERS = {
 }
 
 ALPACA_ASSETS_URL = 'https://paper-api.alpaca.markets/v2/assets'
-DB_PATH = './frontend-react/public/data/tradingcopilot.db'
+
+def get_db_conn():
+    return mysql.connector.connect(
+        host=os.environ.get("MARIADB_HOST", "localhost"),
+        user=os.environ.get("MARIADB_USER", "root"),
+        password=os.environ.get("MARIADB_PASSWORD", ""),
+        database=os.environ.get("MARIADB_DATABASE", "tradingcopilot"),
+        port=int(os.environ.get("MARIADB_PORT", 3306)),
+    )
 
 def update_symbols_table_with_alpaca_data():
     try:
@@ -33,12 +41,12 @@ def update_symbols_table_with_alpaca_data():
 
     conn = None
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn = get_db_conn()
         cur = conn.cursor()
         for asset in assets:
             symbol = asset['symbol']
             # Check if symbol exists
-            cur.execute('SELECT COUNT(*) FROM symbols WHERE symbol = ?', (symbol,))
+            cur.execute('SELECT COUNT(*) FROM symbols WHERE symbol = %s', (symbol,))
             exists = cur.fetchone()[0] > 0
             if not exists:
                 description = asset.get('name', '')
@@ -46,7 +54,7 @@ def update_symbols_table_with_alpaca_data():
                 live_enabled = 0
                 isactive = 0
                 try:
-                    cur.execute('INSERT INTO symbols (symbol, description, asset_type, live_enabled, isactive) VALUES (?, ?, ?, ?, ?)',
+                    cur.execute('INSERT INTO symbols (symbol, description, asset_type, live_enabled, isactive) VALUES (%s, %s, %s, %s, %s)',
                                 (symbol, description, asset_type, live_enabled, isactive))
                 except Exception as e:
                     logger.warning(f'Could not insert {symbol}: {e}')
@@ -56,7 +64,7 @@ def update_symbols_table_with_alpaca_data():
                     continue
                 try:
                     value = json.dumps(v) if isinstance(v, (dict, list)) else v
-                    cur.execute(f'UPDATE symbols SET {k}=? WHERE symbol=?', (value, symbol))
+                    cur.execute(f'UPDATE symbols SET {k}=%s WHERE symbol=%s', (value, symbol))
                 except Exception as e:
                     logger.warning(f'Could not update {k} for {symbol}: {e}')
         conn.commit()

@@ -8,10 +8,22 @@ Usage:
 Add new CSV files to TRADE_FILES to import additional symbols/versions.
 """
 import csv
-import sqlite3
+import mysql.connector
 import os
 
-DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../frontend-react/public/data/tradingcopilot.db'))
+
+import dotenv
+dotenv.load_dotenv(os.path.join(os.path.dirname(__file__), '../../.env'))
+
+def get_db_conn():
+    import os
+    return mysql.connector.connect(
+        host=os.environ.get("MARIADB_HOST", "localhost"),
+        user=os.environ.get("MARIADB_USER", "root"),
+        password=os.environ.get("MARIADB_PASSWORD", ""),
+        database=os.environ.get("MARIADB_DATABASE", "tradingcopilot"),
+        port=int(os.environ.get("MARIADB_PORT", 3306)),
+    )
 
 # Each entry maps a CSV file to symbol + version + mode.
 # Uses root-level naming convention apm_v*_trades.csv for BTC_USD.
@@ -40,24 +52,8 @@ CSV_TO_DB = {
 
 
 def ensure_trades_table(conn):
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS trades (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            symbol TEXT NOT NULL,
-            version TEXT NOT NULL DEFAULT 'v1',
-            mode TEXT NOT NULL DEFAULT 'backtest',
-            entry_time DATETIME,
-            exit_time DATETIME,
-            direction TEXT,
-            entry_price REAL,
-            exit_price REAL,
-            result TEXT,
-            pnl_pct REAL,
-            dollar_pnl REAL,
-            equity REAL
-        )
-    ''')
-    conn.commit()
+    # Table creation is assumed to be handled by migrations; skip for MariaDB
+    pass
 
 
 def import_csv(conn, csv_path, symbol, version, mode):
@@ -65,14 +61,15 @@ def import_csv(conn, csv_path, symbol, version, mode):
         print(f'WARNING: {csv_path} not found, skipping.')
         return 0
 
+    cur = conn.cursor()
     # Delete existing rows for this symbol/version/mode to allow re-import
-    conn.execute(
-        'DELETE FROM trades WHERE symbol = ? AND version = ? AND mode = ?',
+    cur.execute(
+        'DELETE FROM trades WHERE symbol = %s AND version = %s AND mode = %s',
         (symbol, version, mode)
     )
 
     db_cols = ['symbol', 'version', 'mode'] + list(CSV_TO_DB.values())
-    placeholders = ', '.join(['?'] * len(db_cols))
+    placeholders = ', '.join(['%s'] * len(db_cols))
     insert_sql = f'INSERT INTO trades ({", ".join(db_cols)}) VALUES ({placeholders})'
 
     count = 0
@@ -89,7 +86,7 @@ def import_csv(conn, csv_path, symbol, version, mode):
                         values.append(float(val) if '.' in val or 'e' in val.lower() else val)
                     except (ValueError, AttributeError):
                         values.append(val)
-            conn.execute(insert_sql, values)
+            cur.execute(insert_sql, values)
             count += 1
 
     conn.commit()
@@ -97,7 +94,7 @@ def import_csv(conn, csv_path, symbol, version, mode):
 
 
 def main():
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_conn()
     ensure_trades_table(conn)
 
     for entry in TRADE_FILES:

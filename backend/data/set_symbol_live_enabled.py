@@ -1,13 +1,23 @@
 """Enable/disable live trading for a symbol in tradingcopilot.db."""
 
+
 import os
-import sqlite3
 import sys
+import mysql.connector
+from dotenv import load_dotenv
+
+load_dotenv(os.path.join(os.path.dirname(__file__), '../../.env'))
 
 
-DB_PATH = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "../../frontend-react/public/data/tradingcopilot.db")
-)
+
+def get_db_conn():
+    return mysql.connector.connect(
+        host=os.environ.get("MARIADB_HOST", "localhost"),
+        user=os.environ.get("MARIADB_USER", "root"),
+        password=os.environ.get("MARIADB_PASSWORD", ""),
+        database=os.environ.get("MARIADB_DATABASE", "tradingcopilot"),
+        port=int(os.environ.get("MARIADB_PORT", 3306)),
+    )
 
 
 def _parse_bool(value: str) -> bool:
@@ -19,25 +29,19 @@ def _parse_bool(value: str) -> bool:
     raise ValueError(f"Unsupported boolean value: {value!r}")
 
 
-def set_symbol_live_enabled(symbol: str, live_enabled: bool) -> int:
-    import shutil
-    conn = sqlite3.connect(DB_PATH)
-    try:
-        conn.execute(
-            "ALTER TABLE symbols ADD COLUMN live_enabled INTEGER NOT NULL DEFAULT 1"
-        )
-    except sqlite3.OperationalError:
-        # Column already exists.
-        pass
 
-    cur = conn.execute(
-        "UPDATE symbols SET live_enabled = ? WHERE UPPER(symbol) = UPPER(?)",
+def set_symbol_live_enabled(symbol: str, live_enabled: bool) -> int:
+    conn = get_db_conn()
+    cur = conn.cursor()
+    # MariaDB: Use %s for parameters, and IFNULL for default
+    cur.execute(
+        "UPDATE symbols SET live_enabled = %s WHERE UPPER(symbol) = UPPER(%s)",
         (1 if live_enabled else 0, symbol),
     )
     conn.commit()
+    rowcount = cur.rowcount
     conn.close()
-    # No need to copy DB, canonical location is already used
-    return cur.rowcount
+    return rowcount
 
 
 def main() -> int:

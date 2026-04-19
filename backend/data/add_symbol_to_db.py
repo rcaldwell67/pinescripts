@@ -1,22 +1,36 @@
-import sqlite3
+
+import mysql.connector
 import os
 import sys
+from dotenv import load_dotenv
 
+load_dotenv(os.path.join(os.path.dirname(__file__), '../../.env'))
+
+
+
+def get_db_conn():
+    return mysql.connector.connect(
+        host=os.environ.get("MARIADB_HOST", "localhost"),
+        user=os.environ.get("MARIADB_USER", "root"),
+        password=os.environ.get("MARIADB_PASSWORD", ""),
+        database=os.environ.get("MARIADB_DATABASE", "tradingcopilot"),
+        port=int(os.environ.get("MARIADB_PORT", 3306)),
+    )
 
 def add_symbol(symbol, description=None, isactive=1, asset_type=None):
-    db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../frontend-react/public/data/tradingcopilot.db'))
-    conn = sqlite3.connect(db_path)
+    conn = get_db_conn()
     c = conn.cursor()
     try:
+        # MariaDB uses %s for parameter placeholders
         c.execute(
             '''
             INSERT INTO symbols (symbol, description, isactive, asset_type, live_enabled)
-            VALUES (?, ?, ?, ?, 0)
-            ON CONFLICT(symbol) DO UPDATE SET
-              description = COALESCE(excluded.description, symbols.description),
-              isactive = excluded.isactive,
-              asset_type = COALESCE(excluded.asset_type, symbols.asset_type),
-              live_enabled = symbols.live_enabled
+            VALUES (%s, %s, %s, %s, 0)
+            ON DUPLICATE KEY UPDATE
+              description = COALESCE(VALUES(description), description),
+              isactive = VALUES(isactive),
+              asset_type = COALESCE(VALUES(asset_type), asset_type),
+              live_enabled = live_enabled
             ''',
             (symbol, description, isactive, asset_type),
         )
