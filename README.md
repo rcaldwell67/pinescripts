@@ -238,3 +238,15 @@ Guideline reports and CI workflows enforce threshold compliance before profile p
 - Prefer reproducible profile closures over ad-hoc parameter edits.
 - Investigate persistent near-miss clusters by failed stage (for example, bullish_stack or bearish_stack) before changing thresholds.
 - Preserve risk controls first; tune entry gates second.
+
+## TradingStrategy Constraints & Adjustments
+- To ensure you hit those specific targets during your backtest, keep these nuances in mind:
+
+## Max Drawdown (< 4.5%)
+- Controlled by Position Sizing. By only committing 20% of your wallet to a single trade, even a 10% flash crash on BTC only results in a 2% total account drawdown.
+
+## Win Rate (> 65%)
+- Achieved by the Trend Filter. RSI buy signals are notoriously fake during bear markets; only buying during a macro uptrend (Price > EMA 200) filters out the "losing" oversold signals.
+
+## Net Return (> 15%)
+- Dependent on Volatility. This strategy relies on "compounding" small wins. In a YTD context, BTC usually provides enough RSI oscillations to hit this return within 4-5 months.

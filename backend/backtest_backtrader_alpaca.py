@@ -492,8 +492,9 @@ def run_backtest(
         from v6_params import get_v6_params
         return backtest_apm_v2(df, params=get_v6_params(symbol=symbol, profile=profile))
     if version == "v7":
-        from strategy_generator.v7.apm_v7 import run_v7_backtest
-        from strategy_generator.v7.apm_v7 import get_v7_params
+        import sys, os
+        sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'strategy_generator/v7')))
+        from apm_v7 import run_v7_backtest, get_v7_params
         return run_v7_backtest(df, get_v7_params(symbol=symbol))
     if version == "universal":
         from strategy_generator.apm_universal_backtest import backtest_apm_universal
