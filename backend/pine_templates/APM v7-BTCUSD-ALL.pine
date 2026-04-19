@@ -1,0 +1,46 @@
+//@version=6
+// APM v7 (BTC/USD, all timespans)
+// Combines v1–v6 logic, multi-factor entry, symbol-specific
+
+indicator("APM v7 BTC/USD ALL", overlay=true)
+
+// === INPUTS ===
+ema_fast = input.int(8, "EMA Fast")
+ema_mid = input.int(21, "EMA Mid")
+ema_slow = input.int(55, "EMA Slow")
+rsi_len = input.int(14, "RSI Length")
+atr_len = input.int(14, "ATR Length")
+atr_baseline_len = input.int(100, "ATR Baseline Length")
+volume_sma_len = input.int(20, "Volume SMA Length")
+
+// === INDICATORS ===
+emaFast = ta.ema(close, ema_fast)
+emaMid = ta.ema(close, ema_mid)
+emaSlow = ta.ema(close, ema_slow)
+rsiVal = ta.rsi(close, rsi_len)
+atrVal = ta.atr(atr_len)
+atrBaseline = ta.sma(atrVal, atr_baseline_len)
+volSMA = ta.sma(volume, volume_sma_len)
+[macdLine, macdSignal, macdHist] = ta.macd(close, 12, 26, 9)
+stochK = ta.stoch(close, high, low, 14)
+stochD = ta.sma(stochK, 3)
+cciVal = ta.cci(close, 20)
+
+// === MULTI-FACTOR ENTRY LOGIC ===
+trend_ok = emaFast > emaMid and emaMid > emaSlow
+rsi_ok = rsiVal > 40 and rsiVal < 70
+macd_ok = macdLine > macdSignal
+stoch_ok = stochK > 20 and stochD > 20
+cci_ok = cciVal > -100 and cciVal < 100
+factor_count = (trend_ok ? 1 : 0) + (rsi_ok ? 1 : 0) + (macd_ok ? 1 : 0) + (stoch_ok ? 1 : 0) + (cci_ok ? 1 : 0)
+entry = factor_count >= 3
+
+// === PLOTTING ===
+plotshape(entry, style=shape.triangleup, location=location.belowbar, color=color.green, size=size.tiny, title="Entry Signal")
+plot(emaFast, color=color.blue, title="EMA Fast")
+plot(emaMid, color=color.orange, title="EMA Mid")
+plot(emaSlow, color=color.red, title="EMA Slow")
+
+// === STRATEGY (optional) ===
+// strategy.entry("Long", strategy.long, when=entry)
+// Add exit logic as needed

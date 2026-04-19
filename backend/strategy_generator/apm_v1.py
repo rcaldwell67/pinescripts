@@ -61,7 +61,48 @@ def dmi(df, length):
 
 
 def _prepare_signal_frame(df, params):
+    # --- Additional indicators: MACD, Stochastic, CCI ---
+    # MACD
+    def macd(series, fast=12, slow=26, signal=9):
+        ema_fast = series.ewm(span=fast, adjust=False).mean()
+        ema_slow = series.ewm(span=slow, adjust=False).mean()
+        macd_line = ema_fast - ema_slow
+        signal_line = macd_line.ewm(span=signal, adjust=False).mean()
+        hist = macd_line - signal_line
+        return macd_line, signal_line, hist
+
+    # Stochastic Oscillator
+    def stoch_kd(df, k_len=14, d_len=3):
+        low_min = df['Low'].rolling(window=k_len, min_periods=1).min()
+        high_max = df['High'].rolling(window=k_len, min_periods=1).max()
+        k = 100 * (df['Close'] - low_min) / (high_max - low_min + 1e-9)
+        d = k.rolling(window=d_len, min_periods=1).mean()
+        return k, d
+
+    # Commodity Channel Index (CCI)
+    def cci(df, n=20):
+        tp = (df['High'] + df['Low'] + df['Close']) / 3
+        ma = tp.rolling(n, min_periods=1).mean()
+        md = tp.rolling(n, min_periods=1).apply(lambda x: np.mean(np.abs(x - np.mean(x))), raw=True)
+        cci_val = (tp - ma) / (0.015 * md + 1e-9)
+        return cci_val
+
     signal = params["signal"]
+
+    # MACD
+    macd_fast = int(signal.get("macd_fast", 12))
+    macd_slow = int(signal.get("macd_slow", 26))
+    macd_signal = int(signal.get("macd_signal", 9))
+    df['macd_line'], df['macd_signal_line'], df['macd_hist'] = macd(df['Close'], fast=macd_fast, slow=macd_slow, signal=macd_signal)
+
+    # Stochastic
+    stoch_k_len = int(signal.get("stoch_k", 14))
+    stoch_d_len = int(signal.get("stoch_d", 3))
+    df['stoch_k'], df['stoch_d'] = stoch_kd(df, k_len=stoch_k_len, d_len=stoch_d_len)
+
+    # CCI
+    cci_len = int(signal.get("cci_len", 20))
+    df['cci'] = cci(df, n=cci_len)
 
     ema_fast = int(signal["ema_fast"])
     ema_mid = int(signal["ema_mid"])

@@ -75,30 +75,42 @@ def _set_nested(data: dict[str, Any], path: str, value: Any) -> None:
 def candidate_grid(version: str, symbol: str) -> dict[str, list[Any]]:
     is_crypto = "/" in symbol
     grid: dict[str, list[Any]] = {
-        "signal.enable_longs": [True, False] if is_crypto else [True, False],
-        "signal.enable_shorts": [True, False] if is_crypto else [True, False],
-        "signal.pullback_tolerance_pct": [0.15, 0.2, 0.25, 0.3, 0.35],
-        "signal.momentum_bars": [3, 4, 5, 6, 8],
-        "signal.rsi_long_min": [38, 40, 42, 44, 46],
-        "signal.rsi_long_max": [58, 60, 62, 64, 66],
-        "signal.rsi_short_min": [28, 30, 32, 34],
-        "signal.rsi_short_max": [50, 54, 58, 62],
-        "signal.adx_slope_bars": [0, 1, 2],
-        "signal.adx_threshold": [12, 14, 16, 18, 20, 22],
-        "signal.di_spread": [0.0, 2.5, 5.0, 7.5],
+        "signal.enable_longs": [True, False],
+        "signal.enable_shorts": [True, False],
+        "signal.pullback_tolerance_pct": [0.10, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.5],
+        "signal.momentum_bars": [2, 3, 4, 5, 6, 8, 10, 12],
+        "signal.rsi_long_min": [30, 34, 38, 40, 42, 44, 46, 48, 50],
+        "signal.rsi_long_max": [54, 58, 60, 62, 64, 66, 68, 70],
+        "signal.rsi_short_min": [18, 24, 28, 30, 32, 34, 36, 40],
+        "signal.rsi_short_max": [40, 46, 50, 54, 58, 62, 66],
+        "signal.adx_slope_bars": [0, 1, 2, 3, 4],
+        "signal.adx_threshold": [10, 12, 14, 16, 18, 20, 22, 25],
+        "signal.di_spread": [0.0, 1.0, 2.5, 5.0, 7.5, 10.0],
         "signal.session_filter_enabled": [False, True],
-        "signal.session_start_hour_et": [8, 9, 10],
-        "signal.session_end_hour_et": [13, 14, 15, 16],
-        "signal.volume_mult_min": [0.3, 0.5, 0.7, 0.9],
-        "signal.min_body_atr_mult": [0.10, 0.15, 0.20],
-        "signal.atr_floor_pct": [0.08, 0.10, 0.12, 0.15],
-        "signal.panic_suppression_mult": [1.2, 1.5, 1.8, 2.0],
-        "risk.sl_atr_mult": [1.5, 2.0, 2.5, 3.0, 3.5],
-        "risk.tp_atr_mult": [4.0, 5.0, 6.0, 8.0, 10.0],
-        "risk.trail_activate_atr_mult": [1.5, 2.0, 2.5, 3.0],
-        "risk.trail_dist_atr_mult": [0.05, 0.08, 0.10, 0.12, 0.15],
-        "risk.risk_pct": [0.4, 0.6, 0.8, 1.0, 1.2, 1.5, 2.0, 3.0],
-        "risk.max_bars_in_trade": [20, 30, 40, 60],
+        "signal.session_start_hour_et": [0, 8, 9, 10, 12],
+        "signal.session_end_hour_et": [12, 13, 14, 15, 16, 18, 23],
+        "signal.volume_mult_min": [0.1, 0.3, 0.5, 0.7, 0.9, 1.1],
+        "signal.min_body_atr_mult": [0.05, 0.10, 0.12, 0.15, 0.18, 0.20, 0.25],
+        "signal.atr_floor_pct": [0.05, 0.08, 0.10, 0.12, 0.15, 0.2],
+        "signal.panic_suppression_mult": [1.0, 1.2, 1.5, 1.8, 2.0, 2.5],
+        "risk.sl_atr_mult": [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0],
+        "risk.tp_atr_mult": [2.0, 4.0, 5.0, 6.0, 8.0, 10.0, 12.0],
+        "risk.trail_activate_atr_mult": [1.0, 1.5, 2.0, 2.5, 3.0, 4.0],
+        "risk.trail_dist_atr_mult": [0.02, 0.05, 0.08, 0.10, 0.12, 0.15, 0.2],
+        "risk.risk_pct": [0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.5, 2.0, 3.0, 4.0],
+        "risk.max_bars_in_trade": [10, 20, 30, 40, 60, 100],
+        # MACD
+        "signal.macd_enabled": [True, False],
+        "signal.macd_fast": [8, 12, 16],
+        "signal.macd_slow": [18, 26, 34],
+        "signal.macd_signal": [6, 9, 12],
+        # Stochastic
+        "signal.stoch_enabled": [True, False],
+        "signal.stoch_k": [7, 14, 21],
+        "signal.stoch_d": [3, 5, 7],
+        # CCI
+        "signal.cci_enabled": [True, False],
+        "signal.cci_len": [10, 14, 20, 34],
     }
     if version == "v3":
         grid.update(
@@ -197,10 +209,13 @@ def run() -> int:
     base = loader(symbol=args.symbol)
     base_result = evaluate(df, version, base, args.symbol)
 
+
     best_candidate: dict[str, Any] | None = None
     best_result: EvalResult | None = None
-
-    for _ in range(max(args.max_evals, 1)):
+    evals = 0
+    found = False
+    max_evals = args.max_evals if args.max_evals > 0 else 1000000
+    while not found and evals < max_evals:
         candidate = {key: random.choice(grid[key]) for key in keys}
         if not candidate["signal.enable_longs"] and not candidate["signal.enable_shorts"]:
             continue
@@ -209,6 +224,9 @@ def run() -> int:
             candidate["signal.session_end_hour_et"] = base["signal"].get("session_end_hour_et", 14)
         params = apply_candidate(base, candidate)
         result = evaluate(df, version, params, args.symbol)
+        evals += 1
+        # Print status update after every pass
+        print(f"[Tuning Pass {evals}] Trades: {result.trades}, Win Rate: {result.win_rate:.2f}%, Net Return: {result.net_return_pct:.2f}%, Max Drawdown: {result.max_drawdown_pct:.2f}% | Pass: {'YES' if (result.trades >= args.min_trades and result.win_rate >= args.min_win_rate and result.net_return_pct >= args.min_net_return and result.max_drawdown_pct <= args.max_drawdown) else 'NO'}")
         if best_result is None or rank_key(result, args.min_trades, args.min_win_rate, args.min_net_return, args.max_drawdown) > rank_key(
             best_result,
             args.min_trades,
@@ -218,6 +236,13 @@ def run() -> int:
         ):
             best_result = result
             best_candidate = candidate
+        if (
+            result.trades >= args.min_trades
+            and result.win_rate >= args.min_win_rate
+            and result.net_return_pct >= args.min_net_return
+            and result.max_drawdown_pct <= args.max_drawdown
+        ):
+            found = True
 
     assert best_result is not None and best_candidate is not None
 
