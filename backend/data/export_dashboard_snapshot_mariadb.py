@@ -43,17 +43,24 @@ def build_snapshot(trade_limit=200):
         cur = conn.cursor(dictionary=True)
         cur.execute("SELECT symbol, version, metrics FROM backtest_results")
         rows = cur.fetchall()
-        results = {}
+        backtest_results = []
         for row in rows:
             symbol = row["symbol"]
             version = row["version"].lower() if row["version"] else "v6"
+            symbol_key = ''.join(ch for ch in symbol.upper() if ch.isalnum())
             try:
                 metrics = json.loads(row["metrics"] or "{}")
             except Exception:
                 metrics = {}
-            if symbol not in results:
-                results[symbol] = {}
-            results[symbol][version] = metrics
+            # Flatten for dashboard: add symbol, version, symbol_key
+            result_obj = {
+                "symbol": symbol,
+                "version": version,
+                "symbol_key": symbol_key,
+            }
+            result_obj.update(metrics)
+            backtest_results.append(result_obj)
+        results = {"backtest": backtest_results}
         snapshot = {
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "account": {},

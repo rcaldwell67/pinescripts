@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-19T07:27:51.853845+00:00",
+  "generated_at": "2026-04-19T07:30:33.580043+00:00",
   "account": {},
   "symbols": [
     {
@@ -30,9 +30,11 @@
     }
   ],
   "results": {
-    "BTC/USD": {
-      "v6": {
+    "backtest": [
+      {
+        "symbol": "BTC/USD",
         "version": "v6",
+        "symbol_key": "BTCUSD",
         "beginning_equity": 1000.0,
         "final_equity": 1015.4479807215018,
         "current_equity": 1015.4479807215018,
@@ -48,7 +50,7 @@
         "first_trade_date": "2026-01-02 17:00:00+00:00",
         "last_trade_date": "2026-04-14 16:00:00+00:00"
       }
-    }
+    ]
   },
   "trades": []
 }
