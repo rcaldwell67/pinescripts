@@ -119,17 +119,20 @@ export default function BacktestsTable() {
     <section style={{ padding: 24 }}>
       <h2>Backtests (v6) - Active Symbols</h2>
       <div style={{ marginBottom: 16, display: 'flex', gap: 16, alignItems: 'center' }}>
-        <label>
-          Timespan:
-          <select value={timespan} onChange={e => setTimespan(e.target.value)} style={{ marginLeft: 8 }}>
-            <option value="All">All</option>
-            <option value="YTD">YTD</option>
-            <option value="MTD">MTD</option>
-            <option value="WTD">WTD</option>
-            <option value="1D">1D</option>
-            <option value="4H">4H</option>
-          </select>
-        </label>
+          <label>
+            Timespan:
+            <select value={timespan} onChange={e => setTimespan(e.target.value)} style={{ marginLeft: 8 }}>
+              <option value="All">All</option>
+              <option value="YTD">YTD</option>
+              <option value="MTD">MTD</option>
+              <option value="WTD">WTD</option>
+              <option value="1D">1D</option>
+              <option value="4H">4H</option>
+              <option value="1H">1H</option>
+              <option value="30m">30m</option>
+              <option value="15m">15m</option>
+            </select>
+          </label>
         <label>
           Asset Type:
           <select value={assetTypeFilter} onChange={e => setAssetTypeFilter(e.target.value)} style={{ marginLeft: 8 }}>

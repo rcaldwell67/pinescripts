@@ -28,7 +28,7 @@ except ModuleNotFoundError:
     import sys, os
     sys.path.insert(0, os.path.dirname(__file__))
     from telegram_notify import send_telegram_message
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -102,7 +102,7 @@ def ensure_result_tables_have_current_equity(conn: sqlite3.Connection) -> None:
 
 # ── Data fetch ─────────────────────────────────────────────────────────────────
 
-def fetch_ohlcv_alpaca(symbol: str) -> "pd.DataFrame | None":
+def fetch_ohlcv_alpaca(symbol: str, timespan: str = "YTD") -> "pd.DataFrame | None":
     """
     Fetch OHLCV data from Alpaca for a given symbol.
     Returns None if subscription/access denied.
@@ -117,9 +117,38 @@ def fetch_ohlcv_alpaca(symbol: str) -> "pd.DataFrame | None":
     from alpaca.data.timeframe import TimeFrame, TimeFrameUnit  # type: ignore[attr-defined]
     from alpaca.common.exceptions import APIError
 
-    now   = datetime.now(tz=timezone.utc)
-    start = datetime(now.year, 1, 1, tzinfo=timezone.utc)   # YTD
-    tf = TimeFrame(5, TimeFrameUnit.Minute)
+
+    now = datetime.now(tz=timezone.utc)
+    # Determine start and timeframe based on timespan
+    if timespan == "YTD":
+        start = datetime(now.year, 1, 1, tzinfo=timezone.utc)
+        tf = TimeFrame(5, TimeFrameUnit.Minute)
+    elif timespan == "MTD":
+        start = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
+        tf = TimeFrame(5, TimeFrameUnit.Minute)
+    elif timespan == "WTD":
+        start = now - timedelta(days=now.weekday())
+        start = datetime(start.year, start.month, start.day, tzinfo=timezone.utc)
+        tf = TimeFrame(5, TimeFrameUnit.Minute)
+    elif timespan == "1D":
+        start = now - timedelta(days=1)
+        tf = TimeFrame(5, TimeFrameUnit.Minute)
+    elif timespan == "4H":
+        start = now - timedelta(hours=4)
+        tf = TimeFrame(5, TimeFrameUnit.Minute)
+    elif timespan == "1H":
+        start = now - timedelta(hours=1)
+        tf = TimeFrame(1, TimeFrameUnit.Hour)
+    elif timespan == "30m":
+        start = now - timedelta(minutes=30)
+        tf = TimeFrame(30, TimeFrameUnit.Minute)
+    elif timespan == "15m":
+        start = now - timedelta(minutes=15)
+        tf = TimeFrame(15, TimeFrameUnit.Minute)
+    else:
+        # Default to YTD
+        start = datetime(now.year, 1, 1, tzinfo=timezone.utc)
+        tf = TimeFrame(5, TimeFrameUnit.Minute)
 
     is_crypto = "/" in symbol
     try:
@@ -163,7 +192,7 @@ def fetch_ohlcv_alpaca(symbol: str) -> "pd.DataFrame | None":
     return df
 
 
-def fetch_ohlcv_yfinance(symbol: str) -> "pd.DataFrame":
+def fetch_ohlcv_yfinance(symbol: str, timespan: str = "YTD") -> "pd.DataFrame":
     """
     Fetch OHLCV data from Yahoo Finance as a fallback (1h bars instead of 5m).
     Args:
@@ -174,12 +203,39 @@ def fetch_ohlcv_yfinance(symbol: str) -> "pd.DataFrame":
     import pandas as pd
     import yfinance as yf
 
-    now = datetime.now(tz=timezone.utc)
-    start = datetime(now.year, 1, 1, tzinfo=timezone.utc)
 
-    # Download 1h data (yfinance doesn't support 5m without a subscription)
-    print(f"  Fetching from Yahoo Finance (1h bars)...", file=sys.stderr)
-    df = yf.download(symbol, start=start, end=now, interval="1h", progress=False)
+    now = datetime.now(tz=timezone.utc)
+    # Determine start and interval based on timespan
+    if timespan == "YTD":
+        start = datetime(now.year, 1, 1, tzinfo=timezone.utc)
+        interval = "1h"
+    elif timespan == "MTD":
+        start = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
+        interval = "1h"
+    elif timespan == "WTD":
+        start = now - timedelta(days=now.weekday())
+        start = datetime(start.year, start.month, start.day, tzinfo=timezone.utc)
+        interval = "1h"
+    elif timespan == "1D":
+        start = now - timedelta(days=1)
+        interval = "1h"
+    elif timespan == "4H":
+        start = now - timedelta(hours=4)
+        interval = "1h"
+    elif timespan == "1H":
+        start = now - timedelta(hours=1)
+        interval = "1h"
+    elif timespan == "30m":
+        start = now - timedelta(minutes=30)
+        interval = "30m"
+    elif timespan == "15m":
+        start = now - timedelta(minutes=15)
+        interval = "15m"
+    else:
+        start = datetime(now.year, 1, 1, tzinfo=timezone.utc)
+        interval = "1h"
+    print(f"  Fetching from Yahoo Finance ({interval} bars)...", file=sys.stderr)
+    df = yf.download(symbol, start=start, end=now, interval=interval, progress=False)
 
     if df.empty:
         logger.error(f"No data returned from Yahoo Finance for {symbol}")
@@ -358,6 +414,7 @@ def _apply_data_scope(df: "pd.DataFrame", scope: str) -> "pd.DataFrame":
 def fetch_ohlcv(
     symbol: str,
     *,
+    timespan: str = "YTD",
     prefer_realtime_bar: bool = False,
     alpaca_only: bool = False,
     data_scope: str = "historical",
@@ -378,12 +435,12 @@ def fetch_ohlcv(
     # Use Alpaca for crypto, Yahoo Finance for non-crypto
     if "/" in symbol:
         print(f"  Using Alpaca for crypto symbol {symbol}...", file=sys.stderr)
-        df = fetch_ohlcv_alpaca(symbol)
+        df = fetch_ohlcv_alpaca(symbol, timespan=timespan)
         if df is None:
             raise RuntimeError(f"No data returned from Alpaca for {symbol}")
     else:
         print(f"  Using Yahoo Finance for non-crypto symbol {symbol}...", file=sys.stderr)
-        df = fetch_ohlcv_yfinance(symbol)
+        df = fetch_ohlcv_yfinance(symbol, timespan=timespan)
 
     if prefer_realtime_bar:
         df = _append_latest_realtime_bar(df, symbol)
@@ -501,7 +558,7 @@ def _result_label(exit_type):
 
 
 def save_to_db(symbol: str, version: str,
-               trades: "pd.DataFrame", df: "pd.DataFrame") -> None:
+               trades: "pd.DataFrame", df: "pd.DataFrame", timespan: str = "YTD") -> None:
     """
     Save backtest results and trades to the SQLite database.
     Args:
@@ -540,6 +597,7 @@ def save_to_db(symbol: str, version: str,
 
     metrics = {
         "version":          version,
+        "timespan":         timespan,
         "beginning_equity": _to_native(initial_equity),
         "final_equity":     _to_native(final_equity),
         "current_equity":   _to_native(final_equity),
@@ -653,6 +711,7 @@ def main() -> int:
     parser.add_argument("--version", required=True, help="Strategy version (v1-v6)")
     parser.add_argument("--profile", help="Optional runtime profile override, e.g. eth_focus")
     parser.add_argument("--all-symbols", action="store_true", help="Run for every symbol in the DB")
+    parser.add_argument("--timespan", default="YTD", help="Timespan for backtest (YTD, MTD, WTD, 1D, 4H, 1H, 30m, 15m)")
     args = parser.parse_args()
 
     version = args.version.strip().lower()
@@ -680,10 +739,10 @@ def main() -> int:
 
     failures = []
     for symbol in symbols:
-        print(f"\n[RUN] {symbol} {version}")
+        print(f"\n[RUN] {symbol} {version} {args.timespan}")
         try:
-            print(f"Fetching YTD OHLCV for {symbol}...")
-            df = fetch_ohlcv(symbol)
+            print(f"Fetching {args.timespan} OHLCV for {symbol}...")
+            df = fetch_ohlcv(symbol, timespan=args.timespan)
             print(f"  {len(df):,} bars fetched ({df['timestamp'].iloc[0]} -> {df['timestamp'].iloc[-1]})")
 
             profile = args.profile.strip() if args.profile else None
@@ -695,7 +754,7 @@ def main() -> int:
             trades = run_backtest(df, version, symbol=symbol, profile=profile)
             print(f"  {len(trades)} trades generated")
 
-            save_to_db(symbol, version, trades, df)
+            save_to_db(symbol, version, trades, df, timespan=args.timespan)
         except Exception as e:
             # Skip symbol if Alpaca API access denied or subscription error
             err_str = str(e).lower()
