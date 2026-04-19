@@ -39,10 +39,18 @@ def build_snapshot(trade_limit=200):
     conn = get_db_conn()
     try:
         symbols = fetch_symbols(conn)
+        # Add symbol_key to each symbol for frontend matching
+        for sym in symbols:
+            sym["symbol_key"] = ''.join(ch for ch in sym["symbol"].upper() if ch.isalnum())
         # Fetch backtest results
         cur = conn.cursor(dictionary=True)
-        cur.execute("SELECT symbol, version, metrics FROM backtest_results")
+        cur.execute("SELECT symbol, version, metrics, timestamp FROM backtest_results")
         rows = cur.fetchall()
+        # Convert any datetime objects to ISO strings for JSON serialization
+        for row in rows:
+            for k, v in row.items():
+                if hasattr(v, 'isoformat'):
+                    row[k] = v.isoformat()
         backtest_results = []
         for row in rows:
             symbol = row["symbol"]
@@ -52,11 +60,12 @@ def build_snapshot(trade_limit=200):
                 metrics = json.loads(row["metrics"] or "{}")
             except Exception:
                 metrics = {}
-            # Flatten for dashboard: add symbol, version, symbol_key
+            # Flatten for dashboard: add symbol, version, symbol_key, timestamp
             result_obj = {
                 "symbol": symbol,
                 "version": version,
                 "symbol_key": symbol_key,
+                "timestamp": row.get("timestamp"),
             }
             result_obj.update(metrics)
             backtest_results.append(result_obj)

@@ -568,7 +568,7 @@ def save_to_db(symbol: str, version: str,
         (symbol, f"%{VERSION_MAP.get(version, version)}%"),
     )
     cur.execute(
-        "INSERT INTO backtest_results (symbol, metrics, notes, current_equity) VALUES (%s, %s, %s, %s)",
+        "INSERT INTO backtest_results (symbol, metrics, notes, current_equity, timestamp) VALUES (%s, %s, %s, %s, NOW())",
         (symbol, json.dumps(metrics), notes, float(final_equity)),
     )
 
