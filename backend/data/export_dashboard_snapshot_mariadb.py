@@ -39,12 +39,26 @@ def build_snapshot(trade_limit=200):
     conn = get_db_conn()
     try:
         symbols = fetch_symbols(conn)
-        # TODO: Add account, results, trades queries as needed
+        # Fetch backtest results
+        cur = conn.cursor(dictionary=True)
+        cur.execute("SELECT symbol, version, metrics FROM backtest_results")
+        rows = cur.fetchall()
+        results = {}
+        for row in rows:
+            symbol = row["symbol"]
+            version = row["version"].lower() if row["version"] else "v6"
+            try:
+                metrics = json.loads(row["metrics"] or "{}")
+            except Exception:
+                metrics = {}
+            if symbol not in results:
+                results[symbol] = {}
+            results[symbol][version] = metrics
         snapshot = {
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "account": {},
             "symbols": symbols,
-            "results": {},
+            "results": results,
             "trades": [],
         }
         return snapshot
