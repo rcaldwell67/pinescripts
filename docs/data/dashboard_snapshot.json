@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-19T07:23:26.839888+00:00",
+  "generated_at": "2026-04-19T07:27:51.853845+00:00",
   "account": {},
   "symbols": [
     {
@@ -29,6 +29,26 @@
       "updated_at": "2026-04-18T11:38:18"
     }
   ],
-  "results": {},
+  "results": {
+    "BTC/USD": {
+      "v6": {
+        "version": "v6",
+        "beginning_equity": 1000.0,
+        "final_equity": 1015.4479807215018,
+        "current_equity": 1015.4479807215018,
+        "total_trades": 28,
+        "winning_trades": 12,
+        "losing_trades": 16,
+        "win_rate": 42.857142857142854,
+        "average_pnl": 0.5517135971965136,
+        "total_pnl": 15.447980721502379,
+        "max_drawdown": 21.026068173513067,
+        "max_drawdown_pct": 2.102606817351307,
+        "net_return_pct": 1.5447980721501835,
+        "first_trade_date": "2026-01-02 17:00:00+00:00",
+        "last_trade_date": "2026-04-14 16:00:00+00:00"
+      }
+    }
+  },
   "trades": []
 }
