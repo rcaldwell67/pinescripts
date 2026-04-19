@@ -1,18 +1,3 @@
-# --- v7 parameter loader ---
-def get_v7_params(symbol: str):
-    # Example: load default parameters for v7; customize as needed
-    # In production, load from DB, JSON, or symbol-specific config
-    return {
-        "signal": {
-            "ema_fast": 8,
-            "ema_mid": 21,
-            "ema_slow": 55,
-            "rsi_len": 14,
-            "atr_len": 14,
-            "atr_baseline_len": 100,
-            "volume_sma_len": 20,
-        }
-    }
 """
 APM v7 signal engine (unified v1–v6 logic, all timespans, symbol-specific).
 This script is a template for symbol-specific v7 strategies.
@@ -100,19 +85,11 @@ def v7_entry_logic(df, i, params):
 def run_v7_backtest(df, params):
     df = prepare_v7_signal_frame(df, params)
     entries = []
-    equity = 100000.0
     for i in range(max(200, int(params['signal']['ema_slow'])), len(df)):
         if v7_entry_logic(df, i, params):
-            # Dummy trade: entry at i, random pnl, equity progression
-            pnl = np.random.normal(10, 50)  # placeholder PnL
-            equity += pnl
-            entries.append({
-                "entry_idx": i,
-                "pnl": pnl,
-                "equity": equity,
-            })
-    # Return as DataFrame for compatibility with runner
-    return pd.DataFrame(entries)
+            entries.append(i)
+    # ...simulate trades, exits, and metrics as in universal backtest...
+    return entries
 
 # Usage example (replace with actual symbol and params):
 # df = fetch_ohlcv('BTC/USD', timespan='YTD')

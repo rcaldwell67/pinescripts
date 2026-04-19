@@ -82,6 +82,7 @@ VERSION_MAP: dict[str, str] = {
     "v4": "APM v4.0",
     "v5": "APM v5.0",
     "v6": "APM v6.0",
+    "v7": "APM v7.0",
     "universal": "APM Universal",
 }
 
@@ -490,6 +491,10 @@ def run_backtest(
         from apm_v2_backtest import backtest_apm_v2
         from v6_params import get_v6_params
         return backtest_apm_v2(df, params=get_v6_params(symbol=symbol, profile=profile))
+    if version == "v7":
+        from strategy_generator.v7.apm_v7 import run_v7_backtest
+        from strategy_generator.v7.apm_v7 import get_v7_params
+        return run_v7_backtest(df, get_v7_params(symbol=symbol))
     if version == "universal":
         from strategy_generator.apm_universal_backtest import backtest_apm_universal
         from strategy_generator.universal_params import get_universal_params

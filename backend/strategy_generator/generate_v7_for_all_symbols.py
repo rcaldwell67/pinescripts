@@ -1,4 +1,4 @@
-DELETE FILE
+
 
 """
 Generates v7 Pine Script and Python strategy files for all symbols in the MariaDB symbols table.
