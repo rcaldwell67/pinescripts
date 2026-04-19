@@ -17,6 +17,7 @@ function SymbolsTable() {
   const [editLiveEnabled, setEditLiveEnabled] = useState(0);
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [editError, setEditError] = useState(null);
+  const [editIsActive, setEditIsActive] = useState(1);
 
   useEffect(() => {
     async function fetchSymbols() {
@@ -99,6 +100,7 @@ function SymbolsTable() {
     setEditDescription(sym.description || "");
     setEditAssetType(sym.asset_type || sym.asset_class || "crypto");
     setEditLiveEnabled(sym.live_enabled ?? 0);
+    setEditIsActive(sym.isactive ?? 1);
     setEditError(null);
   }
 
@@ -107,6 +109,7 @@ function SymbolsTable() {
     setEditDescription("");
     setEditAssetType("");
     setEditLiveEnabled(0);
+    setEditIsActive(1);
     setEditError(null);
   }
 
@@ -118,7 +121,7 @@ function SymbolsTable() {
       const res = await fetch(`http://localhost:4000/api/symbols/${encodeURIComponent(editSymbol)}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ description: editDescription, asset_type: editAssetType, live_enabled: editLiveEnabled })
+        body: JSON.stringify({ description: editDescription, asset_type: editAssetType, live_enabled: editLiveEnabled, isactive: editIsActive })
       });
       if (!res.ok) throw new Error("Failed to update symbol");
       cancelEdit();
@@ -218,6 +221,9 @@ function SymbolsTable() {
                   <input type="checkbox" checked={!!editLiveEnabled} onChange={e => setEditLiveEnabled(e.target.checked ? 1 : 0)} />
                 </td>
                 <td>
+                  <label style={{ marginRight: 8 }}>
+                    <input type="checkbox" checked={!!editIsActive} onChange={e => setEditIsActive(e.target.checked ? 1 : 0)} /> Active
+                  </label>
                   <button onClick={handleEditSubmit} disabled={editSubmitting}>Save</button>
                   <button onClick={cancelEdit} style={{ marginLeft: 8 }}>Cancel</button>
                   {editError && <div style={{ color: 'red' }}>{editError}</div>}

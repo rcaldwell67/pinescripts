@@ -73,16 +73,16 @@ app.post('/api/symbols', async (req, res) => {
   }
 });
 
-// UPDATE symbol (edit description, asset_type, live_enabled)
+// UPDATE symbol (edit description, asset_type, live_enabled, isactive)
 app.put('/api/symbols/:symbol', async (req, res) => {
   const { symbol } = req.params;
-  const { description, asset_type, live_enabled } = req.body;
+  const { description, asset_type, live_enabled, isactive } = req.body;
   let conn;
   try {
     conn = await mysql.createConnection(dbConfig);
     await conn.execute(
-      'UPDATE symbols SET description=?, asset_type=?, live_enabled=? WHERE symbol=?',
-      [description, asset_type, live_enabled, symbol]
+      'UPDATE symbols SET description=?, asset_type=?, live_enabled=?, isactive=? WHERE symbol=?',
+      [description, asset_type, live_enabled, isactive ?? 1, symbol]
     );
     res.json({ success: true });
   } catch (err) {
