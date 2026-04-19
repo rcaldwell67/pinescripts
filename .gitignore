@@ -2,7 +2,7 @@
 .vscode
 .nvm
 .venv
-#.env
+.env
 .backend-api/.env
 .env.example
 .github
