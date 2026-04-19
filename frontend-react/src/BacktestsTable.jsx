@@ -93,10 +93,11 @@ export default function BacktestsTable() {
   const symbols = Array.from(new Set(snapshot.symbols.map(s => s.symbol)));
 
   // Filtering logic
+  const backtestResults = (snapshot.results && snapshot.results.backtest) ? snapshot.results.backtest : [];
   const filteredSymbols = snapshot.symbols.filter(sym => {
     if (assetTypeFilter && sym.asset_type !== assetTypeFilter) return false;
     if (symbolFilter && sym.symbol !== symbolFilter) return false;
-    const result = snapshot.results.backtest.find(r => r.symbol_key === sym.symbol_key);
+    const result = backtestResults.find(r => r.symbol_key === sym.symbol_key);
     if (guidelineStatus) {
       const audit = result ? evaluateBacktestGuideline({
         symbol: sym.symbol,
@@ -169,7 +170,8 @@ export default function BacktestsTable() {
           </thead>
           <tbody>
             {filteredSymbols.map(sym => {
-              const result = snapshot.results.backtest.find(r => r.symbol_key === sym.symbol_key);
+              const backtestResults = (snapshot.results && snapshot.results.backtest) ? snapshot.results.backtest : [];
+              const result = backtestResults.find(r => r.symbol_key === sym.symbol_key);
               const audit = result ? evaluateBacktestGuideline({
                 symbol: sym.symbol,
                 version: 'v6',

@@ -26,8 +26,14 @@ def get_db_conn():
 
 def fetch_symbols(conn):
     cur = conn.cursor(dictionary=True)
-    cur.execute("SELECT * FROM alpaca_symbols ORDER BY symbol")
-    return cur.fetchall()
+    cur.execute("SELECT * FROM symbols ORDER BY symbol")
+    rows = cur.fetchall()
+    # Convert any datetime objects to ISO strings for JSON serialization
+    for row in rows:
+        for k, v in row.items():
+            if hasattr(v, 'isoformat'):
+                row[k] = v.isoformat()
+    return rows
 
 def build_snapshot(trade_limit=200):
     conn = get_db_conn()
