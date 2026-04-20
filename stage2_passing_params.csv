@@ -1,4 +1,4 @@
-macd_fast,macd_slow,macd_signal,stoch_k_len,stoch_d_len,cci_len,win_rate,net_return
+symbol,lookback,candle-interval,win_rate,net_return,macd_fast,macd_slow,macd_signal,stoch_k_len,stoch_d_len,cci_len
 8,26,9,10,7,14,65.51724137931035,13.667472719731535
 8,26,7,10,5,14,66.66666666666666,13.667472719731535
 8,32,7,10,7,14,66.66666666666666,13.667472719731535
