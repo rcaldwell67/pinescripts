@@ -3,6 +3,7 @@ Tuning script for v7 BTC/USD to meet or exceed strategy guidelines.
 Iterates over a parameter grid, runs backtests, and reports the best result.
 """
 import itertools
+import multiprocessing
 import numpy as np
 import pandas as pd
 import sys
@@ -25,6 +26,12 @@ grid = {
     "atr_len": [10, 14, 21],
     "atr_baseline_len": [50, 100, 200],
     "volume_sma_len": [10, 20, 30],
+    "macd_fast": [8, 12],
+    "macd_slow": [21, 26],
+    "macd_signal": [5, 9],
+    "stoch_k_len": [7, 14],
+    "stoch_d_len": [3, 5],
+    "cci_len": [14, 20],
 }
 
 # Load OHLCV data once
@@ -32,25 +39,70 @@ df = fetch_ohlcv("BTC/USD", timespan="YTD")
 
 
 
-# Stage 1: Tune for Win Rate only
-stage1_best = None
-stage1_best_wr = None
-for values in itertools.product(*grid.values()):
+
+# --- Multiprocessing helper for Stage 1 ---
+def stage1_worker(values):
     params = get_v7_params("BTC/USD")
     for k, v in zip(grid.keys(), values):
         params["signal"][k] = v
+    # Pass MACD, Stoch, and CCI params if present
+    if "macd_fast" in params["signal"]:
+        params["signal"]["macd_fast"] = params["signal"].get("macd_fast", 12)
+        params["signal"]["macd_slow"] = params["signal"].get("macd_slow", 26)
+        params["signal"]["macd_signal"] = params["signal"].get("macd_signal", 9)
+    if "stoch_k_len" in params["signal"]:
+        params["signal"]["stoch_k_len"] = params["signal"].get("stoch_k_len", 14)
+        params["signal"]["stoch_d_len"] = params["signal"].get("stoch_d_len", 3)
+    if "cci_len" in params["signal"]:
+        params["signal"]["cci_len"] = params["signal"].get("cci_len", 20)
     trades = run_backtest(df.copy(), "v7", symbol="BTC/USD")
     if trades.empty:
-        continue
+        return None
     win_rate = float((trades["pnl"] > 0).mean() * 100.0)
-    if stage1_best_wr is None or win_rate > stage1_best_wr:
-        stage1_best = dict(params["signal"])
-        stage1_best_wr = win_rate
-    print(f"Stage 1: {params['signal']} => WR={win_rate:.2f}")
+    return (dict(params["signal"]), win_rate)
 
+if __name__ == "__main__":
+    param_grid = list(itertools.product(*grid.values()))
+    total = len(param_grid)
+    results = []
+    completed = 0
+    print(f"Stage 1: Evaluating {total} parameter combinations...")
+    with multiprocessing.Pool() as pool:
+        for result in pool.imap_unordered(stage1_worker, param_grid):
+            completed += 1
+            if result is not None:
+                params, win_rate = result
+                results.append(result)
+                print(f"Stage 1 [{completed}/{total}]: {params} => WR={win_rate:.2f}")
+            else:
+                print(f"Stage 1 [{completed}/{total}]: No result (empty trades)")
 
-print("\nBest Win Rate params:")
-print(f"Params: {stage1_best}\nWin Rate: {stage1_best_wr:.2f}%")
+    # Filter for Win Rate guideline
+    passing_stage1 = [params for params, win_rate in results if win_rate >= WIN_RATE_TARGET]
+    print(f"\nStage 1 complete. {len(passing_stage1)} parameter sets passed Win Rate ≥ {WIN_RATE_TARGET}%.")
+    if passing_stage1:
+        print("Sample passing params:")
+        for p in passing_stage1[:5]:
+            print(p)
+    else:
+        print("No parameter sets met the Win Rate guideline.")
+
+    # Stage 2: Net Return evaluation placeholder
+    def stage2_worker(params):
+        # You should implement actual Net Return evaluation here
+        # For now, just return dummy value
+        # Example: trades = run_backtest(df.copy(), "v7", symbol="BTC/USD", params=params)
+        # net_return = ...
+        net_return = 0.0  # TODO: Replace with real calculation
+        return (params, net_return)
+
+    if passing_stage1:
+        print(f"\nStage 2: Evaluating Net Return for {len(passing_stage1)} parameter sets...")
+        # Example: with multiprocessing.Pool() as pool:
+        #     stage2_results = pool.map(stage2_worker, passing_stage1)
+        # For now, just print placeholder
+        for params in passing_stage1:
+            print(f"Stage 2: Would evaluate Net Return for {params}")
 
 # Only proceed if Win Rate passes
 if stage1_best_wr is not None and stage1_best_wr >= WIN_RATE_TARGET:
