@@ -13,7 +13,7 @@
 
 - [X] Remove the 'ID' column from the Sybmols section in the Dashboard
 
-- [X] Add functionality to add a Symbol to the Symbols Table of the Symbols Dashboard item. Provide filter for Crypto and Non-Crypto Symbols. When the Symbol is added, mark the Symbol isActive - almost done, need to list the filtered symbols in the Symbol: selection box and add the description to the text box. 
+- [X] Add functionality to add a Symbol to the Symbols Table of the Symbols Dashboard item. Provide filter for Crypto and Non-Crypto Symbols. When the Symbol is added, mark the Symbol isActive - almost done, need to list the filtered symbols in the Symbol: selection box and add the description to the text box.
 
 - [X] Add all symbols and symbol data from Alpaca to the Dashboard
 
@@ -29,6 +29,8 @@ this may require hosting on ionos server
 - [X] Fix Symbols Section - should not load symbols that are not active
 
 The available timespans for backtesting in your codebase are:
+Use YTD as Default 'lookback' parameter
+Use the below as 'candle-interval' parameter
 
 YTD (Year-to-date)
 MTD (Month-to-date)
@@ -38,5 +40,6 @@ WTD (Week-to-date)
 1H (1 Hour)
 30m (30 Minutes)
 15m (15 Minutes)
+
 All (for viewing/filtering results, not for running a backtest)
 These are used in both backend scripts and the frontend dashboard for filtering and running backtests.
