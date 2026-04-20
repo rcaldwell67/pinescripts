@@ -27,3 +27,16 @@
 this may require hosting on ionos server
 
 - [X] Fix Symbols Section - should not load symbols that are not active
+
+The available timespans for backtesting in your codebase are:
+
+YTD (Year-to-date)
+MTD (Month-to-date)
+WTD (Week-to-date)
+1D (1 Day)
+4H (4 Hours)
+1H (1 Hour)
+30m (30 Minutes)
+15m (15 Minutes)
+All (for viewing/filtering results, not for running a backtest)
+These are used in both backend scripts and the frontend dashboard for filtering and running backtests.
