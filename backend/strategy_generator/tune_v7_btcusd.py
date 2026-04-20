@@ -10,13 +10,23 @@ import time
 import pandas as pd
 import itertools
 import multiprocessing
+import argparse
+
+# --- Argument parsing ---
+def parse_args():
+    parser = argparse.ArgumentParser(description="Tuning script for v7 BTC/USD with flexible candle interval.")
+    parser.add_argument("--symbol", type=str, default="BTC/USD", help="Trading symbol (default: BTC/USD)")
+    parser.add_argument("--lookback", type=str, default="YTD", help="Lookback period (e.g., YTD, MTD, 1D)")
+    parser.add_argument("--candle-interval", type=str, default="15m", help="Candle interval (e.g., 1m, 5m, 15m, 1h)")
+    return parser.parse_args()
+
+args = parse_args()
+symbol = args.symbol
+lookback = args.lookback
+candle_interval = args.candle_interval
 
 # --- User configuration ---
-symbol = "BTC/USD"
-timespan = "YTD"
-WIN_RATE_TARGET = 65.0
-NET_RETURN_TARGET = 15.0
-MAX_DD_TARGET = 4.5
+candle_interval = "15m"  # e.g., 15m, 30m, 1h, etc.
 
 # --- Parameter grid (example, expand as needed) ---
 grid = {
@@ -31,16 +41,19 @@ grid = {
 # --- Local CSV caching for OHLCV data with retry logic ---
 cache_dir = pathlib.Path("./data_cache")
 cache_dir.mkdir(exist_ok=True)
-cache_file = cache_dir / f"ohlcv_{symbol.replace('/', '-')}_{timespan}.csv"
+cache_file = cache_dir / f"ohlcv_{symbol.replace('/', '-')}_{lookback}_{candle_interval}.csv"
 
-def fetch_ohlcv(symbol, timespan="YTD"):
-    # TODO: Implement or import your actual OHLCV fetch logic here
-    raise NotImplementedError("fetch_ohlcv must be implemented or imported.")
+from backend.backtest_backtrader_alpaca import fetch_ohlcv as fetch_ohlcv_backend
 
-def fetch_ohlcv_with_retry(symbol, timespan="YTD", max_retries=5, delay=10):
+def fetch_ohlcv(symbol, lookback="YTD", candle_interval="15m"):
+    # Compose a timespan string if backend expects it, or pass both if supported
+    # Here, we assume fetch_ohlcv_backend supports both lookback and candle_interval as kwargs
+    return fetch_ohlcv_backend(symbol, timespan=lookback, candle_interval=candle_interval)
+
+def fetch_ohlcv_with_retry(symbol, lookback="YTD", candle_interval="15m", max_retries=5, delay=10):
     for attempt in range(max_retries):
         try:
-            return fetch_ohlcv(symbol, timespan=timespan)
+            return fetch_ohlcv(symbol, lookback=lookback, candle_interval=candle_interval)
         except Exception as e:
             if "429" in str(e) or "too many requests" in str(e).lower():
                 print(f"Alpaca rate limit hit, retrying in {delay} seconds (attempt {attempt+1}/{max_retries})...")
@@ -75,8 +88,8 @@ if __name__ == "__main__":
         print(f"Loading OHLCV data from cache: {cache_file}")
         df = pd.read_csv(cache_file)
     else:
-        print(f"Fetching OHLCV data for {symbol} ({timespan}) from API...")
-        df = fetch_ohlcv_with_retry(symbol, timespan=timespan)
+        print(f"Fetching OHLCV data for {symbol} ({lookback}, {candle_interval}) from API...")
+        df = fetch_ohlcv_with_retry(symbol, lookback=lookback, candle_interval=candle_interval)
         df.to_csv(cache_file, index=False)
         print(f"Saved OHLCV data to cache: {cache_file}")
 
@@ -97,6 +110,7 @@ if __name__ == "__main__":
                 print(f"Stage 1 [{completed}/{total}]: No result (empty trades)")
 
     # Filter for Win Rate guideline
+    WIN_RATE_TARGET = 65.0  # Minimum win rate percentage for passing Stage 1
     passing_stage1 = [params for params, win_rate in results if win_rate >= WIN_RATE_TARGET]
     print(f"\nStage 1 complete. {len(passing_stage1)} parameter sets passed Win Rate ≥ {WIN_RATE_TARGET}%.")
     if passing_stage1:
