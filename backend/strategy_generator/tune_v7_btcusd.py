@@ -34,6 +34,7 @@ grid = {
     "cci_len": [14, 20],
 }
 
+<<<<<<< HEAD
 # --- OHLCV Data Caching ---
 import time
 DATA_PATH = os.path.join(os.path.dirname(__file__), "btcusd_15m_ytd.csv")
@@ -61,6 +62,26 @@ def load_or_fetch_ohlcv(symbol, timespan="YTD", path=DATA_PATH):
     return df
 
 df = load_or_fetch_ohlcv("BTC/USD", timespan="YTD")
+=======
+
+# --- Local CSV caching for OHLCV data ---
+import pathlib
+symbol = "BTC/USD"
+timespan = "YTD"
+cache_dir = pathlib.Path("./data_cache")
+cache_dir.mkdir(exist_ok=True)
+cache_file = cache_dir / f"ohlcv_{symbol.replace('/', '-')}_{timespan}.csv"
+
+if cache_file.exists():
+    print(f"Loading OHLCV data from cache: {cache_file}")
+    import pandas as pd
+    df = pd.read_csv(cache_file)
+else:
+    print(f"Fetching OHLCV data for {symbol} ({timespan}) from API...")
+    df = fetch_ohlcv(symbol, timespan=timespan)
+    df.to_csv(cache_file, index=False)
+    print(f"Saved OHLCV data to cache: {cache_file}")
+>>>>>>> 9baba346 (feat: implement local CSV caching for OHLCV data in v7 BTC/USD tuning script)
 
 
 
@@ -90,44 +111,37 @@ if __name__ == "__main__":
     param_grid = list(itertools.product(*grid.values()))
     total = len(param_grid)
     results = []
-    completed = 0
-    print(f"Stage 1: Evaluating {total} parameter combinations...")
-    with multiprocessing.Pool() as pool:
-        for result in pool.imap_unordered(stage1_worker, param_grid):
-            completed += 1
-            if result is not None:
-                params, win_rate = result
-                results.append(result)
-                print(f"Stage 1 [{completed}/{total}]: {params} => WR={win_rate:.2f}")
-            else:
-                print(f"Stage 1 [{completed}/{total}]: No result (empty trades)")
-
-    # Filter for Win Rate guideline
-    passing_stage1 = [params for params, win_rate in results if win_rate >= WIN_RATE_TARGET]
-    print(f"\nStage 1 complete. {len(passing_stage1)} parameter sets passed Win Rate ≥ {WIN_RATE_TARGET}%.")
-    if passing_stage1:
-        print("Sample passing params:")
-        for p in passing_stage1[:5]:
-            print(p)
-        # Assign best win rate for next stage
-        stage1_best_wr = max([wr for _, wr in results])
-    else:
-        print("No parameter sets met the Win Rate guideline.")
-        stage1_best_wr = None
-
-    # Stage 2: Net Return evaluation placeholder
-    def stage2_worker(params):
-        # You should implement actual Net Return evaluation here
-        # For now, just return dummy value
         # Example: trades = run_backtest(df.copy(), "v7", symbol="BTC/USD", params=params)
         # net_return = ...
+    import time
         net_return = 0.0  # TODO: Replace with real calculation
         return (params, net_return)
 
     if passing_stage1:
         print(f"\nStage 2: Evaluating Net Return for {len(passing_stage1)} parameter sets...")
         # Example: with multiprocessing.Pool() as pool:
+
         #     stage2_results = pool.map(stage2_worker, passing_stage1)
+        for attempt in range(max_retries):
+            try:
+                return fetch_ohlcv(symbol, timespan=timespan)
+            except Exception as e:
+                if "429" in str(e) or "too many requests" in str(e).lower():
+                    print(f"Alpaca rate limit hit, retrying in {delay} seconds (attempt {attempt+1}/{max_retries})...")
+                    time.sleep(delay)
+                else:
+                    raise
+        raise RuntimeError("Failed to fetch OHLCV data after retries due to rate limiting.")
+
+    if cache_file.exists():
+        print(f"Loading OHLCV data from cache: {cache_file}")
+        import pandas as pd
+        df = pd.read_csv(cache_file)
+    else:
+        print(f"Fetching OHLCV data for {symbol} ({timespan}) from API...")
+        df = fetch_ohlcv_with_retry(symbol, timespan=timespan)
+        df.to_csv(cache_file, index=False)
+        print(f"Saved OHLCV data to cache: {cache_file}")
         # For now, just print placeholder
         for params in passing_stage1:
             print(f"Stage 2: Would evaluate Net Return for {params}")
