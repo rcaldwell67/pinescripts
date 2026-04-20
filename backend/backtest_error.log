@@ -1,0 +1,95 @@
+2026-04-14 12:02:32,555 ERROR HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: BTCUSDT"}}}
+2026-04-14 12:02:33,446 ERROR $BTCUSDT: possibly delisted; no timezone found
+2026-04-14 12:02:33,451 ERROR 
+1 Failed download:
+2026-04-14 12:02:33,451 ERROR ['BTCUSDT']: possibly delisted; no timezone found
+2026-04-14 12:02:33,466 ERROR No data returned from Yahoo Finance for BTCUSDT
+2026-04-14 12:02:48,202 ERROR HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: BTCUSDT"}}}
+2026-04-14 12:02:48,421 ERROR $BTCUSDT: possibly delisted; no timezone found
+2026-04-14 12:02:48,429 ERROR 
+1 Failed download:
+2026-04-14 12:02:48,430 ERROR ['BTCUSDT']: possibly delisted; no timezone found
+2026-04-14 12:02:48,435 ERROR No data returned from Yahoo Finance for BTCUSDT
+2026-04-20 08:04:03,595 INFO package: mysql.connector.plugins
+2026-04-20 08:04:03,596 INFO plugin_name: mysql_native_password
+2026-04-20 08:04:03,598 INFO AUTHENTICATION_PLUGIN_CLASS: MySQLNativePasswordAuthPlugin
+2026-04-20 08:16:05,434 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:16:08,266 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:16:11,314 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:16:11,475 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:16:14,332 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:16:17,521 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:16:17,543 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:16:20,720 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:16:23,807 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:16:35,828 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:16:35,842 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:16:51,740 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:16:57,979 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:16:58,010 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:17:07,510 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:18:05,931 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:18:12,340 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:18:15,178 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:18:15,209 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:18:15,266 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:18:18,354 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:18:21,548 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:18:21,682 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:18:26,746 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:18:31,099 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:18:37,301 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:18:55,219 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:18:59,019 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:19:24,251 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:19:24,374 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:19:27,335 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:19:27,384 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:19:27,399 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:19:30,530 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:19:45,654 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:23:05,922 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:23:08,994 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:23:12,102 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:23:12,393 ERROR Alpaca API error: {"message": "too many requests."}
+
+2026-04-20 08:23:15,814 ERROR Alpaca API error: {"message": "too many requests."}
+

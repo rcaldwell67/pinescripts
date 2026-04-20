@@ -1,0 +1,18 @@
+on:
+jobs:
+name: Scheduled DB Backup (DEPRECATED)
+
+# This workflow is deprecated. SQLite tradingcopilot.db is no longer used.
+# MariaDB is now the source of record for all trading data.
+
+on:
+  workflow_dispatch:
+
+
+  deprecated:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Show deprecation message
+        run: |
+          echo "This workflow is deprecated. MariaDB is now the source of record."
+        with:

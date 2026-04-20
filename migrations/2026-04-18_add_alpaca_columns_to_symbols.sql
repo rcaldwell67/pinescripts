@@ -1,0 +1,20 @@
+-- Migration: Add columns from alpaca_symbols to symbols table
+ALTER TABLE symbols
+    ADD COLUMN asset_id VARCHAR(64) UNIQUE,
+    ADD COLUMN name VARCHAR(255),
+    ADD COLUMN status VARCHAR(32),
+    ADD COLUMN tradable TINYINT(1),
+    ADD COLUMN marginable TINYINT(1),
+    ADD COLUMN shortable TINYINT(1),
+    ADD COLUMN easy_to_borrow TINYINT(1),
+    ADD COLUMN fractionable TINYINT(1),
+    ADD COLUMN asset_class VARCHAR(32),
+    ADD COLUMN exchange VARCHAR(32),
+    ADD COLUMN last_trade_time DATETIME,
+    ADD COLUMN maintenance_margin_requirement DOUBLE,
+    ADD COLUMN min_order_size DOUBLE,
+    ADD COLUMN min_trade_increment DOUBLE,
+    ADD COLUMN min_trade_price_increment DOUBLE,
+    ADD COLUMN attributes TEXT,
+    ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
