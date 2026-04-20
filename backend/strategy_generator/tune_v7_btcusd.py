@@ -34,8 +34,33 @@ grid = {
     "cci_len": [14, 20],
 }
 
-# Load OHLCV data once
-df = fetch_ohlcv("BTC/USD", timespan="YTD")
+# --- OHLCV Data Caching ---
+import time
+DATA_PATH = os.path.join(os.path.dirname(__file__), "btcusd_15m_ytd.csv")
+
+def fetch_ohlcv_with_retry(symbol, timespan="YTD", max_retries=5, delay=10):
+    for attempt in range(max_retries):
+        try:
+            return fetch_ohlcv(symbol, timespan=timespan)
+        except Exception as e:
+            if "429" in str(e) or "too many requests" in str(e).lower():
+                print(f"Alpaca rate limit hit, retrying in {delay} seconds (attempt {attempt+1}/{max_retries})...")
+                time.sleep(delay)
+            else:
+                raise
+    raise RuntimeError("Failed to fetch OHLCV data after retries due to rate limiting.")
+
+def load_or_fetch_ohlcv(symbol, timespan="YTD", path=DATA_PATH):
+    if os.path.exists(path):
+        print(f"Loading OHLCV data from cache: {path}")
+        return pd.read_csv(path, index_col=0, parse_dates=True)
+    print("Fetching OHLCV data from API...")
+    df = fetch_ohlcv_with_retry(symbol, timespan=timespan)
+    df.to_csv(path)
+    print(f"Saved OHLCV data to {path}")
+    return df
+
+df = load_or_fetch_ohlcv("BTC/USD", timespan="YTD")
 
 
 
@@ -84,8 +109,11 @@ if __name__ == "__main__":
         print("Sample passing params:")
         for p in passing_stage1[:5]:
             print(p)
+        # Assign best win rate for next stage
+        stage1_best_wr = max([wr for _, wr in results])
     else:
         print("No parameter sets met the Win Rate guideline.")
+        stage1_best_wr = None
 
     # Stage 2: Net Return evaluation placeholder
     def stage2_worker(params):
