@@ -51,26 +51,6 @@
         "net_return_pct": 1.5447980721501835,
         "first_trade_date": "2026-01-02 17:00:00+00:00",
         "last_trade_date": "2026-04-14 16:00:00+00:00"
-      },
-      {
-        "symbol": "BTC/USD",
-        "version": "v7",
-        "symbol_key": "BTCUSD",
-        "timestamp": "2026-04-20T19:30:00+00:00",
-        "beginning_equity": 100000.0,
-        "final_equity": 337177.77096262085,
-        "current_equity": 337177.77096262085,
-        "total_trades": 22917,
-        "winning_trades": 13380,
-        "losing_trades": 9537,
-        "win_rate": 58.38460531483178,
-        "average_pnl": 10.349424923097411,
-        "total_pnl": 237177.77096262338,
-        "max_drawdown": 868.6473836231162,
-        "max_drawdown_pct": 0.8686473836231162,
-        "net_return_pct": 237.17777096262088,
-        "first_trade_date": "2026-01-01 16:45:00+00:00",
-        "last_trade_date": "2026-04-20 19:30:00+00:00"
       }
     ]
   },
