@@ -28,14 +28,39 @@ candle_interval = args.candle_interval
 # --- User configuration ---
 candle_interval = "15m"  # e.g., 15m, 30m, 1h, etc.
 
-# --- Parameter grid (example, expand as needed) ---
+# --- Parameter grid (expanded for 30m candles, all indicators) ---
 grid = {
-    "macd_fast": [12, 16],
-    "macd_slow": [26, 32],
-    "macd_signal": [9],
-    "stoch_k_len": [7, 14],
-    "stoch_d_len": [3],
-    "cci_len": [20],
+    # MACD
+    "macd_fast": [8, 12, 16, 20],
+    "macd_slow": [21, 26, 32, 40],
+    "macd_signal": [7, 9, 12],
+    # Stochastic
+    "stoch_k_len": [10, 14, 21],
+    "stoch_d_len": [3, 5, 7],
+    # CCI
+    "cci_len": [14, 20, 34],
+    # EMA
+    "ema_fast": [8, 12, 21],
+    "ema_mid": [21, 34, 50],
+    "ema_slow": [55, 89, 144],
+    # RSI
+    "rsi_len": [7, 14, 21],
+    # ATR
+    "atr_len": [7, 14, 21],
+    "atr_baseline_len": [60, 100, 200],
+    # Volume SMA
+    "volume_sma_len": [10, 20, 30],
+    # Bollinger Bands
+    "bb_len": [14, 20, 34],
+    "bb_std_mult": [1.5, 2.0, 2.5],
+    # Donchian Channel
+    "donchian_len": [14, 20, 34],
+    # DMI/ADX
+    "adx_len": [7, 14, 21],
+    # ATR Percentile Window
+    "atr_percentile_window": [60, 120, 240],
+    # Macro EMA
+    "macro_ema_period": [0, 50, 100],
 }
 
 # --- Local CSV caching for OHLCV data with retry logic ---
@@ -122,27 +147,42 @@ if __name__ == "__main__":
 
     # Filter for Win Rate guideline
     WIN_RATE_TARGET = 65.0  # Minimum win rate percentage for passing Stage 1
-    passing_stage1 = [params for params, win_rate in results if win_rate >= WIN_RATE_TARGET]
+
+    # Save all passing Stage 1 parameter sets and their win rates to CSV
+    passing_stage1 = [(params, win_rate) for params, win_rate in results if win_rate >= WIN_RATE_TARGET]
     print(f"\nStage 1 complete. {len(passing_stage1)} parameter sets passed Win Rate ≥ {WIN_RATE_TARGET}%.")
     if passing_stage1:
         print("Sample passing params:")
-        for p in passing_stage1[:5]:
-            print(p)
+        for p, wr in passing_stage1[:5]:
+            print(f"{p} => WR={wr:.2f}")
+        # Save to CSV
+        stage1_table = pd.DataFrame([
+            {**params, "win_rate": win_rate} for params, win_rate in passing_stage1
+        ])
+        stage1_table.to_csv("stage1_passing_params.csv", index=False)
+        print("Saved passing Stage 1 parameter sets to stage1_passing_params.csv")
     else:
         print("No parameter sets met the Win Rate guideline.")
 
     # --- Stage 2: Net Return (placeholder) ---
-    def stage2_worker(params):
-        # TODO: Implement actual Net Return evaluation here
-        # Example: trades = run_backtest(df.copy(), "v7", symbol=symbol, params=params)
-        # net_return = ...
-        net_return = 0.0  # TODO: Replace with real calculation
-        return (params, net_return)
+    def stage2_worker(args):
+        params, win_rate = args
+        trades = run_backtest(df.copy(), "v7", symbol=symbol, params=params)
+        if trades is None or trades.empty:
+            net_return = float('-inf')
+        else:
+            net_return = float(trades["pnl"].sum())
+        return {**params, "win_rate": win_rate, "net_return": net_return}
 
     if passing_stage1:
         print(f"\nStage 2: Evaluating Net Return for {len(passing_stage1)} parameter sets...")
-        # Example: with multiprocessing.Pool() as pool:
-        #     stage2_results = pool.map(stage2_worker, passing_stage1)
-        # For now, just print placeholder
-        for params in passing_stage1:
-            print(f"Stage 2: Would evaluate Net Return for {params}")
+        with multiprocessing.Pool() as pool:
+            stage2_results = list(pool.imap_unordered(stage2_worker, passing_stage1))
+        # Save Stage 2 results to CSV
+        stage2_table = pd.DataFrame(stage2_results)
+        stage2_table.to_csv("stage2_results.csv", index=False)
+        print("Saved Stage 2 Net Return results to stage2_results.csv")
+        # Print top 5 by net return
+        top5 = stage2_table.sort_values("net_return", ascending=False).head(5)
+        print("Top 5 parameter sets by Net Return:")
+        print(top5)
