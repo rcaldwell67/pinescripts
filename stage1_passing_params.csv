@@ -1,1 +1,1 @@
-symbol,lookback,candle-interval,win_rate,macd_fast,macd_slow,macd_signal,stoch_k_len,stoch_d_len,cci_len
+symbol,lookback,candle-interval,win_rate,macd_fast,macd_slow,macd_signal,stoch_k_len,stoch_d_len,cci_len,ema_fast,ema_mid,ema_slow,rsi_len,atr_len,atr_baseline_len,volume_sma_len,bb_len,bb_std_mult,donchian_len,adx_len,atr_percentile_window,macro_ema_period
