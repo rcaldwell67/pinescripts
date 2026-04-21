@@ -250,3 +250,18 @@ Guideline reports and CI workflows enforce threshold compliance before profile p
 
 ## Net Return (> 15%)
 - Dependent on Volatility. This strategy relies on "compounding" small wins. In a YTD context, BTC usually provides enough RSI oscillations to hit this return within 4-5 months.
+
+## Stage 1 Chunking (Parameter Grid Splitting)
+
+If you need to run Stage 1 tuning in chunks (to avoid memory or crash issues with large parameter grids), use the following arguments with the tuning script:
+
+```
+python backend/strategy_generator/tune_v7_btcusd.py --chunk-index 0 --num-chunks 10
+```
+- `--chunk-index` (0-based): Which chunk to run (e.g., 0 for the first chunk)
+- `--num-chunks`: Total number of chunks to split the grid into
+- `--chunk-output`: (optional) Output CSV file for this chunk (default: auto-named)
+
+Each chunk will process a subset of the parameter grid and write its results to a separate CSV (e.g., `stage1_passing_params_chunk1_of_10.csv`).
+
+After all chunks are complete, merge the chunk CSVs for the full result set.

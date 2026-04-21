@@ -26,12 +26,19 @@ def parse_args():
     parser.add_argument("--symbol", type=str, default="BTC/USD", help="Trading symbol (default: BTC/USD)")
     parser.add_argument("--lookback", type=str, default="YTD", help="Lookback period (e.g., YTD, MTD, 1D)")
     parser.add_argument("--candle-interval", type=str, default="15m", help="Candle interval (e.g., 1m, 5m, 15m, 1h)")
+    parser.add_argument("--chunk-index", type=int, default=0, help="Index of this chunk (0-based)")
+    parser.add_argument("--num-chunks", type=int, default=1, help="Total number of chunks")
+    parser.add_argument("--chunk-output", type=str, default=None, help="Optional output CSV for this chunk")
     return parser.parse_args()
+
 
 args = parse_args()
 symbol = args.symbol
 lookback = args.lookback
 candle_interval = args.candle_interval
+chunk_index = args.chunk_index
+num_chunks = args.num_chunks
+chunk_output = args.chunk_output
 
 # --- User configuration ---
 candle_interval = "15m"  # e.g., 15m, 30m, 1h, etc.
@@ -144,41 +151,51 @@ if __name__ == "__main__":
         print(f"Saved OHLCV data to cache: {cache_file}")
 
     # --- Stage 1: Win Rate ---
-    param_grid_iter = itertools.product(*grid.values())
-    total = 1
-    for v in grid.values():
-        total *= len(v)
+
+    # --- Chunking logic ---
+    param_grid_all = list(itertools.product(*grid.values()))
+    total = len(param_grid_all)
+    if num_chunks > 1:
+        chunk_size = (total + num_chunks - 1) // num_chunks
+        start = chunk_index * chunk_size
+        end = min(start + chunk_size, total)
+        param_grid_iter = param_grid_all[start:end]
+        print(f"Stage 1: Evaluating chunk {chunk_index+1}/{num_chunks}: {len(param_grid_iter)} of {total} parameter combinations...")
+    else:
+        param_grid_iter = param_grid_all
+        print(f"Stage 1: Evaluating {total} parameter combinations...")
+
     results = []
     completed = 0
-    print(f"Stage 1: Evaluating {total} parameter combinations...")
     with multiprocessing.Pool(processes=1, initializer=stage1_init, initargs=(df,)) as pool:
         for result in pool.imap_unordered(stage1_worker, param_grid_iter):
             completed += 1
             if result is not None:
                 params, win_rate = result
                 results.append(result)
-                print(f"Stage 1 [{completed}/{total}]: {params} => WR={win_rate:.2f}")
+                print(f"Stage 1 [{completed}/{len(param_grid_iter)}]: {params} => WR={win_rate:.2f}")
             else:
-                print(f"Stage 1 [{completed}/{total}]: No result (empty trades)")
+                print(f"Stage 1 [{completed}/{len(param_grid_iter)}]: No result (empty trades)")
 
     # Filter for Win Rate guideline
     WIN_RATE_TARGET = 65.0  # Minimum win rate percentage for passing Stage 1
 
     # Save all passing Stage 1 parameter sets and their win rates to CSV
     passing_stage1 = [(params, win_rate) for params, win_rate in results if win_rate >= WIN_RATE_TARGET]
-    print(f"\nStage 1 complete. {len(passing_stage1)} parameter sets passed Win Rate ≥ {WIN_RATE_TARGET}%.")
+    print(f"\nStage 1 chunk complete. {len(passing_stage1)} parameter sets passed Win Rate ≥ {WIN_RATE_TARGET}% in this chunk.")
     if passing_stage1:
         print("Sample passing params:")
         for p, wr in passing_stage1[:5]:
             print(f"{p} => WR={wr:.2f}")
-        # Save to CSV
+        # Save to chunked CSV
+        out_csv = chunk_output or f"stage1_passing_params_chunk{chunk_index+1}_of_{num_chunks}.csv" if num_chunks > 1 else "stage1_passing_params.csv"
         stage1_table = pd.DataFrame([
             {**params, "win_rate": win_rate} for params, win_rate in passing_stage1
         ])
-        stage1_table.to_csv("stage1_passing_params.csv", index=False)
-        print("Saved passing Stage 1 parameter sets to stage1_passing_params.csv")
+        stage1_table.to_csv(out_csv, index=False)
+        print(f"Saved passing Stage 1 parameter sets to {out_csv}")
     else:
-        print("No parameter sets met the Win Rate guideline.")
+        print("No parameter sets met the Win Rate guideline in this chunk.")
 
     # --- Stage 2: Net Return (placeholder) ---
     def stage2_worker(args):
