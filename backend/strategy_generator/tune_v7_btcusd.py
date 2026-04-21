@@ -1,4 +1,12 @@
 """
+# --- Set memory limit for Stage 1 (Windows: psutil) ---
+try:
+    import psutil, os
+    p = psutil.Process(os.getpid())
+    # 1GB memory limit
+    p.rlimit(psutil.RLIMIT_AS, (1 * 1024**3, 1 * 1024**3))
+except Exception as e:
+    pass  # If psutil not available or fails, continue without limit
 Tuning script for v7 BTC/USD to meet or exceed strategy guidelines.
 Staged optimization: Win Rate → Net Return → Max Drawdown.
 Multiprocessing and local CSV caching for efficiency.
