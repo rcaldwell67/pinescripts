@@ -143,7 +143,7 @@ if __name__ == "__main__":
     results = []
     completed = 0
     print(f"Stage 1: Evaluating {total} parameter combinations...")
-    with multiprocessing.Pool(initializer=stage1_init, initargs=(df,)) as pool:
+    with multiprocessing.Pool(processes=4, initializer=stage1_init, initargs=(df,)) as pool:
         for result in pool.imap_unordered(stage1_worker, param_grid_iter):
             completed += 1
             if result is not None:
@@ -184,7 +184,7 @@ if __name__ == "__main__":
 
     if passing_stage1:
         print(f"\nStage 2: Evaluating Net Return for {len(passing_stage1)} parameter sets...")
-        with multiprocessing.Pool() as pool:
+        with multiprocessing.Pool(processes=4) as pool:
             stage2_results = list(pool.imap_unordered(stage2_worker, passing_stage1))
         # Save Stage 2 results to CSV
         stage2_table = pd.DataFrame(stage2_results)
