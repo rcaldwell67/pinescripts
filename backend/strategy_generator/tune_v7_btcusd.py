@@ -108,15 +108,21 @@ def run_backtest(df, version, symbol, params=None):
     return pd.DataFrame({'pnl': pnl, 'equity': equity})
 
 # --- Stage 1: Win Rate ---
+df_worker = None
 def stage1_worker(values):
+    global df_worker
     params = get_v7_params(symbol)
     for k, v in zip(grid.keys(), values):
         params["signal"][k] = v
-    trades = run_backtest(df.copy(), "v7", symbol=symbol, params=params)
+    trades = run_backtest(df_worker.copy(), "v7", symbol=symbol, params=params)
     if trades is None or trades.empty:
         return None
     win_rate = float((trades["pnl"] > 0).mean() * 100.0)
     return (dict(params["signal"]), win_rate)
+
+def stage1_init(df):
+    global df_worker
+    df_worker = df
 
 if __name__ == "__main__":
     # --- Load or fetch OHLCV data ---
@@ -130,13 +136,15 @@ if __name__ == "__main__":
         print(f"Saved OHLCV data to cache: {cache_file}")
 
     # --- Stage 1: Win Rate ---
-    param_grid = list(itertools.product(*grid.values()))
-    total = len(param_grid)
+    param_grid_iter = itertools.product(*grid.values())
+    total = 1
+    for v in grid.values():
+        total *= len(v)
     results = []
     completed = 0
     print(f"Stage 1: Evaluating {total} parameter combinations...")
-    with multiprocessing.Pool() as pool:
-        for result in pool.imap_unordered(stage1_worker, param_grid):
+    with multiprocessing.Pool(initializer=stage1_init, initargs=(df,)) as pool:
+        for result in pool.imap_unordered(stage1_worker, param_grid_iter):
             completed += 1
             if result is not None:
                 params, win_rate = result
