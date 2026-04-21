@@ -17,22 +17,40 @@ from backtest_backtrader_alpaca import run_backtest
 
 
 def grid_search(param_grid: Dict[str, List[Any]], run_fn, run_kwargs: dict) -> List[dict]:
+    from v1_params import get_v1_params
     keys = list(param_grid.keys())
     results = []
     for values in itertools.product(*(param_grid[k] for k in keys)):
         params = dict(zip(keys, values))
-        result = run_fn(**run_kwargs, **params)
-        results.append({"params": params, "result": result})
+        run_kwargs_copy = dict(run_kwargs)
+        # Start with default v1 params
+        merged_params = get_v1_params()
+        # Merge grid params into all sections
+        for k, v in params.items():
+            for section in merged_params:
+                if k in merged_params[section]:
+                    merged_params[section][k] = v
+        run_kwargs_copy['params'] = merged_params
+        result = run_fn(**run_kwargs_copy)
+        results.append({"params": params, "result": str(result)})
     return results
 
 
 def random_search(param_grid: Dict[str, List[Any]], run_fn, run_kwargs: dict, n_iter: int = 10) -> List[dict]:
+    from v1_params import get_v1_params
     keys = list(param_grid.keys())
     results = []
     for _ in range(n_iter):
         params = {k: random.choice(param_grid[k]) for k in keys}
-        result = run_fn(**run_kwargs, **params)
-        results.append({"params": params, "result": result})
+        run_kwargs_copy = dict(run_kwargs)
+        merged_params = get_v1_params()
+        for k, v in params.items():
+            for section in merged_params:
+                if k in merged_params[section]:
+                    merged_params[section][k] = v
+        run_kwargs_copy['params'] = merged_params
+        result = run_fn(**run_kwargs_copy)
+        results.append({"params": params, "result": str(result)})
     return results
 
 
@@ -45,8 +63,15 @@ def main():
     parser.add_argument("--n-iter", type=int, default=10, help="Random search iterations")
     args = parser.parse_args()
 
+    import pandas as pd
+    # Load OHLCV data for BTC/USD (stage1)
+    if args.symbol == "BTC/USD":
+        df = pd.read_csv("strategy_generator/btcusd_15m_ytd.csv")
+    else:
+        raise ValueError(f"No OHLCV data loader for symbol: {args.symbol}")
+
     param_grid = json.loads(args.param_grid)
-    run_kwargs = {"symbol": args.symbol, "version": args.version}
+    run_kwargs = {"df": df, "symbol": args.symbol, "version": args.version}
     if args.search == "grid":
         results = grid_search(param_grid, run_backtest, run_kwargs)
     else:

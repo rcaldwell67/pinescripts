@@ -456,6 +456,7 @@ def run_backtest(
     version: str,
     symbol: str | None = None,
     profile: str | None = None,
+    params: dict | None = None,
 ) -> "pd.DataFrame":
     """
     Run the backtest for the given DataFrame and strategy version.
@@ -464,42 +465,43 @@ def run_backtest(
         version: Strategy version (v1-v6).
         symbol: Optional trading symbol.
         profile: Optional runtime profile.
+        params: Optional parameters dict to override defaults.
     Returns:
         DataFrame of trades.
     """
     if version == "v1":
         from apm_v1_backtest import backtest_apm_v1
         from v1_params import get_v1_params
-        return backtest_apm_v1(df, params=get_v1_params(symbol=symbol, profile=profile))
+        return backtest_apm_v1(df, params=params if params is not None else get_v1_params(symbol=symbol, profile=profile))
     if version == "v2":
         from apm_v2_backtest import backtest_apm_v2
         from v2_params import get_v2_params
-        return backtest_apm_v2(df, params=get_v2_params(symbol=symbol, profile=profile))
+        return backtest_apm_v2(df, params=params if params is not None else get_v2_params(symbol=symbol, profile=profile))
     if version == "v3":
         from apm_v2_backtest import backtest_apm_v2
         from v3_params import get_v3_params
-        return backtest_apm_v2(df, params=get_v3_params(symbol=symbol, profile=profile))
+        return backtest_apm_v2(df, params=params if params is not None else get_v3_params(symbol=symbol, profile=profile))
     if version == "v4":
         from apm_v2_backtest import backtest_apm_v2
         from v4_params import get_v4_params
-        return backtest_apm_v2(df, params=get_v4_params(symbol=symbol, profile=profile))
+        return backtest_apm_v2(df, params=params if params is not None else get_v4_params(symbol=symbol, profile=profile))
     if version == "v5":
         from apm_v2_backtest import backtest_apm_v2
         from v5_params import get_v5_params
-        return backtest_apm_v2(df, params=get_v5_params(symbol=symbol, profile=profile))
+        return backtest_apm_v2(df, params=params if params is not None else get_v5_params(symbol=symbol, profile=profile))
     if version == "v6":
         from apm_v2_backtest import backtest_apm_v2
         from v6_params import get_v6_params
-        return backtest_apm_v2(df, params=get_v6_params(symbol=symbol, profile=profile))
+        return backtest_apm_v2(df, params=params if params is not None else get_v6_params(symbol=symbol, profile=profile))
     if version == "v7":
         import sys, os
         sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'strategy_generator/v7')))
         from apm_v7 import run_v7_backtest, get_v7_params
-        return run_v7_backtest(df, get_v7_params(symbol=symbol))
+        return run_v7_backtest(df, params if params is not None else get_v7_params(symbol=symbol))
     if version == "universal":
         from strategy_generator.apm_universal_backtest import backtest_apm_universal
         from strategy_generator.universal_params import get_universal_params
-        return backtest_apm_universal(df, params=get_universal_params(symbol=symbol, profile=profile))
+        return backtest_apm_universal(df, params=params if params is not None else get_universal_params(symbol=symbol, profile=profile))
     raise ValueError(f"Unknown version: {version!r}. Valid values: {list(VERSION_MAP)}")
 
 
