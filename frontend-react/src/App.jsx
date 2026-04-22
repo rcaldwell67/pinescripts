@@ -41,14 +41,17 @@ function App() {
   const [activePage, setActivePage] = useState("Dashboard");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [paperTradingOpen, setPaperTradingOpen] = useState(false);
+  const [utilitiesOpen, setUtilitiesOpen] = useState(false);
 
   const handleNav = (page) => {
     if (page === "Settings") setSettingsOpen((v) => !v);
     else if (page === "Paper Trading") setPaperTradingOpen((v) => !v);
+    else if (page === "Utilities") setUtilitiesOpen((v) => !v);
     else {
       setActivePage(page);
       setSettingsOpen(false);
       setPaperTradingOpen(false);
+      setUtilitiesOpen(false);
     }
   };
 
@@ -71,6 +74,14 @@ function App() {
             </li>
             <li><a href="#" onClick={() => handleNav("Live Trading")}>Live Trading</a></li>
             <li><a href="#" onClick={() => handleNav("Charts")}>Charts</a></li>
+            <li>
+              <a href="#" onClick={() => handleNav("Utilities")}>Utilities</a>
+              {utilitiesOpen && (
+                <ul className="submenu">
+                  <li><a href="#" onClick={() => setActivePage("Scripts")}>Scripts</a></li>
+                </ul>
+              )}
+            </li>
             <li>
               <a href="#" onClick={() => handleNav("Settings")}>Settings</a>
               {settingsOpen && (
@@ -142,6 +153,11 @@ function App() {
               <h2>Paper Trading &ndash; Simulated</h2>
               <p>Historical or scenario-based paper trading for strategy testing.</p>
               <SimulatedPaperTable />
+            </section>
+          ) : activePage === "Scripts" ? (
+            <section style={{ padding: 24 }}>
+              <h2>Utilities &ndash; Scripts</h2>
+              <p>Access and run utility scripts from this section. (Coming soon)</p>
             </section>
           ) : (
             <section style={{ padding: 24 }}>
