@@ -1,0 +1,77 @@
+name: Stage 1 Parameter Tuning
+
+on:
+  workflow_dispatch:
+    inputs:
+      symbol:
+        description: 'Trading symbol (default: BTC/USD)'
+        required: false
+        default: 'BTC/USD'
+      lookback:
+        description: 'Lookback period (e.g., YTD, MTD, 1D)'
+        required: false
+        default: 'YTD'
+      candle_interval:
+        description: 'Candle interval (e.g., 1m, 5m, 15m, 1h)'
+        required: false
+        default: '15m'
+      max_workers:
+        description: 'Max parallel workers'
+        required: false
+        default: '2'
+      sample_fraction:
+        description: 'Fraction of parameter grid to sample (0 < f <= 1.0)'
+        required: false
+        default: '1.0'
+      save_every:
+        description: 'Save intermediate results every N parameter sets'
+        required: false
+        default: '10000'
+      max_mem_mb:
+        description: 'Max memory (MB) before aborting'
+        required: false
+        default: '950'
+      max_cpu:
+        description: 'Max CPU usage (fraction)'
+        required: false
+        default: '0.95'
+
+jobs:
+  stage1-tuning:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install psutil
+
+      - name: Run Stage 1 tuning script
+        run: |
+          python backend/strategy_generator/tune_v7_btcusd.py \
+            --symbol "${{ github.event.inputs.symbol }}" \
+            --lookback "${{ github.event.inputs.lookback }}" \
+            --candle-interval "${{ github.event.inputs.candle_interval }}" \
+            --max-workers "${{ github.event.inputs.max_workers }}" \
+            --sample-fraction "${{ github.event.inputs.sample_fraction }}" \
+            --save-every "${{ github.event.inputs.save_every }}" \
+            --max-mem-mb "${{ github.event.inputs.max_mem_mb }}" \
+            --max-cpu "${{ github.event.inputs.max_cpu }}"
+        env:
+          PYTHONUNBUFFERED: 1
+
+      - name: Upload Stage 1 results
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage1_passing_params
+          path: stage1_passing_params.csv
+          if-no-files-found: warn
