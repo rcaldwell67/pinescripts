@@ -156,15 +156,40 @@ def stage1_init(df):
     df_worker = df
 
 if __name__ == "__main__":
+
+    import psutil
+    import datetime
+    process = psutil.Process(os.getpid())
+    def log_resources(stage):
+        mem_mb = process.memory_info().rss / (1024 * 1024)
+        cpu = process.cpu_percent(interval=0.1) / 100.0
+        now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        log_line = f"[{now}] {stage}: mem={mem_mb:.2f}MB, cpu={cpu:.2f}"
+        print(log_line)
+        with open("resource_log.txt", "a") as f:
+            f.write(log_line + "\n")
+
     # --- Load or fetch OHLCV data ---
+    log_resources("START")
     if cache_file.exists():
         print(f"Loading OHLCV data from cache: {cache_file}")
-        df = pd.read_csv(cache_file)
+        df = pd.read_csv(cache_file, low_memory=False)
+        log_resources("AFTER CSV LOAD")
     else:
         print(f"Fetching OHLCV data for {symbol} ({lookback}, {candle_interval}) from API...")
         df = fetch_ohlcv_with_retry(symbol, lookback=lookback, candle_interval=candle_interval)
+        log_resources("AFTER API FETCH")
         df.to_csv(cache_file, index=False)
         print(f"Saved OHLCV data to cache: {cache_file}")
+        log_resources("AFTER CSV SAVE")
+
+    # Log DataFrame info to help debug memory usage
+    print(f"DataFrame shape: {df.shape}")
+    print(f"DataFrame dtypes:\n{df.dtypes}")
+    with open("resource_log.txt", "a") as f:
+        f.write(f"DataFrame shape: {df.shape}\n")
+        f.write(f"DataFrame dtypes:\n{df.dtypes}\n")
+    log_resources("AFTER DF INFO")
 
     # --- Stage 1: Win Rate ---
 
@@ -221,6 +246,8 @@ if __name__ == "__main__":
                     {**params, "win_rate": win_rate} for params, win_rate in results
                 ]).to_csv(tmp_csv, index=False)
                 print(f"[Checkpoint] Saved {completed} results to {tmp_csv}")
+            if completed % 100 == 0:
+                log_resources(f"PROGRESS {completed}")
             check_resources()
 
     # Filter for Win Rate guideline
