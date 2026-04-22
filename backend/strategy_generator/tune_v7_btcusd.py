@@ -31,10 +31,11 @@ def parse_args():
     parser.add_argument("--lookback", type=str, default="YTD", help="Lookback period (e.g., YTD, MTD, 1D)")
     parser.add_argument("--candle-interval", type=str, default="15m", help="Candle interval (e.g., 1m, 5m, 15m, 1h)")
     parser.add_argument("--chunk-index", type=int, default=0, help="Index of this chunk (0-based)")
-    parser.add_argument("--num-chunks", type=int, default=1, help="Total number of chunks")
+        parser.add_argument("--num-chunks", type=int, default=8, help="Total number of chunks (default: 8)")
     parser.add_argument("--chunk-output", type=str, default=None, help="Optional output CSV for this chunk")
 
     parser.add_argument("--max-workers", type=int, default=1, help="Maximum parallel worker processes (default: 1)")
+        parser.add_argument("--max-workers", type=int, default=2, help="Maximum parallel worker processes (default: 2)")
     parser.add_argument("--sample-fraction", type=float, default=1.0, help="Fraction of parameter grid to sample (0 < f <= 1.0)")
     parser.add_argument("--save-every", type=int, default=10000, help="Save intermediate results every N parameter sets")
     parser.add_argument("--max-mem-mb", type=int, default=950, help="Max memory (MB) before aborting (default: 950)")
