@@ -157,7 +157,14 @@ function App() {
           ) : activePage === "Scripts" ? (
             <section style={{ padding: 24 }}>
               <h2>Utilities &ndash; Scripts</h2>
-              <p>Access and run utility scripts from this section. (Coming soon)</p>
+              <div style={{ marginTop: 24 }}>
+                <h3>Stage 1</h3>
+                <p>Stage 1 parameter selection and evaluation utilities.</p>
+                <h3>Stage 2</h3>
+                <p>Stage 2 net return and further filtering utilities.</p>
+                <h3>Stage 3</h3>
+                <p>Stage 3 advanced analysis and reporting utilities.</p>
+              </div>
             </section>
           ) : (
             <section style={{ padding: 24 }}>
