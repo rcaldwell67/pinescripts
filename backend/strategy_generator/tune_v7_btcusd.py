@@ -62,36 +62,36 @@ candle_interval = "15m"  # e.g., 15m, 30m, 1h, etc.
 # --- Parameter grid (expanded for 30m candles, all indicators) ---
 grid = {
     # MACD
-    "macd_fast": [8, 12, 16, 20],
-    "macd_slow": [21, 26, 32, 40],
-    "macd_signal": [7, 9, 12],
+    "macd_fast": [8, 12],
+    "macd_slow": [21, 26],
+    "macd_signal": [7, 9],
     # Stochastic
-    "stoch_k_len": [10, 14, 21],
-    "stoch_d_len": [3, 5, 7],
+    "stoch_k_len": [10, 14],
+    "stoch_d_len": [3, 5],
     # CCI
-    "cci_len": [14, 20, 34],
+    "cci_len": [14, 20],
     # EMA
-    "ema_fast": [8, 12, 21],
-    "ema_mid": [21, 34, 50],
-    "ema_slow": [55, 89, 144],
+    "ema_fast": [8, 12],
+    "ema_mid": [21, 34],
+    "ema_slow": [55, 89],
     # RSI
-    "rsi_len": [7, 14, 21],
+    "rsi_len": [7, 14],
     # ATR
-    "atr_len": [7, 14, 21],
-    "atr_baseline_len": [60, 100, 200],
+    "atr_len": [7, 14],
+    "atr_baseline_len": [60, 100],
     # Volume SMA
-    "volume_sma_len": [10, 20, 30],
+    "volume_sma_len": [10, 20],
     # Bollinger Bands
-    "bb_len": [14, 20, 34],
-    "bb_std_mult": [1.5, 2.0, 2.5],
+    "bb_len": [14, 20],
+    "bb_std_mult": [1.5, 2.0],
     # Donchian Channel
-    "donchian_len": [14, 20, 34],
+    "donchian_len": [14, 20],
     # DMI/ADX
-    "adx_len": [7, 14, 21],
+    "adx_len": [7, 14],
     # ATR Percentile Window
-    "atr_percentile_window": [60, 120, 240],
+    "atr_percentile_window": [60, 120],
     # Macro EMA
-    "macro_ema_period": [0, 50, 100],
+    "macro_ema_period": [0, 50],
 }
 
 # --- Local CSV caching for OHLCV data with retry logic ---
@@ -217,13 +217,20 @@ if __name__ == "__main__":
         param_grid_all = random.sample(param_grid_all, sample_size)
         total = len(param_grid_all)
         print(f"Sampling {sample_size} parameter sets from full grid.")
-    # Chunking
-    if num_chunks > 1:
-        chunk_size = (total + num_chunks - 1) // num_chunks
+
+    # --- Auto-chunking for max 50MB per chunk ---
+    EST_ROW_SIZE = 100  # bytes per parameter set (conservative)
+    MAX_CHUNK_BYTES = 50 * 1024 * 1024  # 50MB
+    max_chunk_rows = MAX_CHUNK_BYTES // EST_ROW_SIZE
+    auto_num_chunks = (total + max_chunk_rows - 1) // max_chunk_rows
+    # Use the larger of user-specified num_chunks or auto_num_chunks
+    effective_num_chunks = max(num_chunks, auto_num_chunks)
+    if effective_num_chunks > 1:
+        chunk_size = (total + effective_num_chunks - 1) // effective_num_chunks
         start = chunk_index * chunk_size
         end = min(start + chunk_size, total)
         param_grid_iter = param_grid_all[start:end]
-        print(f"Stage 1: Evaluating chunk {chunk_index+1}/{num_chunks}: {len(param_grid_iter)} of {total} parameter combinations...")
+        print(f"Stage 1: Evaluating chunk {chunk_index+1}/{effective_num_chunks}: {len(param_grid_iter)} of {total} parameter combinations...")
     else:
         param_grid_iter = param_grid_all
         print(f"Stage 1: Evaluating {total} parameter combinations...")

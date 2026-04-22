@@ -13,3 +13,33 @@ trade_count    float64
 vwap           float64
 dtype: object
 [2026-04-22 10:51:54] AFTER DF INFO: mem=91.96MB, cpu=0.00
+[2026-04-22 14:30:46] START: mem=90.95MB, cpu=0.00
+[2026-04-22 14:30:46] AFTER CSV LOAD: mem=91.70MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-22 14:30:46] AFTER DF INFO: mem=91.84MB, cpu=0.00
+[2026-04-22 14:34:01] START: mem=91.01MB, cpu=0.00
+[2026-04-22 14:34:01] AFTER CSV LOAD: mem=91.74MB, cpu=0.15
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-22 14:34:01] AFTER DF INFO: mem=91.88MB, cpu=0.00
