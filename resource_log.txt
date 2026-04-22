@@ -1,0 +1,15 @@
+[2026-04-22 10:51:54] START: mem=91.07MB, cpu=0.00
+[2026-04-22 10:51:54] AFTER CSV LOAD: mem=91.83MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-22 10:51:54] AFTER DF INFO: mem=91.96MB, cpu=0.00
