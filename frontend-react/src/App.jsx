@@ -160,6 +160,24 @@ function App() {
               <div style={{ marginTop: 24 }}>
                 <h3>Stage 1</h3>
                 <p>Stage 1 parameter selection and evaluation utilities.</p>
+                <a
+                  href="https://github.com/rcaldwell67/pinescripts/actions/workflows/stage1-tuning.yml"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'inline-block',
+                    margin: '12px 0 24px 0',
+                    padding: '10px 18px',
+                    background: '#0a6',
+                    color: '#fff',
+                    borderRadius: 6,
+                    fontWeight: 600,
+                    textDecoration: 'none',
+                    boxShadow: '0 1px 4px #0002',
+                  }}
+                >
+                  Launch Stage 1 Workflow
+                </a>
                 <h3>Stage 2</h3>
                 <p>Stage 2 net return and further filtering utilities.</p>
                 <h3>Stage 3</h3>
