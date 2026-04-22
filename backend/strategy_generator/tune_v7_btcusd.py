@@ -196,8 +196,21 @@ if __name__ == "__main__":
     # --- Chunking logic ---
 
     import random
-    param_grid_all = list(itertools.product(*grid.values()))
+
+    # --- Optional: Pre-filter parameter combinations before grid expansion ---
+    # Example: Only keep combinations where macd_fast < macd_slow (domain knowledge)
+    def is_valid_combination(param_tuple):
+        param_dict = dict(zip(grid.keys(), param_tuple))
+        # Example filter: macd_fast < macd_slow
+        if param_dict["macd_fast"] >= param_dict["macd_slow"]:
+            return False
+        # Add more domain-specific filters as needed
+        return True
+
+    # Expand grid and apply pre-filter
+    param_grid_all = [t for t in itertools.product(*grid.values()) if is_valid_combination(t)]
     total = len(param_grid_all)
+
     # Sampling
     if sample_fraction < 1.0:
         sample_size = int(total * sample_fraction)

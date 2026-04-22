@@ -253,6 +253,16 @@ Guideline reports and CI workflows enforce threshold compliance before profile p
 
 ## Stage 1 Chunking (Parameter Grid Splitting)
 
+
+**Best practices for large parameter grids:**
+- Reduce the number of parameter values in the grid (edit the grid in tune_v7_btcusd.py)
+- Use pre-filtering to remove invalid or uninteresting parameter combinations (see code comment in tune_v7_btcusd.py)
+- Use --sample-fraction to randomly sample the grid
+- Use --num-chunks and --chunk-index to split the grid into smaller jobs
+- Use --max-workers to limit parallelism
+- Use --save-every to checkpoint results
+- Use --max-mem-mb and --max-cpu to abort if resource limits are exceeded
+
 If you need to run Stage 1 tuning in chunks (to avoid memory or crash issues with large parameter grids), use the following arguments with the tuning script:
 
 ```
