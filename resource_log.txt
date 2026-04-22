@@ -59,3 +59,68 @@ vwap           float64
 dtype: object
 [2026-04-22 14:47:53] AFTER DF INFO: mem=85.58MB, cpu=0.00
 [2026-04-22 14:48:05] PROGRESS 100: mem=225.84MB, cpu=0.00
+[2026-04-22 15:21:13] START: mem=84.86MB, cpu=0.00
+[2026-04-22 15:21:13] AFTER CSV LOAD: mem=85.63MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-22 15:21:14] AFTER DF INFO: mem=85.76MB, cpu=0.00
+[2026-04-22 15:33:27] START: mem=84.63MB, cpu=0.00
+[2026-04-22 15:33:27] AFTER CSV LOAD: mem=85.30MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-22 15:33:27] AFTER DF INFO: mem=85.43MB, cpu=0.00
+[2026-04-22 15:34:17] START: mem=85.52MB, cpu=0.00
+[2026-04-22 15:34:17] AFTER CSV LOAD: mem=86.03MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-22 15:34:17] AFTER DF INFO: mem=86.16MB, cpu=0.16
+[2026-04-22 15:38:46] START: mem=85.29MB, cpu=0.00
+[2026-04-22 15:38:46] AFTER CSV LOAD: mem=86.05MB, cpu=0.16
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-22 15:38:46] AFTER DF INFO: mem=86.18MB, cpu=0.00
+[2026-04-22 15:38:58] PROGRESS 100: mem=197.16MB, cpu=0.00
+[2026-04-22 15:39:08] PROGRESS 200: mem=197.16MB, cpu=0.00
+[2026-04-22 15:39:18] PROGRESS 300: mem=197.16MB, cpu=0.00
+[2026-04-22 15:39:28] PROGRESS 400: mem=197.16MB, cpu=0.00
+[2026-04-22 15:39:39] PROGRESS 500: mem=197.16MB, cpu=0.00

@@ -31,11 +31,10 @@ def parse_args():
     parser.add_argument("--lookback", type=str, default="YTD", help="Lookback period (e.g., YTD, MTD, 1D)")
     parser.add_argument("--candle-interval", type=str, default="15m", help="Candle interval (e.g., 1m, 5m, 15m, 1h)")
     parser.add_argument("--chunk-index", type=int, default=0, help="Index of this chunk (0-based)")
-        parser.add_argument("--num-chunks", type=int, default=8, help="Total number of chunks (default: 8)")
+    parser.add_argument("--num-chunks", type=int, default=1024, help="Total number of chunks (default: 1024)")
     parser.add_argument("--chunk-output", type=str, default=None, help="Optional output CSV for this chunk")
 
-    parser.add_argument("--max-workers", type=int, default=1, help="Maximum parallel worker processes (default: 1)")
-        parser.add_argument("--max-workers", type=int, default=2, help="Maximum parallel worker processes (default: 2)")
+    parser.add_argument("--max-workers", type=int, default=2, help="Maximum parallel worker processes (default: 2)")
     parser.add_argument("--sample-fraction", type=float, default=1.0, help="Fraction of parameter grid to sample (0 < f <= 1.0)")
     parser.add_argument("--save-every", type=int, default=10000, help="Save intermediate results every N parameter sets")
     parser.add_argument("--max-mem-mb", type=int, default=950, help="Max memory (MB) before aborting (default: 950)")
@@ -291,25 +290,78 @@ if __name__ == "__main__":
     else:
         print("No parameter sets met the Win Rate guideline in this chunk.")
 
-    # --- Stage 2: Net Return (placeholder) ---
-    def stage2_worker(args):
-        params, win_rate = args
-        trades = run_backtest(df.copy(), "v7", symbol=symbol, params=params)
-        if trades is None or trades.empty:
-            net_return = float('-inf')
-        else:
-            net_return = float(trades["pnl"].sum())
-        return {**params, "win_rate": win_rate, "net_return": net_return}
 
-    if passing_stage1:
-        print(f"\nStage 2: Evaluating Net Return for {len(passing_stage1)} parameter sets...")
-        with multiprocessing.Pool(processes=1) as pool:
-            stage2_results = list(pool.imap_unordered(stage2_worker, passing_stage1))
-        # Save Stage 2 results to CSV
-        stage2_table = pd.DataFrame(stage2_results)
-        stage2_table.to_csv("stage2_results.csv", index=False)
-        print("Saved Stage 2 Net Return results to stage2_results.csv")
-        # Print top 5 by net return
-        top5 = stage2_table.sort_values("net_return", ascending=False).head(5)
-        print("Top 5 parameter sets by Net Return:")
-        print(top5)
+# --- Stage 2: Net Return (with chunking and multiprocessing) ---
+stage2_df_worker = None
+def stage2_worker(args):
+    global stage2_df_worker
+    params, win_rate = args
+    trades = run_backtest(stage2_df_worker.copy(), "v7", symbol=symbol, params=params)
+    if trades is None or trades.empty:
+        net_return = float('-inf')
+    else:
+        net_return = float(trades["pnl"].sum())
+    return {**params, "win_rate": win_rate, "net_return": net_return}
+
+def stage2_init(df):
+    global stage2_df_worker
+    stage2_df_worker = df
+
+if passing_stage1:
+    # Stage 2 chunking
+    stage2_total = len(passing_stage1)
+    # Use same chunking logic as Stage 1 for consistency
+    EST_ROW_SIZE2 = 120  # bytes per param set (slightly larger)
+    MAX_CHUNK_BYTES2 = 50 * 1024 * 1024
+    max_chunk_rows2 = MAX_CHUNK_BYTES2 // EST_ROW_SIZE2
+    auto_num_chunks2 = (stage2_total + max_chunk_rows2 - 1) // max_chunk_rows2
+    effective_num_chunks2 = max(num_chunks, auto_num_chunks2)
+    if effective_num_chunks2 > 1:
+        chunk_size2 = (stage2_total + effective_num_chunks2 - 1) // effective_num_chunks2
+        start2 = chunk_index * chunk_size2
+        end2 = min(start2 + chunk_size2, stage2_total)
+        stage2_param_iter = passing_stage1[start2:end2]
+        print(f"Stage 2: Evaluating chunk {chunk_index+1}/{effective_num_chunks2}: {len(stage2_param_iter)} of {stage2_total} parameter sets...")
+    else:
+        stage2_param_iter = passing_stage1
+        print(f"Stage 2: Evaluating {stage2_total} parameter sets...")
+
+    import psutil
+    process2 = psutil.Process(os.getpid())
+    def check_resources2():
+        mem_mb = process2.memory_info().rss / (1024 * 1024)
+        cpu = process2.cpu_percent(interval=0.1) / 100.0
+        if mem_mb > max_mem_mb:
+            print(f"[Stage 2] Memory usage exceeded {max_mem_mb} MB. Aborting.")
+            exit(1)
+        if cpu > max_cpu:
+            print(f"[Stage 2] CPU usage exceeded {max_cpu*100:.0f}%. Aborting.")
+            exit(1)
+
+    stage2_results = []
+    completed2 = 0
+    with multiprocessing.Pool(processes=max_workers, initializer=stage2_init, initargs=(df,)) as pool:
+        for result in pool.imap_unordered(stage2_worker, stage2_param_iter):
+            completed2 += 1
+            if result is not None:
+                stage2_results.append(result)
+                print(f"Stage 2 [{completed2}/{len(stage2_param_iter)}]: {result['win_rate']:.2f} WR, Net={result['net_return']:.2f}")
+            else:
+                print(f"Stage 2 [{completed2}/{len(stage2_param_iter)}]: No result (empty trades)")
+            if completed2 % save_every == 0:
+                tmp_csv2 = f"stage2_partial_{chunk_index+1}_of_{num_chunks}.csv"
+                pd.DataFrame(stage2_results).to_csv(tmp_csv2, index=False)
+                print(f"[Stage 2 Checkpoint] Saved {completed2} results to {tmp_csv2}")
+            if completed2 % 100 == 0:
+                log_resources(f"STAGE2 PROGRESS {completed2}")
+            check_resources2()
+
+    # Save Stage 2 results to CSV
+    stage2_table = pd.DataFrame(stage2_results)
+    out_csv2 = f"stage2_results_chunk{chunk_index+1}_of_{num_chunks}.csv" if num_chunks > 1 else "stage2_results.csv"
+    stage2_table.to_csv(out_csv2, index=False)
+    print(f"Saved Stage 2 Net Return results to {out_csv2}")
+    # Print top 5 by net return
+    top5 = stage2_table.sort_values("net_return", ascending=False).head(5)
+    print("Top 5 parameter sets by Net Return:")
+    print(top5)
