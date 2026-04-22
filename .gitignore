@@ -5,7 +5,7 @@
 .env
 .backend-api/.env
 .env.example
-.github
+
 
 node_modules
 __pycache__/
