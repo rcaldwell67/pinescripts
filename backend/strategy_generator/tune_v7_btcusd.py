@@ -5,8 +5,12 @@ try:
     p = psutil.Process(os.getpid())
     # 1GB memory limit
     p.rlimit(psutil.RLIMIT_AS, (1 * 1024**3, 1 * 1024**3))
-except Exception as e:
-    pass  # If psutil not available or fails, continue without limit
+except Exception:
+    try:
+        import resource
+        resource.setrlimit(resource.RLIMIT_AS, (1 * 1024**3, 1 * 1024**3))
+    except Exception:
+        pass  # If resource/psutil not available or fails, continue without limit
 Tuning script for v7 BTC/USD to meet or exceed strategy guidelines.
 Staged optimization: Win Rate → Net Return → Max Drawdown.
 Multiprocessing and local CSV caching for efficiency.
@@ -29,16 +33,28 @@ def parse_args():
     parser.add_argument("--chunk-index", type=int, default=0, help="Index of this chunk (0-based)")
     parser.add_argument("--num-chunks", type=int, default=1, help="Total number of chunks")
     parser.add_argument("--chunk-output", type=str, default=None, help="Optional output CSV for this chunk")
+
+    parser.add_argument("--max-workers", type=int, default=1, help="Maximum parallel worker processes (default: 1)")
+    parser.add_argument("--sample-fraction", type=float, default=1.0, help="Fraction of parameter grid to sample (0 < f <= 1.0)")
+    parser.add_argument("--save-every", type=int, default=10000, help="Save intermediate results every N parameter sets")
+    parser.add_argument("--max-mem-mb", type=int, default=950, help="Max memory (MB) before aborting (default: 950)")
+    parser.add_argument("--max-cpu", type=float, default=0.95, help="Max CPU usage (fraction, default: 0.95)")
     return parser.parse_args()
 
 
 args = parse_args()
+
 symbol = args.symbol
 lookback = args.lookback
 candle_interval = args.candle_interval
 chunk_index = args.chunk_index
 num_chunks = args.num_chunks
 chunk_output = args.chunk_output
+max_workers = args.max_workers
+sample_fraction = args.sample_fraction
+save_every = args.save_every
+max_mem_mb = args.max_mem_mb
+max_cpu = args.max_cpu
 
 # --- User configuration ---
 candle_interval = "15m"  # e.g., 15m, 30m, 1h, etc.
@@ -153,8 +169,17 @@ if __name__ == "__main__":
     # --- Stage 1: Win Rate ---
 
     # --- Chunking logic ---
+
+    import random
     param_grid_all = list(itertools.product(*grid.values()))
     total = len(param_grid_all)
+    # Sampling
+    if sample_fraction < 1.0:
+        sample_size = int(total * sample_fraction)
+        param_grid_all = random.sample(param_grid_all, sample_size)
+        total = len(param_grid_all)
+        print(f"Sampling {sample_size} parameter sets from full grid.")
+    # Chunking
     if num_chunks > 1:
         chunk_size = (total + num_chunks - 1) // num_chunks
         start = chunk_index * chunk_size
@@ -165,9 +190,22 @@ if __name__ == "__main__":
         param_grid_iter = param_grid_all
         print(f"Stage 1: Evaluating {total} parameter combinations...")
 
+
     results = []
     completed = 0
-    with multiprocessing.Pool(processes=1, initializer=stage1_init, initargs=(df,)) as pool:
+    import psutil
+    process = psutil.Process(os.getpid())
+    def check_resources():
+        mem_mb = process.memory_info().rss / (1024 * 1024)
+        cpu = process.cpu_percent(interval=0.1) / 100.0
+        if mem_mb > max_mem_mb:
+            print(f"Memory usage exceeded {max_mem_mb} MB. Aborting.")
+            exit(1)
+        if cpu > max_cpu:
+            print(f"CPU usage exceeded {max_cpu*100:.0f}%. Aborting.")
+            exit(1)
+
+    with multiprocessing.Pool(processes=max_workers, initializer=stage1_init, initargs=(df,)) as pool:
         for result in pool.imap_unordered(stage1_worker, param_grid_iter):
             completed += 1
             if result is not None:
@@ -176,6 +214,14 @@ if __name__ == "__main__":
                 print(f"Stage 1 [{completed}/{len(param_grid_iter)}]: {params} => WR={win_rate:.2f}")
             else:
                 print(f"Stage 1 [{completed}/{len(param_grid_iter)}]: No result (empty trades)")
+            if completed % save_every == 0:
+                # Save intermediate results
+                tmp_csv = chunk_output or f"stage1_partial_{chunk_index+1}_of_{num_chunks}.csv"
+                pd.DataFrame([
+                    {**params, "win_rate": win_rate} for params, win_rate in results
+                ]).to_csv(tmp_csv, index=False)
+                print(f"[Checkpoint] Saved {completed} results to {tmp_csv}")
+            check_resources()
 
     # Filter for Win Rate guideline
     WIN_RATE_TARGET = 65.0  # Minimum win rate percentage for passing Stage 1
