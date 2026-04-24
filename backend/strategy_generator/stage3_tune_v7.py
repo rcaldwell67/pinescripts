@@ -71,7 +71,7 @@ if __name__ == "__main__":
     parser.add_argument("--max-cpu", type=float, default=0.95)
     args = parser.parse_args()
     num_chunks = args.num_chunks
-    max_workers = args.max_workers
+    max_workers = 1  # Force single worker for resource safety
     save_every = args.save_every
     max_mem_mb = args.max_mem_mb
     max_cpu = args.max_cpu

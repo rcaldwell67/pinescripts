@@ -24,7 +24,7 @@ if __name__ == "__main__":
     chunk_index = args.chunk_index
     num_chunks = args.num_chunks
     chunk_output = args.chunk_output
-    max_workers = args.max_workers
+    max_workers = 1  # Force single worker for resource safety
     sample_fraction = args.sample_fraction
     save_every = args.save_every
     max_mem_mb = args.max_mem_mb
