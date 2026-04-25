@@ -1,7 +1,0 @@
-
-[RUN] BTC/USDT v6
-Fetching YTD OHLCV for BTC/USDT...
-  26,480 bars fetched (2026-01-01 00:00:00+00:00 -> 2026-04-13 20:05:00+00:00)
-Running backtest v6...
-  74 trades generated
-Results saved to DB: BTC/USDT v6  trades=74  net=50.9%
