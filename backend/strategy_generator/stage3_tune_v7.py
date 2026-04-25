@@ -39,8 +39,12 @@ def stage3_worker(args, symbol, df):
         max_drawdown = None
         calmar_ratio = None
     else:
-        equity_curve = trades['equity']
-        equity_curve.index = pd.RangeIndex(len(equity_curve))
+        # Use date-indexed equity curve if available
+        if 'date' in trades.columns:
+            equity_curve = trades.set_index('date')['equity']
+        else:
+            equity_curve = trades['equity']
+            equity_curve.index = pd.RangeIndex(len(equity_curve))
         max_drawdown = compute_max_drawdown(equity_curve)
         calmar_ratio = compute_calmar_ratio(equity_curve)
     return {**params, "win_rate": win_rate, "net_return": net_return, "max_drawdown": max_drawdown, "calmar_ratio": calmar_ratio}
@@ -87,6 +91,7 @@ def process_stage3_for_chunk(chunk_idx, chunk_file, num_chunks, symbol, df, save
 
 
 if __name__ == "__main__":
+
     parser = argparse.ArgumentParser(description="Stage 3 tuning for v7")
     parser.add_argument("--symbol", type=str, required=True, help="Trading symbol (e.g., BTC/USD)")
     parser.add_argument("--lookback", type=str, default="YTD")
@@ -95,6 +100,7 @@ if __name__ == "__main__":
     parser.add_argument("--save-every", type=int, default=10000)
     parser.add_argument("--max-mem-mb", type=int, default=950)
     parser.add_argument("--max-cpu", type=float, default=0.95)
+    parser.add_argument("--equity-only", action="store_true", help="Output only the equity curve for the first parameter set.")
     args = parser.parse_args()
     symbol = args.symbol
     lookback = args.lookback
@@ -110,6 +116,30 @@ if __name__ == "__main__":
     else:
         df = fetch_ohlcv_with_retry(symbol, lookback=lookback, candle_interval=candle_interval)
         df.to_csv(cache_file, index=False)
+
+    # If equity-only mode, run backtest for first parameter set and output equity curve
+    if args.equity_only:
+        files = sorted(glob.glob("stage2_passing_params*.csv"))
+        found = False
+        for f in files:
+            chunk_df = pd.read_csv(f)
+            if not chunk_df.empty:
+                row = chunk_df.iloc[0]
+                params = row.drop(['win_rate','net_return']).to_dict()
+                v7_params = get_v7_params(symbol)
+                v7_params['signal'].update(params)
+                trades = run_v7_backtest(df.copy(), v7_params)
+                if trades is not None and not trades.empty and 'equity' in trades.columns:
+                    equity_curve = trades['equity']
+                    equity_curve.to_csv('stage3_equity_curve.csv', index=False)
+                    print("Saved equity curve to stage3_equity_curve.csv")
+                else:
+                    print("No equity curve found for the first parameter set.")
+                found = True
+                break
+        if not found:
+            print("No Stage 2 passing parameter sets found.")
+        sys.exit(0)
 
     # Always parse all stage2_passing_params_chunk*.csv files for Stage 3
     files = sorted(glob.glob("stage2_passing_params*.csv"))

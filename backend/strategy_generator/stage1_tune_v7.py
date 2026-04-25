@@ -1,3 +1,17 @@
+def compute_max_drawdown(equity_curve):
+    roll_max = equity_curve.cummax()
+    drawdown = (equity_curve - roll_max) / roll_max
+    return drawdown.min() * 100 if not drawdown.empty else 0.0
+
+def compute_calmar_ratio(equity_curve):
+    if len(equity_curve) < 2:
+        return 0.0
+    start = equity_curve.iloc[0]
+    end = equity_curve.iloc[-1]
+    n_years = max((equity_curve.index[-1] - equity_curve.index[0]).days / 365.25, 1e-6) if hasattr(equity_curve.index, 'days') else max(len(equity_curve) / 252, 1e-6)
+    cagr = ((end / start) ** (1 / n_years)) - 1 if start > 0 else 0.0
+    max_dd = abs(compute_max_drawdown(equity_curve)) / 100
+    return cagr / max_dd if max_dd > 0 else 0.0
 # Stage 1 Tuning Script for v7
 # Usage: python stage1_tune_v7.py [args]
 # This script performs Stage 1 (Win Rate) parameter grid search and outputs passing parameter sets.
@@ -80,12 +94,25 @@ if __name__ == "__main__":
             completed += 1
             if result is not None:
                 params, win_rate = result
+                # Run backtest to get equity curve for metrics
+                v7_params = get_v7_params(symbol)
+                v7_params['signal'].update(params)
+                trades = run_backtest(df.copy(), "v7", symbol=symbol, params=params)
+                if trades is not None and not trades.empty and 'equity' in trades.columns:
+                    equity_curve = trades['equity']
+                    max_drawdown = compute_max_drawdown(equity_curve)
+                    calmar_ratio = compute_calmar_ratio(equity_curve)
+                else:
+                    max_drawdown = None
+                    calmar_ratio = None
                 results.append({
                     "symbol_id": symbol_id,
                     "lookback": lookback,
                     "candle_interval": candle_interval,
                     **params,
                     "win_rate": win_rate,
+                    "max_drawdown": max_drawdown,
+                    "calmar_ratio": calmar_ratio,
                     "run_timestamp": pd.Timestamp.now()
                 })
             if completed % save_every == 0:
@@ -98,6 +125,11 @@ if __name__ == "__main__":
     out_csv = "stage1_passing_params.csv"
     if passing_stage1:
         stage1_table = pd.DataFrame(passing_stage1)
+        # Add max_drawdown and calmar_ratio columns if missing
+        if 'max_drawdown' not in stage1_table.columns:
+            stage1_table['max_drawdown'] = None
+        if 'calmar_ratio' not in stage1_table.columns:
+            stage1_table['calmar_ratio'] = None
         stage1_table.to_csv(out_csv, index=False)
         print(f"Saved passing Stage 1 parameter sets to {out_csv}")
     else:

@@ -103,11 +103,18 @@ def run_v7_backtest(df, params):
     equity = 100000.0
     for i in range(max(200, int(params['signal']['ema_slow'])), len(df)):
         if v7_entry_logic(df, i, params):
-            # Dummy trade: entry at i, random pnl, equity progression
+            # Use the date or index for time tracking
+            if 'Date' in df.columns:
+                trade_date = df['Date'].iloc[i]
+            elif 'date' in df.columns:
+                trade_date = df['date'].iloc[i]
+            else:
+                trade_date = df.index[i] if hasattr(df.index, '__getitem__') else i
             pnl = np.random.normal(10, 50)  # placeholder PnL
             equity += pnl
             entries.append({
                 "entry_idx": i,
+                "date": trade_date,
                 "pnl": pnl,
                 "equity": equity,
             })

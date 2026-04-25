@@ -1,3 +1,17 @@
+def compute_max_drawdown(equity_curve):
+    roll_max = equity_curve.cummax()
+    drawdown = (equity_curve - roll_max) / roll_max
+    return drawdown.min() * 100 if not drawdown.empty else 0.0
+
+def compute_calmar_ratio(equity_curve):
+    if len(equity_curve) < 2:
+        return 0.0
+    start = equity_curve.iloc[0]
+    end = equity_curve.iloc[-1]
+    n_years = max((equity_curve.index[-1] - equity_curve.index[0]).days / 365.25, 1e-6) if hasattr(equity_curve.index, 'days') else max(len(equity_curve) / 252, 1e-6)
+    cagr = ((end / start) ** (1 / n_years)) - 1 if start > 0 else 0.0
+    max_dd = abs(compute_max_drawdown(equity_curve)) / 100
+    return cagr / max_dd if max_dd > 0 else 0.0
 # Stage 2 Tuning Script for v7
 # Usage: python stage2_tune_v7.py [args]
 # This script performs Stage 2 (Net Return) evaluation on all Stage 1 passing parameter sets.
@@ -54,13 +68,23 @@ def process_stage2_for_chunk(chunk_idx, chunk_file, num_chunks, df, max_workers,
         # Use multiprocessing for each param set if needed, but here we keep it simple
         result = stage2_worker((params, win_rate))
         net_return = result.get("net_return", None) if result is not None else None
-        # Always record, then filter at the end
+        # Compute max_drawdown and calmar_ratio if possible
         if result is not None:
+            trades = result.get("trades", None)
+            if trades is not None and hasattr(trades, 'empty') and not trades.empty and 'equity' in trades.columns:
+                equity_curve = trades['equity']
+                max_drawdown = compute_max_drawdown(equity_curve)
+                calmar_ratio = compute_calmar_ratio(equity_curve)
+            else:
+                max_drawdown = None
+                calmar_ratio = None
             stage2_results.append({
                 "symbol_id": symbol_id,
                 **params,
                 "win_rate": win_rate,
                 "net_return": net_return,
+                "max_drawdown": max_drawdown,
+                "calmar_ratio": calmar_ratio,
                 "run_timestamp": pd.Timestamp.now()
             })
         completed2 += 1
