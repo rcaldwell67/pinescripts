@@ -500,24 +500,26 @@ if __name__ == "__main__":
                 if completed2 % 100 == 0:
                     log_resources(f"STAGE2 PROGRESS {completed2}")
                 check_resources2()
-        stage2_table = pd.DataFrame(stage2_results)
-        out_csv2 = f"stage2_results_chunk{chunk_idx+1}_of_{num_chunks}.csv" if num_chunks > 1 else "stage2_results.csv"
-        stage2_table.to_csv(out_csv2, index=False)
-        print(f"Saved Stage 2 Net Return results to {out_csv2}")
+        # Filter for both guidelines before writing results
+        WIN_RATE_TARGET = 65.0
         NET_RETURN_TARGET = 20.0
-        if "net_return" in stage2_table.columns:
-            passing_stage2 = stage2_table[stage2_table["net_return"] >= NET_RETURN_TARGET]
-            if not passing_stage2.empty:
+        if "win_rate" in pd.DataFrame(stage2_results).columns and "net_return" in pd.DataFrame(stage2_results).columns:
+            filtered_stage2 = [r for r in stage2_results if r["win_rate"] >= WIN_RATE_TARGET and r["net_return"] >= NET_RETURN_TARGET]
+            stage2_table = pd.DataFrame(filtered_stage2)
+            out_csv2 = f"stage2_results_chunk{chunk_idx+1}_of_{num_chunks}.csv" if num_chunks > 1 else "stage2_results.csv"
+            stage2_table.to_csv(out_csv2, index=False)
+            print(f"Saved Stage 2 results (passing both guidelines) to {out_csv2}")
+            if not stage2_table.empty:
                 out_csv2_pass = f"stage2_passing_params_chunk{chunk_idx+1}_of_{num_chunks}.csv" if num_chunks > 1 else "stage2_passing_params.csv"
-                passing_stage2.to_csv(out_csv2_pass, index=False)
-                print(f"Saved Stage 2 passing parameter sets (Net Return ≥ {NET_RETURN_TARGET}%) to {out_csv2_pass}")
+                stage2_table.to_csv(out_csv2_pass, index=False)
+                print(f"Saved Stage 2 passing parameter sets to {out_csv2_pass}")
+                top5 = stage2_table.sort_values("net_return", ascending=False).head(5)
+                print("Top 5 parameter sets by Net Return:")
+                print(top5)
             else:
-                print(f"No parameter sets met the Stage 2 Net Return guideline (≥ {NET_RETURN_TARGET}%) in this chunk.")
-            top5 = stage2_table.sort_values("net_return", ascending=False).head(5)
-            print("Top 5 parameter sets by Net Return:")
-            print(top5)
+                print(f"No parameter sets met both guidelines in this chunk.")
         else:
-            print("No 'net_return' column found in Stage 2 results for this chunk. Skipping Net Return filtering and top 5 display.")
+            print("No 'win_rate' or 'net_return' column found in Stage 2 results for this chunk. Skipping filtering and top 5 display.")
 
     # Always parse all stage1_passing_params_chunk*.csv files for Stage 2
     import glob

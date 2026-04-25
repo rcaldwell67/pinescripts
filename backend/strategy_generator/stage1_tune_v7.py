@@ -2,6 +2,7 @@
 # Usage: python stage1_tune_v7.py [args]
 # This script performs Stage 1 (Win Rate) parameter grid search and outputs passing parameter sets.
 
+
 import os
 import pathlib
 import time
@@ -10,6 +11,9 @@ import itertools
 import multiprocessing
 import argparse
 import sys
+
+# Import symbol_id lookup
+from symbol_id_lookup import get_symbol_id
 
 # Import or define all functions and variables needed for Stage 1 from tune_v7_btcusd.py
 from tune_v7_btcusd import (
@@ -30,12 +34,19 @@ if __name__ == "__main__":
     max_mem_mb = args.max_mem_mb
     max_cpu = args.max_cpu
 
+
     # Load or fetch OHLCV data
     if cache_file.exists():
         df = pd.read_csv(cache_file, low_memory=False)
     else:
         df = fetch_ohlcv_with_retry(symbol, lookback=lookback, candle_interval=candle_interval)
         df.to_csv(cache_file, index=False)
+
+    # Lookup symbol_id from MariaDB
+    symbol_id = get_symbol_id(symbol)
+    if symbol_id is None:
+        print(f"Warning: Could not find id for symbol '{symbol}' in MariaDB. Using 'UNKNOWN'.")
+        symbol_id = 'UNKNOWN'
 
     # Expand grid and apply pre-filter
     param_grid_all = [t for t in itertools.product(*grid.values()) if is_valid_combination(t)]
@@ -63,13 +74,14 @@ if __name__ == "__main__":
             print(f"CPU usage exceeded {max_cpu*100:.0f}%. Aborting.")
             exit(1)
 
+
     with multiprocessing.Pool(processes=max_workers, initializer=stage1_init, initargs=(df,)) as pool:
         for result in pool.imap_unordered(stage1_worker, param_grid_iter):
             completed += 1
             if result is not None:
                 params, win_rate = result
                 results.append({
-                    "symbol_id": symbol,
+                    "symbol_id": symbol_id,
                     "lookback": lookback,
                     "candle_interval": candle_interval,
                     **params,

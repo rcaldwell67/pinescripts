@@ -2,6 +2,7 @@
 # Usage: python stage2_tune_v7.py [args]
 # This script performs Stage 2 (Net Return) evaluation on all Stage 1 passing parameter sets.
 
+
 import os
 import pandas as pd
 import multiprocessing
@@ -9,6 +10,9 @@ import argparse
 import glob
 import re
 import sys
+
+# Import symbol_id lookup
+from symbol_id_lookup import get_symbol_id
 
 # Import or define all functions and variables needed for Stage 2 from tune_v7_btcusd.py
 from tune_v7_btcusd import (
@@ -37,14 +41,23 @@ def process_stage2_for_chunk(chunk_idx, chunk_file, num_chunks, df, max_workers,
     completed2 = 0
     # Initialize the global DataFrame for stage2_worker
     stage2_init(df)
+
+    # Lookup symbol_id from MariaDB (use symbol from args)
+    from tune_v7_btcusd import parse_args
+    args = parse_args()
+    symbol_id = get_symbol_id(args.symbol)
+    if symbol_id is None:
+        print(f"Warning: Could not find id for symbol '{args.symbol}' in MariaDB. Using 'UNKNOWN'.")
+        symbol_id = 'UNKNOWN'
+
     for params, win_rate in stage2_param_iter:
         # Use multiprocessing for each param set if needed, but here we keep it simple
         result = stage2_worker((params, win_rate))
         net_return = result.get("net_return", None) if result is not None else None
-        # Only record if both guidelines are met
-        if result is not None and win_rate >= 65.0 and net_return is not None and net_return >= 20.0:
+        # Always record, then filter at the end
+        if result is not None:
             stage2_results.append({
-                "symbol_id": df.get('symbol', 'UNKNOWN') if isinstance(df, dict) else 'UNKNOWN',
+                "symbol_id": symbol_id,
                 **params,
                 "win_rate": win_rate,
                 "net_return": net_return,
@@ -55,7 +68,11 @@ def process_stage2_for_chunk(chunk_idx, chunk_file, num_chunks, df, max_workers,
             tmp_csv2 = "stage2_partial.csv"
             pd.DataFrame(stage2_results).to_csv(tmp_csv2, index=False)
         check_resources2()
-    return stage2_results
+    # Filter for both guidelines before returning
+    WIN_RATE_TARGET = 65.0
+    NET_RETURN_TARGET = 20.0
+    filtered_results = [r for r in stage2_results if r["win_rate"] >= WIN_RATE_TARGET and r["net_return"] >= NET_RETURN_TARGET]
+    return filtered_results
 
 if __name__ == "__main__":
     args = parse_args()

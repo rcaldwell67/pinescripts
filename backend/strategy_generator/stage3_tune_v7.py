@@ -2,34 +2,56 @@
 # Usage: python stage3_tune_v7.py [args]
 # This script performs Stage 3 (e.g., Max Drawdown or further filtering) on all Stage 2 passing parameter sets.
 
+
 import os
 import pandas as pd
-import multiprocessing
 import argparse
 import glob
-import re
 import sys
+from symbol_id_lookup import get_symbol_id
+from v7.apm_v7 import get_v7_params, run_v7_backtest
+from tune_v7_btcusd import fetch_ohlcv_with_retry, cache_file
 
-# Import or define all functions and variables needed for Stage 3 from tune_v7_btcusd.py
-# Placeholder: you must implement or import the Stage 3 worker/init and metrics logic
-def stage3_worker(args):
-    # Implement your Stage 3 evaluation logic here (e.g., max drawdown, calmar ratio)
+def compute_max_drawdown(equity_curve):
+    # Max drawdown as a negative percentage (e.g., -4.2 for -4.2%)
+    roll_max = equity_curve.cummax()
+    drawdown = (equity_curve - roll_max) / roll_max
+    return drawdown.min() * 100 if not drawdown.empty else 0.0
+
+def compute_calmar_ratio(equity_curve):
+    # Calmar = CAGR / abs(max_drawdown)
+    if len(equity_curve) < 2:
+        return 0.0
+    start = equity_curve.iloc[0]
+    end = equity_curve.iloc[-1]
+    n_years = max((equity_curve.index[-1] - equity_curve.index[0]).days / 365.25, 1e-6)
+    cagr = ((end / start) ** (1 / n_years)) - 1 if start > 0 else 0.0
+    max_dd = abs(compute_max_drawdown(equity_curve)) / 100
+    return cagr / max_dd if max_dd > 0 else 0.0
+
+def stage3_worker(args, symbol, df):
     params, win_rate, net_return = args
-    # Dummy: add placeholder metrics
-    max_drawdown = -10.0
-    calmar_ratio = 1.5
+    # Run v7 backtest for this param set
+    v7_params = get_v7_params(symbol)
+    v7_params['signal'].update(params)
+    trades = run_v7_backtest(df.copy(), v7_params)
+    if trades is None or trades.empty or 'equity' not in trades.columns:
+        max_drawdown = None
+        calmar_ratio = None
+    else:
+        equity_curve = trades['equity']
+        equity_curve.index = pd.RangeIndex(len(equity_curve))
+        max_drawdown = compute_max_drawdown(equity_curve)
+        calmar_ratio = compute_calmar_ratio(equity_curve)
     return {**params, "win_rate": win_rate, "net_return": net_return, "max_drawdown": max_drawdown, "calmar_ratio": calmar_ratio}
 
-def stage3_init(df):
-    pass
 
-def process_stage3_for_chunk(chunk_idx, chunk_file, num_chunks, max_workers, save_every, max_mem_mb, max_cpu):
+def process_stage3_for_chunk(chunk_idx, chunk_file, num_chunks, symbol, df, save_every, max_mem_mb, max_cpu):
     chunk_df = pd.read_csv(chunk_file)
     if chunk_df.empty:
         print(f"Skipping {chunk_file}: no passing Stage 2 entries.")
         return []
     passing_stage2 = [(row.drop(['win_rate','net_return']).to_dict(), row['win_rate'], row['net_return']) for _, row in chunk_df.iterrows()]
-    stage3_param_iter = passing_stage2
     import psutil
     process3 = psutil.Process(os.getpid())
     def check_resources3():
@@ -41,13 +63,14 @@ def process_stage3_for_chunk(chunk_idx, chunk_file, num_chunks, max_workers, sav
         if cpu > max_cpu:
             print(f"[Stage 3] CPU usage exceeded {max_cpu*100:.0f}%. Aborting.")
             exit(1)
+    symbol_id = get_symbol_id(symbol) or 'UNKNOWN'
     stage3_results = []
     completed3 = 0
-    for params, win_rate, net_return in stage3_param_iter:
-        result = stage3_worker((params, win_rate, net_return))
+    for params, win_rate, net_return in passing_stage2:
+        result = stage3_worker((params, win_rate, net_return), symbol, df)
         if result is not None:
             stage3_results.append({
-                "symbol_id": params.get('symbol', 'UNKNOWN'),
+                "symbol_id": symbol_id,
                 **params,
                 "win_rate": win_rate,
                 "net_return": net_return,
@@ -62,45 +85,55 @@ def process_stage3_for_chunk(chunk_idx, chunk_file, num_chunks, max_workers, sav
         check_resources3()
     return stage3_results
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Stage 3 tuning for v7")
+    parser.add_argument("--symbol", type=str, required=True, help="Trading symbol (e.g., BTC/USD)")
+    parser.add_argument("--lookback", type=str, default="YTD")
+    parser.add_argument("--candle-interval", type=str, default="15m")
     parser.add_argument("--num-chunks", type=int, default=1)
-    parser.add_argument("--max-workers", type=int, default=2)
     parser.add_argument("--save-every", type=int, default=10000)
     parser.add_argument("--max-mem-mb", type=int, default=950)
     parser.add_argument("--max-cpu", type=float, default=0.95)
     args = parser.parse_args()
+    symbol = args.symbol
+    lookback = args.lookback
+    candle_interval = args.candle_interval
     num_chunks = args.num_chunks
-    max_workers = 1  # Force single worker for resource safety
     save_every = args.save_every
     max_mem_mb = args.max_mem_mb
     max_cpu = args.max_cpu
 
+    # Load or fetch OHLCV data
+    if cache_file.exists():
+        df = pd.read_csv(cache_file, low_memory=False)
+    else:
+        df = fetch_ohlcv_with_retry(symbol, lookback=lookback, candle_interval=candle_interval)
+        df.to_csv(cache_file, index=False)
+
     # Always parse all stage2_passing_params_chunk*.csv files for Stage 3
-    # Find all Stage 2 output files (chunked or not)
     files = sorted(glob.glob("stage2_passing_params*.csv"))
     all_results = []
     for f in files:
-        chunk_results = process_stage3_for_chunk(0, f, 1, max_workers, save_every, max_mem_mb, max_cpu)
+        chunk_results = process_stage3_for_chunk(0, f, 1, symbol, df, save_every, max_mem_mb, max_cpu)
         all_results.extend(chunk_results)
     if all_results:
         stage3_table = pd.DataFrame(all_results)
         out_csv3 = "stage3_results.csv"
         stage3_table.to_csv(out_csv3, index=False)
         print(f"Saved Stage 3 results to {out_csv3}")
-        # Example: filter by max_drawdown and calmar_ratio
-        MAX_DRAWDOWN_LIMIT = -20.0
-        CALMAR_MIN = 1.0
-        if "max_drawdown" in stage3_table.columns and "calmar_ratio" in stage3_table.columns:
-            passing_stage3 = stage3_table[(stage3_table["max_drawdown"] >= MAX_DRAWDOWN_LIMIT) & (stage3_table["calmar_ratio"] >= CALMAR_MIN)]
+        # Filter by max_drawdown <= 4.5% (i.e., max_drawdown >= -4.5)
+        MAX_DRAWDOWN_LIMIT = -4.5
+        if "max_drawdown" in stage3_table.columns:
+            passing_stage3 = stage3_table[stage3_table["max_drawdown"] >= MAX_DRAWDOWN_LIMIT]
             if not passing_stage3.empty:
                 out_csv3_pass = "stage3_passing_params.csv"
                 passing_stage3.to_csv(out_csv3_pass, index=False)
                 print(f"Saved Stage 3 passing parameter sets to {out_csv3_pass}")
             else:
-                print(f"No parameter sets met the Stage 3 guideline.")
-            top5 = stage3_table.sort_values("calmar_ratio", ascending=False).head(5)
-            print("Top 5 parameter sets by Calmar ratio:")
+                print(f"No parameter sets met the Stage 3 guideline (Max Drawdown ≤ 4.5%).")
+            top5 = stage3_table.sort_values("max_drawdown", ascending=False).head(5)
+            print("Top 5 parameter sets by Max Drawdown:")
             print(top5)
         else:
             print("No Stage 3 metrics found in results. Skipping filtering and top 5 display.")
