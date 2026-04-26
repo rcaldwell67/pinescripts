@@ -112,11 +112,16 @@ def run_v7_backtest(df, params):
                 trade_date = df.index[i] if hasattr(df.index, '__getitem__') else i
             pnl = np.random.normal(10, 50)  # placeholder PnL
             equity += pnl
+            # For demonstration, alternate type/side for each trade
+            trade_type = 'Long' if i % 2 == 0 else 'Short'
+            trade_side = 'Buy' if trade_type == 'Long' else 'Sell'
             entries.append({
                 "entry_idx": i,
                 "date": trade_date,
                 "pnl": pnl,
                 "equity": equity,
+                "type": trade_type,
+                "side": trade_side,
             })
     # Return as DataFrame for compatibility with runner
     return pd.DataFrame(entries)

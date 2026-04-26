@@ -71,10 +71,20 @@ def process_stage2_for_chunk(chunk_idx, chunk_file, num_chunks, df, max_workers,
         # Compute max_drawdown and calmar_ratio if possible
         if result is not None:
             trades = result.get("trades", None)
+            # Default type/side to None
+            trade_type = None
+            trade_side = None
             if trades is not None and hasattr(trades, 'empty') and not trades.empty and 'equity' in trades.columns:
                 equity_curve = trades['equity']
                 max_drawdown = compute_max_drawdown(equity_curve)
                 calmar_ratio = compute_calmar_ratio(equity_curve)
+                # Try to infer type/side from trades DataFrame if present
+                if 'side' in trades.columns:
+                    # Use the most common side in trades as the summary
+                    trade_side = trades['side'].mode().iloc[0] if not trades['side'].empty else None
+                    # Map side to type (Long/Short)
+                    if trade_side is not None:
+                        trade_type = 'Long' if trade_side.lower() == 'buy' else 'Short' if trade_side.lower() == 'sell' else None
             else:
                 max_drawdown = None
                 calmar_ratio = None
@@ -83,6 +93,8 @@ def process_stage2_for_chunk(chunk_idx, chunk_file, num_chunks, df, max_workers,
                 **params,
                 "win_rate": win_rate,
                 "net_return": net_return,
+                "type": trade_type,
+                "side": trade_side,
                 "max_drawdown": max_drawdown,
                 "calmar_ratio": calmar_ratio,
                 "run_timestamp": pd.Timestamp.now()
@@ -92,7 +104,7 @@ def process_stage2_for_chunk(chunk_idx, chunk_file, num_chunks, df, max_workers,
             tmp_csv2 = "stage2_partial.csv"
             # Ensure columns are ordered as in output_columns
             output_columns = [
-                "symbol_id", "lookback", "candle_interval", "macd_fast", "macd_slow", "macd_signal", "stoch_k_len", "stoch_d_len", "cci_len", "ema_fast", "ema_mid", "ema_slow", "rsi_len", "atr_len", "atr_baseline_len", "volume_sma_len", "bb_len", "bb_std_mult", "donchian_len", "adx_len", "atr_percentile_window", "macro_ema_period", "win_rate", "net_return", "max_drawdown", "calmar_ratio", "run_timestamp"
+                "symbol_id", "lookback", "candle_interval", "macd_fast", "macd_slow", "macd_signal", "stoch_k_len", "stoch_d_len", "cci_len", "ema_fast", "ema_mid", "ema_slow", "rsi_len", "atr_len", "atr_baseline_len", "volume_sma_len", "bb_len", "bb_std_mult", "donchian_len", "adx_len", "atr_percentile_window", "macro_ema_period", "type", "side", "win_rate", "net_return", "max_drawdown", "calmar_ratio", "run_timestamp"
             ]
             df_partial = pd.DataFrame(stage2_results)
             for col in output_columns:
@@ -136,7 +148,7 @@ if __name__ == "__main__":
         stage2_table = pd.DataFrame(all_results)
         # Ensure all relevant columns are present and ordered
         output_columns = [
-            "symbol_id", "lookback", "candle_interval", "macd_fast", "macd_slow", "macd_signal", "stoch_k_len", "stoch_d_len", "cci_len", "ema_fast", "ema_mid", "ema_slow", "rsi_len", "atr_len", "atr_baseline_len", "volume_sma_len", "bb_len", "bb_std_mult", "donchian_len", "adx_len", "atr_percentile_window", "macro_ema_period", "win_rate", "net_return", "max_drawdown", "calmar_ratio", "run_timestamp"
+            "symbol_id", "lookback", "candle_interval", "macd_fast", "macd_slow", "macd_signal", "stoch_k_len", "stoch_d_len", "cci_len", "ema_fast", "ema_mid", "ema_slow", "rsi_len", "atr_len", "atr_baseline_len", "volume_sma_len", "bb_len", "bb_std_mult", "donchian_len", "adx_len", "atr_percentile_window", "macro_ema_period", "type", "side", "win_rate", "net_return", "max_drawdown", "calmar_ratio", "run_timestamp"
         ]
         for col in output_columns:
             if col not in stage2_table.columns:
