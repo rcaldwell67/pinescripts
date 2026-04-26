@@ -90,7 +90,16 @@ def process_stage2_for_chunk(chunk_idx, chunk_file, num_chunks, df, max_workers,
         completed2 += 1
         if completed2 % save_every == 0:
             tmp_csv2 = "stage2_partial.csv"
-            pd.DataFrame(stage2_results).to_csv(tmp_csv2, index=False)
+            # Ensure columns are ordered as in output_columns
+            output_columns = [
+                "symbol_id", "lookback", "candle_interval", "macd_fast", "macd_slow", "macd_signal", "stoch_k_len", "stoch_d_len", "cci_len", "ema_fast", "ema_mid", "ema_slow", "rsi_len", "atr_len", "atr_baseline_len", "volume_sma_len", "bb_len", "bb_std_mult", "donchian_len", "adx_len", "atr_percentile_window", "macro_ema_period", "win_rate", "net_return", "max_drawdown", "calmar_ratio", "run_timestamp"
+            ]
+            df_partial = pd.DataFrame(stage2_results)
+            for col in output_columns:
+                if col not in df_partial.columns:
+                    df_partial[col] = None
+            df_partial = df_partial.reindex(columns=output_columns, fill_value=None)
+            df_partial.to_csv(tmp_csv2, index=False)
         check_resources2()
     # Filter for both guidelines before returning
     WIN_RATE_TARGET = 65.0
@@ -125,6 +134,14 @@ if __name__ == "__main__":
         all_results.extend(chunk_results)
     if all_results:
         stage2_table = pd.DataFrame(all_results)
+        # Ensure all relevant columns are present and ordered
+        output_columns = [
+            "symbol_id", "lookback", "candle_interval", "macd_fast", "macd_slow", "macd_signal", "stoch_k_len", "stoch_d_len", "cci_len", "ema_fast", "ema_mid", "ema_slow", "rsi_len", "atr_len", "atr_baseline_len", "volume_sma_len", "bb_len", "bb_std_mult", "donchian_len", "adx_len", "atr_percentile_window", "macro_ema_period", "win_rate", "net_return", "max_drawdown", "calmar_ratio", "run_timestamp"
+        ]
+        for col in output_columns:
+            if col not in stage2_table.columns:
+                stage2_table[col] = None
+        stage2_table = stage2_table.reindex(columns=output_columns, fill_value=None)
         out_csv2 = "stage2_results.csv"
         stage2_table.to_csv(out_csv2, index=False)
         print(f"Saved Stage 2 results (passing both guidelines) to {out_csv2}")

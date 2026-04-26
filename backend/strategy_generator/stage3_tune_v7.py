@@ -85,7 +85,15 @@ def process_stage3_for_chunk(chunk_idx, chunk_file, num_chunks, symbol, df, save
         completed3 += 1
         if completed3 % save_every == 0:
             tmp_csv3 = "stage3_partial.csv"
-            pd.DataFrame(stage3_results).to_csv(tmp_csv3, index=False)
+            output_columns = [
+                "symbol_id", "macd_fast", "macd_slow", "macd_signal", "stoch_k_len", "stoch_d_len", "cci_len", "ema_fast", "ema_mid", "ema_slow", "rsi_len", "atr_len", "atr_baseline_len", "volume_sma_len", "bb_len", "bb_std_mult", "donchian_len", "adx_len", "atr_percentile_window", "macro_ema_period", "run_timestamp", "win_rate", "net_return", "max_drawdown", "calmar_ratio"
+            ]
+            df_partial = pd.DataFrame(stage3_results)
+            for col in output_columns:
+                if col not in df_partial.columns:
+                    df_partial[col] = None
+            df_partial = df_partial.reindex(columns=output_columns, fill_value=None)
+            df_partial.to_csv(tmp_csv3, index=False)
         check_resources3()
     return stage3_results
 
@@ -148,7 +156,14 @@ if __name__ == "__main__":
         chunk_results = process_stage3_for_chunk(0, f, 1, symbol, df, save_every, max_mem_mb, max_cpu)
         all_results.extend(chunk_results)
     if all_results:
+        output_columns = [
+            "symbol_id", "macd_fast", "macd_slow", "macd_signal", "stoch_k_len", "stoch_d_len", "cci_len", "ema_fast", "ema_mid", "ema_slow", "rsi_len", "atr_len", "atr_baseline_len", "volume_sma_len", "bb_len", "bb_std_mult", "donchian_len", "adx_len", "atr_percentile_window", "macro_ema_period", "run_timestamp", "win_rate", "net_return", "max_drawdown", "calmar_ratio"
+        ]
         stage3_table = pd.DataFrame(all_results)
+        for col in output_columns:
+            if col not in stage3_table.columns:
+                stage3_table[col] = None
+        stage3_table = stage3_table.reindex(columns=output_columns, fill_value=None)
         out_csv3 = "stage3_results.csv"
         stage3_table.to_csv(out_csv3, index=False)
         print(f"Saved Stage 3 results to {out_csv3}")
@@ -158,6 +173,7 @@ if __name__ == "__main__":
             passing_stage3 = stage3_table[stage3_table["max_drawdown"] >= MAX_DRAWDOWN_LIMIT]
             if not passing_stage3.empty:
                 out_csv3_pass = "stage3_passing_params.csv"
+                passing_stage3 = passing_stage3.reindex(columns=output_columns, fill_value=None)
                 passing_stage3.to_csv(out_csv3_pass, index=False)
                 print(f"Saved Stage 3 passing parameter sets to {out_csv3_pass}")
             else:

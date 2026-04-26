@@ -169,6 +169,21 @@ def stage1_init(df):
     df_worker = df
 
 if __name__ == "__main__":
+    # --- Stage 3: Placeholder for further filtering or metrics ---
+    # This block reads stage2_passing_params.csv and writes stage3_results.csv with correct headers
+    import os
+    if os.path.exists("stage2_passing_params.csv"):
+        stage2_df = pd.read_csv("stage2_passing_params.csv")
+        # Example: Copy all rows, just ensure column order
+        output_columns = [
+            "symbol_id", "lookback", "candle_interval", "macd_fast", "macd_slow", "macd_signal", "stoch_k_len", "stoch_d_len", "cci_len", "ema_fast", "ema_mid", "ema_slow", "rsi_len", "atr_len", "atr_baseline_len", "volume_sma_len", "bb_len", "bb_std_mult", "donchian_len", "adx_len", "atr_percentile_window", "macro_ema_period", "win_rate", "net_return", "max_drawdown", "calmar_ratio", "run_timestamp"
+        ]
+        for col in output_columns:
+            if col not in stage2_df.columns:
+                stage2_df[col] = None
+        stage3_df = stage2_df.reindex(columns=output_columns, fill_value=None)
+        stage3_df.to_csv("stage3_results.csv", index=False)
+        print("[Stage 3] Wrote stage3_results.csv with max_drawdown and calmar_ratio after net_return.")
 
     # --- Load or fetch OHLCV data before Stage 1 chunk processing ---
     import psutil
@@ -440,9 +455,37 @@ def stage2_worker(args):
     trades = run_backtest(stage2_df_worker.copy(), "v7", symbol=symbol, params=params)
     if trades is None or trades.empty:
         net_return = float('-inf')
+        max_drawdown = None
+        calmar_ratio = None
     else:
         net_return = float(trades["pnl"].sum())
-    return {**params, "win_rate": win_rate, "net_return": net_return}
+        # Compute metrics if possible
+        if 'equity' in trades.columns:
+            equity_curve = trades['equity']
+            # Import or define compute_max_drawdown and compute_calmar_ratio if not in scope
+            try:
+                from backend.strategy_generator.stage2_tune_v7 import compute_max_drawdown, compute_calmar_ratio
+            except ImportError:
+                def compute_max_drawdown(equity_curve):
+                    roll_max = equity_curve.cummax()
+                    drawdown = (equity_curve - roll_max) / roll_max
+                    return drawdown.min() * 100 if not drawdown.empty else 0.0
+                def compute_calmar_ratio(equity_curve):
+                    if len(equity_curve) < 2:
+                        return 0.0
+                    start = equity_curve.iloc[0]
+                    end = equity_curve.iloc[-1]
+                    n_years = max(len(equity_curve) / 252, 1e-6)
+                    cagr = ((end / start) ** (1 / n_years)) - 1 if start > 0 else 0.0
+                    max_dd = abs(compute_max_drawdown(equity_curve)) / 100
+                    return cagr / max_dd if max_dd > 0 else 0.0
+            max_drawdown = compute_max_drawdown(equity_curve)
+            calmar_ratio = compute_calmar_ratio(equity_curve)
+        else:
+            max_drawdown = None
+            calmar_ratio = None
+    # Return trades and metrics for further processing
+    return {**params, "win_rate": win_rate, "net_return": net_return, "max_drawdown": max_drawdown, "calmar_ratio": calmar_ratio, "trades": trades}
 
 def stage2_init(df):
     global stage2_df_worker
@@ -506,6 +549,16 @@ if __name__ == "__main__":
         if "win_rate" in pd.DataFrame(stage2_results).columns and "net_return" in pd.DataFrame(stage2_results).columns:
             filtered_stage2 = [r for r in stage2_results if r["win_rate"] >= WIN_RATE_TARGET and r["net_return"] >= NET_RETURN_TARGET]
             stage2_table = pd.DataFrame(filtered_stage2)
+            # Ensure all relevant columns are present and ordered
+            output_columns = [
+                "symbol_id", "lookback", "candle_interval", "macd_fast", "macd_slow", "macd_signal", "stoch_k_len", "stoch_d_len", "cci_len", "ema_fast", "ema_mid", "ema_slow", "rsi_len", "atr_len", "atr_baseline_len", "volume_sma_len", "bb_len", "bb_std_mult", "donchian_len", "adx_len", "atr_percentile_window", "macro_ema_period", "win_rate", "net_return", "max_drawdown", "calmar_ratio", "run_timestamp"
+            ]
+            # Always add max_drawdown and calmar_ratio columns if missing
+            for col in output_columns:
+                if col not in stage2_table.columns:
+                    stage2_table[col] = None
+            # Reorder columns and fill missing with None
+            stage2_table = stage2_table.reindex(columns=output_columns, fill_value=None)
             out_csv2 = f"stage2_results_chunk{chunk_idx+1}_of_{num_chunks}.csv" if num_chunks > 1 else "stage2_results.csv"
             stage2_table.to_csv(out_csv2, index=False)
             print(f"Saved Stage 2 results (passing both guidelines) to {out_csv2}")

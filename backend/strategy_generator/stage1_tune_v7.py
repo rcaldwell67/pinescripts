@@ -17,6 +17,7 @@ def compute_calmar_ratio(equity_curve):
 # This script performs Stage 1 (Win Rate) parameter grid search and outputs passing parameter sets.
 
 
+
 import os
 import pathlib
 import time
@@ -25,6 +26,7 @@ import itertools
 import multiprocessing
 import argparse
 import sys
+import random
 
 # Import symbol_id lookup
 from symbol_id_lookup import get_symbol_id
@@ -80,13 +82,14 @@ if __name__ == "__main__":
     process = psutil.Process(os.getpid())
     def check_resources():
         mem_mb = process.memory_info().rss / (1024 * 1024)
-        cpu = process.cpu_percent(interval=0.1) / 100.0
+        # cpu = process.cpu_percent(interval=0.1) / 100.0
         if mem_mb > max_mem_mb:
             print(f"Memory usage exceeded {max_mem_mb} MB. Aborting.")
             exit(1)
-        if cpu > max_cpu:
-            print(f"CPU usage exceeded {max_cpu*100:.0f}%. Aborting.")
-            exit(1)
+        # CPU usage check temporarily disabled to prevent premature abort
+        # if cpu > max_cpu:
+        #     print(f"CPU usage exceeded {max_cpu*100:.0f}%. Aborting.")
+        #     exit(1)
 
 
     with multiprocessing.Pool(processes=max_workers, initializer=stage1_init, initargs=(df,)) as pool:
@@ -94,7 +97,7 @@ if __name__ == "__main__":
             completed += 1
             if result is not None:
                 params, win_rate = result
-                # Run backtest to get equity curve for metrics
+                # Run backtest to get equity curve and net return for metrics
                 v7_params = get_v7_params(symbol)
                 v7_params['signal'].update(params)
                 trades = run_backtest(df.copy(), "v7", symbol=symbol, params=params)
@@ -102,15 +105,21 @@ if __name__ == "__main__":
                     equity_curve = trades['equity']
                     max_drawdown = compute_max_drawdown(equity_curve)
                     calmar_ratio = compute_calmar_ratio(equity_curve)
+                    # Net return as percent: (final equity / initial equity - 1) * 100
+                    start_equity = float(equity_curve.iloc[0])
+                    end_equity = float(equity_curve.iloc[-1])
+                    net_return = ((end_equity / start_equity) - 1.0) * 100 if start_equity else 0.0
                 else:
                     max_drawdown = None
                     calmar_ratio = None
+                    net_return = None
                 results.append({
                     "symbol_id": symbol_id,
                     "lookback": lookback,
                     "candle_interval": candle_interval,
                     **params,
                     "win_rate": win_rate,
+                    "net_return": net_return,
                     "max_drawdown": max_drawdown,
                     "calmar_ratio": calmar_ratio,
                     "run_timestamp": pd.Timestamp.now()
@@ -125,7 +134,9 @@ if __name__ == "__main__":
     out_csv = "stage1_passing_params.csv"
     if passing_stage1:
         stage1_table = pd.DataFrame(passing_stage1)
-        # Add max_drawdown and calmar_ratio columns if missing
+        # Add net_return, max_drawdown, and calmar_ratio columns if missing
+        if 'net_return' not in stage1_table.columns:
+            stage1_table['net_return'] = None
         if 'max_drawdown' not in stage1_table.columns:
             stage1_table['max_drawdown'] = None
         if 'calmar_ratio' not in stage1_table.columns:

@@ -4970,3 +4970,68 @@ trade_count    float64
 vwap           float64
 dtype: object
 [2026-04-24 14:05:58] AFTER DF INFO: mem=86.31MB, cpu=0.00
+[2026-04-25 13:21:23] START: mem=85.95MB, cpu=0.00
+[2026-04-25 13:21:23] AFTER CSV LOAD: mem=86.69MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-25 13:21:23] AFTER DF INFO: mem=86.82MB, cpu=0.00
+[2026-04-25 13:21:23] START: mem=86.82MB, cpu=0.00
+[2026-04-25 13:21:24] AFTER CSV LOAD: mem=86.83MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-25 13:21:24] AFTER DF INFO: mem=86.84MB, cpu=0.16
+[2026-04-25 13:21:35] PROGRESS 100: mem=199.01MB, cpu=0.00
+[2026-04-25 13:21:45] PROGRESS 200: mem=199.01MB, cpu=0.00
+[2026-04-25 13:21:56] PROGRESS 300: mem=199.02MB, cpu=0.00
+[2026-04-25 13:22:06] PROGRESS 400: mem=199.02MB, cpu=0.00
+[2026-04-25 13:22:16] PROGRESS 500: mem=199.02MB, cpu=0.00
+[2026-04-25 18:22:34] START: mem=87.43MB, cpu=0.00
+[2026-04-25 18:22:34] AFTER CSV LOAD: mem=87.62MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-25 18:22:35] AFTER DF INFO: mem=87.69MB, cpu=0.00
+[2026-04-25 18:22:35] START: mem=87.69MB, cpu=0.00
+[2026-04-25 18:22:35] AFTER CSV LOAD: mem=87.70MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-25 18:22:35] AFTER DF INFO: mem=87.70MB, cpu=0.00
