@@ -171,3 +171,6 @@
 2026-04-26 02:13:21,043 INFO package: mysql.connector.plugins
 2026-04-26 02:13:21,043 INFO plugin_name: mysql_native_password
 2026-04-26 02:13:21,045 INFO AUTHENTICATION_PLUGIN_CLASS: MySQLNativePasswordAuthPlugin
+2026-04-26 02:15:52,645 INFO package: mysql.connector.plugins
+2026-04-26 02:15:52,645 INFO plugin_name: mysql_native_password
+2026-04-26 02:15:52,646 INFO AUTHENTICATION_PLUGIN_CLASS: MySQLNativePasswordAuthPlugin
