@@ -143,7 +143,7 @@ if __name__ == "__main__":
             stage1_table['calmar_ratio'] = None
         # Define output columns (update as needed)
         output_columns = [
-            "symbol_id", "lookback", "candle_interval", *grid.keys(), "win_rate", "net_return", "max_drawdown", "calmar_ratio", "run_timestamp"
+            "symbol_id", "lookback", "candle_interval", *grid.keys(), "type", "side", "win_rate", "net_return", "max_drawdown", "calmar_ratio", "run_timestamp"
         ]
         for col in output_columns:
             if col not in stage1_table.columns:

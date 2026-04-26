@@ -144,12 +144,16 @@ def get_v7_params(symbol):
     return {"symbol": symbol, "signal": {}}
 
 def run_backtest(df, version, symbol, params=None):
-    # Dummy implementation for demonstration: simulate random trades
+    # Simulate random trades with type and side columns
     import numpy as np
     n_trades = np.random.randint(10, 50)
     pnl = np.random.normal(loc=0.1, scale=1.0, size=n_trades)
     equity = np.cumsum(pnl) + 10000
-    return pd.DataFrame({'pnl': pnl, 'equity': equity})
+    # Alternate type/side for demonstration
+    types = ['Long' if i % 2 == 0 else 'Short' for i in range(n_trades)]
+    sides = ['Buy' if t == 'Long' else 'Sell' for t in types]
+    return pd.DataFrame({'pnl': pnl, 'equity': equity, 'type': types, 'side': sides})
+
 
 # --- Stage 1: Win Rate ---
 df_worker = None
@@ -162,7 +166,32 @@ def stage1_worker(values):
     if trades is None or trades.empty:
         return None
     win_rate = float((trades["pnl"] > 0).mean() * 100.0)
-    return (dict(params["signal"]), win_rate)
+    # Extract most common type/side if present
+    trade_type = trades["type"].mode().iloc[0] if "type" in trades.columns and not trades["type"].empty else None
+    trade_side = trades["side"].mode().iloc[0] if "side" in trades.columns and not trades["side"].empty else None
+    result = dict(params["signal"])
+    result["type"] = trade_type
+    result["side"] = trade_side
+    return (result, win_rate)
+
+# --- Stage 2: Net Return ---
+def stage2_worker(args):
+    params, win_rate = args
+    # Use the same DataFrame as Stage 1
+    trades = run_backtest(df_worker.copy(), "v7", symbol=symbol, params=params)
+    if trades is None or trades.empty:
+        return {"win_rate": win_rate, "net_return": None, "type": None, "side": None, "trades": None}
+    # Net return as percent: (final equity / initial equity - 1) * 100
+    equity_curve = trades["equity"] if "equity" in trades.columns else None
+    if equity_curve is not None and not equity_curve.empty:
+        start_equity = float(equity_curve.iloc[0])
+        end_equity = float(equity_curve.iloc[-1])
+        net_return = ((end_equity / start_equity) - 1.0) * 100 if start_equity else 0.0
+    else:
+        net_return = None
+    trade_type = trades["type"].mode().iloc[0] if "type" in trades.columns and not trades["type"].empty else None
+    trade_side = trades["side"].mode().iloc[0] if "side" in trades.columns and not trades["side"].empty else None
+    return {"win_rate": win_rate, "net_return": net_return, "type": trade_type, "side": trade_side, "trades": trades}
 
 def stage1_init(df):
     global df_worker
