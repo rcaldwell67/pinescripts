@@ -165,8 +165,24 @@ if __name__ == "__main__":
                 stage3_table[col] = None
         stage3_table = stage3_table.reindex(columns=output_columns, fill_value=None)
         out_csv3 = "stage3_results.csv"
-        stage3_table.to_csv(out_csv3, index=False)
-        print(f"Saved Stage 3 results to {out_csv3}")
+        # CSV header validation and conditional overwrite
+        import os
+        write_csv = True
+        if os.path.exists(out_csv3):
+            try:
+                existing = pd.read_csv(out_csv3, nrows=0)
+                existing_cols = list(existing.columns)
+                missing_cols = [col for col in output_columns if col not in existing_cols]
+                if not missing_cols:
+                    write_csv = False
+                    print(f"{out_csv3} already exists and has all required columns. Skipping overwrite.")
+                else:
+                    print(f"{out_csv3} is missing columns: {missing_cols}. Overwriting file.")
+            except Exception as e:
+                print(f"Error reading {out_csv3} for header validation: {e}. Overwriting file.")
+        if write_csv:
+            stage3_table.to_csv(out_csv3, index=False)
+            print(f"Saved Stage 3 results to {out_csv3}")
         # Filter by max_drawdown <= 4.5% (i.e., max_drawdown >= -4.5)
         MAX_DRAWDOWN_LIMIT = -4.5
         if "max_drawdown" in stage3_table.columns:

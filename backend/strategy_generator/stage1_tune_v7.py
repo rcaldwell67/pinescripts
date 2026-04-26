@@ -141,7 +141,33 @@ if __name__ == "__main__":
             stage1_table['max_drawdown'] = None
         if 'calmar_ratio' not in stage1_table.columns:
             stage1_table['calmar_ratio'] = None
-        stage1_table.to_csv(out_csv, index=False)
-        print(f"Saved passing Stage 1 parameter sets to {out_csv}")
+        # Define output columns (update as needed)
+        output_columns = [
+            "symbol_id", "lookback", "candle_interval", *grid.keys(), "win_rate", "net_return", "max_drawdown", "calmar_ratio", "run_timestamp"
+        ]
+        for col in output_columns:
+            if col not in stage1_table.columns:
+                stage1_table[col] = None
+        stage1_table = stage1_table.reindex(columns=output_columns, fill_value=None)
+        # CSV header validation and conditional overwrite
+        import os
+        import pandas as pd
+        write_csv = True
+        if os.path.exists(out_csv):
+            try:
+                existing = pd.read_csv(out_csv, nrows=0)
+                existing_cols = list(existing.columns)
+                missing_cols = [col for col in output_columns if col not in existing_cols]
+                if not missing_cols:
+                    write_csv = False
+                    print(f"{out_csv} already exists and has all required columns. Skipping overwrite.")
+                else:
+                    print(f"{out_csv} is missing columns: {missing_cols}. Overwriting file.")
+            except Exception as e:
+                print(f"Error reading {out_csv} for header validation: {e}. Overwriting file.")
+        if write_csv:
+            stage1_table.to_csv(out_csv, index=False)
+            print(f"Saved passing Stage 1 parameter sets to {out_csv}")
+        
     else:
         print("No parameter sets met the Win Rate guideline.")

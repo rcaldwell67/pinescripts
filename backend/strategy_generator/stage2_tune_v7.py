@@ -155,8 +155,24 @@ if __name__ == "__main__":
                 stage2_table[col] = None
         stage2_table = stage2_table.reindex(columns=output_columns, fill_value=None)
         out_csv2 = "stage2_results.csv"
-        stage2_table.to_csv(out_csv2, index=False)
-        print(f"Saved Stage 2 results (passing both guidelines) to {out_csv2}")
+        # CSV header validation and conditional overwrite
+        import os
+        write_csv = True
+        if os.path.exists(out_csv2):
+            try:
+                existing = pd.read_csv(out_csv2, nrows=0)
+                existing_cols = list(existing.columns)
+                missing_cols = [col for col in output_columns if col not in existing_cols]
+                if not missing_cols:
+                    write_csv = False
+                    print(f"{out_csv2} already exists and has all required columns. Skipping overwrite.")
+                else:
+                    print(f"{out_csv2} is missing columns: {missing_cols}. Overwriting file.")
+            except Exception as e:
+                print(f"Error reading {out_csv2} for header validation: {e}. Overwriting file.")
+        if write_csv:
+            stage2_table.to_csv(out_csv2, index=False)
+            print(f"Saved Stage 2 results (passing both guidelines) to {out_csv2}")
         if not stage2_table.empty:
             out_csv2_pass = "stage2_passing_params.csv"
             stage2_table.to_csv(out_csv2_pass, index=False)
