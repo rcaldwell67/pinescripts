@@ -5095,3 +5095,128 @@ trade_count    float64
 vwap           float64
 dtype: object
 [2026-04-26 02:09:09] AFTER DF INFO: mem=87.82MB, cpu=0.00
+[2026-04-26 02:23:56] START: mem=87.37MB, cpu=0.00
+[2026-04-26 02:23:57] AFTER CSV LOAD: mem=87.38MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 02:23:57] AFTER DF INFO: mem=87.46MB, cpu=0.00
+[2026-04-26 02:23:57] START: mem=87.46MB, cpu=0.00
+[2026-04-26 02:23:57] AFTER CSV LOAD: mem=87.46MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 02:23:57] AFTER DF INFO: mem=87.47MB, cpu=0.00
+[2026-04-26 02:24:09] PROGRESS 100: mem=198.72MB, cpu=0.00
+[2026-04-26 02:24:19] PROGRESS 200: mem=198.72MB, cpu=0.00
+[2026-04-26 02:24:30] PROGRESS 300: mem=198.70MB, cpu=0.00
+[2026-04-26 02:24:40] PROGRESS 400: mem=171.27MB, cpu=0.00
+[2026-04-26 02:24:50] PROGRESS 500: mem=106.99MB, cpu=0.00
+[2026-04-26 13:19:53] START: mem=86.60MB, cpu=0.00
+[2026-04-26 13:19:53] AFTER CSV LOAD: mem=87.28MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 13:19:54] AFTER DF INFO: mem=87.41MB, cpu=0.00
+[2026-04-26 13:19:54] START: mem=87.41MB, cpu=0.00
+[2026-04-26 13:19:54] AFTER CSV LOAD: mem=87.43MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 13:19:54] AFTER DF INFO: mem=87.43MB, cpu=0.00
+[2026-04-26 13:35:09] START: mem=86.66MB, cpu=0.00
+[2026-04-26 13:35:09] AFTER CSV LOAD: mem=87.41MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 13:35:09] AFTER DF INFO: mem=87.54MB, cpu=0.00
+[2026-04-26 13:35:09] START: mem=87.54MB, cpu=0.00
+[2026-04-26 13:35:09] AFTER CSV LOAD: mem=87.55MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 13:35:09] AFTER DF INFO: mem=87.55MB, cpu=0.00
+[2026-04-26 14:50:00] START: mem=86.73MB, cpu=0.00
+[2026-04-26 14:50:00] AFTER CSV LOAD: mem=87.48MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 14:50:00] AFTER DF INFO: mem=87.61MB, cpu=0.00
+[2026-04-26 14:50:00] START: mem=87.61MB, cpu=0.00
+[2026-04-26 14:50:00] AFTER CSV LOAD: mem=87.74MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 14:50:00] AFTER DF INFO: mem=87.75MB, cpu=0.00

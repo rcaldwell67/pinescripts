@@ -73,61 +73,69 @@ if __name__ == "__main__":
         total = len(param_grid_all)
 
 
-    # For single CSV output, always process the full grid (or sampled grid)
-    param_grid_iter = param_grid_all
 
-    results = []
-    completed = 0
+    # --- Chunked processing to avoid memory limit ---
+    CHUNK_SIZE = 1000  # You can adjust this value as needed
+    total = len(param_grid_all)
+    num_chunks = (total + CHUNK_SIZE - 1) // CHUNK_SIZE
+    tmp_csv = "stage1_partial.csv"
+    # Remove old partial file if exists
+    if os.path.exists(tmp_csv):
+        os.remove(tmp_csv)
+
     import psutil
     process = psutil.Process(os.getpid())
     def check_resources():
         mem_mb = process.memory_info().rss / (1024 * 1024)
-        # cpu = process.cpu_percent(interval=0.1) / 100.0
         if mem_mb > max_mem_mb:
             print(f"Memory usage exceeded {max_mem_mb} MB. Aborting.")
             exit(1)
-        # CPU usage check temporarily disabled to prevent premature abort
-        # if cpu > max_cpu:
-        #     print(f"CPU usage exceeded {max_cpu*100:.0f}%. Aborting.")
-        #     exit(1)
 
-
-    with multiprocessing.Pool(processes=max_workers, initializer=stage1_init, initargs=(df,)) as pool:
-        for result in pool.imap_unordered(stage1_worker, param_grid_iter):
-            completed += 1
-            if result is not None:
-                params, win_rate = result
-                # Run backtest to get equity curve and net return for metrics
-                v7_params = get_v7_params(symbol)
-                v7_params['signal'].update(params)
-                trades = run_backtest(df.copy(), "v7", symbol=symbol, params=params)
-                if trades is not None and not trades.empty and 'equity' in trades.columns:
-                    equity_curve = trades['equity']
-                    max_drawdown = compute_max_drawdown(equity_curve)
-                    calmar_ratio = compute_calmar_ratio(equity_curve)
-                    # Net return as percent: (final equity / initial equity - 1) * 100
-                    start_equity = float(equity_curve.iloc[0])
-                    end_equity = float(equity_curve.iloc[-1])
-                    net_return = ((end_equity / start_equity) - 1.0) * 100 if start_equity else 0.0
-                else:
-                    max_drawdown = None
-                    calmar_ratio = None
-                    net_return = None
-                results.append({
-                    "symbol_id": symbol_id,
-                    "lookback": lookback,
-                    "candle_interval": candle_interval,
-                    **params,
-                    "win_rate": win_rate,
-                    "net_return": net_return,
-                    "max_drawdown": max_drawdown,
-                    "calmar_ratio": calmar_ratio,
-                    "run_timestamp": pd.Timestamp.now()
-                })
-            if completed % save_every == 0:
-                tmp_csv = "stage1_partial.csv"
-                pd.DataFrame(results).to_csv(tmp_csv, index=False)
-            check_resources()
+    completed = 0
+    for chunk_idx in range(num_chunks):
+        start = chunk_idx * CHUNK_SIZE
+        end = min((chunk_idx + 1) * CHUNK_SIZE, total)
+        chunk = param_grid_all[start:end]
+        results = []
+        with multiprocessing.Pool(processes=max_workers, initializer=stage1_init, initargs=(df,)) as pool:
+            for result in pool.imap_unordered(stage1_worker, chunk):
+                completed += 1
+                if result is not None:
+                    params, win_rate = result
+                    v7_params = get_v7_params(symbol)
+                    v7_params['signal'].update(params)
+                    trades = run_backtest(df.copy(), "v7", symbol=symbol, params=params)
+                    if trades is not None and not trades.empty and 'equity' in trades.columns:
+                        equity_curve = trades['equity']
+                        max_drawdown = compute_max_drawdown(equity_curve)
+                        calmar_ratio = compute_calmar_ratio(equity_curve)
+                        start_equity = float(equity_curve.iloc[0])
+                        end_equity = float(equity_curve.iloc[-1])
+                        net_return = ((end_equity / start_equity) - 1.0) * 100 if start_equity else 0.0
+                    else:
+                        max_drawdown = None
+                        calmar_ratio = None
+                        net_return = None
+                    results.append({
+                        "symbol_id": symbol_id,
+                        "lookback": lookback,
+                        "candle_interval": candle_interval,
+                        **params,
+                        "win_rate": win_rate,
+                        "net_return": net_return,
+                        "max_drawdown": max_drawdown,
+                        "calmar_ratio": calmar_ratio,
+                        "run_timestamp": pd.Timestamp.now()
+                    })
+                if completed % save_every == 0:
+                    pd.DataFrame(results).to_csv(tmp_csv, mode='a', header=not os.path.exists(tmp_csv), index=False)
+                    results = []  # Clear memory
+                check_resources()
+        # Write any remaining results for this chunk
+        if results:
+            pd.DataFrame(results).to_csv(tmp_csv, mode='a', header=not os.path.exists(tmp_csv), index=False)
+        results = []  # Clear memory
+        check_resources()
 
     WIN_RATE_TARGET = 65.0
     passing_stage1 = [row for row in results if row["win_rate"] >= WIN_RATE_TARGET]
@@ -150,24 +158,6 @@ if __name__ == "__main__":
                 stage1_table[col] = None
         stage1_table = stage1_table.reindex(columns=output_columns, fill_value=None)
         # CSV header validation and conditional overwrite
-        import os
-        import pandas as pd
-        write_csv = True
-        if os.path.exists(out_csv):
-            try:
-                existing = pd.read_csv(out_csv, nrows=0)
-                existing_cols = list(existing.columns)
-                missing_cols = [col for col in output_columns if col not in existing_cols]
-                if not missing_cols:
-                    write_csv = False
-                    print(f"{out_csv} already exists and has all required columns. Skipping overwrite.")
-                else:
-                    print(f"{out_csv} is missing columns: {missing_cols}. Overwriting file.")
-            except Exception as e:
-                print(f"Error reading {out_csv} for header validation: {e}. Overwriting file.")
-        if write_csv:
-            stage1_table.to_csv(out_csv, index=False)
-            print(f"Saved passing Stage 1 parameter sets to {out_csv}")
-        
-    else:
-        print("No parameter sets met the Win Rate guideline.")
+        # Always overwrite the output CSV, no try/except needed
+        stage1_table.to_csv(out_csv, index=False)
+        print(f"Saved passing Stage 1 parameter sets to {out_csv}")

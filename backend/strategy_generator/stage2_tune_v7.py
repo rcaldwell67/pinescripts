@@ -38,7 +38,16 @@ def process_stage2_for_chunk(chunk_idx, chunk_file, num_chunks, df, max_workers,
     if chunk_df.empty:
         print(f"Skipping {chunk_file}: no passing Stage 1 entries.")
         return []
-    passing_stage1 = [(row.drop(['win_rate']).to_dict(), row['win_rate']) for _, row in chunk_df.iterrows()]
+    # Propagate type/side from input if present
+    passing_stage1 = []
+    for _, row in chunk_df.iterrows():
+        param_dict = row.drop(['win_rate']).to_dict()
+        # If type/side present in input, keep them for output
+        if 'type' in row and pd.notnull(row['type']):
+            param_dict['type'] = row['type']
+        if 'side' in row and pd.notnull(row['side']):
+            param_dict['side'] = row['side']
+        passing_stage1.append((param_dict, row['win_rate']))
     stage2_param_iter = passing_stage1
     import psutil
     process2 = psutil.Process(os.getpid())
@@ -71,9 +80,9 @@ def process_stage2_for_chunk(chunk_idx, chunk_file, num_chunks, df, max_workers,
         # Compute max_drawdown and calmar_ratio if possible
         if result is not None:
             trades = result.get("trades", None)
-            # Default type/side to None
-            trade_type = None
-            trade_side = None
+            # Default type/side to input values if present
+            trade_type = params.get('type', None)
+            trade_side = params.get('side', None)
             if trades is not None and hasattr(trades, 'empty') and not trades.empty and 'equity' in trades.columns:
                 equity_curve = trades['equity']
                 max_drawdown = compute_max_drawdown(equity_curve)
@@ -81,10 +90,12 @@ def process_stage2_for_chunk(chunk_idx, chunk_file, num_chunks, df, max_workers,
                 # Try to infer type/side from trades DataFrame if present
                 if 'side' in trades.columns:
                     # Use the most common side in trades as the summary
-                    trade_side = trades['side'].mode().iloc[0] if not trades['side'].empty else None
+                    trade_side = trades['side'].mode().iloc[0] if not trades['side'].empty else trade_side
                     # Map side to type (Long/Short)
                     if trade_side is not None:
-                        trade_type = 'Long' if trade_side.lower() == 'buy' else 'Short' if trade_side.lower() == 'sell' else None
+                        trade_type = 'Long' if trade_side.lower() == 'buy' else 'Short' if trade_side.lower() == 'sell' else trade_type
+                if 'type' in trades.columns and pd.notnull(trades['type']).any():
+                    trade_type = trades['type'].mode().iloc[0]
             else:
                 max_drawdown = None
                 calmar_ratio = None
@@ -155,24 +166,9 @@ if __name__ == "__main__":
                 stage2_table[col] = None
         stage2_table = stage2_table.reindex(columns=output_columns, fill_value=None)
         out_csv2 = "stage2_results.csv"
-        # CSV header validation and conditional overwrite
-        import os
-        write_csv = True
-        if os.path.exists(out_csv2):
-            try:
-                existing = pd.read_csv(out_csv2, nrows=0)
-                existing_cols = list(existing.columns)
-                missing_cols = [col for col in output_columns if col not in existing_cols]
-                if not missing_cols:
-                    write_csv = False
-                    print(f"{out_csv2} already exists and has all required columns. Skipping overwrite.")
-                else:
-                    print(f"{out_csv2} is missing columns: {missing_cols}. Overwriting file.")
-            except Exception as e:
-                print(f"Error reading {out_csv2} for header validation: {e}. Overwriting file.")
-        if write_csv:
-            stage2_table.to_csv(out_csv2, index=False)
-            print(f"Saved Stage 2 results (passing both guidelines) to {out_csv2}")
+        # Always overwrite the output CSV
+        stage2_table.to_csv(out_csv2, index=False)
+        print(f"Saved Stage 2 results (passing both guidelines) to {out_csv2}")
         if not stage2_table.empty:
             out_csv2_pass = "stage2_passing_params.csv"
             stage2_table.to_csv(out_csv2_pass, index=False)

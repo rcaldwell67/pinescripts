@@ -198,21 +198,31 @@ def stage1_init(df):
     df_worker = df
 
 if __name__ == "__main__":
-    # --- Stage 3: Placeholder for further filtering or metrics ---
-    # This block reads stage2_passing_params.csv and writes stage3_results.csv with correct headers
-    import os
-    if os.path.exists("stage2_passing_params.csv"):
-        stage2_df = pd.read_csv("stage2_passing_params.csv")
-        # Example: Copy all rows, just ensure column order
-        output_columns = [
-            "symbol_id", "lookback", "candle_interval", "macd_fast", "macd_slow", "macd_signal", "stoch_k_len", "stoch_d_len", "cci_len", "ema_fast", "ema_mid", "ema_slow", "rsi_len", "atr_len", "atr_baseline_len", "volume_sma_len", "bb_len", "bb_std_mult", "donchian_len", "adx_len", "atr_percentile_window", "macro_ema_period", "type", "side", "win_rate", "net_return", "max_drawdown", "calmar_ratio", "run_timestamp"
-        ]
-        for col in output_columns:
-            if col not in stage2_df.columns:
-                stage2_df[col] = None
-        stage3_df = stage2_df.reindex(columns=output_columns, fill_value=None)
-        stage3_df.to_csv("stage3_results.csv", index=False)
-        print("[Stage 3] Wrote stage3_results.csv with max_drawdown and calmar_ratio after net_return.")
+
+    # --- Automated Stage 2 and Stage 3 execution ---
+    import subprocess
+    import sys
+    # Run Stage 2 after Stage 1 completes
+    print("\n[Pipeline] Running Stage 2 (Net Return) after Stage 1...")
+    stage2_cmd = [sys.executable, os.path.join(os.path.dirname(__file__), "stage2_tune_v7.py"),
+                  "--symbol", symbol, "--lookback", lookback, "--candle-interval", candle_interval]
+    try:
+        result2 = subprocess.run(stage2_cmd, check=True)
+        print("[Pipeline] Stage 2 completed.")
+    except subprocess.CalledProcessError as e:
+        print(f"[Pipeline] Stage 2 failed: {e}")
+        sys.exit(1)
+
+    # Run Stage 3 after Stage 2 completes
+    print("\n[Pipeline] Running Stage 3 (Max Drawdown/Calmar) after Stage 2...")
+    stage3_cmd = [sys.executable, os.path.join(os.path.dirname(__file__), "stage3_tune_v7.py"),
+                  "--symbol", symbol, "--lookback", lookback, "--candle-interval", candle_interval]
+    try:
+        result3 = subprocess.run(stage3_cmd, check=True)
+        print("[Pipeline] Stage 3 completed.")
+    except subprocess.CalledProcessError as e:
+        print(f"[Pipeline] Stage 3 failed: {e}")
+        sys.exit(1)
 
     # --- Load or fetch OHLCV data before Stage 1 chunk processing ---
     import psutil
