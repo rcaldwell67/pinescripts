@@ -1,2 +1,0 @@
-symbol_id,macd_fast,macd_slow,macd_signal,stoch_k_len,stoch_d_len,cci_len,ema_fast,ema_mid,ema_slow,rsi_len,atr_len,atr_baseline_len,volume_sma_len,bb_len,bb_std_mult,donchian_len,adx_len,atr_percentile_window,macro_ema_period,type,side,run_timestamp,win_rate,net_return,max_drawdown,calmar_ratio
-1,8,21,7,10,3,14,8,21,55,7,14,100,20,20,1.5,20,14,60,50,Long,Buy,2026-04-26 14:50:00.024970,68.96551724137932,21.7917258868065,,

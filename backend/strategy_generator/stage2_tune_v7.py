@@ -157,9 +157,11 @@ if __name__ == "__main__":
         all_results.extend(chunk_results)
     if all_results:
         stage2_table = pd.DataFrame(all_results)
-        # Ensure all relevant columns are present and ordered
+        # Standardized output columns for all stages
         output_columns = [
-            "symbol_id", "lookback", "candle_interval", "macd_fast", "macd_slow", "macd_signal", "stoch_k_len", "stoch_d_len", "cci_len", "ema_fast", "ema_mid", "ema_slow", "rsi_len", "atr_len", "atr_baseline_len", "volume_sma_len", "bb_len", "bb_std_mult", "donchian_len", "adx_len", "atr_percentile_window", "macro_ema_period", "type", "side", "win_rate", "net_return", "max_drawdown", "calmar_ratio", "run_timestamp"
+            "symbol_id", "lookback", "candle_interval",
+            "macd_fast", "macd_slow", "macd_signal", "stoch_k_len", "stoch_d_len", "cci_len", "ema_fast", "ema_mid", "ema_slow", "rsi_len", "atr_len", "atr_baseline_len", "volume_sma_len", "bb_len", "bb_std_mult", "donchian_len", "adx_len", "atr_percentile_window", "macro_ema_period",
+            "type", "side", "win_rate", "net_return", "max_drawdown", "calmar_ratio", "run_timestamp"
         ]
         for col in output_columns:
             if col not in stage2_table.columns:

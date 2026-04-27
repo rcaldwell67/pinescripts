@@ -142,22 +142,16 @@ if __name__ == "__main__":
     out_csv = "stage1_passing_params.csv"
     if passing_stage1:
         stage1_table = pd.DataFrame(passing_stage1)
-        # Add net_return, max_drawdown, and calmar_ratio columns if missing
-        if 'net_return' not in stage1_table.columns:
-            stage1_table['net_return'] = None
-        if 'max_drawdown' not in stage1_table.columns:
-            stage1_table['max_drawdown'] = None
-        if 'calmar_ratio' not in stage1_table.columns:
-            stage1_table['calmar_ratio'] = None
-        # Define output columns (update as needed)
+        # Standardized output columns for all stages
         output_columns = [
-            "symbol_id", "lookback", "candle_interval", *grid.keys(), "type", "side", "win_rate", "net_return", "max_drawdown", "calmar_ratio", "run_timestamp"
+            "symbol_id", "lookback", "candle_interval",
+            "macd_fast", "macd_slow", "macd_signal", "stoch_k_len", "stoch_d_len", "cci_len", "ema_fast", "ema_mid", "ema_slow", "rsi_len", "atr_len", "atr_baseline_len", "volume_sma_len", "bb_len", "bb_std_mult", "donchian_len", "adx_len", "atr_percentile_window", "macro_ema_period",
+            "type", "side", "win_rate", "net_return", "max_drawdown", "calmar_ratio", "run_timestamp"
         ]
         for col in output_columns:
             if col not in stage1_table.columns:
                 stage1_table[col] = None
         stage1_table = stage1_table.reindex(columns=output_columns, fill_value=None)
-        # CSV header validation and conditional overwrite
-        # Always overwrite the output CSV, no try/except needed
+        # Always overwrite the output CSV
         stage1_table.to_csv(out_csv, index=False)
         print(f"Saved passing Stage 1 parameter sets to {out_csv}")

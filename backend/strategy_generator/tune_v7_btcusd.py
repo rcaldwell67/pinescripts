@@ -1,7 +1,9 @@
+
 """
 # --- Set memory limit for Stage 1 (Windows: psutil) ---
 try:
-    import psutil, os
+    import psutil
+    import os
     p = psutil.Process(os.getpid())
     # 1GB memory limit
     p.rlimit(psutil.RLIMIT_AS, (1 * 1024**3, 1 * 1024**3))
@@ -16,14 +18,17 @@ Staged optimization: Win Rate → Net Return → Max Drawdown.
 Multiprocessing and local CSV caching for efficiency.
 """
 
-
+import sys
 import os
+import random
 import pathlib
 import time
 import pandas as pd
 import itertools
 import multiprocessing
 import argparse
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from backtest_backtrader_alpaca import fetch_ohlcv as fetch_ohlcv_backend
 
 # --- Optional: Pre-filter parameter combinations before grid expansion ---
 # Example: Only keep combinations where macd_fast < macd_slow (domain knowledge)
@@ -107,15 +112,11 @@ grid = {
     "macro_ema_period": [0, 50],
 }
 
+
 # --- Local CSV caching for OHLCV data with retry logic ---
 cache_dir = pathlib.Path("./data_cache")
 cache_dir.mkdir(exist_ok=True)
 cache_file = cache_dir / f"ohlcv_{symbol.replace('/', '-')}_{lookback}_{candle_interval}.csv"
-
-import sys
-import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from backtest_backtrader_alpaca import fetch_ohlcv as fetch_ohlcv_backend
 
 
 # The backend expects timespan to control both lookback and interval granularity (e.g., "YTD", "30m", etc.)
@@ -166,19 +167,40 @@ def stage1_worker(values):
     if trades is None or trades.empty:
         return None
     win_rate = float((trades["pnl"] > 0).mean() * 100.0)
-    # Extract most common type/side if present
     trade_type = trades["type"].mode().iloc[0] if "type" in trades.columns and not trades["type"].empty else None
     trade_side = trades["side"].mode().iloc[0] if "side" in trades.columns and not trades["side"].empty else None
+    # Compute net return, max drawdown, calmar ratio, trades count
+    if "equity" in trades.columns and not trades["equity"].empty:
+        equity_curve = trades["equity"]
+        start_equity = float(equity_curve.iloc[0])
+        end_equity = float(equity_curve.iloc[-1])
+        net_return = ((end_equity / start_equity) - 1.0) * 100 if start_equity else 0.0
+        roll_max = equity_curve.cummax()
+        drawdown = (equity_curve - roll_max) / roll_max
+        max_drawdown = drawdown.min() * 100 if not drawdown.empty else 0.0
+        n_years = max(len(equity_curve) / 252, 1e-6)
+        cagr = ((end_equity / start_equity) ** (1 / n_years)) - 1 if start_equity > 0 else 0.0
+        calmar_ratio = cagr / (abs(max_drawdown) / 100) if max_drawdown != 0 else 0.0
+    else:
+        net_return = None
+        max_drawdown = None
+        calmar_ratio = None
+    trades_count = len(trades) if hasattr(trades, "__len__") else None
     result = dict(params["signal"])
     result["type"] = trade_type
     result["side"] = trade_side
-    return (result, win_rate)
+    result["win_rate"] = win_rate
+    result["net_return"] = net_return
+    result["max_drawdown"] = max_drawdown
+    result["calmar_ratio"] = calmar_ratio
+    result["trades"] = trades_count
+    return result
 
 # --- Stage 2: Net Return ---
 def stage2_worker(args):
     params, win_rate = args
     # Use the same DataFrame as Stage 1
-    trades = run_backtest(df_worker.copy(), "v7", symbol=symbol, params=params)
+    trades = run_backtest(stage2_df_worker.copy(), "v7", symbol=symbol, params=params)
     if trades is None or trades.empty:
         return {"win_rate": win_rate, "net_return": None, "type": None, "side": None, "trades": None}
     # Net return as percent: (final equity / initial equity - 1) * 100
@@ -270,78 +292,59 @@ if __name__ == "__main__":
             print(f"CPU usage exceeded {max_cpu*100:.0f}%. Aborting.")
             exit(1)
 
+
     if args.process_all_stage1_chunks:
         print(f"Processing all Stage 1 chunks (total: {num_chunks})...")
+        # Expand grid and apply pre-filter
+        param_grid_all = [t for t in itertools.product(*grid.values()) if is_valid_combination(t)]
+        total = len(param_grid_all)
+        # Sampling
+        if sample_fraction < 1.0:
+            sample_size = int(total * sample_fraction)
+            param_grid_all = random.sample(param_grid_all, sample_size)
+            total = len(param_grid_all)
         for idx in range(num_chunks):
             out_csv = f"stage1_passing_params_chunk{idx+1}_of_{num_chunks}.csv" if num_chunks > 1 else "stage1_passing_params.csv"
             if os.path.exists(out_csv):
-                try:
-                    chunk_df = pd.read_csv(out_csv)
-                    if chunk_df.shape[0] > 0:
-                        print(f"[Stage 1] Skipping chunk {idx+1} of {num_chunks}: {out_csv} already exists and has {chunk_df.shape[0]} rows.")
-                        continue
-                except Exception as e:
-                    print(f"[Stage 1] Error reading {out_csv}: {e}. Will re-run Stage 1 for this chunk.")
-            print(f"\n[Stage 1] Processing chunk {idx+1} of {num_chunks}...")
-            chunk_index = idx
-            # Recompute grid and chunking logic for this chunk
-            # (Recompute in case grid or filters change in future)
-            param_grid_all = [t for t in itertools.product(*grid.values()) if is_valid_combination(t)]
-            total = len(param_grid_all)
-            EST_ROW_SIZE = 100  # bytes per parameter set (conservative)
-            MAX_CHUNK_BYTES = 50 * 1024 * 1024  # 50MB
-            max_chunk_rows = MAX_CHUNK_BYTES // EST_ROW_SIZE
-            auto_num_chunks = (total + max_chunk_rows - 1) // max_chunk_rows
-            effective_num_chunks = max(num_chunks, auto_num_chunks)
-            if effective_num_chunks > 1:
-                chunk_size = (total + effective_num_chunks - 1) // effective_num_chunks
-                start = chunk_index * chunk_size
+                results = []
+                completed = 0
+                # Calculate chunk boundaries for this chunk
+                chunk_size = (total + num_chunks - 1) // num_chunks
+                start = idx * chunk_size
                 end = min(start + chunk_size, total)
                 param_grid_iter = param_grid_all[start:end]
-                print(f"Stage 1: Evaluating chunk {chunk_index+1}/{effective_num_chunks}: {len(param_grid_iter)} of {total} parameter combinations...")
-            else:
-                param_grid_iter = param_grid_all
-                print(f"Stage 1: Evaluating {total} parameter combinations...")
-            results = []
-            completed = 0
-            with multiprocessing.Pool(processes=max_workers, initializer=stage1_init, initargs=(df,)) as pool:
-                for result in pool.imap_unordered(stage1_worker, param_grid_iter):
-                    completed += 1
-                    if result is not None:
-                        params, win_rate = result
-                        results.append(result)
-                        print(f"Stage 1 [{completed}/{len(param_grid_iter)}]: {params} => WR={win_rate:.2f}")
-                    else:
-                        print(f"Stage 1 [{completed}/{len(param_grid_iter)}]: No result (empty trades)")
-                    if completed % save_every == 0:
-                        tmp_csv = f"stage1_partial_{chunk_index+1}_of_{num_chunks}.csv"
-                        pd.DataFrame([
-                            {**params, "win_rate": win_rate} for params, win_rate in results
-                        ]).to_csv(tmp_csv, index=False)
-                        print(f"[Checkpoint] Saved {completed} results to {tmp_csv}")
-                    if completed % 100 == 0:
-                        log_resources(f"PROGRESS {completed}")
-                    check_resources()
-            WIN_RATE_TARGET = 65.0
-            passing_stage1 = [(params, win_rate) for params, win_rate in results if win_rate >= WIN_RATE_TARGET]
-            print(f"\nStage 1 chunk complete. {len(passing_stage1)} parameter sets passed Win Rate ≥ {WIN_RATE_TARGET}% in this chunk.")
-            if passing_stage1:
-                print("Sample passing params:")
-                for p, wr in passing_stage1[:5]:
-                    print(f"{p} => WR={wr:.2f}")
-                stage1_table = pd.DataFrame([
-                    {**params, "win_rate": win_rate} for params, win_rate in passing_stage1
-                ])
-                stage1_table.to_csv(out_csv, index=False)
-                print(f"Saved passing Stage 1 parameter sets to {out_csv}")
-            else:
-                print("No parameter sets met the Win Rate guideline in this chunk.")
+                with multiprocessing.Pool(processes=max_workers, initializer=stage1_init, initargs=(df,)) as pool:
+                    for result in pool.imap_unordered(stage1_worker, param_grid_iter):
+                        completed += 1
+                        if result is not None:
+                            results.append(result)
+                            print(f"Stage 1 [{completed}/{len(param_grid_iter)}]: {result}")
+                        else:
+                            print(f"Stage 1 [{completed}/{len(param_grid_iter)}]: No result (empty trades)")
+                        if completed % save_every == 0:
+                            tmp_csv = f"stage1_partial_{idx+1}_of_{num_chunks}.csv"
+                            pd.DataFrame(results).to_csv(tmp_csv, index=False)
+                            print(f"[Checkpoint] Saved {completed} results to {tmp_csv}")
+                        if completed % 100 == 0:
+                            log_resources(f"PROGRESS {completed}")
+                        check_resources()
+                WIN_RATE_TARGET = 65.0
+                passing_stage1 = [row for row in results if row["win_rate"] >= WIN_RATE_TARGET]
+                print(f"\nStage 1 chunk complete. {len(passing_stage1)} parameter sets passed Win Rate ≥ {WIN_RATE_TARGET}% in this chunk.")
+                if passing_stage1:
+                    print("Sample passing params:")
+                    for p in passing_stage1[:5]:
+                        print(p)
+                    stage1_table = pd.DataFrame(passing_stage1)
+                    stage1_table.to_csv(out_csv, index=False)
+                    print(f"Saved passing Stage 1 parameter sets to {out_csv}")
+                else:
+                    print("No parameter sets met the Win Rate guideline in this chunk.")
         print("\nAll Stage 1 chunks processed.")
         if not args.process_all_chunks:
             exit(0)
 
     import psutil
-    import datetime
     process = psutil.Process(os.getpid())
     def log_resources(stage):
         mem_mb = process.memory_info().rss / (1024 * 1024)
@@ -383,15 +386,11 @@ if __name__ == "__main__":
     out_csv = chunk_output or (f"stage1_passing_params_chunk{chunk_index+1}_of_{num_chunks}.csv" if num_chunks > 1 else "stage1_passing_params.csv")
     skip_stage1 = False
     if os.path.exists(out_csv):
-        try:
-            chunk_df = pd.read_csv(out_csv)
-            if chunk_df.shape[0] > 0:
-                print(f"[Stage 1] Skipping chunk {chunk_index+1} of {num_chunks}: {out_csv} already exists and has {chunk_df.shape[0]} rows.")
-                skip_stage1 = True
-        except Exception as e:
-            print(f"[Stage 1] Error reading {out_csv}: {e}. Will re-run Stage 1 for this chunk.")
+        # Always overwrite Stage 1 output files, do not skip if file exists
+        pass
 
-    if not skip_stage1:
+    # Always run Stage 1 chunk processing, do not skip
+    if True:
         # ...existing Stage 1 code...
         # Expand grid and apply pre-filter
         param_grid_all = [t for t in itertools.product(*grid.values()) if is_valid_combination(t)]
@@ -440,91 +439,83 @@ if __name__ == "__main__":
         with multiprocessing.Pool(processes=max_workers, initializer=stage1_init, initargs=(df,)) as pool:
             for result in pool.imap_unordered(stage1_worker, param_grid_iter):
                 completed += 1
-                if result is not None:
-                    params, win_rate = result
-                    results.append(result)
-                    print(f"Stage 1 [{completed}/{len(param_grid_iter)}]: {params} => WR={win_rate:.2f}")
-                else:
-                    print(f"Stage 1 [{completed}/{len(param_grid_iter)}]: No result (empty trades)")
-                if completed % save_every == 0:
-                    # Save intermediate results
-                    tmp_csv = chunk_output or f"stage1_partial_{chunk_index+1}_of_{num_chunks}.csv"
-                    pd.DataFrame([
-                        {**params, "win_rate": win_rate} for params, win_rate in results
-                    ]).to_csv(tmp_csv, index=False)
-                    print(f"[Checkpoint] Saved {completed} results to {tmp_csv}")
-                if completed % 100 == 0:
-                    log_resources(f"PROGRESS {completed}")
-                check_resources()
+                results = []
+                completed = 0
+                with multiprocessing.Pool(processes=max_workers, initializer=stage1_init, initargs=(df,)) as pool:
+                    for result in pool.imap_unordered(stage1_worker, param_grid_iter):
+                        completed += 1
+                        if result is not None:
+                            results.append(result)
+                            print(f"Stage 1 [{completed}/{len(param_grid_iter)}]: {result}")
+                        else:
+                            print(f"Stage 1 [{completed}/{len(param_grid_iter)}]: No result (empty trades)")
+                        if completed % save_every == 0:
+                            tmp_csv = chunk_output or f"stage1_partial_{chunk_index+1}_of_{num_chunks}.csv"
+                            pd.DataFrame(results).to_csv(tmp_csv, index=False)
+                            print(f"[Checkpoint] Saved {completed} results to {tmp_csv}")
+                        if completed % 100 == 0:
+                            log_resources(f"PROGRESS {completed}")
+                        check_resources()
 
-        # Filter for Win Rate guideline
-        WIN_RATE_TARGET = 65.0  # Minimum win rate percentage for passing Stage 1
+                WIN_RATE_TARGET = 65.0  # Minimum win rate percentage for passing Stage 1
+                passing_stage1 = [row for row in results if row["win_rate"] >= WIN_RATE_TARGET]
+                print(f"\nStage 1 chunk complete. {len(passing_stage1)} parameter sets passed Win Rate ≥ {WIN_RATE_TARGET}% in this chunk.")
+                if passing_stage1:
+                    print("Sample passing params:")
+                    for p in passing_stage1[:5]:
+                        results = []
+                        completed = 0
+                        process = psutil.Process(os.getpid())
+                        def check_resources():
+                            mem_mb = process.memory_info().rss / (1024 * 1024)
+                            cpu = process.cpu_percent(interval=0.1) / 100.0
+                            if mem_mb > max_mem_mb:
+                                print(f"Memory usage exceeded {max_mem_mb} MB. Aborting.")
+                                exit(1)
+                            if cpu > max_cpu:
+                                print(f"CPU usage exceeded {max_cpu*100:.0f}%. Aborting.")
+                                exit(1)
 
-        # Save all passing Stage 1 parameter sets and their win rates to CSV
-        passing_stage1 = [(params, win_rate) for params, win_rate in results if win_rate >= WIN_RATE_TARGET]
-        print(f"\nStage 1 chunk complete. {len(passing_stage1)} parameter sets passed Win Rate ≥ {WIN_RATE_TARGET}% in this chunk.")
-        if passing_stage1:
-            print("Sample passing params:")
-            for p, wr in passing_stage1[:5]:
-                print(f"{p} => WR={wr:.2f}")
-            # Save to chunked CSV
-            stage1_table = pd.DataFrame([
-                {**params, "win_rate": win_rate} for params, win_rate in passing_stage1
-            ])
-            stage1_table.to_csv(out_csv, index=False)
-            print(f"Saved passing Stage 1 parameter sets to {out_csv}")
-        else:
-            print("No parameter sets met the Win Rate guideline in this chunk.")
-    else:
-        # If skipping Stage 1, load passing_stage1 from the existing CSV for Stage 2
-        import pandas as pd
-        chunk_df = pd.read_csv(out_csv)
-        if chunk_df.shape[0] > 0:
-            passing_stage1 = [(row.drop(['win_rate']).to_dict(), row['win_rate']) for _, row in chunk_df.iterrows()]
-        else:
-            passing_stage1 = []
+                    with multiprocessing.Pool(processes=max_workers, initializer=stage1_init, initargs=(df,)) as pool:
+                        for result in pool.imap_unordered(stage1_worker, param_grid_iter):
+                            completed += 1
+                            if result is not None:
+                                results.append(result)
+                                print(f"Stage 1 [{completed}/{len(param_grid_iter)}]: {result}")
+                            else:
+                                print(f"Stage 1 [{completed}/{len(param_grid_iter)}]: No result (empty trades)")
+                            if completed % save_every == 0:
+                                tmp_csv = chunk_output or f"stage1_partial_{chunk_index+1}_of_{num_chunks}.csv"
+                                pd.DataFrame(results).to_csv(tmp_csv, index=False)
+                                print(f"[Checkpoint] Saved {completed} results to {tmp_csv}")
+                            if completed % 100 == 0:
+                                log_resources(f"PROGRESS {completed}")
+                            check_resources()
 
-
-
-# --- Stage 2: Net Return (with chunking and multiprocessing) ---
-stage2_df_worker = None
-def stage2_worker(args):
-    global stage2_df_worker
-    params, win_rate = args
-    trades = run_backtest(stage2_df_worker.copy(), "v7", symbol=symbol, params=params)
-    if trades is None or trades.empty:
-        net_return = float('-inf')
-        max_drawdown = None
-        calmar_ratio = None
-    else:
-        net_return = float(trades["pnl"].sum())
-        # Compute metrics if possible
-        if 'equity' in trades.columns:
-            equity_curve = trades['equity']
-            # Import or define compute_max_drawdown and compute_calmar_ratio if not in scope
-            try:
-                from backend.strategy_generator.stage2_tune_v7 import compute_max_drawdown, compute_calmar_ratio
-            except ImportError:
-                def compute_max_drawdown(equity_curve):
-                    roll_max = equity_curve.cummax()
-                    drawdown = (equity_curve - roll_max) / roll_max
-                    return drawdown.min() * 100 if not drawdown.empty else 0.0
-                def compute_calmar_ratio(equity_curve):
-                    if len(equity_curve) < 2:
-                        return 0.0
-                    start = equity_curve.iloc[0]
-                    end = equity_curve.iloc[-1]
-                    n_years = max(len(equity_curve) / 252, 1e-6)
-                    cagr = ((end / start) ** (1 / n_years)) - 1 if start > 0 else 0.0
-                    max_dd = abs(compute_max_drawdown(equity_curve)) / 100
-                    return cagr / max_dd if max_dd > 0 else 0.0
-            max_drawdown = compute_max_drawdown(equity_curve)
-            calmar_ratio = compute_calmar_ratio(equity_curve)
-        else:
-            max_drawdown = None
-            calmar_ratio = None
-    # Return trades and metrics for further processing
-    return {**params, "win_rate": win_rate, "net_return": net_return, "max_drawdown": max_drawdown, "calmar_ratio": calmar_ratio, "trades": trades}
+                    # Enforce all trading strategy guidelines using centralized policy
+                    import sys
+                    import os
+                    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+                    from backend.config.guideline_policy import evaluate_backtest_guideline
+                    passing_stage1 = []
+                    for row in results:
+                        trades = row.get("trades", 0)
+                        win_rate = row.get("win_rate", 0.0)
+                        net_return = row.get("net_return", 0.0)
+                        max_drawdown = row.get("max_drawdown", 0.0)
+                        passed, _ = evaluate_backtest_guideline(symbol, "v7", trades, win_rate, net_return, abs(max_drawdown) if max_drawdown is not None else None)
+                        if passed:
+                            passing_stage1.append(row)
+                    print(f"\nStage 1 chunk complete. {len(passing_stage1)} parameter sets passed ALL trading strategy guidelines in this chunk.")
+                    if passing_stage1:
+                        print("Sample passing params:")
+                        for p in passing_stage1[:5]:
+                            print(p)
+                        stage1_table = pd.DataFrame(passing_stage1)
+                        stage1_table.to_csv(out_csv, index=False)
+                        print(f"Saved passing Stage 1 parameter sets to {out_csv}")
+                    else:
+                        print("No parameter sets met ALL trading strategy guidelines in this chunk.")
 
 def stage2_init(df):
     global stage2_df_worker
@@ -609,7 +600,7 @@ if __name__ == "__main__":
                 print("Top 5 parameter sets by Net Return:")
                 print(top5)
             else:
-                print(f"No parameter sets met both guidelines in this chunk.")
+                print("No parameter sets met both guidelines in this chunk.")
         else:
             print("No 'win_rate' or 'net_return' column found in Stage 2 results for this chunk. Skipping filtering and top 5 display.")
 
@@ -624,14 +615,13 @@ if __name__ == "__main__":
         if not m:
             continue
         # Check if file has at least one row
-        import pandas as pd
         try:
             chunk_df = pd.read_csv(f)
-            if chunk_df.shape[0] == 0:
-                print(f"Skipping {f}: no passing Stage 1 entries.")
-                continue
         except Exception as e:
             print(f"Skipping {f}: error reading file ({e})")
+            continue
+        if chunk_df.shape[0] == 0:
+            print(f"Skipping {f}: no passing Stage 1 entries.")
             continue
         found_passing = True
         chunk_idx = int(m.group(1)) - 1

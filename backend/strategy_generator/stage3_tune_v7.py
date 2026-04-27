@@ -157,7 +157,9 @@ if __name__ == "__main__":
         all_results.extend(chunk_results)
     if all_results:
         output_columns = [
-            "symbol_id", "macd_fast", "macd_slow", "macd_signal", "stoch_k_len", "stoch_d_len", "cci_len", "ema_fast", "ema_mid", "ema_slow", "rsi_len", "atr_len", "atr_baseline_len", "volume_sma_len", "bb_len", "bb_std_mult", "donchian_len", "adx_len", "atr_percentile_window", "macro_ema_period", "type", "side", "run_timestamp", "win_rate", "net_return", "max_drawdown", "calmar_ratio"
+            "symbol_id", "lookback", "candle_interval",
+            "macd_fast", "macd_slow", "macd_signal", "stoch_k_len", "stoch_d_len", "cci_len", "ema_fast", "ema_mid", "ema_slow", "rsi_len", "atr_len", "atr_baseline_len", "volume_sma_len", "bb_len", "bb_std_mult", "donchian_len", "adx_len", "atr_percentile_window", "macro_ema_period",
+            "type", "side", "win_rate", "net_return", "max_drawdown", "calmar_ratio", "run_timestamp"
         ]
         stage3_table = pd.DataFrame(all_results)
         for col in output_columns:

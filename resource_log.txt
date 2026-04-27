@@ -5220,3 +5220,1144 @@ trade_count    float64
 vwap           float64
 dtype: object
 [2026-04-26 14:50:00] AFTER DF INFO: mem=87.75MB, cpu=0.00
+[2026-04-26 18:31:03] START: mem=86.92MB, cpu=0.00
+[2026-04-26 18:31:03] AFTER CSV LOAD: mem=87.67MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 18:31:03] AFTER DF INFO: mem=87.80MB, cpu=0.00
+[2026-04-26 18:31:03] START: mem=87.80MB, cpu=0.00
+[2026-04-26 18:31:04] AFTER CSV LOAD: mem=87.80MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 18:31:04] AFTER DF INFO: mem=87.81MB, cpu=0.00
+[2026-04-26 18:31:15] PROGRESS 100: mem=198.64MB, cpu=0.00
+[2026-04-26 18:31:25] PROGRESS 200: mem=198.65MB, cpu=0.00
+[2026-04-26 18:31:36] PROGRESS 300: mem=198.65MB, cpu=0.00
+[2026-04-26 18:31:46] PROGRESS 400: mem=198.65MB, cpu=0.00
+[2026-04-26 18:31:56] PROGRESS 500: mem=198.65MB, cpu=0.00
+[2026-04-26 18:47:43] START: mem=86.98MB, cpu=0.00
+[2026-04-26 18:47:43] AFTER CSV LOAD: mem=87.69MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 18:47:43] AFTER DF INFO: mem=87.82MB, cpu=0.15
+[2026-04-26 18:47:43] START: mem=87.82MB, cpu=0.00
+[2026-04-26 18:47:43] AFTER CSV LOAD: mem=87.83MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 18:47:43] AFTER DF INFO: mem=87.84MB, cpu=0.00
+[2026-04-26 18:47:55] PROGRESS 100: mem=199.16MB, cpu=0.00
+[2026-04-26 18:48:05] PROGRESS 200: mem=199.16MB, cpu=0.00
+[2026-04-26 18:48:15] PROGRESS 300: mem=199.16MB, cpu=0.00
+[2026-04-26 18:48:25] PROGRESS 400: mem=199.16MB, cpu=0.00
+[2026-04-26 18:48:36] PROGRESS 500: mem=199.16MB, cpu=0.00
+[2026-04-26 19:01:44] START: mem=86.98MB, cpu=0.00
+[2026-04-26 19:01:44] AFTER CSV LOAD: mem=87.73MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 19:01:44] AFTER DF INFO: mem=87.86MB, cpu=0.00
+[2026-04-26 19:01:45] START: mem=87.86MB, cpu=0.00
+[2026-04-26 19:01:45] AFTER CSV LOAD: mem=87.87MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 19:01:45] AFTER DF INFO: mem=87.87MB, cpu=0.00
+[2026-04-26 19:04:40] START: mem=86.95MB, cpu=0.00
+[2026-04-26 19:04:40] AFTER CSV LOAD: mem=87.70MB, cpu=0.16
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 19:04:40] AFTER DF INFO: mem=87.83MB, cpu=0.00
+[2026-04-26 19:04:41] START: mem=87.83MB, cpu=0.00
+[2026-04-26 19:04:41] AFTER CSV LOAD: mem=87.84MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 19:04:41] AFTER DF INFO: mem=87.84MB, cpu=0.00
+[2026-04-26 19:04:52] PROGRESS 100: mem=199.43MB, cpu=0.15
+[2026-04-26 19:05:03] PROGRESS 200: mem=199.43MB, cpu=0.00
+[2026-04-26 19:05:13] PROGRESS 300: mem=199.43MB, cpu=0.00
+[2026-04-26 19:05:23] PROGRESS 400: mem=199.43MB, cpu=0.00
+[2026-04-26 19:05:33] PROGRESS 500: mem=199.43MB, cpu=0.00
+[2026-04-26 19:30:58] START: mem=86.52MB, cpu=0.00
+[2026-04-26 19:30:58] AFTER CSV LOAD: mem=87.27MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 19:30:58] AFTER DF INFO: mem=87.39MB, cpu=0.00
+[2026-04-26 19:30:59] START: mem=87.39MB, cpu=0.00
+[2026-04-26 19:30:59] AFTER CSV LOAD: mem=87.41MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 19:30:59] AFTER DF INFO: mem=87.41MB, cpu=0.00
+[2026-04-26 19:33:41] START: mem=86.51MB, cpu=0.00
+[2026-04-26 19:33:41] AFTER CSV LOAD: mem=87.26MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 19:33:41] AFTER DF INFO: mem=87.39MB, cpu=0.00
+[2026-04-26 19:33:41] START: mem=87.39MB, cpu=0.00
+[2026-04-26 19:33:41] AFTER CSV LOAD: mem=87.40MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 19:33:41] AFTER DF INFO: mem=87.40MB, cpu=0.00
+[2026-04-26 19:34:10] START: mem=86.53MB, cpu=0.00
+[2026-04-26 19:34:10] AFTER CSV LOAD: mem=87.28MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 19:34:10] AFTER DF INFO: mem=87.41MB, cpu=0.00
+[2026-04-26 19:34:10] START: mem=87.41MB, cpu=0.00
+[2026-04-26 19:34:11] AFTER CSV LOAD: mem=87.42MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 19:34:11] AFTER DF INFO: mem=87.43MB, cpu=0.00
+[2026-04-26 19:34:43] START: mem=86.78MB, cpu=0.00
+[2026-04-26 19:34:43] AFTER CSV LOAD: mem=87.46MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 19:34:43] AFTER DF INFO: mem=87.58MB, cpu=0.00
+[2026-04-26 19:34:43] START: mem=87.58MB, cpu=0.00
+[2026-04-26 19:34:43] AFTER CSV LOAD: mem=87.59MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 19:34:43] AFTER DF INFO: mem=87.60MB, cpu=0.00
+[2026-04-26 19:34:56] PROGRESS 100: mem=200.57MB, cpu=0.00
+[2026-04-26 19:35:06] PROGRESS 200: mem=200.58MB, cpu=0.00
+[2026-04-26 19:35:16] PROGRESS 300: mem=200.61MB, cpu=0.00
+[2026-04-26 19:35:26] PROGRESS 400: mem=200.61MB, cpu=0.00
+[2026-04-26 19:35:36] PROGRESS 500: mem=200.61MB, cpu=0.00
+[2026-04-26 19:35:48] PROGRESS 100: mem=201.16MB, cpu=0.00
+[2026-04-26 19:35:59] PROGRESS 200: mem=201.16MB, cpu=0.00
+[2026-04-26 19:36:09] PROGRESS 300: mem=201.16MB, cpu=0.00
+[2026-04-26 19:36:19] PROGRESS 400: mem=201.16MB, cpu=0.00
+[2026-04-26 19:36:29] PROGRESS 500: mem=201.16MB, cpu=0.00
+[2026-04-26 19:36:41] PROGRESS 100: mem=201.20MB, cpu=0.00
+[2026-04-26 19:36:51] PROGRESS 200: mem=201.18MB, cpu=0.00
+[2026-04-26 19:37:02] PROGRESS 300: mem=201.15MB, cpu=0.00
+[2026-04-26 19:37:12] PROGRESS 400: mem=201.15MB, cpu=0.00
+[2026-04-26 19:37:22] PROGRESS 500: mem=201.15MB, cpu=0.00
+[2026-04-26 19:37:34] PROGRESS 100: mem=201.18MB, cpu=0.00
+[2026-04-26 19:37:44] PROGRESS 200: mem=201.18MB, cpu=0.00
+[2026-04-26 19:37:54] PROGRESS 300: mem=201.18MB, cpu=0.00
+[2026-04-26 19:38:05] PROGRESS 400: mem=201.18MB, cpu=0.00
+[2026-04-26 19:38:15] PROGRESS 500: mem=201.18MB, cpu=0.00
+[2026-04-26 19:38:27] PROGRESS 100: mem=201.18MB, cpu=0.00
+[2026-04-26 19:38:37] PROGRESS 200: mem=201.18MB, cpu=0.00
+[2026-04-26 19:38:47] PROGRESS 300: mem=201.18MB, cpu=0.00
+[2026-04-26 19:38:57] PROGRESS 400: mem=199.34MB, cpu=0.00
+[2026-04-26 19:39:08] PROGRESS 500: mem=199.34MB, cpu=0.00
+[2026-04-26 19:39:20] PROGRESS 100: mem=199.46MB, cpu=0.00
+[2026-04-26 19:39:30] PROGRESS 200: mem=199.46MB, cpu=0.00
+[2026-04-26 19:39:40] PROGRESS 300: mem=199.66MB, cpu=0.00
+[2026-04-26 19:39:50] PROGRESS 400: mem=199.66MB, cpu=0.00
+[2026-04-26 19:40:00] PROGRESS 500: mem=199.66MB, cpu=0.00
+[2026-04-26 19:40:13] PROGRESS 100: mem=199.74MB, cpu=0.00
+[2026-04-26 19:40:23] PROGRESS 200: mem=199.74MB, cpu=0.00
+[2026-04-26 19:40:33] PROGRESS 300: mem=199.74MB, cpu=0.00
+[2026-04-26 19:40:43] PROGRESS 400: mem=199.74MB, cpu=0.00
+[2026-04-26 19:40:53] PROGRESS 500: mem=199.74MB, cpu=0.00
+[2026-04-26 19:41:06] PROGRESS 100: mem=199.75MB, cpu=0.00
+[2026-04-26 19:41:16] PROGRESS 200: mem=199.75MB, cpu=0.00
+[2026-04-26 19:41:26] PROGRESS 300: mem=199.72MB, cpu=0.00
+[2026-04-26 19:41:36] PROGRESS 400: mem=199.72MB, cpu=0.00
+[2026-04-26 19:41:46] PROGRESS 500: mem=199.72MB, cpu=0.00
+[2026-04-26 19:41:58] PROGRESS 100: mem=199.74MB, cpu=0.00
+[2026-04-26 19:42:09] PROGRESS 200: mem=199.74MB, cpu=0.00
+[2026-04-26 19:42:19] PROGRESS 300: mem=199.74MB, cpu=0.00
+[2026-04-26 19:42:29] PROGRESS 400: mem=199.74MB, cpu=0.00
+[2026-04-26 19:42:39] PROGRESS 500: mem=199.74MB, cpu=0.16
+[2026-04-26 19:42:51] PROGRESS 100: mem=199.73MB, cpu=0.00
+[2026-04-26 19:43:46] START: mem=86.54MB, cpu=0.00
+[2026-04-26 19:43:46] AFTER CSV LOAD: mem=87.29MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 19:43:46] AFTER DF INFO: mem=87.41MB, cpu=0.00
+[2026-04-26 19:43:46] START: mem=87.41MB, cpu=0.00
+[2026-04-26 19:43:47] AFTER CSV LOAD: mem=87.43MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 19:43:47] AFTER DF INFO: mem=87.43MB, cpu=0.00
+[2026-04-26 19:47:49] START: mem=87.08MB, cpu=0.00
+[2026-04-26 19:47:49] AFTER CSV LOAD: mem=87.84MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 19:47:49] AFTER DF INFO: mem=87.96MB, cpu=0.00
+[2026-04-26 19:47:49] START: mem=87.96MB, cpu=0.00
+[2026-04-26 19:47:49] AFTER CSV LOAD: mem=87.98MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 19:47:49] AFTER DF INFO: mem=87.98MB, cpu=0.00
+[2026-04-26 19:48:27] START: mem=86.62MB, cpu=0.16
+[2026-04-26 19:48:28] AFTER CSV LOAD: mem=87.37MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 19:48:28] AFTER DF INFO: mem=87.50MB, cpu=0.00
+[2026-04-26 19:48:28] START: mem=87.50MB, cpu=0.00
+[2026-04-26 19:48:28] AFTER CSV LOAD: mem=87.51MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 19:48:28] AFTER DF INFO: mem=87.52MB, cpu=0.00
+[2026-04-26 19:49:55] START: mem=86.62MB, cpu=0.00
+[2026-04-26 19:49:55] AFTER CSV LOAD: mem=87.34MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 19:49:55] AFTER DF INFO: mem=87.47MB, cpu=0.00
+[2026-04-26 19:49:55] START: mem=87.47MB, cpu=0.00
+[2026-04-26 19:49:55] AFTER CSV LOAD: mem=87.48MB, cpu=0.16
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 19:49:55] AFTER DF INFO: mem=87.48MB, cpu=0.00
+[2026-04-26 19:50:08] PROGRESS 100: mem=200.42MB, cpu=0.00
+[2026-04-26 19:50:18] PROGRESS 200: mem=200.43MB, cpu=0.00
+[2026-04-26 19:50:28] PROGRESS 300: mem=200.43MB, cpu=0.00
+[2026-04-26 19:50:38] PROGRESS 400: mem=200.43MB, cpu=0.00
+[2026-04-26 19:50:48] PROGRESS 500: mem=200.37MB, cpu=0.00
+[2026-04-26 19:51:01] PROGRESS 100: mem=200.52MB, cpu=0.00
+[2026-04-26 19:51:11] PROGRESS 200: mem=200.52MB, cpu=0.00
+[2026-04-26 19:51:21] PROGRESS 300: mem=200.52MB, cpu=0.00
+[2026-04-26 19:51:31] PROGRESS 400: mem=200.52MB, cpu=0.00
+[2026-04-26 19:51:41] PROGRESS 500: mem=200.52MB, cpu=0.00
+[2026-04-26 19:53:33] START: mem=86.63MB, cpu=0.00
+[2026-04-26 19:53:33] AFTER CSV LOAD: mem=87.27MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 19:53:33] AFTER DF INFO: mem=87.39MB, cpu=0.00
+[2026-04-26 19:53:34] START: mem=87.39MB, cpu=0.00
+[2026-04-26 19:53:34] AFTER CSV LOAD: mem=87.40MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 19:53:34] AFTER DF INFO: mem=87.41MB, cpu=0.00
+[2026-04-26 19:53:46] PROGRESS 100: mem=200.36MB, cpu=0.00
+[2026-04-26 19:53:56] PROGRESS 200: mem=200.37MB, cpu=0.00
+[2026-04-26 19:54:07] PROGRESS 300: mem=200.37MB, cpu=0.00
+[2026-04-26 19:54:17] PROGRESS 400: mem=200.37MB, cpu=0.00
+[2026-04-26 19:54:27] PROGRESS 500: mem=200.32MB, cpu=0.00
+[2026-04-26 19:54:39] PROGRESS 100: mem=200.45MB, cpu=0.00
+[2026-04-26 19:54:49] PROGRESS 200: mem=200.45MB, cpu=0.00
+[2026-04-26 19:55:00] PROGRESS 300: mem=200.45MB, cpu=0.00
+[2026-04-26 19:55:10] PROGRESS 400: mem=200.45MB, cpu=0.00
+[2026-04-26 19:55:20] PROGRESS 500: mem=200.45MB, cpu=0.00
+[2026-04-26 20:03:05] START: mem=92.47MB, cpu=0.00
+[2026-04-26 20:03:05] AFTER CSV LOAD: mem=93.21MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 20:03:05] AFTER DF INFO: mem=93.34MB, cpu=0.00
+[2026-04-26 20:03:05] START: mem=93.34MB, cpu=0.00
+[2026-04-26 20:03:05] AFTER CSV LOAD: mem=93.36MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 20:03:06] AFTER DF INFO: mem=93.37MB, cpu=0.00
+[2026-04-26 20:03:18] PROGRESS 100: mem=205.82MB, cpu=0.00
+[2026-04-26 20:03:28] PROGRESS 200: mem=205.82MB, cpu=0.00
+[2026-04-26 20:03:39] PROGRESS 300: mem=205.82MB, cpu=0.00
+[2026-04-26 20:03:49] PROGRESS 400: mem=205.82MB, cpu=0.00
+[2026-04-26 20:03:59] PROGRESS 500: mem=205.76MB, cpu=0.00
+[2026-04-26 20:04:11] PROGRESS 100: mem=205.92MB, cpu=0.00
+[2026-04-26 20:04:22] PROGRESS 200: mem=205.92MB, cpu=0.00
+[2026-04-26 20:04:32] PROGRESS 300: mem=205.92MB, cpu=0.00
+[2026-04-26 20:04:42] PROGRESS 400: mem=205.92MB, cpu=0.00
+[2026-04-26 20:04:52] PROGRESS 500: mem=205.92MB, cpu=0.00
+[2026-04-26 20:05:26] START: mem=92.39MB, cpu=0.00
+[2026-04-26 20:05:26] AFTER CSV LOAD: mem=93.12MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 20:05:26] AFTER DF INFO: mem=93.25MB, cpu=0.00
+[2026-04-26 20:05:26] START: mem=93.25MB, cpu=0.00
+[2026-04-26 20:05:26] AFTER CSV LOAD: mem=93.27MB, cpu=0.00
+DataFrame shape: (1, 9)
+DataFrame dtypes:
+symbol             str
+timestamp          str
+Open           float64
+High           float64
+Low            float64
+Close          float64
+Volume         float64
+trade_count    float64
+vwap           float64
+dtype: object
+[2026-04-26 20:05:26] AFTER DF INFO: mem=93.28MB, cpu=0.00
+[2026-04-26 20:05:39] PROGRESS 100: mem=205.85MB, cpu=0.00
+[2026-04-26 20:05:49] PROGRESS 200: mem=205.85MB, cpu=0.00
+[2026-04-26 20:05:59] PROGRESS 300: mem=205.85MB, cpu=0.00
+[2026-04-26 20:06:09] PROGRESS 400: mem=205.87MB, cpu=0.00
+[2026-04-26 20:06:19] PROGRESS 500: mem=205.81MB, cpu=0.00
+[2026-04-26 20:06:32] PROGRESS 100: mem=205.95MB, cpu=0.00
+[2026-04-26 20:06:42] PROGRESS 200: mem=205.95MB, cpu=0.00
+[2026-04-26 20:06:52] PROGRESS 300: mem=205.96MB, cpu=0.00
+[2026-04-26 20:07:02] PROGRESS 400: mem=205.96MB, cpu=0.00
+[2026-04-26 20:07:12] PROGRESS 500: mem=205.96MB, cpu=0.00
+[2026-04-26 20:07:25] PROGRESS 100: mem=206.13MB, cpu=0.00
+[2026-04-26 20:07:35] PROGRESS 200: mem=206.10MB, cpu=0.00
+[2026-04-26 20:07:45] PROGRESS 300: mem=206.10MB, cpu=0.00
+[2026-04-26 20:07:55] PROGRESS 400: mem=206.10MB, cpu=0.00
+[2026-04-26 20:08:05] PROGRESS 500: mem=206.10MB, cpu=0.00
+[2026-04-26 20:08:18] PROGRESS 100: mem=206.11MB, cpu=0.00
+[2026-04-26 20:08:28] PROGRESS 200: mem=206.11MB, cpu=0.00
+[2026-04-26 20:08:38] PROGRESS 300: mem=206.11MB, cpu=0.00
+[2026-04-26 20:08:48] PROGRESS 400: mem=206.11MB, cpu=0.00
+[2026-04-26 20:08:58] PROGRESS 500: mem=206.11MB, cpu=0.00
+[2026-04-26 20:09:11] PROGRESS 100: mem=206.11MB, cpu=0.00
+[2026-04-26 20:09:21] PROGRESS 200: mem=206.11MB, cpu=0.00
+[2026-04-26 20:09:31] PROGRESS 300: mem=206.11MB, cpu=0.00
+[2026-04-26 20:09:41] PROGRESS 400: mem=206.11MB, cpu=0.00
+[2026-04-26 20:09:51] PROGRESS 500: mem=206.11MB, cpu=0.00
+[2026-04-26 20:10:04] PROGRESS 100: mem=206.11MB, cpu=0.00
+[2026-04-26 20:10:14] PROGRESS 200: mem=206.11MB, cpu=0.00
+[2026-04-26 20:10:24] PROGRESS 300: mem=206.24MB, cpu=0.00
+[2026-04-26 20:10:34] PROGRESS 400: mem=206.24MB, cpu=0.00
+[2026-04-26 20:10:44] PROGRESS 500: mem=206.24MB, cpu=0.00
+[2026-04-26 20:10:57] PROGRESS 100: mem=206.24MB, cpu=0.00
+[2026-04-26 20:11:07] PROGRESS 200: mem=206.24MB, cpu=0.00
+[2026-04-26 20:11:17] PROGRESS 300: mem=206.24MB, cpu=0.00
+[2026-04-26 20:11:27] PROGRESS 400: mem=206.24MB, cpu=0.00
+[2026-04-26 20:11:37] PROGRESS 500: mem=206.24MB, cpu=0.00
+[2026-04-26 20:11:50] PROGRESS 100: mem=206.24MB, cpu=0.00
+[2026-04-26 20:12:00] PROGRESS 200: mem=206.20MB, cpu=0.00
+[2026-04-26 20:12:10] PROGRESS 300: mem=206.20MB, cpu=0.00
+[2026-04-26 20:12:20] PROGRESS 400: mem=206.20MB, cpu=0.00
+[2026-04-26 20:12:30] PROGRESS 500: mem=206.20MB, cpu=0.00
+[2026-04-26 20:12:43] PROGRESS 100: mem=206.20MB, cpu=0.00
+[2026-04-26 20:12:53] PROGRESS 200: mem=206.20MB, cpu=0.00
+[2026-04-26 20:13:03] PROGRESS 300: mem=206.20MB, cpu=0.00
+[2026-04-26 20:13:13] PROGRESS 400: mem=206.20MB, cpu=0.00
+[2026-04-26 20:13:23] PROGRESS 500: mem=206.20MB, cpu=0.00
+[2026-04-26 20:13:36] PROGRESS 100: mem=206.21MB, cpu=0.00
+[2026-04-26 20:13:46] PROGRESS 200: mem=206.21MB, cpu=0.00
+[2026-04-26 20:13:56] PROGRESS 300: mem=206.21MB, cpu=0.00
+[2026-04-26 20:14:06] PROGRESS 400: mem=206.21MB, cpu=0.00
+[2026-04-26 20:14:16] PROGRESS 500: mem=206.21MB, cpu=0.00
+[2026-04-26 20:14:29] PROGRESS 100: mem=206.20MB, cpu=0.00
+[2026-04-26 20:14:39] PROGRESS 200: mem=206.20MB, cpu=0.00
+[2026-04-26 20:14:49] PROGRESS 300: mem=206.20MB, cpu=0.00
+[2026-04-26 20:14:59] PROGRESS 400: mem=206.20MB, cpu=0.00
+[2026-04-26 20:15:10] PROGRESS 500: mem=206.20MB, cpu=0.00
+[2026-04-26 20:15:22] PROGRESS 100: mem=206.23MB, cpu=0.00
+[2026-04-26 20:15:32] PROGRESS 200: mem=206.23MB, cpu=0.00
+[2026-04-26 20:15:42] PROGRESS 300: mem=206.23MB, cpu=0.00
+[2026-04-26 20:15:53] PROGRESS 400: mem=206.23MB, cpu=0.00
+[2026-04-26 20:16:03] PROGRESS 500: mem=206.23MB, cpu=0.00
+[2026-04-26 20:16:15] PROGRESS 100: mem=206.23MB, cpu=0.00
+[2026-04-26 20:16:25] PROGRESS 200: mem=206.20MB, cpu=0.00
+[2026-04-26 20:16:35] PROGRESS 300: mem=206.20MB, cpu=0.00
+[2026-04-26 20:16:45] PROGRESS 400: mem=206.20MB, cpu=0.00
+[2026-04-26 20:16:56] PROGRESS 500: mem=206.20MB, cpu=0.00
+[2026-04-26 20:17:08] PROGRESS 100: mem=206.20MB, cpu=0.00
+[2026-04-26 20:17:18] PROGRESS 200: mem=206.20MB, cpu=0.00
+[2026-04-26 20:17:28] PROGRESS 300: mem=206.20MB, cpu=0.00
+[2026-04-26 20:17:38] PROGRESS 400: mem=206.20MB, cpu=0.00
+[2026-04-26 20:17:48] PROGRESS 500: mem=206.20MB, cpu=0.00
+[2026-04-26 20:18:01] PROGRESS 100: mem=206.20MB, cpu=0.00
+[2026-04-26 20:18:11] PROGRESS 200: mem=206.20MB, cpu=0.00
+[2026-04-26 20:18:21] PROGRESS 300: mem=206.22MB, cpu=0.00
+[2026-04-26 20:18:31] PROGRESS 400: mem=206.22MB, cpu=0.00
+[2026-04-26 20:18:41] PROGRESS 500: mem=206.22MB, cpu=0.00
+[2026-04-26 20:18:54] PROGRESS 100: mem=206.22MB, cpu=0.00
+[2026-04-26 20:19:04] PROGRESS 200: mem=206.22MB, cpu=0.00
+[2026-04-26 20:19:14] PROGRESS 300: mem=206.22MB, cpu=0.00
+[2026-04-26 20:19:24] PROGRESS 400: mem=206.22MB, cpu=0.00
+[2026-04-26 20:19:34] PROGRESS 500: mem=206.22MB, cpu=0.00
+[2026-04-26 20:19:46] PROGRESS 100: mem=206.21MB, cpu=0.00
+[2026-04-26 20:19:57] PROGRESS 200: mem=206.21MB, cpu=0.00
+[2026-04-26 20:20:07] PROGRESS 300: mem=206.21MB, cpu=0.00
+[2026-04-26 20:20:17] PROGRESS 400: mem=206.21MB, cpu=0.00
+[2026-04-26 20:20:27] PROGRESS 500: mem=206.21MB, cpu=0.00
+[2026-04-26 20:20:39] PROGRESS 100: mem=206.20MB, cpu=0.00
+[2026-04-26 20:20:50] PROGRESS 200: mem=206.20MB, cpu=0.00
+[2026-04-26 20:21:00] PROGRESS 300: mem=206.20MB, cpu=0.00
+[2026-04-26 20:21:10] PROGRESS 400: mem=206.20MB, cpu=0.00
+[2026-04-26 20:21:20] PROGRESS 500: mem=206.20MB, cpu=0.00
+[2026-04-26 20:21:32] PROGRESS 100: mem=206.20MB, cpu=0.00
+[2026-04-26 20:21:42] PROGRESS 200: mem=206.20MB, cpu=0.00
+[2026-04-26 20:21:53] PROGRESS 300: mem=206.20MB, cpu=0.00
+[2026-04-26 20:22:03] PROGRESS 400: mem=206.20MB, cpu=0.00
+[2026-04-26 20:22:13] PROGRESS 500: mem=206.20MB, cpu=0.00
+[2026-04-26 20:22:25] PROGRESS 100: mem=206.20MB, cpu=0.00
+[2026-04-26 20:22:35] PROGRESS 200: mem=206.20MB, cpu=0.00
+[2026-04-26 20:22:46] PROGRESS 300: mem=206.20MB, cpu=0.00
+[2026-04-26 20:22:56] PROGRESS 400: mem=206.20MB, cpu=0.00
+[2026-04-26 20:23:06] PROGRESS 500: mem=206.20MB, cpu=0.00
+[2026-04-26 20:23:18] PROGRESS 100: mem=206.21MB, cpu=0.00
+[2026-04-26 20:23:28] PROGRESS 200: mem=206.21MB, cpu=0.00
+[2026-04-26 20:23:38] PROGRESS 300: mem=206.21MB, cpu=0.00
+[2026-04-26 20:23:49] PROGRESS 400: mem=206.21MB, cpu=0.00
+[2026-04-26 20:23:59] PROGRESS 500: mem=206.21MB, cpu=0.00
+[2026-04-26 20:24:11] PROGRESS 100: mem=206.20MB, cpu=0.00
+[2026-04-26 20:24:21] PROGRESS 200: mem=206.20MB, cpu=0.00
+[2026-04-26 20:24:31] PROGRESS 300: mem=206.20MB, cpu=0.00
+[2026-04-26 20:24:41] PROGRESS 400: mem=206.20MB, cpu=0.00
+[2026-04-26 20:24:52] PROGRESS 500: mem=206.20MB, cpu=0.00
+[2026-04-26 20:25:04] PROGRESS 100: mem=206.20MB, cpu=0.00
+[2026-04-26 20:25:14] PROGRESS 200: mem=206.20MB, cpu=0.00
+[2026-04-26 20:25:24] PROGRESS 300: mem=206.20MB, cpu=0.00
+[2026-04-26 20:25:34] PROGRESS 400: mem=206.20MB, cpu=0.00
+[2026-04-26 20:25:45] PROGRESS 500: mem=206.20MB, cpu=0.00
+[2026-04-26 20:25:57] PROGRESS 100: mem=206.20MB, cpu=0.00
+[2026-04-26 20:26:07] PROGRESS 200: mem=206.20MB, cpu=0.00
+[2026-04-26 20:26:17] PROGRESS 300: mem=206.20MB, cpu=0.00
+[2026-04-26 20:26:27] PROGRESS 400: mem=206.20MB, cpu=0.00
+[2026-04-26 20:26:38] PROGRESS 500: mem=206.20MB, cpu=0.00
+[2026-04-26 20:26:50] PROGRESS 100: mem=206.21MB, cpu=0.00
+[2026-04-26 20:27:00] PROGRESS 200: mem=206.21MB, cpu=0.00
+[2026-04-26 20:27:10] PROGRESS 300: mem=206.21MB, cpu=0.00
+[2026-04-26 20:27:20] PROGRESS 400: mem=206.21MB, cpu=0.00
+[2026-04-26 20:27:31] PROGRESS 500: mem=206.21MB, cpu=0.00
+[2026-04-26 20:27:43] PROGRESS 100: mem=206.20MB, cpu=0.00
+[2026-04-26 20:27:53] PROGRESS 200: mem=206.20MB, cpu=0.00
+[2026-04-26 20:28:03] PROGRESS 300: mem=206.20MB, cpu=0.00
+[2026-04-26 20:28:13] PROGRESS 400: mem=206.20MB, cpu=0.00
+[2026-04-26 20:28:23] PROGRESS 500: mem=206.20MB, cpu=0.00
+[2026-04-26 20:28:36] PROGRESS 100: mem=206.21MB, cpu=0.00
+[2026-04-26 20:28:46] PROGRESS 200: mem=206.21MB, cpu=0.00
+[2026-04-26 20:28:56] PROGRESS 300: mem=206.21MB, cpu=0.00
+[2026-04-26 20:29:06] PROGRESS 400: mem=206.21MB, cpu=0.00
+[2026-04-26 20:29:16] PROGRESS 500: mem=206.21MB, cpu=0.00
+[2026-04-26 20:29:28] PROGRESS 100: mem=206.20MB, cpu=0.00
+[2026-04-26 20:29:39] PROGRESS 200: mem=206.20MB, cpu=0.00
+[2026-04-26 20:29:49] PROGRESS 300: mem=206.20MB, cpu=0.00
+[2026-04-26 20:29:59] PROGRESS 400: mem=206.20MB, cpu=0.00
+[2026-04-26 20:30:09] PROGRESS 500: mem=206.20MB, cpu=0.00
+[2026-04-26 20:30:21] PROGRESS 100: mem=206.20MB, cpu=0.00
+[2026-04-26 20:30:32] PROGRESS 200: mem=206.20MB, cpu=0.00
+[2026-04-26 20:30:42] PROGRESS 300: mem=206.20MB, cpu=0.00
+[2026-04-26 20:30:52] PROGRESS 400: mem=206.20MB, cpu=0.00
+[2026-04-26 20:31:02] PROGRESS 500: mem=206.20MB, cpu=0.00
+[2026-04-26 20:31:14] PROGRESS 100: mem=206.20MB, cpu=0.00
+[2026-04-26 20:31:25] PROGRESS 200: mem=206.20MB, cpu=0.00
+[2026-04-26 20:31:35] PROGRESS 300: mem=206.20MB, cpu=0.00
+[2026-04-26 20:31:45] PROGRESS 400: mem=206.20MB, cpu=0.00
+[2026-04-26 20:31:55] PROGRESS 500: mem=206.20MB, cpu=0.00
+[2026-04-26 20:32:07] PROGRESS 100: mem=206.21MB, cpu=0.00
+[2026-04-26 20:32:17] PROGRESS 200: mem=206.21MB, cpu=0.00
+[2026-04-26 20:32:28] PROGRESS 300: mem=206.21MB, cpu=0.00
+[2026-04-26 20:32:38] PROGRESS 400: mem=206.21MB, cpu=0.00
+[2026-04-26 20:32:48] PROGRESS 500: mem=206.21MB, cpu=0.00
+[2026-04-26 20:33:00] PROGRESS 100: mem=206.20MB, cpu=0.00
+[2026-04-26 20:33:10] PROGRESS 200: mem=206.20MB, cpu=0.00
+[2026-04-26 20:33:21] PROGRESS 300: mem=206.20MB, cpu=0.00
+[2026-04-26 20:33:31] PROGRESS 400: mem=206.20MB, cpu=0.00
+[2026-04-26 20:33:41] PROGRESS 500: mem=206.20MB, cpu=0.00
+[2026-04-26 20:33:53] PROGRESS 100: mem=206.20MB, cpu=0.00
+[2026-04-26 20:34:03] PROGRESS 200: mem=206.20MB, cpu=0.00
+[2026-04-26 20:34:14] PROGRESS 300: mem=206.20MB, cpu=0.00
+[2026-04-26 20:34:24] PROGRESS 400: mem=206.20MB, cpu=0.00
+[2026-04-26 20:34:34] PROGRESS 500: mem=206.20MB, cpu=0.00
+[2026-04-26 20:34:46] PROGRESS 100: mem=206.21MB, cpu=0.00
+[2026-04-26 20:34:56] PROGRESS 200: mem=206.21MB, cpu=0.00
+[2026-04-26 20:35:06] PROGRESS 300: mem=206.21MB, cpu=0.00
+[2026-04-26 20:35:17] PROGRESS 400: mem=206.21MB, cpu=0.00
+[2026-04-26 20:35:27] PROGRESS 500: mem=206.21MB, cpu=0.00
+[2026-04-26 20:35:39] PROGRESS 100: mem=206.20MB, cpu=0.00
+[2026-04-26 20:35:49] PROGRESS 200: mem=206.20MB, cpu=0.00
+[2026-04-26 20:35:59] PROGRESS 300: mem=206.20MB, cpu=0.00
+[2026-04-26 20:36:10] PROGRESS 400: mem=206.20MB, cpu=0.00
+[2026-04-26 20:36:20] PROGRESS 500: mem=206.20MB, cpu=0.00
+[2026-04-26 20:36:32] PROGRESS 100: mem=206.21MB, cpu=0.00
+[2026-04-26 20:36:42] PROGRESS 200: mem=206.21MB, cpu=0.00
+[2026-04-26 20:36:52] PROGRESS 300: mem=206.21MB, cpu=0.00
+[2026-04-26 20:37:02] PROGRESS 400: mem=206.21MB, cpu=0.00
+[2026-04-26 20:37:13] PROGRESS 500: mem=206.21MB, cpu=0.00
+[2026-04-26 20:37:25] PROGRESS 100: mem=206.21MB, cpu=0.00
+[2026-04-26 20:37:35] PROGRESS 200: mem=206.21MB, cpu=0.00
+[2026-04-26 20:37:45] PROGRESS 300: mem=206.21MB, cpu=0.00
+[2026-04-26 20:37:56] PROGRESS 400: mem=206.21MB, cpu=0.00
+[2026-04-26 20:38:06] PROGRESS 500: mem=206.21MB, cpu=0.00
+[2026-04-26 20:38:18] PROGRESS 100: mem=206.21MB, cpu=0.00
+[2026-04-26 20:38:28] PROGRESS 200: mem=206.21MB, cpu=0.00
+[2026-04-26 20:38:38] PROGRESS 300: mem=206.21MB, cpu=0.00
+[2026-04-26 20:38:49] PROGRESS 400: mem=206.21MB, cpu=0.00
+[2026-04-26 20:38:59] PROGRESS 500: mem=206.21MB, cpu=0.00
+[2026-04-26 20:39:11] PROGRESS 100: mem=206.20MB, cpu=0.00
+[2026-04-26 20:39:21] PROGRESS 200: mem=206.20MB, cpu=0.00
+[2026-04-26 20:39:31] PROGRESS 300: mem=206.20MB, cpu=0.00
+[2026-04-26 20:39:42] PROGRESS 400: mem=78.49MB, cpu=0.00
+[2026-04-26 20:39:52] PROGRESS 500: mem=78.49MB, cpu=0.00
+[2026-04-26 20:40:04] PROGRESS 100: mem=78.49MB, cpu=0.00
+[2026-04-26 20:40:14] PROGRESS 200: mem=78.49MB, cpu=0.00
+[2026-04-26 20:40:25] PROGRESS 300: mem=78.49MB, cpu=0.00
+[2026-04-26 20:40:35] PROGRESS 400: mem=78.49MB, cpu=0.00
+[2026-04-26 20:40:45] PROGRESS 500: mem=78.49MB, cpu=0.00
+[2026-04-26 20:40:57] PROGRESS 100: mem=78.49MB, cpu=0.00
+[2026-04-26 20:41:07] PROGRESS 200: mem=78.49MB, cpu=0.00
+[2026-04-26 20:41:17] PROGRESS 300: mem=78.49MB, cpu=0.00
+[2026-04-26 20:41:28] PROGRESS 400: mem=78.49MB, cpu=0.00
+[2026-04-26 20:41:38] PROGRESS 500: mem=78.50MB, cpu=0.00
+[2026-04-26 20:41:50] PROGRESS 100: mem=78.50MB, cpu=0.00
+[2026-04-26 20:42:00] PROGRESS 200: mem=78.50MB, cpu=0.00
+[2026-04-26 20:42:10] PROGRESS 300: mem=78.50MB, cpu=0.00
+[2026-04-26 20:42:20] PROGRESS 400: mem=78.50MB, cpu=0.00
+[2026-04-26 20:42:31] PROGRESS 500: mem=78.50MB, cpu=0.00
+[2026-04-26 20:42:43] PROGRESS 100: mem=78.52MB, cpu=0.00
+[2026-04-26 20:42:53] PROGRESS 200: mem=78.52MB, cpu=0.00
+[2026-04-26 20:43:03] PROGRESS 300: mem=78.52MB, cpu=0.00
+[2026-04-26 20:43:13] PROGRESS 400: mem=78.52MB, cpu=0.00
+[2026-04-26 20:43:24] PROGRESS 500: mem=78.52MB, cpu=0.00
+[2026-04-26 20:43:36] PROGRESS 100: mem=78.51MB, cpu=0.00
+[2026-04-26 20:43:46] PROGRESS 200: mem=78.51MB, cpu=0.00
+[2026-04-26 20:43:56] PROGRESS 300: mem=78.51MB, cpu=0.00
+[2026-04-26 20:44:06] PROGRESS 400: mem=78.51MB, cpu=0.00
+[2026-04-26 20:44:16] PROGRESS 500: mem=78.51MB, cpu=0.00
+[2026-04-26 20:44:29] PROGRESS 100: mem=78.51MB, cpu=0.00
+[2026-04-26 20:44:39] PROGRESS 200: mem=78.51MB, cpu=0.00
+[2026-04-26 20:44:49] PROGRESS 300: mem=78.51MB, cpu=0.00
+[2026-04-26 20:44:59] PROGRESS 400: mem=78.51MB, cpu=0.00
+[2026-04-26 20:45:09] PROGRESS 500: mem=78.51MB, cpu=0.00
+[2026-04-26 20:45:22] PROGRESS 100: mem=78.52MB, cpu=0.00
+[2026-04-26 20:45:32] PROGRESS 200: mem=78.52MB, cpu=0.00
+[2026-04-26 20:45:42] PROGRESS 300: mem=78.52MB, cpu=0.00
+[2026-04-26 20:45:52] PROGRESS 400: mem=78.52MB, cpu=0.00
+[2026-04-26 20:46:02] PROGRESS 500: mem=78.52MB, cpu=0.00
+[2026-04-26 20:46:15] PROGRESS 100: mem=78.53MB, cpu=0.00
+[2026-04-26 20:46:25] PROGRESS 200: mem=78.53MB, cpu=0.00
+[2026-04-26 20:46:35] PROGRESS 300: mem=78.53MB, cpu=0.00
+[2026-04-26 20:46:45] PROGRESS 400: mem=78.53MB, cpu=0.00
+[2026-04-26 20:46:55] PROGRESS 500: mem=78.53MB, cpu=0.00
+[2026-04-26 20:47:07] PROGRESS 100: mem=78.54MB, cpu=0.00
+[2026-04-26 20:47:18] PROGRESS 200: mem=78.54MB, cpu=0.00
+[2026-04-26 20:47:28] PROGRESS 300: mem=78.54MB, cpu=0.00
+[2026-04-26 20:47:38] PROGRESS 400: mem=78.54MB, cpu=0.00
+[2026-04-26 20:47:48] PROGRESS 500: mem=78.54MB, cpu=0.00
+[2026-04-26 20:48:00] PROGRESS 100: mem=22.52MB, cpu=0.00
+[2026-04-26 20:48:11] PROGRESS 200: mem=22.52MB, cpu=0.00
+[2026-04-26 20:48:21] PROGRESS 300: mem=22.52MB, cpu=0.00
+[2026-04-26 20:48:31] PROGRESS 400: mem=22.52MB, cpu=0.00
+[2026-04-26 20:48:41] PROGRESS 500: mem=22.52MB, cpu=0.00
+[2026-04-26 20:48:53] PROGRESS 100: mem=22.54MB, cpu=0.00
+[2026-04-26 20:49:04] PROGRESS 200: mem=22.54MB, cpu=0.00
+[2026-04-26 20:49:14] PROGRESS 300: mem=22.54MB, cpu=0.00
+[2026-04-26 20:49:24] PROGRESS 400: mem=22.55MB, cpu=0.00
+[2026-04-26 20:49:34] PROGRESS 500: mem=22.55MB, cpu=0.00
+[2026-04-26 20:49:46] PROGRESS 100: mem=22.56MB, cpu=0.00
+[2026-04-26 20:49:57] PROGRESS 200: mem=22.56MB, cpu=0.00
+[2026-04-26 20:50:07] PROGRESS 300: mem=22.56MB, cpu=0.00
+[2026-04-26 20:50:17] PROGRESS 400: mem=22.56MB, cpu=0.00
+[2026-04-26 20:50:27] PROGRESS 500: mem=22.56MB, cpu=0.00
+[2026-04-26 20:50:39] PROGRESS 100: mem=22.56MB, cpu=0.00
+[2026-04-26 20:50:50] PROGRESS 200: mem=22.56MB, cpu=0.00
+[2026-04-26 20:51:00] PROGRESS 300: mem=22.56MB, cpu=0.00
+[2026-04-26 20:51:10] PROGRESS 400: mem=22.56MB, cpu=0.00
+[2026-04-26 20:51:20] PROGRESS 500: mem=22.56MB, cpu=0.00
+[2026-04-26 20:51:32] PROGRESS 100: mem=22.57MB, cpu=0.00
+[2026-04-26 20:51:42] PROGRESS 200: mem=22.57MB, cpu=0.00
+[2026-04-26 20:51:53] PROGRESS 300: mem=22.58MB, cpu=0.00
+[2026-04-26 20:52:03] PROGRESS 400: mem=22.58MB, cpu=0.00
+[2026-04-26 20:52:13] PROGRESS 500: mem=22.58MB, cpu=0.00
+[2026-04-26 20:52:25] PROGRESS 100: mem=22.59MB, cpu=0.00
+[2026-04-26 20:52:35] PROGRESS 200: mem=22.59MB, cpu=0.00
+[2026-04-26 20:52:46] PROGRESS 300: mem=22.59MB, cpu=0.00
+[2026-04-26 20:52:56] PROGRESS 400: mem=22.29MB, cpu=0.00
+[2026-04-26 20:53:06] PROGRESS 500: mem=22.29MB, cpu=0.00
+[2026-04-26 20:53:18] PROGRESS 100: mem=22.31MB, cpu=0.00
+[2026-04-26 20:53:28] PROGRESS 200: mem=22.31MB, cpu=0.00
+[2026-04-26 20:53:39] PROGRESS 300: mem=22.31MB, cpu=0.00
+[2026-04-26 20:53:49] PROGRESS 400: mem=22.31MB, cpu=0.00
+[2026-04-26 20:53:59] PROGRESS 500: mem=22.31MB, cpu=0.00
+[2026-04-26 20:54:11] PROGRESS 100: mem=22.32MB, cpu=0.00
+[2026-04-26 20:54:21] PROGRESS 200: mem=22.32MB, cpu=0.00
+[2026-04-26 20:54:32] PROGRESS 300: mem=22.32MB, cpu=0.00
+[2026-04-26 20:54:42] PROGRESS 400: mem=22.32MB, cpu=0.00
+[2026-04-26 20:54:52] PROGRESS 500: mem=22.32MB, cpu=0.00
+[2026-04-26 20:55:04] PROGRESS 100: mem=22.33MB, cpu=0.00
+[2026-04-26 20:55:14] PROGRESS 200: mem=22.33MB, cpu=0.00
+[2026-04-26 20:55:24] PROGRESS 300: mem=22.33MB, cpu=0.00
+[2026-04-26 20:55:35] PROGRESS 400: mem=22.33MB, cpu=0.00
+[2026-04-26 20:55:45] PROGRESS 500: mem=22.33MB, cpu=0.00
+[2026-04-26 20:55:57] PROGRESS 100: mem=22.34MB, cpu=0.00
+[2026-04-26 20:56:07] PROGRESS 200: mem=22.34MB, cpu=0.00
+[2026-04-26 20:56:17] PROGRESS 300: mem=22.21MB, cpu=0.00
+[2026-04-26 20:56:28] PROGRESS 400: mem=22.21MB, cpu=0.00
+[2026-04-26 20:56:38] PROGRESS 500: mem=22.21MB, cpu=0.00
+[2026-04-26 20:56:50] PROGRESS 100: mem=22.35MB, cpu=0.00
+[2026-04-26 20:57:00] PROGRESS 200: mem=22.36MB, cpu=0.00
+[2026-04-26 20:57:10] PROGRESS 300: mem=22.36MB, cpu=0.00
+[2026-04-26 20:57:21] PROGRESS 400: mem=22.36MB, cpu=0.00
+[2026-04-26 20:57:31] PROGRESS 500: mem=22.36MB, cpu=0.00
+[2026-04-26 20:57:43] PROGRESS 100: mem=22.37MB, cpu=0.00
+[2026-04-26 20:57:53] PROGRESS 200: mem=20.64MB, cpu=0.00
+[2026-04-26 20:58:03] PROGRESS 300: mem=20.64MB, cpu=0.00
+[2026-04-26 20:58:13] PROGRESS 400: mem=20.64MB, cpu=0.00
+[2026-04-26 20:58:24] PROGRESS 500: mem=20.64MB, cpu=0.00
+[2026-04-26 20:58:36] PROGRESS 100: mem=20.69MB, cpu=0.00
+[2026-04-26 20:58:46] PROGRESS 200: mem=20.69MB, cpu=0.00
+[2026-04-26 20:58:56] PROGRESS 300: mem=20.69MB, cpu=0.00
+[2026-04-26 20:59:06] PROGRESS 400: mem=20.69MB, cpu=0.00
+[2026-04-26 20:59:17] PROGRESS 500: mem=20.69MB, cpu=0.00
+[2026-04-26 20:59:29] PROGRESS 100: mem=20.70MB, cpu=0.00
+[2026-04-26 20:59:39] PROGRESS 200: mem=20.70MB, cpu=0.00
+[2026-04-26 20:59:49] PROGRESS 300: mem=20.70MB, cpu=0.00
+[2026-04-26 20:59:59] PROGRESS 400: mem=20.70MB, cpu=0.00
+[2026-04-26 21:00:10] PROGRESS 500: mem=20.70MB, cpu=0.00
+[2026-04-26 21:00:22] PROGRESS 100: mem=20.70MB, cpu=0.00
+[2026-04-26 21:00:32] PROGRESS 200: mem=20.70MB, cpu=0.00
+[2026-04-26 21:00:42] PROGRESS 300: mem=20.70MB, cpu=0.00
+[2026-04-26 21:00:52] PROGRESS 400: mem=20.70MB, cpu=0.00
+[2026-04-26 21:01:02] PROGRESS 500: mem=20.70MB, cpu=0.00
+[2026-04-26 21:01:15] PROGRESS 100: mem=20.71MB, cpu=0.00
+[2026-04-26 21:01:25] PROGRESS 200: mem=20.71MB, cpu=0.00
+[2026-04-26 21:01:35] PROGRESS 300: mem=20.71MB, cpu=0.00
+[2026-04-26 21:01:45] PROGRESS 400: mem=20.71MB, cpu=0.00
+[2026-04-26 21:01:55] PROGRESS 500: mem=20.71MB, cpu=0.00
+[2026-04-26 21:02:08] PROGRESS 100: mem=20.74MB, cpu=0.00
+[2026-04-26 21:02:18] PROGRESS 200: mem=20.74MB, cpu=0.00
+[2026-04-26 21:02:28] PROGRESS 300: mem=20.74MB, cpu=0.00
+[2026-04-26 21:02:38] PROGRESS 400: mem=20.74MB, cpu=0.00
+[2026-04-26 21:02:48] PROGRESS 500: mem=20.74MB, cpu=0.00
+[2026-04-26 21:03:01] PROGRESS 100: mem=20.75MB, cpu=0.00
+[2026-04-26 21:03:11] PROGRESS 200: mem=20.75MB, cpu=0.00
+[2026-04-26 21:03:21] PROGRESS 300: mem=20.75MB, cpu=0.00
+[2026-04-26 21:03:31] PROGRESS 400: mem=20.75MB, cpu=0.00
+[2026-04-26 21:03:41] PROGRESS 500: mem=20.75MB, cpu=0.00
+[2026-04-26 21:03:54] PROGRESS 100: mem=20.77MB, cpu=0.00
+[2026-04-26 21:04:04] PROGRESS 200: mem=20.77MB, cpu=0.00
+[2026-04-26 21:04:14] PROGRESS 300: mem=20.77MB, cpu=0.00
+[2026-04-26 21:04:24] PROGRESS 400: mem=20.77MB, cpu=0.00
+[2026-04-26 21:04:34] PROGRESS 500: mem=20.77MB, cpu=0.00
+[2026-04-26 21:04:47] PROGRESS 100: mem=20.77MB, cpu=0.00
+[2026-04-26 21:04:57] PROGRESS 200: mem=20.77MB, cpu=0.00
+[2026-04-26 21:05:07] PROGRESS 300: mem=20.77MB, cpu=0.00
+[2026-04-26 21:05:17] PROGRESS 400: mem=20.77MB, cpu=0.00
+[2026-04-26 21:05:27] PROGRESS 500: mem=20.77MB, cpu=0.00
+[2026-04-26 21:05:40] PROGRESS 100: mem=20.79MB, cpu=0.00
+[2026-04-26 21:05:50] PROGRESS 200: mem=20.79MB, cpu=0.00
+[2026-04-26 21:06:00] PROGRESS 300: mem=20.79MB, cpu=0.00
+[2026-04-26 21:06:10] PROGRESS 400: mem=20.79MB, cpu=0.00
+[2026-04-26 21:06:20] PROGRESS 500: mem=20.79MB, cpu=0.00
+[2026-04-26 21:06:32] PROGRESS 100: mem=20.79MB, cpu=0.00
+[2026-04-26 21:06:43] PROGRESS 200: mem=20.79MB, cpu=0.00
+[2026-04-26 21:06:53] PROGRESS 300: mem=20.79MB, cpu=0.00
+[2026-04-26 21:07:03] PROGRESS 400: mem=20.79MB, cpu=0.00
+[2026-04-26 21:07:13] PROGRESS 500: mem=20.79MB, cpu=0.00
+[2026-04-26 21:07:26] PROGRESS 100: mem=20.80MB, cpu=0.00
+[2026-04-26 21:07:36] PROGRESS 200: mem=20.80MB, cpu=0.00
+[2026-04-26 21:07:46] PROGRESS 300: mem=20.80MB, cpu=0.00
+[2026-04-26 21:07:56] PROGRESS 400: mem=18.64MB, cpu=0.00
+[2026-04-26 21:08:06] PROGRESS 500: mem=18.64MB, cpu=0.00
+[2026-04-26 21:08:19] PROGRESS 100: mem=18.70MB, cpu=0.00
+[2026-04-26 21:08:29] PROGRESS 200: mem=18.70MB, cpu=0.00
+[2026-04-26 21:08:39] PROGRESS 300: mem=18.70MB, cpu=0.00
+[2026-04-26 21:08:49] PROGRESS 400: mem=18.70MB, cpu=0.00
+[2026-04-26 21:08:59] PROGRESS 500: mem=18.70MB, cpu=0.00
+[2026-04-26 21:09:12] PROGRESS 100: mem=18.72MB, cpu=0.00
+[2026-04-26 21:09:22] PROGRESS 200: mem=18.72MB, cpu=0.00
+[2026-04-26 21:09:32] PROGRESS 300: mem=18.72MB, cpu=0.00
+[2026-04-26 21:09:42] PROGRESS 400: mem=18.72MB, cpu=0.00
+[2026-04-26 21:09:52] PROGRESS 500: mem=18.72MB, cpu=0.00
+[2026-04-26 21:10:05] PROGRESS 100: mem=18.72MB, cpu=0.00
+[2026-04-26 21:10:15] PROGRESS 200: mem=18.73MB, cpu=0.00
+[2026-04-26 21:10:25] PROGRESS 300: mem=18.73MB, cpu=0.00
+[2026-04-26 21:10:35] PROGRESS 400: mem=18.73MB, cpu=0.00
+[2026-04-26 21:10:45] PROGRESS 500: mem=18.73MB, cpu=0.00
+[2026-04-26 21:10:58] PROGRESS 100: mem=18.74MB, cpu=0.00
+[2026-04-26 21:11:08] PROGRESS 200: mem=18.74MB, cpu=0.00
+[2026-04-26 21:11:18] PROGRESS 300: mem=18.61MB, cpu=0.00
+[2026-04-26 21:11:28] PROGRESS 400: mem=18.61MB, cpu=0.00
+[2026-04-26 21:11:38] PROGRESS 500: mem=18.61MB, cpu=0.00
+[2026-04-26 21:11:51] PROGRESS 100: mem=18.75MB, cpu=0.00
+[2026-04-26 21:12:01] PROGRESS 200: mem=18.75MB, cpu=0.00
+[2026-04-26 21:12:11] PROGRESS 300: mem=18.75MB, cpu=0.00
+[2026-04-26 21:12:21] PROGRESS 400: mem=18.75MB, cpu=0.00
+[2026-04-26 21:12:31] PROGRESS 500: mem=18.75MB, cpu=0.00
+[2026-04-26 21:12:44] PROGRESS 100: mem=18.77MB, cpu=0.00
+[2026-04-26 21:12:54] PROGRESS 200: mem=18.60MB, cpu=0.00
+[2026-04-26 21:13:04] PROGRESS 300: mem=18.60MB, cpu=0.00
+[2026-04-26 21:13:14] PROGRESS 400: mem=18.60MB, cpu=0.00
+[2026-04-26 21:13:24] PROGRESS 500: mem=18.60MB, cpu=0.00
+[2026-04-26 21:13:37] PROGRESS 100: mem=18.61MB, cpu=0.00
+[2026-04-26 21:13:47] PROGRESS 200: mem=18.61MB, cpu=0.00
+[2026-04-26 21:13:57] PROGRESS 300: mem=18.61MB, cpu=0.00
+[2026-04-26 21:14:07] PROGRESS 400: mem=18.61MB, cpu=0.00
+[2026-04-26 21:14:17] PROGRESS 500: mem=18.61MB, cpu=0.00
+[2026-04-26 21:14:30] PROGRESS 100: mem=18.63MB, cpu=0.00
+[2026-04-26 21:14:40] PROGRESS 200: mem=18.63MB, cpu=0.00
+[2026-04-26 21:14:50] PROGRESS 300: mem=18.63MB, cpu=0.00
+[2026-04-26 21:15:00] PROGRESS 400: mem=18.63MB, cpu=0.00
+[2026-04-26 21:15:11] PROGRESS 500: mem=18.63MB, cpu=0.00
+[2026-04-26 21:15:23] PROGRESS 100: mem=18.65MB, cpu=0.00
+[2026-04-26 21:15:33] PROGRESS 200: mem=18.65MB, cpu=0.00
+[2026-04-26 21:15:43] PROGRESS 300: mem=18.65MB, cpu=0.00
+[2026-04-26 21:15:53] PROGRESS 400: mem=18.65MB, cpu=0.00
+[2026-04-26 21:16:04] PROGRESS 500: mem=18.65MB, cpu=0.00
+[2026-04-26 21:16:16] PROGRESS 100: mem=18.68MB, cpu=0.00
+[2026-04-26 21:16:26] PROGRESS 200: mem=18.68MB, cpu=0.00
+[2026-04-26 21:16:36] PROGRESS 300: mem=18.68MB, cpu=0.00
+[2026-04-26 21:16:46] PROGRESS 400: mem=18.68MB, cpu=0.00
+[2026-04-26 21:16:57] PROGRESS 500: mem=18.68MB, cpu=0.00
+[2026-04-26 21:17:09] PROGRESS 100: mem=18.68MB, cpu=0.00
+[2026-04-26 21:17:19] PROGRESS 200: mem=18.68MB, cpu=0.00
+[2026-04-26 21:17:29] PROGRESS 300: mem=18.68MB, cpu=0.00
+[2026-04-26 21:17:39] PROGRESS 400: mem=18.68MB, cpu=0.00
+[2026-04-26 21:17:50] PROGRESS 500: mem=18.68MB, cpu=0.00
+[2026-04-26 21:18:02] PROGRESS 100: mem=18.70MB, cpu=0.00
+[2026-04-26 21:18:12] PROGRESS 200: mem=18.70MB, cpu=0.00
+[2026-04-26 21:18:22] PROGRESS 300: mem=18.70MB, cpu=0.00
+[2026-04-26 21:18:32] PROGRESS 400: mem=18.70MB, cpu=0.00
+[2026-04-26 21:18:43] PROGRESS 500: mem=18.70MB, cpu=0.00
+[2026-04-26 21:18:55] PROGRESS 100: mem=18.71MB, cpu=0.00
+[2026-04-26 21:19:05] PROGRESS 200: mem=18.71MB, cpu=0.00
+[2026-04-26 21:19:15] PROGRESS 300: mem=18.71MB, cpu=0.00
+[2026-04-26 21:19:25] PROGRESS 400: mem=18.71MB, cpu=0.00
+[2026-04-26 21:19:36] PROGRESS 500: mem=18.71MB, cpu=0.00
+[2026-04-26 21:19:48] PROGRESS 100: mem=18.72MB, cpu=0.00
+[2026-04-26 21:19:58] PROGRESS 200: mem=18.73MB, cpu=0.00
+[2026-04-26 21:20:08] PROGRESS 300: mem=18.73MB, cpu=0.00
+[2026-04-26 21:20:18] PROGRESS 400: mem=18.73MB, cpu=0.00
+[2026-04-26 21:20:29] PROGRESS 500: mem=18.73MB, cpu=0.00
+[2026-04-26 21:20:41] PROGRESS 100: mem=18.73MB, cpu=0.00
+[2026-04-26 21:20:51] PROGRESS 200: mem=18.73MB, cpu=0.00
+[2026-04-26 21:21:01] PROGRESS 300: mem=18.73MB, cpu=0.00
+[2026-04-26 21:21:11] PROGRESS 400: mem=18.73MB, cpu=0.00
+[2026-04-26 21:21:22] PROGRESS 500: mem=18.73MB, cpu=0.00
+[2026-04-26 21:21:34] PROGRESS 100: mem=18.74MB, cpu=0.00
+[2026-04-26 21:21:44] PROGRESS 200: mem=18.74MB, cpu=0.00
+[2026-04-26 21:21:54] PROGRESS 300: mem=18.75MB, cpu=0.00
+[2026-04-26 21:22:04] PROGRESS 400: mem=18.75MB, cpu=0.00
+[2026-04-26 21:22:15] PROGRESS 500: mem=18.75MB, cpu=0.00
+[2026-04-26 21:22:27] PROGRESS 100: mem=18.75MB, cpu=0.00
+[2026-04-26 21:22:37] PROGRESS 200: mem=18.75MB, cpu=0.00
+[2026-04-26 21:22:47] PROGRESS 300: mem=18.75MB, cpu=0.00
+[2026-04-26 21:22:57] PROGRESS 400: mem=18.48MB, cpu=0.00
+[2026-04-26 21:23:08] PROGRESS 500: mem=18.48MB, cpu=0.00
+[2026-04-26 21:23:20] PROGRESS 100: mem=18.48MB, cpu=0.00
+[2026-04-26 21:23:30] PROGRESS 200: mem=18.48MB, cpu=0.00
+[2026-04-26 21:23:40] PROGRESS 300: mem=18.48MB, cpu=0.00
+[2026-04-26 21:23:50] PROGRESS 400: mem=18.48MB, cpu=0.00
+[2026-04-26 21:24:01] PROGRESS 500: mem=18.48MB, cpu=0.00
+[2026-04-26 21:24:13] PROGRESS 100: mem=18.51MB, cpu=0.00
+[2026-04-26 21:24:23] PROGRESS 200: mem=18.51MB, cpu=0.00
+[2026-04-26 21:24:33] PROGRESS 300: mem=18.51MB, cpu=0.00
+[2026-04-26 21:24:44] PROGRESS 400: mem=18.51MB, cpu=0.00
+[2026-04-26 21:24:54] PROGRESS 500: mem=18.51MB, cpu=0.00
+[2026-04-26 21:25:06] PROGRESS 100: mem=18.54MB, cpu=0.00
+[2026-04-26 21:25:16] PROGRESS 200: mem=18.54MB, cpu=0.00
+[2026-04-26 21:25:26] PROGRESS 300: mem=18.54MB, cpu=0.00
+[2026-04-26 21:25:37] PROGRESS 400: mem=18.54MB, cpu=0.00
+[2026-04-26 21:25:47] PROGRESS 500: mem=18.54MB, cpu=0.00
+[2026-04-26 21:25:59] PROGRESS 100: mem=18.54MB, cpu=0.00
+[2026-04-26 21:26:09] PROGRESS 200: mem=18.54MB, cpu=0.00
+[2026-04-26 21:26:19] PROGRESS 300: mem=18.41MB, cpu=0.00
+[2026-04-26 21:26:30] PROGRESS 400: mem=18.41MB, cpu=0.00
+[2026-04-26 21:26:40] PROGRESS 500: mem=18.41MB, cpu=0.00
+[2026-04-26 21:26:52] PROGRESS 100: mem=18.55MB, cpu=0.00
+[2026-04-26 21:27:02] PROGRESS 200: mem=18.55MB, cpu=0.00
+[2026-04-26 21:27:12] PROGRESS 300: mem=18.55MB, cpu=0.00
+[2026-04-26 21:27:23] PROGRESS 400: mem=18.55MB, cpu=0.00
+[2026-04-26 21:27:33] PROGRESS 500: mem=18.55MB, cpu=0.00
+[2026-04-26 21:27:45] PROGRESS 100: mem=18.55MB, cpu=0.00
+[2026-04-26 21:27:55] PROGRESS 200: mem=18.55MB, cpu=0.00
+[2026-04-26 21:28:05] PROGRESS 300: mem=18.55MB, cpu=0.00
+[2026-04-26 21:28:16] PROGRESS 400: mem=18.55MB, cpu=0.00
+[2026-04-26 21:28:26] PROGRESS 500: mem=18.55MB, cpu=0.00
+[2026-04-26 21:28:38] PROGRESS 100: mem=18.57MB, cpu=0.00
+[2026-04-26 21:28:48] PROGRESS 200: mem=18.57MB, cpu=0.00
+[2026-04-26 21:28:58] PROGRESS 300: mem=18.57MB, cpu=0.00
+[2026-04-26 21:29:09] PROGRESS 400: mem=18.57MB, cpu=0.00
+[2026-04-26 21:29:19] PROGRESS 500: mem=18.57MB, cpu=0.00
+[2026-04-26 21:29:31] PROGRESS 100: mem=18.58MB, cpu=0.00
+[2026-04-26 21:29:41] PROGRESS 200: mem=18.58MB, cpu=0.00
+[2026-04-26 21:29:52] PROGRESS 300: mem=18.58MB, cpu=0.00
+[2026-04-26 21:30:02] PROGRESS 400: mem=18.58MB, cpu=0.00
+[2026-04-26 21:30:12] PROGRESS 500: mem=18.58MB, cpu=0.00
+[2026-04-26 21:30:24] PROGRESS 100: mem=18.61MB, cpu=0.00
+[2026-04-26 21:30:34] PROGRESS 200: mem=18.61MB, cpu=0.00
+[2026-04-26 21:30:44] PROGRESS 300: mem=18.61MB, cpu=0.00
+[2026-04-26 21:30:55] PROGRESS 400: mem=18.61MB, cpu=0.00
+[2026-04-26 21:31:05] PROGRESS 500: mem=18.61MB, cpu=0.00
+[2026-04-26 21:31:17] PROGRESS 100: mem=18.61MB, cpu=0.00
+[2026-04-26 21:31:27] PROGRESS 200: mem=18.61MB, cpu=0.00
+[2026-04-26 21:31:37] PROGRESS 300: mem=18.61MB, cpu=0.00
+[2026-04-26 21:31:48] PROGRESS 400: mem=18.61MB, cpu=0.00
+[2026-04-26 21:31:58] PROGRESS 500: mem=18.61MB, cpu=0.00
+[2026-04-26 21:32:10] PROGRESS 100: mem=18.62MB, cpu=0.00
+[2026-04-26 21:32:20] PROGRESS 200: mem=18.62MB, cpu=0.00
+[2026-04-26 21:32:31] PROGRESS 300: mem=18.62MB, cpu=0.00
+[2026-04-26 21:32:41] PROGRESS 400: mem=18.62MB, cpu=0.00
+[2026-04-26 21:32:51] PROGRESS 500: mem=18.62MB, cpu=0.00
+[2026-04-26 21:33:03] PROGRESS 100: mem=18.63MB, cpu=0.00
+[2026-04-26 21:33:13] PROGRESS 200: mem=18.63MB, cpu=0.00
+[2026-04-26 21:33:23] PROGRESS 300: mem=18.63MB, cpu=0.00
+[2026-04-26 21:33:34] PROGRESS 400: mem=18.63MB, cpu=0.00
+[2026-04-26 21:33:44] PROGRESS 500: mem=18.63MB, cpu=0.00
+[2026-04-26 21:33:56] PROGRESS 100: mem=14.85MB, cpu=0.00
+[2026-04-26 21:34:06] PROGRESS 200: mem=14.85MB, cpu=0.00
+[2026-04-26 21:34:17] PROGRESS 300: mem=14.85MB, cpu=0.00
+[2026-04-26 21:34:27] PROGRESS 400: mem=14.85MB, cpu=0.00
+[2026-04-26 21:34:37] PROGRESS 500: mem=14.85MB, cpu=0.00
+[2026-04-26 21:34:52] PROGRESS 100: mem=14.85MB, cpu=0.00
+[2026-04-26 21:35:02] PROGRESS 200: mem=14.85MB, cpu=0.00
+[2026-04-26 21:35:12] PROGRESS 300: mem=14.85MB, cpu=0.00
+[2026-04-26 21:35:23] PROGRESS 400: mem=14.85MB, cpu=0.00
+[2026-04-26 21:35:33] PROGRESS 500: mem=14.85MB, cpu=0.00
+[2026-04-26 21:35:45] PROGRESS 100: mem=14.86MB, cpu=0.00
+[2026-04-26 21:35:55] PROGRESS 200: mem=14.87MB, cpu=0.00
+[2026-04-26 21:36:05] PROGRESS 300: mem=14.87MB, cpu=0.00
+[2026-04-26 21:36:16] PROGRESS 400: mem=14.87MB, cpu=0.00
+[2026-04-26 21:36:26] PROGRESS 500: mem=14.87MB, cpu=0.00
+[2026-04-26 21:36:38] PROGRESS 100: mem=14.87MB, cpu=0.00
+[2026-04-26 21:36:48] PROGRESS 200: mem=14.87MB, cpu=0.00
+[2026-04-26 21:36:59] PROGRESS 300: mem=14.87MB, cpu=0.00
+[2026-04-26 21:37:09] PROGRESS 400: mem=14.87MB, cpu=0.00
+[2026-04-26 21:37:19] PROGRESS 500: mem=14.87MB, cpu=0.00
+[2026-04-26 21:37:31] PROGRESS 100: mem=14.89MB, cpu=0.00
+[2026-04-26 21:37:41] PROGRESS 200: mem=14.89MB, cpu=0.00
+[2026-04-26 21:37:52] PROGRESS 300: mem=14.89MB, cpu=0.00
+[2026-04-26 21:38:02] PROGRESS 400: mem=14.68MB, cpu=0.00
+[2026-04-26 21:38:12] PROGRESS 500: mem=14.68MB, cpu=0.00
+[2026-04-26 21:38:24] PROGRESS 100: mem=14.69MB, cpu=0.00
+[2026-04-26 21:38:34] PROGRESS 200: mem=14.69MB, cpu=0.00
+[2026-04-26 21:38:44] PROGRESS 300: mem=14.69MB, cpu=0.00
+[2026-04-26 21:38:55] PROGRESS 400: mem=14.69MB, cpu=0.00
+[2026-04-26 21:39:05] PROGRESS 500: mem=14.69MB, cpu=0.00
+[2026-04-26 21:39:17] PROGRESS 100: mem=14.72MB, cpu=0.00
+[2026-04-26 21:39:27] PROGRESS 200: mem=14.72MB, cpu=0.00
+[2026-04-26 21:39:37] PROGRESS 300: mem=14.72MB, cpu=0.00
+[2026-04-26 21:39:48] PROGRESS 400: mem=14.72MB, cpu=0.00
+[2026-04-26 21:39:58] PROGRESS 500: mem=14.72MB, cpu=0.00
+[2026-04-26 21:40:10] PROGRESS 100: mem=14.72MB, cpu=0.00
+[2026-04-26 21:40:20] PROGRESS 200: mem=14.72MB, cpu=0.00
+[2026-04-26 21:40:30] PROGRESS 300: mem=14.72MB, cpu=0.00
+[2026-04-26 21:40:41] PROGRESS 400: mem=14.72MB, cpu=0.00
+[2026-04-26 21:40:51] PROGRESS 500: mem=14.72MB, cpu=0.00
+[2026-04-26 21:41:03] PROGRESS 100: mem=14.73MB, cpu=0.00
+[2026-04-26 21:41:13] PROGRESS 200: mem=14.73MB, cpu=0.00
+[2026-04-26 21:41:24] PROGRESS 300: mem=14.73MB, cpu=0.00
+[2026-04-26 21:41:34] PROGRESS 400: mem=14.73MB, cpu=0.00
+[2026-04-26 21:41:44] PROGRESS 500: mem=14.73MB, cpu=0.00
+[2026-04-26 21:41:56] PROGRESS 100: mem=14.74MB, cpu=0.00
+[2026-04-26 21:42:06] PROGRESS 200: mem=14.74MB, cpu=0.00
+[2026-04-26 21:42:17] PROGRESS 300: mem=14.74MB, cpu=0.00
+[2026-04-26 21:42:27] PROGRESS 400: mem=14.74MB, cpu=0.00
+[2026-04-26 21:42:37] PROGRESS 500: mem=14.74MB, cpu=0.00
+[2026-04-26 21:42:49] PROGRESS 100: mem=14.75MB, cpu=0.00
+[2026-04-26 21:42:59] PROGRESS 200: mem=14.70MB, cpu=0.00
+[2026-04-26 21:43:10] PROGRESS 300: mem=14.70MB, cpu=0.00
+[2026-04-26 21:43:20] PROGRESS 400: mem=14.70MB, cpu=0.00
+[2026-04-26 21:43:30] PROGRESS 500: mem=14.70MB, cpu=0.00
+[2026-04-26 21:43:42] PROGRESS 100: mem=14.71MB, cpu=0.00
+[2026-04-26 21:43:52] PROGRESS 200: mem=14.71MB, cpu=0.00
+[2026-04-26 21:44:03] PROGRESS 300: mem=14.71MB, cpu=0.00
+[2026-04-26 21:44:13] PROGRESS 400: mem=14.71MB, cpu=0.00
+[2026-04-26 21:44:23] PROGRESS 500: mem=14.71MB, cpu=0.00
+[2026-04-26 21:44:35] PROGRESS 100: mem=14.73MB, cpu=0.00
+[2026-04-26 21:44:45] PROGRESS 200: mem=14.73MB, cpu=0.00
+[2026-04-26 21:44:56] PROGRESS 300: mem=14.73MB, cpu=0.00
+[2026-04-26 21:45:06] PROGRESS 400: mem=14.73MB, cpu=0.00
+[2026-04-26 21:45:16] PROGRESS 500: mem=14.73MB, cpu=0.00
+[2026-04-26 21:45:28] PROGRESS 100: mem=14.73MB, cpu=0.00
+[2026-04-26 21:45:38] PROGRESS 200: mem=14.73MB, cpu=0.00
+[2026-04-26 21:45:49] PROGRESS 300: mem=14.73MB, cpu=0.00
+[2026-04-26 21:45:59] PROGRESS 400: mem=14.73MB, cpu=0.00
+[2026-04-26 21:46:09] PROGRESS 500: mem=14.75MB, cpu=0.00
+[2026-04-26 21:46:21] PROGRESS 100: mem=14.65MB, cpu=0.00
+[2026-04-26 21:46:31] PROGRESS 200: mem=14.65MB, cpu=0.00
+[2026-04-26 21:46:42] PROGRESS 300: mem=14.65MB, cpu=0.00
+[2026-04-26 21:46:52] PROGRESS 400: mem=14.66MB, cpu=0.00
+[2026-04-26 21:47:02] PROGRESS 500: mem=14.66MB, cpu=0.00
+[2026-04-26 21:47:14] PROGRESS 100: mem=14.79MB, cpu=0.00
+[2026-04-26 21:47:24] PROGRESS 200: mem=14.79MB, cpu=0.00
+[2026-04-26 21:47:35] PROGRESS 300: mem=14.79MB, cpu=0.00
+[2026-04-26 21:47:45] PROGRESS 400: mem=14.81MB, cpu=0.00
+[2026-04-26 21:47:55] PROGRESS 500: mem=14.81MB, cpu=0.00
+[2026-04-26 21:48:07] PROGRESS 100: mem=14.87MB, cpu=0.00
+[2026-04-26 21:48:17] PROGRESS 200: mem=14.11MB, cpu=0.00
+[2026-04-26 21:48:28] PROGRESS 300: mem=14.11MB, cpu=0.00
+[2026-04-26 21:48:38] PROGRESS 400: mem=14.11MB, cpu=0.00
+[2026-04-26 21:48:48] PROGRESS 500: mem=14.11MB, cpu=0.00
+[2026-04-26 21:49:01] PROGRESS 100: mem=14.14MB, cpu=0.00
+[2026-04-26 21:49:11] PROGRESS 200: mem=14.14MB, cpu=0.00
+[2026-04-26 21:49:21] PROGRESS 300: mem=14.14MB, cpu=0.00
+[2026-04-26 21:49:31] PROGRESS 400: mem=14.14MB, cpu=0.00
+[2026-04-26 21:49:41] PROGRESS 500: mem=14.14MB, cpu=0.00
+[2026-04-26 21:49:54] PROGRESS 100: mem=14.16MB, cpu=0.00
+[2026-04-26 21:50:04] PROGRESS 200: mem=14.16MB, cpu=0.00
+[2026-04-26 21:50:14] PROGRESS 300: mem=14.16MB, cpu=0.00
+[2026-04-26 21:50:24] PROGRESS 400: mem=14.16MB, cpu=0.00
+[2026-04-26 21:50:35] PROGRESS 500: mem=14.16MB, cpu=0.00
+[2026-04-26 21:50:47] PROGRESS 100: mem=14.16MB, cpu=0.00
+[2026-04-26 21:50:57] PROGRESS 200: mem=14.16MB, cpu=0.00
+[2026-04-26 21:51:07] PROGRESS 300: mem=14.16MB, cpu=0.00
+[2026-04-26 21:51:17] PROGRESS 400: mem=14.18MB, cpu=0.00
+[2026-04-26 21:51:28] PROGRESS 500: mem=14.18MB, cpu=0.00
