@@ -1,3 +1,11 @@
+import sys
+from pathlib import Path
+REPO_ROOT = Path(__file__).resolve().parent.parent
+SG_DIR    = REPO_ROOT / "backend" / "strategy_generator"
+sys.path.insert(0, str(SG_DIR))
+# Path to the SQLite database for paper trading and backtest results
+DB_PATH = REPO_ROOT / "docs" / "data" / "tradingcopilot.db"
+
 """
 CLI entry point for running a backtest on a symbol+version pair.
 Fetches YTD 5-minute OHLCV data from Alpaca, runs the strategy,
@@ -12,7 +20,7 @@ Requires env vars (or a .env file):
     ALPACA_API_SECRET / ALPACA_PAPER_API_SECRET
 """
 
-from __future__ import annotations
+
 
 
 import argparse
@@ -21,6 +29,7 @@ import os
 import mysql.connector
 import sys
 import logging
+import sqlite3
 try:
     from backend.telegram_notify import send_telegram_message
 except ModuleNotFoundError:
@@ -35,7 +44,6 @@ from typing import Any
 import requests
 
 
-# ── Bootstrap path so strategy_generator imports work ─────────────────────────
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SG_DIR    = REPO_ROOT / "backend" / "strategy_generator"
 sys.path.insert(0, str(SG_DIR))
@@ -84,6 +92,7 @@ VERSION_MAP: dict[str, str] = {
     "v6": "APM v6.0",
     "v7": "APM v7.0",
     "universal": "APM Universal",
+    "meanrev_tf": "Mean Reversion TrendFilter v1",
 }
 
 
@@ -502,6 +511,9 @@ def run_backtest(
         from strategy_generator.apm_universal_backtest import backtest_apm_universal
         from strategy_generator.universal_params import get_universal_params
         return backtest_apm_universal(df, params=params if params is not None else get_universal_params(symbol=symbol, profile=profile))
+    if version == "meanrev_tf":
+        from strategy_generator.mean_reversion_trendfilter_backtest import backtest_mean_reversion_trendfilter
+        return backtest_mean_reversion_trendfilter(df, params=params)
     raise ValueError(f"Unknown version: {version!r}. Valid values: {list(VERSION_MAP)}")
 
 

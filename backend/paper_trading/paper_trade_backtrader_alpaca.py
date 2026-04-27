@@ -260,8 +260,8 @@ def main() -> int:
     args = parser.parse_args()
 
 
-    # Force v6 for all paper trading
-    version = "v6"
+
+    version = args.version.strip().lower()
 
     symbols = [args.symbol.strip()] if args.symbol else load_symbols_from_db()
     if not symbols:
