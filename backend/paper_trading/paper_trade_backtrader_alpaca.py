@@ -109,30 +109,25 @@ def _metrics_for_trades(symbol: str, version: str, trades, df) -> dict[str, obje
 
 def save_paper_to_db(symbol: str, version: str, trades, df, *, force_reset: bool = False) -> None:
     try:
-        conn = sqlite3.connect(str(DB_PATH), timeout=30)
-        conn.execute("PRAGMA journal_mode=DELETE")
-        ensure_result_tables_have_current_equity(conn)
-        try:
-            conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
-        except sqlite3.OperationalError as e:
-            logger.debug(f"WAL checkpoint error: {e}")
-
+        from backend.backtest_backtrader_alpaca import get_db_conn
+        conn = get_db_conn()
+        cur = conn.cursor()
         notes = f"{VERSION_MAP.get(version, version)} paper trading summary"
 
         if force_reset:
-            conn.execute(
-                "DELETE FROM trades WHERE symbol = ? AND version = ? AND mode = 'paper'",
+            cur.execute(
+                "DELETE FROM trades WHERE symbol = %s AND version = %s AND mode = 'paper'",
                 (symbol, version),
             )
             last_exit_time = None
         else:
-            row = conn.execute(
-                "SELECT MAX(exit_time) FROM trades WHERE symbol = ? AND version = ? AND mode = 'paper'",
+            cur.execute(
+                "SELECT MAX(exit_time) FROM trades WHERE symbol = %s AND version = %s AND mode = 'paper'",
                 (symbol, version),
-            ).fetchone()
+            )
+            row = cur.fetchone()
             last_exit_time = row[0] if row else None
 
-        # Build new trade rows, skipping any already stored
         new_rows: list[tuple] = []
         skipped = 0
 
@@ -156,6 +151,7 @@ def save_paper_to_db(symbol: str, version: str, trades, df, *, force_reset: bool
                 new_rows.append((
                     symbol,
                     version,
+                    "paper",
                     entry_time,
                     exit_time,
                     direction,
@@ -165,27 +161,27 @@ def save_paper_to_db(symbol: str, version: str, trades, df, *, force_reset: bool
                     pnl_pct,
                     dollar_pnl,
                     equity,
+                    "simulation",
                 ))
 
         if new_rows:
-            conn.executemany(
+            cur.executemany(
                 """
                 INSERT INTO trades (
                     symbol, version, mode, entry_time, exit_time, direction,
-                    entry_price, exit_price, result, pnl_pct, dollar_pnl, equity
-                ) VALUES (?, ?, 'paper', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    entry_price, exit_price, result, pnl_pct, dollar_pnl, equity, source
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 new_rows,
             )
 
-        # Always refresh the summary metrics from the full simulation run
         metrics = _metrics_for_trades(symbol, version, trades, df)
-        conn.execute(
-            "DELETE FROM paper_trading_results WHERE symbol = ? AND notes LIKE ?",
+        cur.execute(
+            "DELETE FROM paper_trading_results WHERE symbol = %s AND notes LIKE %s",
             (symbol, f"%{VERSION_MAP.get(version, version)}%"),
         )
-        conn.execute(
-            "INSERT INTO paper_trading_results (symbol, metrics, notes, current_equity) VALUES (?, ?, ?, ?)",
+        cur.execute(
+            "INSERT INTO paper_trading_results (symbol, metrics, notes, current_equity) VALUES (%s, %s, %s, %s)",
             (symbol, json.dumps(metrics), notes, float(metrics.get("current_equity") or metrics.get("final_equity") or 0.0)),
         )
 
