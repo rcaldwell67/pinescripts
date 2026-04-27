@@ -87,10 +87,7 @@ export default function BacktestsTable() {
   if (error) return <section style={{ padding: 24, color: 'red' }}>Error: {error}</section>;
   if (!snapshot) return null;
 
-  // Collect unique asset types for filter dropdown
-  const assetTypes = Array.from(new Set(snapshot.symbols.map(s => s.asset_type || ''))).filter(Boolean);
-  // Collect unique symbols for filter dropdown
-  const symbols = Array.from(new Set(snapshot.symbols.map(s => s.symbol)));
+  // (Removed duplicate assetTypes and symbols for snapshot)
 
   // Filtering logic
   const backtestResults = (snapshot.results && snapshot.results.backtest) ? snapshot.results.backtest : [];
@@ -112,6 +109,54 @@ export default function BacktestsTable() {
     }
     // Timespan filter: if 'All', show all, else filter by timespan if available in result
     if (timespan !== 'All' && result && result.timespan && result.timespan !== timespan) return false;
+    return true;
+  });
+
+  const [results, setResults] = useState([]);
+  const [loadingResults, setLoadingResults] = useState(true);
+  const [errorResults, setErrorResults] = useState(null);
+
+  useEffect(() => {
+    async function loadResults() {
+      try {
+        const res = await fetch("http://localhost:4000/api/backtest-results");
+        if (!res.ok) throw new Error("Failed to load backtest results from API");
+        const data = await res.json();
+        setResults(data);
+      } catch (err) {
+        setErrorResults(err.message || "Unknown error");
+      } finally {
+        setLoadingResults(false);
+      }
+    }
+    loadResults();
+  }, []);
+
+  if (loadingResults) return <section style={{ padding: 24 }}>Loading backtest data...</section>;
+  if (errorResults) return <section style={{ padding: 24, color: 'red' }}>Error: {errorResults}</section>;
+  if (!results || results.length === 0) return <section style={{ padding: 24 }}>No backtest results available.</section>;
+
+  // Collect unique asset types and symbols for filter dropdowns
+  const assetTypes = Array.from(new Set(results.map(r => r.asset_type || ''))).filter(Boolean);
+  const symbols = Array.from(new Set(results.map(r => r.symbol)));
+
+  // Filtering logic
+  const filteredResults = results.filter(r => {
+    if (assetTypeFilter && r.asset_type !== assetTypeFilter) return false;
+    if (symbolFilter && r.symbol !== symbolFilter) return false;
+    if (guidelineStatus) {
+      const audit = evaluateBacktestGuideline({
+        symbol: r.symbol,
+        version: r.version,
+        trades: r.total_trades,
+        win_rate_pct: r.win_rate,
+        net_return_pct: r.net_return_pct,
+        max_drawdown_pct: r.max_drawdown_pct,
+      });
+      if (guidelineStatus === 'pass' && !audit.passed) return false;
+      if (guidelineStatus === 'fail' && audit.passed) return false;
+    }
+    if (timespan !== 'All' && r.timespan && r.timespan !== timespan) return false;
     return true;
   });
 

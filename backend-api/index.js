@@ -1,3 +1,13 @@
+import { getBacktestResults } from './backtestResults.js';
+// GET backtest results (for BacktestsTable)
+app.get('/api/backtest-results', async (req, res) => {
+  try {
+    const rows = await getBacktestResults();
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 import dotenv from 'dotenv';
 dotenv.config();
