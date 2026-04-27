@@ -64,7 +64,13 @@ def _timestamp_at(df, idx: object) -> str | None:
         pos = int(idx)
         if pos < 0 or pos >= len(df):
             return None
-        return str(df["timestamp"].iloc[pos])
+        ts = df["timestamp"].iloc[pos]
+        # Convert to naive datetime string for MySQL (YYYY-MM-DD HH:MM:SS)
+        if hasattr(ts, 'to_pydatetime'):
+            ts = ts.to_pydatetime()
+        if hasattr(ts, 'tzinfo') and ts.tzinfo is not None:
+            ts = ts.replace(tzinfo=None)
+        return ts.strftime("%Y-%m-%d %H:%M:%S")
     except Exception as e:
         logger.warning(f"Failed to get timestamp at index {idx}: {e}")
         return None
@@ -109,11 +115,17 @@ def _metrics_for_trades(symbol: str, version: str, trades, df) -> dict[str, obje
 
 def save_paper_to_db(symbol: str, version: str, trades, df, *, force_reset: bool = False) -> None:
     try:
-        from backend.backtest_backtrader_alpaca import get_db_conn
+        try:
+            from backend.backtest_backtrader_alpaca import get_db_conn
+        except ModuleNotFoundError:
+            import sys, os
+            sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+            from backend.backtest_backtrader_alpaca import get_db_conn
         conn = get_db_conn()
         cur = conn.cursor()
         notes = f"{VERSION_MAP.get(version, version)} paper trading summary"
 
+        from datetime import datetime
         if force_reset:
             cur.execute(
                 "DELETE FROM trades WHERE symbol = %s AND version = %s AND mode = 'paper'",
@@ -127,19 +139,40 @@ def save_paper_to_db(symbol: str, version: str, trades, df, *, force_reset: bool
             )
             row = cur.fetchone()
             last_exit_time = row[0] if row else None
+            if last_exit_time:
+                try:
+                    last_exit_time = datetime.strptime(str(last_exit_time), "%Y-%m-%d %H:%M:%S")
+                except Exception:
+                    last_exit_time = None
+
 
         new_rows: list[tuple] = []
         skipped = 0
+        invalid = 0
 
         if not trades.empty:
             for _, trade in trades.iterrows():
-                entry_time = _timestamp_at(df, trade.get("entry_idx"))
-                exit_time = _timestamp_at(df, trade.get("exit_idx"))
-
-                if last_exit_time and entry_time and entry_time <= last_exit_time:
-                    skipped += 1
+                entry_idx = trade.get("entry_idx")
+                exit_idx = trade.get("exit_idx")
+                if entry_idx is None or exit_idx is None:
+                    logger.warning(f"Skipping trade with missing entry_idx or exit_idx: {trade}")
+                    invalid += 1
                     continue
-
+                entry_time = _timestamp_at(df, entry_idx)
+                exit_time = _timestamp_at(df, exit_idx)
+                if entry_time is None or exit_time is None:
+                    logger.warning(f"Skipping trade with invalid timestamp: {trade}")
+                    invalid += 1
+                    continue
+                if last_exit_time and entry_time:
+                    from datetime import datetime
+                    try:
+                        entry_time_dt = datetime.strptime(str(entry_time), "%Y-%m-%d %H:%M:%S")
+                        if entry_time_dt <= last_exit_time:
+                            skipped += 1
+                            continue
+                    except Exception as e:
+                        logger.warning(f"Failed to parse entry_time or last_exit_time for comparison: {e}")
                 dollar_pnl = float(trade.get("pnl", trade.get("dollar_pnl", 0.0)) or 0.0)
                 equity = float(trade.get("equity", 0.0) or 0.0)
                 beginning_equity = equity - dollar_pnl
@@ -147,7 +180,6 @@ def save_paper_to_db(symbol: str, version: str, trades, df, *, force_reset: bool
                 direction = str(trade.get("side", "short") or "short").strip().lower()
                 if direction not in {"long", "short"}:
                     direction = "short"
-
                 new_rows.append((
                     symbol,
                     version,
@@ -175,22 +207,25 @@ def save_paper_to_db(symbol: str, version: str, trades, df, *, force_reset: bool
                 new_rows,
             )
 
-        metrics = _metrics_for_trades(symbol, version, trades, df)
-        cur.execute(
-            "DELETE FROM paper_trading_results WHERE symbol = %s AND notes LIKE %s",
-            (symbol, f"%{VERSION_MAP.get(version, version)}%"),
-        )
-        cur.execute(
-            "INSERT INTO paper_trading_results (symbol, metrics, notes, current_equity) VALUES (%s, %s, %s, %s)",
-            (symbol, json.dumps(metrics), notes, float(metrics.get("current_equity") or metrics.get("final_equity") or 0.0)),
-        )
-
-        conn.commit()
-        conn.close()
-        logger.info(
-            f"Paper results saved: {symbol} {version} "
-            f"new={len(new_rows)} skipped={skipped} net={metrics['net_return_pct']:.1f}%"
-        )
+            metrics = _metrics_for_trades(symbol, version, trades, df)
+            cur.execute(
+                "DELETE FROM paper_trading_results WHERE symbol = %s AND notes LIKE %s",
+                (symbol, f"%{VERSION_MAP.get(version, version)}%"),
+            )
+            cur.execute(
+                "INSERT INTO paper_trading_results (symbol, metrics, notes, current_equity) VALUES (%s, %s, %s, %s)",
+                (symbol, json.dumps(metrics), notes, float(metrics.get("current_equity") or metrics.get("final_equity") or 0.0)),
+            )
+            conn.commit()
+            conn.close()
+            logger.info(
+                f"Paper results saved: {symbol} {version} "
+                f"new={len(new_rows)} skipped={skipped} net={metrics['net_return_pct']:.1f}%"
+            )
+        else:
+            logger.warning(f"No valid trades for {symbol} {version}; skipping summary write. Skipped: {skipped}, Invalid: {invalid}")
+            conn.commit()
+            conn.close()
     except Exception as e:
         logger.error(f"Error saving paper trading results for {symbol} {version}: {e}", exc_info=True)
 

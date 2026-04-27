@@ -99,32 +99,68 @@ def v7_entry_logic(df, i, params):
 # --- Main v7 backtest loop (all timespans) ---
 def run_v7_backtest(df, params):
     df = prepare_v7_signal_frame(df, params)
-    entries = []
+    trades = []
     equity = 100000.0
+    open_until = -1
+    max_bars = 50  # Example: max bars in trade
     for i in range(max(200, int(params['signal']['ema_slow'])), len(df)):
+        if i <= open_until:
+            continue
         if v7_entry_logic(df, i, params):
-            # Use the date or index for time tracking
-            if 'Date' in df.columns:
-                trade_date = df['Date'].iloc[i]
-            elif 'date' in df.columns:
-                trade_date = df['date'].iloc[i]
-            else:
-                trade_date = df.index[i] if hasattr(df.index, '__getitem__') else i
-            pnl = np.random.normal(10, 50)  # placeholder PnL
+            entry_price = df['Close'].iloc[i]
+            atr = df['atr'].iloc[i] if 'atr' in df.columns else 1.0
+            # Simulate exit: TP at +1.2%, SL at -0.8%, trailing after +0.5% (trail by 0.3%)
+            tp_pct = 0.012
+            sl_pct = 0.008
+            trail_start = 0.005
+            trail_pct = 0.003
+            trail_active = False
+            best_price = entry_price
+            exit_price = None
+            exit_type = None
+            for j in range(i+1, min(i+max_bars, len(df))):
+                current_price = df['Close'].iloc[j]
+                profit = (current_price - entry_price) / entry_price
+                if profit >= tp_pct:
+                    exit_price = entry_price * (1 + tp_pct)
+                    exit_type = 'take_profit'
+                    break
+                if (entry_price - current_price) / entry_price >= sl_pct:
+                    exit_price = entry_price * (1 - sl_pct)
+                    exit_type = 'stop_loss'
+                    break
+                if profit >= trail_start:
+                    if not trail_active:
+                        trail_active = True
+                        best_price = current_price
+                    else:
+                        best_price = max(best_price, current_price)
+                        trail_stop = best_price * (1 - trail_pct)
+                        if current_price < trail_stop:
+                            exit_price = trail_stop
+                            exit_type = 'trailing_stop'
+                            break
+            if exit_price is None:
+                j = min(i+max_bars-1, len(df)-1)
+                exit_price = df['Close'].iloc[j]
+                exit_type = 'max_bars_exit'
+            open_until = j
+            pnl = (exit_price - entry_price)
             equity += pnl
-            # For demonstration, alternate type/side for each trade
-            trade_type = 'Long' if i % 2 == 0 else 'Short'
-            trade_side = 'Buy' if trade_type == 'Long' else 'Sell'
-            entries.append({
+            trade_type = 'Long'  # v7 is long-only in this template
+            trade_side = 'Buy'
+            trades.append({
                 "entry_idx": i,
-                "date": trade_date,
+                "exit_idx": j,
+                "entry": entry_price,
+                "exit": exit_price,
                 "pnl": pnl,
                 "equity": equity,
                 "type": trade_type,
                 "side": trade_side,
+                "exit_type": exit_type,
             })
-    # Return as DataFrame for compatibility with runner
-    return pd.DataFrame(entries)
+    return pd.DataFrame(trades)
 
 # Usage example (replace with actual symbol and params):
 # df = fetch_ohlcv('BTC/USD', timespan='YTD')
