@@ -457,65 +457,42 @@ if __name__ == "__main__":
                             log_resources(f"PROGRESS {completed}")
                         check_resources()
 
-                WIN_RATE_TARGET = 65.0  # Minimum win rate percentage for passing Stage 1
-                passing_stage1 = [row for row in results if row["win_rate"] >= WIN_RATE_TARGET]
-                print(f"\nStage 1 chunk complete. {len(passing_stage1)} parameter sets passed Win Rate ≥ {WIN_RATE_TARGET}% in this chunk.")
+                # Enforce all trading strategy guidelines using centralized policy
+                import sys
+                import os
+                sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+                from backend.config.guideline_policy import evaluate_backtest_guideline
+                passing_stage1 = []
+                for row in results:
+                    trades = row.get("trades", 0)
+                    win_rate = row.get("win_rate", 0.0)
+                    net_return = row.get("net_return", 0.0)
+                    max_drawdown = row.get("max_drawdown", 0.0)
+                    passed, _ = evaluate_backtest_guideline(symbol, "v7", trades, win_rate, net_return, abs(max_drawdown) if max_drawdown is not None else None)
+                    if passed:
+                        passing_stage1.append(row)
+                print(f"\nStage 1 chunk complete. {len(passing_stage1)} parameter sets passed ALL trading strategy guidelines in this chunk.")
+                output_columns = [
+                    "macd_fast", "macd_slow", "macd_signal", "stoch_k_len", "stoch_d_len", "cci_len", "ema_fast", "ema_mid", "ema_slow", "rsi_len", "atr_len", "atr_baseline_len", "volume_sma_len", "bb_len", "bb_std_mult", "donchian_len", "adx_len", "atr_percentile_window", "macro_ema_period", "type", "side", "win_rate", "net_return", "max_drawdown", "calmar_ratio", "trades"
+                ]
                 if passing_stage1:
                     print("Sample passing params:")
                     for p in passing_stage1[:5]:
-                        results = []
-                        completed = 0
-                        process = psutil.Process(os.getpid())
-                        def check_resources():
-                            mem_mb = process.memory_info().rss / (1024 * 1024)
-                            cpu = process.cpu_percent(interval=0.1) / 100.0
-                            if mem_mb > max_mem_mb:
-                                print(f"Memory usage exceeded {max_mem_mb} MB. Aborting.")
-                                exit(1)
-                            if cpu > max_cpu:
-                                print(f"CPU usage exceeded {max_cpu*100:.0f}%. Aborting.")
-                                exit(1)
-
-                    with multiprocessing.Pool(processes=max_workers, initializer=stage1_init, initargs=(df,)) as pool:
-                        for result in pool.imap_unordered(stage1_worker, param_grid_iter):
-                            completed += 1
-                            if result is not None:
-                                results.append(result)
-                                print(f"Stage 1 [{completed}/{len(param_grid_iter)}]: {result}")
-                            else:
-                                print(f"Stage 1 [{completed}/{len(param_grid_iter)}]: No result (empty trades)")
-                            if completed % save_every == 0:
-                                tmp_csv = chunk_output or f"stage1_partial_{chunk_index+1}_of_{num_chunks}.csv"
-                                pd.DataFrame(results).to_csv(tmp_csv, index=False)
-                                print(f"[Checkpoint] Saved {completed} results to {tmp_csv}")
-                            if completed % 100 == 0:
-                                log_resources(f"PROGRESS {completed}")
-                            check_resources()
-
-                    # Enforce all trading strategy guidelines using centralized policy
-                    import sys
-                    import os
-                    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-                    from backend.config.guideline_policy import evaluate_backtest_guideline
-                    passing_stage1 = []
-                    for row in results:
-                        trades = row.get("trades", 0)
-                        win_rate = row.get("win_rate", 0.0)
-                        net_return = row.get("net_return", 0.0)
-                        max_drawdown = row.get("max_drawdown", 0.0)
-                        passed, _ = evaluate_backtest_guideline(symbol, "v7", trades, win_rate, net_return, abs(max_drawdown) if max_drawdown is not None else None)
-                        if passed:
-                            passing_stage1.append(row)
-                    print(f"\nStage 1 chunk complete. {len(passing_stage1)} parameter sets passed ALL trading strategy guidelines in this chunk.")
-                    if passing_stage1:
-                        print("Sample passing params:")
-                        for p in passing_stage1[:5]:
-                            print(p)
-                        stage1_table = pd.DataFrame(passing_stage1)
-                        stage1_table.to_csv(out_csv, index=False)
-                        print(f"Saved passing Stage 1 parameter sets to {out_csv}")
-                    else:
-                        print("No parameter sets met ALL trading strategy guidelines in this chunk.")
+                        print(p)
+                    stage1_table = pd.DataFrame(passing_stage1)
+                    # Ensure all columns are present and ordered
+                    for col in output_columns:
+                        if col not in stage1_table.columns:
+                            stage1_table[col] = None
+                    stage1_table = stage1_table.reindex(columns=output_columns, fill_value=None)
+                    stage1_table.to_csv(out_csv, index=False)
+                    print(f"Saved passing Stage 1 parameter sets to {out_csv}")
+                else:
+                    print("No parameter sets met ALL trading strategy guidelines in this chunk.")
+                    # Always overwrite with empty DataFrame with correct headers
+                    empty_df = pd.DataFrame(columns=output_columns)
+                    empty_df.to_csv(out_csv, index=False)
+                    print(f"Wrote empty output file with headers to {out_csv}")
 
 def stage2_init(df):
     global stage2_df_worker
