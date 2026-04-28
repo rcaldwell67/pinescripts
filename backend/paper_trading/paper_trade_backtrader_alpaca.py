@@ -186,7 +186,7 @@ def save_paper_to_db(symbol: str, version: str, trades, df, *, force_reset: bool
                 if direction not in {"long", "short"}:
                     direction = "short"
                 new_rows.append((
-                    symbols_id,
+                    symbol_id,
                                         symbol_id,
                     symbol,
                     version,
@@ -207,7 +207,7 @@ def save_paper_to_db(symbol: str, version: str, trades, df, *, force_reset: bool
             cur.executemany(
                 """
                 INSERT INTO trades (
-                    symbols_id, symbol, version, mode, entry_time, exit_time, direction,
+                    symbol_id, symbol, version, mode, entry_time, exit_time, direction,
                                         symbol_id, symbol, version, mode, entry_time, exit_time, direction,
                     entry_price, exit_price, result, pnl_pct, dollar_pnl, equity, source
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)

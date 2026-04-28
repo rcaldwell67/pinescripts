@@ -14,7 +14,7 @@ export async function getBacktestResults() {
   let conn;
   try {
     conn = await mysql.createConnection(dbConfig);
-    // Join with symbols table using symbols_id foreign key
+    // Join with symbols table using symbol_id foreign key
     const [rows] = await conn.execute(`
       SELECT br.*, s.asset_type
       FROM backtest_results br
