@@ -1,4 +1,14 @@
+import dotenv from 'dotenv';
+dotenv.config();
+import express from 'express';
+import mysql from 'mysql2/promise';
+import cors from 'cors';
 import { getBacktestResults } from './backtestResults.js';
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
 // GET backtest results (for BacktestsTable)
 app.get('/api/backtest-results', async (req, res) => {
   try {
@@ -8,16 +18,6 @@ app.get('/api/backtest-results', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-import dotenv from 'dotenv';
-dotenv.config();
-import express from 'express';
-import mysql from 'mysql2/promise';
-import cors from 'cors';
-
-const app = express();
-app.use(cors());
-app.use(express.json());
 
 const dbConfig = {
   host: process.env.MARIADB_HOST || 'localhost',
@@ -32,12 +32,12 @@ app.get('/api/paper-trading-results', async (req, res) => {
   let conn;
   try {
     conn = await mysql.createConnection(dbConfig);
-    // Group results by symbol, return as { symbol: [ { ...row } ] }
-    const [rows] = await conn.execute("SELECT * FROM paper_trading_results ORDER BY symbol, version DESC, id DESC");
+    // Group results by symbols_id, return as { symbols_id: [ { ...row } ] }
+    const [rows] = await conn.execute("SELECT * FROM paper_trading_results ORDER BY symbols_id, version DESC, id DESC");
     const grouped = {};
     for (const row of rows) {
-      if (!grouped[row.symbol]) grouped[row.symbol] = [];
-      grouped[row.symbol].push(row);
+      if (!grouped[row.symbols_id]) grouped[row.symbols_id] = [];
+      grouped[row.symbols_id].push(row);
     }
     res.json(grouped);
   } catch (err) {

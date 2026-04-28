@@ -636,29 +636,28 @@ def save_to_db(symbol: str, version: str,
     print("[DEBUG] Metrics to serialize:", metrics)
 
     # Use MariaDB for persistence
+    from strategy_generator.symbol_id_lookup import get_symbol_id
+    symbols_id = get_symbol_id(symbol)
+    if not symbols_id:
+        print(f"[ERROR] Could not find symbols_id for symbol {symbol}")
+        return
     conn = get_db_conn()
     cur = conn.cursor()
 
-    # Replace the existing summary row for this symbol+version (if any)
+    # Replace the existing summary row for this symbols_id+version (if any)
     notes = f"{VERSION_MAP.get(version, version)} backtest summary"
     cur.execute(
-        "DELETE FROM backtest_results WHERE symbol = %s AND notes LIKE %s",
-        (symbol, f"%{VERSION_MAP.get(version, version)}%"),
+        "DELETE FROM backtest_results WHERE symbols_id = %s AND notes LIKE %s",
+        (symbols_id, f"%{VERSION_MAP.get(version, version)}%"),
     )
     cur.execute(
-        "INSERT INTO backtest_results (symbol, metrics, notes, current_equity, timestamp) VALUES (%s, %s, %s, %s, NOW())",
-        (symbol, json.dumps(metrics), notes, float(final_equity)),
+        "INSERT INTO backtest_results (symbols_id, symbol, metrics, notes, current_equity, timestamp) VALUES (%s, %s, %s, %s, %s, NOW())",
+        (symbols_id, symbol, json.dumps(metrics), notes, float(final_equity)),
     )
 
-    norm_symbol = "".join(ch for ch in symbol.upper() if ch.isalnum())
     cur.execute(
-        """
-        DELETE FROM trades
-        WHERE REPLACE(REPLACE(REPLACE(REPLACE(UPPER(symbol), '/', ''), '_', ''), '-', ''), ' ', '') = %s
-          AND LOWER(version) = %s
-          AND mode = 'backtest'
-        """,
-        (norm_symbol, version),
+        "DELETE FROM trades WHERE symbols_id = %s AND LOWER(version) = %s AND mode = 'backtest'",
+        (symbols_id, version),
     )
 
     trade_rows = []
@@ -684,6 +683,7 @@ def save_to_db(symbol: str, version: str,
 
         trade_rows.append(
             (
+                symbols_id,
                 symbol,
                 version,
                 "backtest",

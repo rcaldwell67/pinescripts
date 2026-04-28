@@ -14,8 +14,13 @@ export async function getBacktestResults() {
   let conn;
   try {
     conn = await mysql.createConnection(dbConfig);
-    // Example: fetch all backtest results (customize as needed)
-    const [rows] = await conn.execute('SELECT * FROM backtest_results ORDER BY symbol, version DESC, id DESC');
+    // Join with symbols table using symbols_id foreign key
+    const [rows] = await conn.execute(`
+      SELECT br.*, s.asset_type
+      FROM backtest_results br
+      LEFT JOIN symbols s ON br.symbols_id = s.id
+      ORDER BY br.symbol, br.version DESC, br.id DESC
+    `);
     return rows;
   } finally {
     if (conn) await conn.end();

@@ -53,65 +53,10 @@ function evaluateBacktestGuideline({ symbol, version = 'v6', trades, win_rate_pc
 }
 
 export default function BacktestsTable() {
-  const [snapshot, setSnapshot] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [assetTypeFilter, setAssetTypeFilter] = useState('');
   const [symbolFilter, setSymbolFilter] = useState('');
   const [guidelineStatus, setGuidelineStatus] = useState('');
-  // Add 'All' as the default timespan
   const [timespan, setTimespan] = useState('All');
-
-  useEffect(() => {
-    async function loadSnapshot() {
-      try {
-        const res = await fetch("/pinescripts/data/dashboard_snapshot.json");
-        if (!res.ok) throw new Error("Failed to load dashboard_snapshot.json");
-        let data;
-        try {
-          data = await res.json();
-        } catch (jsonErr) {
-          throw new Error("Invalid JSON in dashboard_snapshot.json");
-        }
-        setSnapshot(data);
-      } catch (err) {
-        setError(err.message || "Unknown error");
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadSnapshot();
-  }, []);
-
-  if (loading) return <section style={{ padding: 24 }}>Loading backtest data...</section>;
-  if (error) return <section style={{ padding: 24, color: 'red' }}>Error: {error}</section>;
-  if (!snapshot) return null;
-
-  // (Removed duplicate assetTypes and symbols for snapshot)
-
-  // Filtering logic
-  const backtestResults = (snapshot.results && snapshot.results.backtest) ? snapshot.results.backtest : [];
-  const filteredSymbols = snapshot.symbols.filter(sym => {
-    if (assetTypeFilter && sym.asset_type !== assetTypeFilter) return false;
-    if (symbolFilter && sym.symbol !== symbolFilter) return false;
-    const result = backtestResults.find(r => r.symbol_key === sym.symbol_key);
-    if (guidelineStatus) {
-      const audit = result ? evaluateBacktestGuideline({
-        symbol: sym.symbol,
-        version: 'v6',
-        trades: result.total_trades,
-        win_rate_pct: result.win_rate,
-        net_return_pct: result.net_return_pct,
-        max_drawdown_pct: result.max_drawdown_pct,
-      }) : null;
-      if (guidelineStatus === 'pass' && !(audit && audit.passed)) return false;
-      if (guidelineStatus === 'fail' && !(audit && !audit.passed)) return false;
-    }
-    // Timespan filter: if 'All', show all, else filter by timespan if available in result
-    if (timespan !== 'All' && result && result.timespan && result.timespan !== timespan) return false;
-    return true;
-  });
-
   const [results, setResults] = useState([]);
   const [loadingResults, setLoadingResults] = useState(true);
   const [errorResults, setErrorResults] = useState(null);
@@ -122,7 +67,21 @@ export default function BacktestsTable() {
         const res = await fetch("http://localhost:4000/api/backtest-results");
         if (!res.ok) throw new Error("Failed to load backtest results from API");
         const data = await res.json();
-        setResults(data);
+        // Flatten metrics JSON string into top-level properties
+        const flatResults = data.map(row => {
+          let metrics = {};
+          if (typeof row.metrics === 'string') {
+            try {
+              metrics = JSON.parse(row.metrics);
+            } catch (e) {
+              metrics = {};
+            }
+          } else if (typeof row.metrics === 'object' && row.metrics !== null) {
+            metrics = row.metrics;
+          }
+          return { ...row, ...metrics };
+        });
+        setResults(flatResults);
       } catch (err) {
         setErrorResults(err.message || "Unknown error");
       } finally {
@@ -136,11 +95,9 @@ export default function BacktestsTable() {
   if (errorResults) return <section style={{ padding: 24, color: 'red' }}>Error: {errorResults}</section>;
   if (!results || results.length === 0) return <section style={{ padding: 24 }}>No backtest results available.</section>;
 
-  // Collect unique asset types and symbols for filter dropdowns
+  // Filtering logic
   const assetTypes = Array.from(new Set(results.map(r => r.asset_type || ''))).filter(Boolean);
   const symbols = Array.from(new Set(results.map(r => r.symbol)));
-
-  // Filtering logic
   const filteredResults = results.filter(r => {
     if (assetTypeFilter && r.asset_type !== assetTypeFilter) return false;
     if (symbolFilter && r.symbol !== symbolFilter) return false;
@@ -217,40 +174,36 @@ export default function BacktestsTable() {
             </tr>
           </thead>
           <tbody>
-            {filteredSymbols.map(sym => {
-              const backtestResults = (snapshot.results && snapshot.results.backtest) ? snapshot.results.backtest : [];
-              const result = backtestResults.find(r => r.symbol_key === sym.symbol_key);
-              const audit = result ? evaluateBacktestGuideline({
-                symbol: sym.symbol,
-                version: 'v6',
+            {filteredResults.map(result => {
+              const audit = evaluateBacktestGuideline({
+                symbol: result.symbol,
+                version: result.version,
                 trades: result.total_trades,
                 win_rate_pct: result.win_rate,
                 net_return_pct: result.net_return_pct,
                 max_drawdown_pct: result.max_drawdown_pct,
-              }) : null;
+              });
               return (
-                <tr key={sym.symbol_key}>
-                  <td style={{padding: '8px 12px'}}>{sym.symbol}</td>
-                  <td style={{padding: '8px 12px'}}>{sym.asset_type || '-'}</td>
-                  <td style={{padding: '8px 12px', textAlign: 'right'}}>{result?.current_equity ?? '-'}</td>
-                  <td style={{padding: '8px 12px', textAlign: 'right'}}>{result?.net_return_pct != null ? result.net_return_pct.toFixed(2) + '%' : '-'}</td>
-                  <td style={{padding: '8px 12px', textAlign: 'right'}}>{result?.win_rate != null ? result.win_rate.toFixed(1) + '%' : '-'}</td>
-                  <td style={{padding: '8px 12px', textAlign: 'right'}}>{result?.max_drawdown_pct != null ? result.max_drawdown_pct.toFixed(2) + '%' : '-'}</td>
-                  <td style={{padding: '8px 12px', textAlign: 'right'}}>{result?.total_trades ?? '-'}</td>
-                  <td style={{padding: '8px 12px', textAlign: 'right'}}>{result?.timestamp ?? '-'}</td>
+                <tr key={result.id}>
+                  <td style={{padding: '8px 12px'}}>{result.symbol}</td>
+                  <td style={{padding: '8px 12px'}}>{result.asset_type || '-'}</td>
+                  <td style={{padding: '8px 12px', textAlign: 'right'}}>{result.current_equity ?? '-'}</td>
+                  <td style={{padding: '8px 12px', textAlign: 'right'}}>{result.net_return_pct != null ? result.net_return_pct.toFixed(2) + '%' : '-'}</td>
+                  <td style={{padding: '8px 12px', textAlign: 'right'}}>{result.win_rate != null ? result.win_rate.toFixed(1) + '%' : '-'}</td>
+                  <td style={{padding: '8px 12px', textAlign: 'right'}}>{result.max_drawdown_pct != null ? result.max_drawdown_pct.toFixed(2) + '%' : '-'}</td>
+                  <td style={{padding: '8px 12px', textAlign: 'right'}}>{result.total_trades ?? '-'}</td>
+                  <td style={{padding: '8px 12px', textAlign: 'right'}}>{result.timestamp ?? '-'}</td>
                   <td style={{padding: '8px 12px', textAlign: 'center'}}>
-                    {result ? (
-                      audit.passed ? (
-                        <span style={{color: 'green', fontWeight: 600}}>PASS</span>
-                      ) : (
-                        <span style={{color: 'red', fontWeight: 600}} title={audit.reasons.join(', ')}>
-                          FAIL
-                          <span style={{fontWeight: 400, color: '#a00', marginLeft: 6, fontSize: '0.9em'}}>
-                            {audit.reasons.join(', ')}
-                          </span>
+                    {audit.passed ? (
+                      <span style={{color: 'green', fontWeight: 600}}>PASS</span>
+                    ) : (
+                      <span style={{color: 'red', fontWeight: 600}} title={audit.reasons.join(', ')}>
+                        FAIL
+                        <span style={{fontWeight: 400, color: '#a00', marginLeft: 6, fontSize: '0.9em'}}>
+                          {audit.reasons.join(', ')}
                         </span>
-                      )
-                    ) : '-'}
+                      </span>
+                    )}
                   </td>
                 </tr>
               );
@@ -258,9 +211,7 @@ export default function BacktestsTable() {
           </tbody>
         </table>
       </div>
-      <footer style={{marginTop: 24, textAlign: 'right', color: '#888', fontSize: '0.95em'}}>
-        Dashboard snapshot generated at: {snapshot.generated_at ? new Date(snapshot.generated_at).toLocaleString() : '-'}
-      </footer>
+      {/* No snapshot timestamp for live data */}
     </section>
   );
 }
