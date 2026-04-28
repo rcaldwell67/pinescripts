@@ -32,12 +32,12 @@ app.get('/api/paper-trading-results', async (req, res) => {
   let conn;
   try {
     conn = await mysql.createConnection(dbConfig);
-    // Group results by symbols_id, return as { symbols_id: [ { ...row } ] }
-    const [rows] = await conn.execute("SELECT * FROM paper_trading_results ORDER BY symbols_id, version DESC, id DESC");
+    // Group results by symbol_id, return as { symbol_id: [ { ...row } ] }
+    const [rows] = await conn.execute("SELECT * FROM paper_trading_results ORDER BY symbol_id, version DESC, id DESC");
     const grouped = {};
     for (const row of rows) {
-      if (!grouped[row.symbols_id]) grouped[row.symbols_id] = [];
-      grouped[row.symbols_id].push(row);
+      if (!grouped[row.symbol_id]) grouped[row.symbol_id] = [];
+      grouped[row.symbol_id].push(row);
     }
     res.json(grouped);
   } catch (err) {

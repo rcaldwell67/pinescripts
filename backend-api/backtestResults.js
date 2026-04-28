@@ -18,8 +18,8 @@ export async function getBacktestResults() {
     const [rows] = await conn.execute(`
       SELECT br.*, s.asset_type
       FROM backtest_results br
-      LEFT JOIN symbols s ON br.symbols_id = s.id
-      ORDER BY br.symbol, br.version DESC, br.id DESC
+      LEFT JOIN symbols s ON br.symbol_id = s.id
+      ORDER BY br.symbol_id, br.version DESC, br.id DESC
     `);
     return rows;
   } finally {

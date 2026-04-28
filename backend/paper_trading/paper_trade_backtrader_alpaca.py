@@ -122,9 +122,9 @@ def save_paper_to_db(symbol: str, version: str, trades, df, *, force_reset: bool
             sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
             from backend.backtest_backtrader_alpaca import get_db_conn
         from strategy_generator.symbol_id_lookup import get_symbol_id
-        symbols_id = get_symbol_id(symbol)
-        if not symbols_id:
-            logger.error(f"[ERROR] Could not find symbols_id for symbol {symbol}")
+            symbol_id = get_symbol_id(symbol)
+            if not symbol_id:
+                logger.error(f"[ERROR] Could not find symbol_id for symbol {symbol}")
             return
         conn = get_db_conn()
         cur = conn.cursor()
@@ -133,14 +133,14 @@ def save_paper_to_db(symbol: str, version: str, trades, df, *, force_reset: bool
         from datetime import datetime
         if force_reset:
             cur.execute(
-                "DELETE FROM trades WHERE symbols_id = %s AND version = %s AND mode = 'paper'",
-                (symbols_id, version),
+                 "DELETE FROM trades WHERE symbol_id = %s AND version = %s AND mode = 'paper'",
+                 (symbol_id, version),
             )
             last_exit_time = None
         else:
             cur.execute(
-                "SELECT MAX(exit_time) FROM trades WHERE symbols_id = %s AND version = %s AND mode = 'paper'",
-                (symbols_id, version),
+                 "SELECT MAX(exit_time) FROM trades WHERE symbol_id = %s AND version = %s AND mode = 'paper'",
+                 (symbol_id, version),
             )
             row = cur.fetchone()
             last_exit_time = row[0] if row else None
@@ -187,6 +187,7 @@ def save_paper_to_db(symbol: str, version: str, trades, df, *, force_reset: bool
                     direction = "short"
                 new_rows.append((
                     symbols_id,
+                                        symbol_id,
                     symbol,
                     version,
                     "paper",
@@ -207,6 +208,7 @@ def save_paper_to_db(symbol: str, version: str, trades, df, *, force_reset: bool
                 """
                 INSERT INTO trades (
                     symbols_id, symbol, version, mode, entry_time, exit_time, direction,
+                                        symbol_id, symbol, version, mode, entry_time, exit_time, direction,
                     entry_price, exit_price, result, pnl_pct, dollar_pnl, equity, source
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
@@ -215,12 +217,12 @@ def save_paper_to_db(symbol: str, version: str, trades, df, *, force_reset: bool
 
             metrics = _metrics_for_trades(symbol, version, trades, df)
             cur.execute(
-                "DELETE FROM paper_trading_results WHERE symbols_id = %s AND notes LIKE %s",
-                (symbols_id, f"%{VERSION_MAP.get(version, version)}%"),
+                 "DELETE FROM paper_trading_results WHERE symbol_id = %s AND notes LIKE %s",
+                 (symbol_id, f"%{VERSION_MAP.get(version, version)}%"),
             )
             cur.execute(
-                "INSERT INTO paper_trading_results (symbols_id, symbol, metrics, notes, current_equity) VALUES (%s, %s, %s, %s, %s)",
-                (symbols_id, symbol, json.dumps(metrics), notes, float(metrics.get("current_equity") or metrics.get("final_equity") or 0.0)),
+                 "INSERT INTO paper_trading_results (symbol_id, symbol, metrics, notes, current_equity) VALUES (%s, %s, %s, %s, %s)",
+                 (symbol_id, symbol, json.dumps(metrics), notes, float(metrics.get("current_equity") or metrics.get("final_equity") or 0.0)),
             )
             conn.commit()
             conn.close()
