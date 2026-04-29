@@ -31,11 +31,12 @@ export default function SimulatedPaperTable() {
   if (error) return <div style={{ color: 'red' }}>Error: {error}</div>;
   if (!data) return null;
 
-  // Only show rows for v6, and only if there is at least one row
-  const v6Rows = Object.entries(data).flatMap(([symbol, results]) =>
-    results.filter(row => row.version === 'v6').map((row, i) => ({ symbol, ...row }))
+
+  // Only show rows for v7, and only if there is at least one row
+  const v7Rows = Object.entries(data).flatMap(([symbol, results]) =>
+    results.filter(row => row.version === 'v7').map((row, i) => ({ symbol, ...row }))
   );
-  if (v6Rows.length === 0) return <div>No simulated paper trading data available.</div>;
+  if (v7Rows.length === 0) return <div>No simulated paper trading data available.</div>;
 
   return (
     <div style={{overflowX: 'auto'}}>
@@ -53,7 +54,7 @@ export default function SimulatedPaperTable() {
           </tr>
         </thead>
         <tbody>
-          {v6Rows.map((row, i) => (
+          {v7Rows.map((row, i) => (
             <tr key={row.symbol + row.version}>
               <td>{row.symbol}</td>
               <td>{row.version}</td>

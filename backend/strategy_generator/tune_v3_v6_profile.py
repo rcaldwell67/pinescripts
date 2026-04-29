@@ -22,12 +22,13 @@ from v4_params import get_v4_params  # noqa: E402
 from v5_params import get_v5_params  # noqa: E402
 from v6_params import get_v6_params  # noqa: E402
 
-SUPPORTED_VERSIONS = {"v3", "v4", "v5", "v6"}
+SUPPORTED_VERSIONS = {"v3", "v4", "v5", "v6", "v7"}
 PARAM_LOADERS = {
     "v3": get_v3_params,
     "v4": get_v4_params,
     "v5": get_v5_params,
     "v6": get_v6_params,
+    # "v7": get_v7_params,  # Add v7 loader if available
 }
 
 

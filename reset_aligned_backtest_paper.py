@@ -1,4 +1,5 @@
-"""Regenerate aligned backtest/paper datasets in tradingcopilot.db for v1-v6.
+"""Regenerate aligned backtest/paper datasets in tradingcopilot.db for v1-v7.
+
 
 This script runs the selected version backtest simulation once per symbol and
 writes identical trade rows into both mode='backtest' and mode='paper' so
@@ -135,7 +136,7 @@ def _insert_summary(conn: sqlite3.Connection, table: str, symbol: str, metrics: 
 
 
 def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Regenerate aligned backtest/paper datasets for v1-v6.")
+    parser = argparse.ArgumentParser(description="Regenerate aligned backtest/paper datasets for v1-v7.")
     parser.add_argument("--symbol", help="Optional symbol (e.g. BTC/USD). If omitted, run for all symbols.")
     parser.add_argument(
         "--version",
@@ -146,7 +147,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--all-versions",
         action="store_true",
-        help="Regenerate all supported versions (v1-v6).",
+        help="Regenerate all supported versions (v1-v7).",
     )
     parser.add_argument(
         "--prefer-realtime-data",

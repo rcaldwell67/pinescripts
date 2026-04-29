@@ -54,7 +54,7 @@ def build_snapshot(trade_limit=200):
         backtest_results = []
         for row in rows:
             symbol = row["symbol"]
-            version = row["version"].lower() if row["version"] else "v6"
+            version = row["version"].lower() if row["version"] else "v7"
             symbol_key = ''.join(ch for ch in symbol.upper() if ch.isalnum())
             try:
                 metrics = json.loads(row["metrics"] or "{}")

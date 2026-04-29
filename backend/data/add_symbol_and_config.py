@@ -38,7 +38,7 @@ TEMPLATE_CONFIG = {
     }
 }
 
-CONFIG_PATH = Path(__file__).resolve().parent.parent / "backend/strategy_generator/configs/v6_runtime.json"
+CONFIG_PATH = Path(__file__).resolve().parent.parent / "backend/strategy_generator/configs/v7_runtime.json"
 
 def add_symbol_and_config(symbol, description=None):
     # Add symbol as disabled
@@ -51,7 +51,7 @@ def add_symbol_and_config(symbol, description=None):
     config["symbol_overrides"] = overrides
     with open(CONFIG_PATH, "w", encoding="utf-8") as f:
         json.dump(config, f, indent=2)
-    print(f"Config override for {symbol} added to v6_runtime.json.")
+    print(f"Config override for {symbol} added to v7_runtime.json.")
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

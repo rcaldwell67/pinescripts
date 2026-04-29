@@ -44,11 +44,11 @@ POLICY_OVERRIDES: dict[tuple[str, str], GuidelineOverride] = {
     ("ETHUSDC", "v3"): GuidelineOverride(waived_hard_checks={"trades"}),
     **{
         ("CLM", version): GuidelineOverride(waived_hard_checks={"trades"})
-        for version in ("v1", "v2", "v3", "v4", "v5", "v6")
+        for version in ("v1", "v2", "v3", "v4", "v5", "v6", "v7")
     },
     **{
         ("CRF", version): GuidelineOverride(waived_hard_checks={"trades"})
-        for version in ("v1", "v2", "v3", "v4", "v5", "v6")
+        for version in ("v1", "v2", "v3", "v4", "v5", "v6", "v7")
     },
 }
 

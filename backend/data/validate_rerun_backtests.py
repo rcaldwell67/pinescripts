@@ -28,7 +28,7 @@ DEFAULT_SYMBOLS = ("BTC/USDT", "CLM")
 class ValidationTarget:
     symbol: str
     aligned_version: str = "v2"
-    direct_version: str = "v6"
+    direct_version: str = "v7"
 
 
 def _parse_args() -> argparse.Namespace:
@@ -48,9 +48,9 @@ def _parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--direct-version",
-        default="v6",
+        default="v7",
         choices=list(backtest.VERSION_MAP),
-        help="Version to validate through the direct backtest path. Default: v6.",
+        help="Version to validate through the direct backtest path. Default: v7.",
     )
     return parser.parse_args()
 

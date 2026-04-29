@@ -13,10 +13,10 @@ const POLICY_OVERRIDES = {
   'BTCUSDC:v1': { waived_hard_checks: new Set(['win_rate']) },
   'ETHUSDT:v3': { waived_hard_checks: new Set(['win_rate']) },
   'ETHUSDC:v3': { waived_hard_checks: new Set(['trades']) },
-  ...Object.fromEntries(['v1','v2','v3','v4','v5','v6'].map(v => [
+  ...Object.fromEntries(['v1','v2','v3','v4','v5','v6','v7'].map(v => [
     `CLM:${v}`, { waived_hard_checks: new Set(['trades']) }
   ])),
-  ...Object.fromEntries(['v1','v2','v3','v4','v5','v6'].map(v => [
+  ...Object.fromEntries(['v1','v2','v3','v4','v5','v6','v7'].map(v => [
     `CRF:${v}`, { waived_hard_checks: new Set(['trades']) }
   ])),
 };
@@ -30,7 +30,7 @@ function getOverride(symbol, version) {
   return POLICY_OVERRIDES[key];
 }
 
-function evaluateBacktestGuideline({ symbol, version = 'v6', trades, win_rate_pct, net_return_pct, max_drawdown_pct }) {
+function evaluateBacktestGuideline({ symbol, version = 'v7', trades, win_rate_pct, net_return_pct, max_drawdown_pct }) {
   const thresholds = DEFAULT_THRESHOLDS;
   const override = getOverride(symbol, version);
   const waived = override?.waived_hard_checks || new Set();
@@ -119,7 +119,7 @@ export default function BacktestsTable() {
 
   return (
     <section style={{ padding: 24 }}>
-      <h2>Backtests (v6) - Active Symbols</h2>
+      <h2>Backtests (v7) - Active Symbols</h2>
       <div style={{ marginBottom: 16, display: 'flex', gap: 16, alignItems: 'center' }}>
           <label>
             Timespan:

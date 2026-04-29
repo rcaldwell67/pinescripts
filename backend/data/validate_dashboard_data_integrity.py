@@ -1,4 +1,4 @@
-"""Validate dashboard data integrity across symbols and v1-v6.
+"""Validate dashboard data integrity across symbols and v1-v7.
 
 Checks:
 - Missing (symbol, version) combos in trades for backtest and paper modes.
@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 DB_PATH = Path(__file__).resolve().parents[2] / "docs" / "data" / "tradingcopilot.db"
-VERSIONS = ("v1", "v2", "v3", "v4", "v5", "v6")
+VERSIONS = ("v1", "v2", "v3", "v4", "v5", "v6", "v7")
 SYM_NORM_SQL = "REPLACE(REPLACE(REPLACE(REPLACE(UPPER(symbol), '/', ''), '_', ''), '-', ''), ' ', '')"
 
 

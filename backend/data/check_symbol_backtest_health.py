@@ -20,7 +20,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "config"))
 from guideline_policy import DEFAULT_THRESHOLDS, normalize_symbol, get_override, evaluate_backtest_guideline
 
-VERSION_KEYS = ["v1", "v2", "v3", "v4", "v5", "v6"]
+VERSION_KEYS = ["v1", "v2", "v3", "v4", "v5", "v6", "v7"]
 
 
 def _parse_args() -> argparse.Namespace:

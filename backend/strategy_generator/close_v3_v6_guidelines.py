@@ -9,7 +9,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_SYMBOLS = ["BTC/USD", "CLM", "CRF", "ETH/USD", "BTC/USDC", "BTC/USDT"]
-DEFAULT_VERSIONS = ["v3", "v4", "v5", "v6"]
+DEFAULT_VERSIONS = ["v3", "v4", "v5", "v6", "v7"]
 
 
 def run_step(command: list[str]) -> None:
@@ -25,17 +25,17 @@ def safe_symbol(symbol: str) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Tune selected v3-v6 symbols and optionally apply passing guideline candidates."
+        description="Tune selected v3-v7 symbols and optionally apply passing guideline candidates."
     )
     parser.add_argument("--symbols", nargs="*", default=DEFAULT_SYMBOLS, help="Symbols to retune")
-    parser.add_argument("--versions", nargs="*", default=DEFAULT_VERSIONS, help="Versions to retune (v3-v6)")
+    parser.add_argument("--versions", nargs="*", default=DEFAULT_VERSIONS, help="Versions to retune (v3-v7)")
     parser.add_argument("--max-evals", type=int, default=300, help="Per-symbol tuning budget")
     parser.add_argument("--seed-base", type=int, default=211, help="Base seed; each symbol/version gets an incremented seed")
     args = parser.parse_args()
 
     python_exe = sys.executable
 
-    valid_versions = {"v3", "v4", "v5", "v6"}
+    valid_versions = {"v3", "v4", "v5", "v6", "v7"}
     versions = [v.strip().lower() for v in args.versions if v and v.strip()]
     invalid = [v for v in versions if v not in valid_versions]
     if invalid:
@@ -47,7 +47,7 @@ def main() -> int:
             out_path = f"docs/data/{version}_profile_tuning_result_{safe_symbol(symbol)}_guideline.json"
             command = [
                 python_exe,
-                "backend/strategy_generator/tune_v3_v6_profile.py",
+                "backend/strategy_generator/tune_v3_v7_profile.py",
                 "--version",
                 version,
                 "--symbol",

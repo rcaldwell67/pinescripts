@@ -4,9 +4,15 @@ Backtest runner for Mean Reversion Trend Filter strategy (long only)
 - Simulates trade management: stop loss, take profit, trailing stop
 """
 import pandas as pd
-from mean_reversion_trendfilter_v1 import mean_reversion_trendfilter_signals, mean_reversion_trendfilter_exit
+
+from mean_reversion_trendfilter_v1 import (
+    mean_reversion_trendfilter_signals,
+    mean_reversion_trendfilter_exit,
+    compute_meanrev_tf_indicators,
+)
 
 def backtest_mean_reversion_trendfilter(df, params=None):
+    df = compute_meanrev_tf_indicators(df)
     entries = mean_reversion_trendfilter_signals(df, params=params)
     equity = 100000.0
     trades = []

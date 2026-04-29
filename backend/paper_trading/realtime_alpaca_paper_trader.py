@@ -40,6 +40,7 @@ from apm_v3 import apm_v3_latest_bar_analysis, apm_v3_latest_bar_exit_analysis
 from apm_v4 import apm_v4_latest_bar_analysis, apm_v4_latest_bar_exit_analysis
 from apm_v5 import apm_v5_latest_bar_analysis, apm_v5_latest_bar_exit_analysis
 from apm_v6 import apm_v6_latest_bar_analysis, apm_v6_latest_bar_exit_analysis
+# v7 logic should be imported and handled similarly if not already
 from backtest_backtrader_alpaca import DB_PATH, VERSION_MAP, ensure_result_tables_have_current_equity, fetch_ohlcv
 from portfolio_system import evaluate_trade
 from v1_params import get_v1_params
@@ -57,6 +58,7 @@ PARAM_LOADERS: dict[str, Any] = {
     "v4": get_v4_params,
     "v5": get_v5_params,
     "v6": get_v6_params,
+    # "v7": get_v7_params,  # Add v7 loader if available
 }
 
 

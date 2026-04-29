@@ -1,3 +1,4 @@
+import os
 import sys
 from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -13,7 +14,7 @@ and writes a summary row to docs/data/tradingcopilot.db.
 
 Usage:
     python backend/backtest_backtrader_alpaca.py --symbol "BTC/USD" --version v1
-    python backend/backtest_backtrader_alpaca.py --symbol "BTC/USD" --version v6
+    python backend/backtest_backtrader_alpaca.py --symbol "BTC/USD" --version v7
 
 Requires env vars (or a .env file):
     ALPACA_API_KEY / ALPACA_PAPER_API_KEY
@@ -25,7 +26,6 @@ Requires env vars (or a .env file):
 
 import argparse
 import json
-import os
 import mysql.connector
 import sys
 import logging
@@ -74,7 +74,6 @@ ALPACA_API_SECRET = os.getenv("ALPACA_API_SECRET") or os.getenv("ALPACA_PAPER_AP
 def get_db_conn():
     import dotenv
     dotenv.load_dotenv(REPO_ROOT / ".env")
-    import os
     return mysql.connector.connect(
         host=os.environ.get("MARIADB_HOST", "localhost"),
         user=os.environ.get("MARIADB_USER", "root"),
@@ -199,10 +198,6 @@ def fetch_ohlcv_alpaca(symbol: str, timespan: str = "YTD") -> "pd.DataFrame | No
     # Rename to Title-case for strategy modules that expect Close/High/Low/Open/Volume
     col_map = {c: c.capitalize() for c in ("open", "high", "low", "close", "volume")}
     df = df.rename(columns=col_map)
-    return df
-
-
-def fetch_ohlcv_yfinance(symbol: str, timespan: str = "YTD") -> "pd.DataFrame":
     """
     Fetch OHLCV data from Yahoo Finance as a fallback (1h bars instead of 5m).
     Args:
@@ -212,7 +207,6 @@ def fetch_ohlcv_yfinance(symbol: str, timespan: str = "YTD") -> "pd.DataFrame":
     """
     import pandas as pd
     import yfinance as yf
-
 
     now = datetime.now(tz=timezone.utc)
     # Determine start and interval based on timespan
@@ -245,7 +239,8 @@ def fetch_ohlcv_yfinance(symbol: str, timespan: str = "YTD") -> "pd.DataFrame":
         start = datetime(now.year, 1, 1, tzinfo=timezone.utc)
         interval = "1h"
     print(f"  Fetching from Yahoo Finance ({interval} bars)...", file=sys.stderr)
-    df = yf.download(symbol, start=start, end=now, interval=interval, progress=False)
+    yf_symbol = symbol.replace("/", "-") if "/" in symbol else symbol
+    df = yf.download(yf_symbol, start=start, end=now, interval=interval, progress=False)
 
     if df.empty:
         logger.error(f"No data returned from Yahoo Finance for {symbol}")

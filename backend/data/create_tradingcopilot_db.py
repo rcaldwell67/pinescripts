@@ -36,7 +36,7 @@ def create_database(db_path):
         CREATE TABLE IF NOT EXISTS backtest_results (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             symbol TEXT NOT NULL,
-            version TEXT NOT NULL DEFAULT 'v6',
+            version TEXT NOT NULL DEFAULT 'v7',
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
             metrics TEXT,
             notes TEXT,
@@ -48,7 +48,7 @@ def create_database(db_path):
         CREATE TABLE IF NOT EXISTS paper_trading_results (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             symbol TEXT NOT NULL,
-            version TEXT NOT NULL DEFAULT 'v6',
+            version TEXT NOT NULL DEFAULT 'v7',
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
             metrics TEXT,
             notes TEXT,
@@ -60,7 +60,7 @@ def create_database(db_path):
         CREATE TABLE IF NOT EXISTS live_trading_results (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             symbol TEXT NOT NULL,
-            version TEXT NOT NULL DEFAULT 'v6',
+            version TEXT NOT NULL DEFAULT 'v7',
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
             metrics TEXT,
             notes TEXT,
@@ -110,7 +110,7 @@ def create_database(db_path):
         CREATE TABLE IF NOT EXISTS trades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             symbol TEXT NOT NULL,
-            version TEXT NOT NULL DEFAULT 'v1',
+            version TEXT NOT NULL DEFAULT 'v7',
             mode TEXT NOT NULL DEFAULT 'backtest',
             entry_time DATETIME,
             exit_time DATETIME,

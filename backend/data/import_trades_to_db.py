@@ -5,7 +5,7 @@ Maps CSV columns to the trades table schema and avoids duplicate imports.
 Usage:
     python import_trades_to_db.py
 
-Add new CSV files to TRADE_FILES to import additional symbols/versions.
+Add new CSV files to TRADE_FILES to import additional symbols/versions (v1-v7).
 """
 import csv
 import mysql.connector
@@ -34,7 +34,7 @@ TRADE_FILES = [
         'version': version,
         'mode': 'backtest',
     }
-    for version in ('v1', 'v2', 'v3', 'v4', 'v5', 'v6')
+    for version in ('v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7')
 ]
 
 # CSV column → DB column mapping (columns not listed here are skipped)
