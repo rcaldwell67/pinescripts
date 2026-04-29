@@ -16,11 +16,12 @@ export async function getBacktestResults() {
     conn = await mysql.createConnection(dbConfig);
     // Join with symbols table using symbol_id foreign key
     const [rows] = await conn.execute(`
-      SELECT br.*, s.asset_type
+      SELECT br.id, br.symbol_id, br.symbol, br.version, br.timestamp, br.metrics, br.notes, br.current_equity, s.asset_type
       FROM backtest_results br
       LEFT JOIN symbols s ON br.symbol_id = s.id
       ORDER BY br.symbol_id, br.version DESC, br.id DESC
     `);
+    console.log('[DEBUG] SQL rows:', JSON.stringify(rows, null, 2));
     return rows;
   } finally {
     if (conn) await conn.end();
