@@ -541,13 +541,18 @@ def _upsert_summary(conn: sqlite3.Connection, symbol: str, version: str, status:
         "current_equity": equity,
         "timestamp": ts,
     }
+    # Lookup symbol_id from symbols table
+    row = conn.execute("SELECT id FROM symbols WHERE symbol = ?", (symbol,)).fetchone()
+    symbol_id = row[0] if row else None
+    if symbol_id is None:
+        raise ValueError(f"Could not find symbol_id for symbol {symbol}")
     conn.execute(
-        "DELETE FROM paper_trading_results WHERE symbol = ? AND notes LIKE ?",
-        (symbol, f"%{VERSION_MAP.get(version, version)} realtime alpaca%"),
+        "DELETE FROM paper_trading_results WHERE symbol_id = ? AND notes LIKE ?",
+        (symbol_id, f"%{VERSION_MAP.get(version, version)} realtime alpaca%"),
     )
     conn.execute(
-        "INSERT INTO paper_trading_results (symbol, metrics, notes, current_equity) VALUES (?, ?, ?, ?)",
-        (symbol, json.dumps(metrics), notes, float(equity) if equity is not None else None),
+        "INSERT INTO paper_trading_results (symbol_id, symbol, metrics, notes, current_equity) VALUES (?, ?, ?, ?, ?)",
+        (symbol_id, symbol, json.dumps(metrics), notes, float(equity) if equity is not None else None),
     )
     # Append to cumulative run log
     _ensure_realtime_paper_log_table(conn)

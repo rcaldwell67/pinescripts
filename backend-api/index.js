@@ -1,3 +1,4 @@
+
 import dotenv from 'dotenv';
 dotenv.config();
 import express from 'express';
@@ -8,6 +9,26 @@ import { getBacktestResults } from './backtestResults.js';
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// GET simulation paper trading results (for SimulatedPaperTable)
+app.get('/api/simulation-paper-trading-results', async (req, res) => {
+  let conn;
+  try {
+    conn = await mysql.createConnection(dbConfig);
+    // Group results by symbol_id, return as { symbol_id: [ { ...row } ] }
+    const [rows] = await conn.execute("SELECT * FROM simulation_paper_trading_results ORDER BY symbol_id, version DESC, id DESC");
+    const grouped = {};
+    for (const row of rows) {
+      if (!grouped[row.symbol_id]) grouped[row.symbol_id] = [];
+      grouped[row.symbol_id].push(row);
+    }
+    res.json(grouped);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    if (conn) await conn.end();
+  }
+});
 
 // GET backtest results (for BacktestsTable)
 app.get('/api/backtest-results', async (req, res) => {

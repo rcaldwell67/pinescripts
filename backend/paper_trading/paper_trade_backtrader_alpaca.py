@@ -128,7 +128,7 @@ def save_paper_to_db(symbol: str, version: str, trades, df, *, force_reset: bool
             return
         conn = get_db_conn()
         cur = conn.cursor()
-        notes = f"{VERSION_MAP.get(version, version)} paper trading summary"
+        notes = f"{VERSION_MAP.get(version, version)} simulation paper trading summary"
 
         from datetime import datetime
         if force_reset:
@@ -216,14 +216,14 @@ def save_paper_to_db(symbol: str, version: str, trades, df, *, force_reset: bool
             )
 
             metrics = _metrics_for_trades(symbol, version, trades, df)
-            cur.execute(
-                 "DELETE FROM paper_trading_results WHERE symbol_id = %s AND notes LIKE %s",
-                 (symbol_id, f"%{VERSION_MAP.get(version, version)}%"),
-            )
-            cur.execute(
-                 "INSERT INTO paper_trading_results (symbol_id, symbol, metrics, notes, current_equity) VALUES (%s, %s, %s, %s, %s)",
-                 (symbol_id, symbol, json.dumps(metrics), notes, float(metrics.get("current_equity") or metrics.get("final_equity") or 0.0)),
-            )
+              cur.execute(
+                  "DELETE FROM simulation_paper_trading_results WHERE symbol_id = %s AND notes LIKE %s",
+                  (symbol_id, f"%{VERSION_MAP.get(version, version)}%"),
+              )
+              cur.execute(
+                  "INSERT INTO simulation_paper_trading_results (symbol_id, symbol, metrics, notes, current_equity) VALUES (%s, %s, %s, %s, %s)",
+                  (symbol_id, symbol, json.dumps(metrics), notes, float(metrics.get("current_equity") or metrics.get("final_equity") or 0.0)),
+              )
             conn.commit()
             conn.close()
             logger.info(

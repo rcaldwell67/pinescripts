@@ -9,7 +9,7 @@ export default function SimulatedPaperTable() {
     async function loadData() {
       try {
         // Fetch from backend API endpoint (to be implemented)
-        const res = await fetch("http://localhost:4000/api/paper-trading-results");
+        const res = await fetch("http://localhost:4000/api/simulation-paper-trading-results");
         if (!res.ok) throw new Error("Failed to load paper trading results from API");
         let json;
         try {
