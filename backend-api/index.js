@@ -15,12 +15,19 @@ app.get('/api/simulation-paper-trading-results', async (req, res) => {
   let conn;
   try {
     conn = await mysql.createConnection(dbConfig);
-    // Group results by symbol_id, return as { symbol_id: [ { ...row } ] }
-    const [rows] = await conn.execute("SELECT * FROM simulation_paper_trading_results ORDER BY symbol_id, version DESC, id DESC");
+    // Group results by symbol_id, merge metrics JSON into each row
+    const [rows] = await conn.execute("SELECT * FROM simulation_paper_trading_results ORDER BY symbol_id, id DESC");
     const grouped = {};
     for (const row of rows) {
-      if (!grouped[row.symbol_id]) grouped[row.symbol_id] = [];
-      grouped[row.symbol_id].push(row);
+      let metrics = {};
+      try {
+        metrics = row.metrics ? JSON.parse(row.metrics) : {};
+      } catch (e) {
+        metrics = {};
+      }
+      const merged = { ...row, ...metrics };
+      if (!grouped[row.symbol]) grouped[row.symbol] = [];
+      grouped[row.symbol].push(merged);
     }
     res.json(grouped);
   } catch (err) {
