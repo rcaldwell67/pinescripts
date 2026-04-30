@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import BacktestsTable from "./BacktestsTable";
 import SimulatedPaperTable from "./SimulatedPaperTable";
 import SymbolsTable from "./SymbolsTable";
+import StrategyManager from "./components/StrategyManager";
 
 
 // Demo/mock data from backend/data/print_account_info.py output
@@ -62,6 +63,7 @@ function App() {
           <ul>
             <li><a href="#" onClick={() => handleNav("Dashboard")}>Dashboard</a></li>
             <li><a href="#" onClick={() => handleNav("Backtests")}>Backtests</a></li>
+            <li><a href="#" onClick={() => handleNav("Strategy Management")}>Strategy Management</a></li>
             <li><a href="#" onClick={() => handleNav("Symbols")}>Symbols</a></li>
             <li>
               <a href="#" onClick={() => handleNav("Paper Trading")}>Paper Trading</a>
@@ -130,6 +132,8 @@ function App() {
             </section>
           ) : activePage === "Backtests" ? (
             <BacktestsTable />
+          ) : activePage === "Strategy Management" ? (
+            <StrategyManager />
           ) : activePage === "Symbols" ? (
             <SymbolsTable />
           ) : activePage === "Real-Time" ? (
