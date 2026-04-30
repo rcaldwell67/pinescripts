@@ -1,3 +1,41 @@
+from strategy_engine import evaluate_strategy
+import pandas as pd
+
+# POST /api/strategy/evaluate
+@app.route('/api/strategy/evaluate', methods=['POST'])
+def strategy_evaluate():
+    data = request.get_json()
+    trades = pd.DataFrame(data.get('trades', []))
+    result = evaluate_strategy(trades)
+    return jsonify(result)
+
+
+# POST /api/backtest (runs backtest and returns metrics)
+@app.route('/api/backtest', methods=['POST'])
+def backtest():
+    from backtest_backtrader_alpaca import fetch_ohlcv, run_backtest
+    data = request.get_json()
+    symbol = data.get('symbol')
+    version = data.get('version', 'v1')
+    timespan = data.get('timespan', 'YTD')
+    profile = data.get('profile')
+    params = data.get('params')
+    if not symbol or not version:
+        return jsonify({'error': 'symbol and version are required'}), 400
+    try:
+        df = fetch_ohlcv(symbol, timespan=timespan)
+        trades = run_backtest(df, version, symbol=symbol, profile=profile, params=params)
+        from strategy_engine import evaluate_strategy
+        metrics = evaluate_strategy(trades)
+        return jsonify({
+            'symbol': symbol,
+            'version': version,
+            'timespan': timespan,
+            'metrics': metrics,
+            'trades': trades.to_dict(orient='records')
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 import os
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
