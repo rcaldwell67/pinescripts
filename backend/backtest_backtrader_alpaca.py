@@ -777,12 +777,20 @@ def main() -> int:
                     AdaptiveTuner = ag_mod.AdaptiveTuner
                 # Example param_space for demonstration (should match your strategy's params)
                 param_space = {
+                    "ema_fast": [8, 12],
+                    "ema_mid": [21, 26],
+                    "ema_slow": [55, 89],
+                    "rsi_len": [14],
+                    "atr_len": [14],
+                    "atr_baseline_len": [100],
+                    "volume_sma_len": [20],
                     "macd_fast": [8, 12],
                     "macd_slow": [21, 26],
                     "macd_signal": [7, 9],
                 }
                 def evaluate(params):
-                    trades = run_backtest(df, version, symbol=symbol, profile=profile, params=params)
+                    # Wrap params in {'signal': params} for v7
+                    trades = run_backtest(df, version, symbol=symbol, profile=profile, params={"signal": params})
                     if trades is None or trades.empty:
                         return None
                     pnl_col = "pnl" if "pnl" in trades.columns else "dollar_pnl"
