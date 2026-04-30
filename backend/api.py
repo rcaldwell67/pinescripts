@@ -38,5 +38,36 @@ def get_symbols():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
+# --- New: Data Ingestion and News Sentiment Endpoints ---
+from data_ingestion import fetch_yfinance_bars
+from news_sentiment import fetch_news_headlines, analyze_sentiment
+
+@app.route('/api/yfinance-bars', methods=['GET'])
+def get_yfinance_bars():
+    symbol = request.args.get('symbol')
+    start = request.args.get('start')
+    end = request.args.get('end')
+    interval = request.args.get('interval', '1d')
+    if not symbol or not start or not end:
+        return jsonify({'error': 'symbol, start, and end are required'}), 400
+    try:
+        df = fetch_yfinance_bars(symbol, start, end, interval)
+        return df.reset_index().to_json(orient='records')
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/news-sentiment', methods=['GET'])
+def get_news_sentiment():
+    symbol = request.args.get('symbol')
+    if not symbol:
+        return jsonify({'error': 'symbol is required'}), 400
+    try:
+        headlines = fetch_news_headlines(symbol)
+        avg_sentiment = analyze_sentiment(headlines)
+        return jsonify({'symbol': symbol, 'avg_sentiment': avg_sentiment, 'headlines': headlines})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
