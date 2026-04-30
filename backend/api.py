@@ -1,3 +1,13 @@
+
+# --- Imports and Flask App Setup (must be at top) ---
+import os
+from dotenv import load_dotenv
+from flask import Flask, jsonify, request
+import mysql.connector
+
+load_dotenv()
+app = Flask(__name__)
+
 # --- Live Trading Endpoint ---
 from live_trading import place_market_order, get_positions, get_orders
 
@@ -71,13 +81,6 @@ def backtest():
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-import os
-from dotenv import load_dotenv
-from flask import Flask, jsonify, request
-import mysql.connector
-
-load_dotenv()
-
 app = Flask(__name__)
 
 def get_db_connection():
