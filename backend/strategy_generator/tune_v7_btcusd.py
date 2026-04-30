@@ -110,13 +110,35 @@ grid = {
     "atr_percentile_window": [60, 120],
     # Macro EMA
     "macro_ema_period": [0, 50],
+    # --- New indicators ---
+    # Supertrend
+    "supertrend_period": [7, 10, 14],
+    "supertrend_mult": [1.5, 2, 3, 4],
+    "enable_supertrend": [True, False],
+    # Keltner Channel
+    "kc_len": [10, 14, 20, 30],
+    "kc_mult": [1.0, 1.5, 2.0, 2.5],
+    "enable_kc": [True, False],
+    # MFI
+    "mfi_len": [7, 10, 14, 20],
+    "enable_mfi": [True, False],
+    # TSI
+    "tsi_r": [13, 18, 25, 30],
+    "tsi_s": [7, 10, 13, 16],
+    "enable_tsi": [True, False],
+    # Williams %R
+    "wpr_len": [7, 10, 14, 20],
+    "enable_wpr": [True, False],
+    # Parabolic SAR
+    "sar_af": [0.01, 0.02, 0.04, 0.06],
+    "sar_max_af": [0.1, 0.2, 0.3, 0.4],
+    "enable_sar": [True, False],
 }
 
 
-# --- Local CSV caching for OHLCV data with retry logic ---
-cache_dir = pathlib.Path("./data_cache")
-cache_dir.mkdir(exist_ok=True)
-cache_file = cache_dir / f"ohlcv_{symbol.replace('/', '-')}_{lookback}_{candle_interval}.csv"
+
+# --- Force use of large local OHLCV file for backtest ---
+cache_file = pathlib.Path("./data_cache/ohlcv_BTC-USD_YTD.csv")
 
 
 # The backend expects timespan to control both lookback and interval granularity (e.g., "YTD", "30m", etc.)
@@ -140,61 +162,57 @@ def fetch_ohlcv_with_retry(symbol, lookback="YTD", candle_interval="15m", max_re
                 raise
     raise RuntimeError("Failed to fetch OHLCV data after retries due to rate limiting.")
 
-def get_v7_params(symbol):
-    # TODO: Implement or import your parameter template logic
-    return {"symbol": symbol, "signal": {}}
-
-def run_backtest(df, version, symbol, params=None):
-    # Simulate random trades with type and side columns
-    import numpy as np
-    n_trades = np.random.randint(10, 50)
-    pnl = np.random.normal(loc=0.1, scale=1.0, size=n_trades)
-    equity = np.cumsum(pnl) + 10000
-    # Alternate type/side for demonstration
-    types = ['Long' if i % 2 == 0 else 'Short' for i in range(n_trades)]
-    sides = ['Buy' if t == 'Long' else 'Sell' for t in types]
-    return pd.DataFrame({'pnl': pnl, 'equity': equity, 'type': types, 'side': sides})
-
-
-# --- Stage 1: Win Rate ---
-df_worker = None
-def stage1_worker(values):
-    global df_worker
-    params = get_v7_params(symbol)
-    for k, v in zip(grid.keys(), values):
-        params["signal"][k] = v
-    trades = run_backtest(df_worker.copy(), "v7", symbol=symbol, params=params)
-    if trades is None or trades.empty:
-        return None
-    win_rate = float((trades["pnl"] > 0).mean() * 100.0)
-    trade_type = trades["type"].mode().iloc[0] if "type" in trades.columns and not trades["type"].empty else None
-    trade_side = trades["side"].mode().iloc[0] if "side" in trades.columns and not trades["side"].empty else None
-    # Compute net return, max drawdown, calmar ratio, trades count
-    if "equity" in trades.columns and not trades["equity"].empty:
-        equity_curve = trades["equity"]
-        start_equity = float(equity_curve.iloc[0])
-        end_equity = float(equity_curve.iloc[-1])
-        net_return = ((end_equity / start_equity) - 1.0) * 100 if start_equity else 0.0
-        roll_max = equity_curve.cummax()
-        drawdown = (equity_curve - roll_max) / roll_max
-        max_drawdown = drawdown.min() * 100 if not drawdown.empty else 0.0
-        n_years = max(len(equity_curve) / 252, 1e-6)
-        cagr = ((end_equity / start_equity) ** (1 / n_years)) - 1 if start_equity > 0 else 0.0
-        calmar_ratio = cagr / (abs(max_drawdown) / 100) if max_drawdown != 0 else 0.0
-    else:
-        net_return = None
-        max_drawdown = None
-        calmar_ratio = None
-    trades_count = len(trades) if hasattr(trades, "__len__") else None
-    result = dict(params["signal"])
-    result["type"] = trade_type
-    result["side"] = trade_side
-    result["win_rate"] = win_rate
-    result["net_return"] = net_return
-    result["max_drawdown"] = max_drawdown
-    result["calmar_ratio"] = calmar_ratio
-    result["trades"] = trades_count
-    return result
+# --- Reduced parameter grid for memory efficiency ---
+grid = {
+    # MACD
+    "macd_fast": [8],
+    "macd_slow": [21],
+    "macd_signal": [7],
+    # Stochastic
+    "stoch_k_len": [10],
+    "stoch_d_len": [3],
+    # CCI
+    "cci_len": [14],
+    # EMA
+    "ema_fast": [8],
+    "ema_mid": [21],
+    "ema_slow": [55],
+    # RSI
+    "rsi_len": [7],
+    # ATR
+    "atr_len": [7],
+    "atr_baseline_len": [60],
+    # Volume SMA
+    "volume_sma_len": [10],
+    # Bollinger Bands
+    "bb_len": [14],
+    "bb_std_mult": [1.5],
+    # Donchian Channel
+    "donchian_len": [14],
+    # DMI/ADX
+    "adx_len": [7],
+    # ATR Percentile Window
+    "atr_percentile_window": [60],
+    # Macro EMA
+    "macro_ema_period": [0],
+    # --- New indicators (single value for each) ---
+    "supertrend_period": [7],
+    "supertrend_mult": [1.5],
+    "enable_supertrend": [True],
+    "kc_len": [10],
+    "kc_mult": [1.0],
+    "enable_kc": [True],
+    "mfi_len": [7],
+    "enable_mfi": [True],
+    "tsi_r": [13],
+    "tsi_s": [7],
+    "enable_tsi": [True],
+    "wpr_len": [7],
+    "enable_wpr": [True],
+    "sar_af": [0.01],
+    "sar_max_af": [0.1],
+    "enable_sar": [True],
+}
 
 # --- Stage 2: Net Return ---
 def stage2_worker(args):
@@ -260,7 +278,13 @@ if __name__ == "__main__":
             f.write(log_line + "\n")
 
     log_resources("START")
-    if cache_file.exists():
+    # --- Force use of local btcusd_15m_ytd.csv if present ---
+    local_csv = pathlib.Path(os.path.join(os.path.dirname(__file__), "..", "btcusd_15m_ytd.csv")).resolve()
+    if local_csv.exists():
+        print(f"[Override] Loading OHLCV data from local CSV: {local_csv}")
+        df = pd.read_csv(local_csv, low_memory=False)
+        log_resources("AFTER LOCAL CSV LOAD")
+    elif cache_file.exists():
         print(f"Loading OHLCV data from cache: {cache_file}")
         df = pd.read_csv(cache_file, low_memory=False)
         log_resources("AFTER CSV LOAD")
