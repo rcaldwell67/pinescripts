@@ -2,8 +2,9 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 
-// Set base path for GitHub Pages deployment
-const base = "/pinescripts/";
+
+// Use '/' base for Docker/Nginx, '/pinescripts/' for GitHub Pages
+const base = process.env.DOCKER ? "/" : "/pinescripts/";
 
 export default defineConfig({
   plugins: [react()],

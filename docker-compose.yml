@@ -30,5 +30,12 @@ services:
       - "5000:5000"
     depends_on:
       - mariadb
+  frontend-react:
+    build: ./frontend-react
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend-api
+      - backend-py
 volumes:
   db_data:
