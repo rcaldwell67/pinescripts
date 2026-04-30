@@ -22,10 +22,10 @@ This file will track all actionable next steps for the project. Each item will b
    **Status:** [x] Complete
 
 6. Testing and validation (automated tests, backtest validation, paper trading simulation)  
-   **Status:** [~] In Progress
+   **Status:** [x] Complete
 
 7. Deployment and monitoring (deploy to server, set up monitoring/logging)  
-   **Status:** [ ] Not Started
+   **Status:** [~] In Progress
 
 8. Agentic Trading (review Gemini article, design/implement agentic trading features)  
    **Status:** [ ] Not Started
