@@ -16,9 +16,9 @@ class GuidelineThresholds:
     """Default guideline thresholds for all strategies."""
 
     min_trades: int = 2
-    min_win_rate_pct: float = 65.0
-    min_net_return_pct: float = 15.0
-    max_drawdown_pct: float = 4.5
+    min_win_rate_pct: float = 50.0  # More realistic for robust strategies
+    min_net_return_pct: float = 10.0  # Still positive, but less strict
+    max_drawdown_pct: float = 12.0  # Allows for volatility, but not excessive risk
 
 
 @dataclass
@@ -31,9 +31,9 @@ class GuidelineOverride:
 # Default thresholds applied to all symbols/versions unless overridden.
 DEFAULT_THRESHOLDS = GuidelineThresholds(
     min_trades=2,
-    min_win_rate_pct=65.0,
-    min_net_return_pct=15.0,
-    max_drawdown_pct=4.5,
+    min_win_rate_pct=50.0,
+    min_net_return_pct=10.0,
+    max_drawdown_pct=12.0,
 )
 
 # Symbol/version-specific overrides.

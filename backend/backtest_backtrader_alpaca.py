@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import os
 import sys
 from pathlib import Path
@@ -716,6 +717,44 @@ def save_to_db(symbol: str, version: str,
 
 
 def main() -> int:
+    # --- Equity Curve Visualization for Best Parameter Set ---
+    # Find the best parameter set from the agentic tuning log
+    import pandas as pd
+    import os
+    log_path = os.path.join(os.path.dirname(__file__), '..', 'agentic_tuning_log_BTCUSD_v7.csv')
+    if os.path.exists(log_path):
+        df_log = pd.read_csv(log_path)
+        # Sort by win_rate, net_return, and lowest max_drawdown
+        df_log = df_log.sort_values(['win_rate', 'net_return', 'max_drawdown'], ascending=[False, False, True])
+        best = df_log.iloc[0]
+        # Prepare params dict for backtest rerun
+        param_cols = [c for c in df_log.columns if c not in ['win_rate','net_return','max_drawdown','calmar_ratio','trades']]
+        best_params = {k: best[k] for k in param_cols}
+        # Rerun backtest for equity curve
+        from strategy_generator.v7 import apm_v7
+        from strategy_generator.v7.apm_v7 import get_v7_params
+        # Build params in v7 format
+        v7_params = get_v7_params('BTC/USD')
+        v7_params['signal'].update(best_params)
+        # Fetch OHLCV data
+        from data_ingestion import fetch_ohlcv_with_retry
+        ohlcv = fetch_ohlcv_with_retry('BTC/USD', lookback='YTD', candle_interval='1h')
+        trades = apm_v7.run_v7_backtest(ohlcv.copy(), v7_params)
+        if trades is not None and not trades.empty and 'equity' in trades.columns:
+            equity_curve = trades['equity']
+            plt.figure(figsize=(10,5))
+            plt.plot(equity_curve.values, label='Equity Curve')
+            plt.title('BTC/USD v7 Best Parameter Set Equity Curve (YTD)')
+            plt.xlabel('Trade #')
+            plt.ylabel('Equity')
+            plt.legend()
+            plt.grid(True)
+            out_path = os.path.join(os.path.dirname(__file__), '..', 'stage3_equity_curve.png')
+            plt.savefig(out_path, bbox_inches='tight')
+            plt.close()
+            print(f"Saved equity curve plot to {out_path}")
+        else:
+            print("No equity curve found for the best parameter set.")
     """
     CLI entry point for running a backtest and saving results to the DB.
     Returns:
@@ -777,37 +816,101 @@ def main() -> int:
                     AdaptiveTuner = ag_mod.AdaptiveTuner
                 # Example param_space for demonstration (should match your strategy's params)
                 param_space = {
-                    "ema_fast": [8, 12],
-                    "ema_mid": [21, 26],
-                    "ema_slow": [55, 89],
-                    "rsi_len": [14],
-                    "atr_len": [14],
-                    "atr_baseline_len": [100],
-                    "volume_sma_len": [20],
-                    "macd_fast": [8, 12],
-                    "macd_slow": [21, 26],
-                    "macd_signal": [7, 9],
+                    # Classic trend/momentum/volatility
+                    "ema_fast": [6, 8, 10, 12, 14, 16],
+                    "ema_mid": [14, 18, 21, 26, 30, 34, 40],
+                    "ema_slow": [34, 55, 89, 100, 120, 144, 200],
+                    "rsi_len": [8, 10, 12, 14, 16, 18, 20],
+                    "atr_len": [8, 10, 12, 14, 16, 18, 20, 24],
+                    "atr_baseline_len": [30, 50, 75, 100, 120, 150, 200],
+                    "volume_sma_len": [5, 10, 15, 20, 25, 30, 40],
+                    "macd_fast": [6, 8, 10, 12, 14, 16],
+                    "macd_slow": [14, 18, 21, 26, 30, 34, 40],
+                    "macd_signal": [5, 7, 8, 9, 10, 12],
+                    # Stochastic Oscillator
+                    "stoch_k_len": [7, 10, 14, 21],
+                    "stoch_d_len": [3, 5, 7],
+                    # Commodity Channel Index
+                    "cci_len": [10, 14, 20, 34],
+                    # Bollinger Bands
+                    "bb_len": [10, 14, 20, 34],
+                    "bb_std_mult": [1.5, 2.0, 2.5, 3.0],
+                    # Donchian Channel
+                    "donchian_len": [10, 20, 30, 50],
+                    # Keltner Channel
+                    "kc_len": [10, 20, 34],
+                    "kc_mult": [1.5, 2.0, 2.5],
+                    # Supertrend
+                    "supertrend_period": [7, 10, 14],
+                    "supertrend_mult": [2.0, 3.0, 4.0],
+                    # Money Flow Index
+                    "mfi_len": [7, 14, 21],
+                    # True Strength Index
+                    "tsi_r": [13, 25, 50],
+                    "tsi_s": [7, 13, 25],
+                    # Williams %R
+                    "wpr_len": [7, 14, 21],
+                    # Parabolic SAR
+                    "sar_af": [0.01, 0.02, 0.04],
+                    "sar_max_af": [0.1, 0.2, 0.4],
+                    # Out-of-the-box: enable/disable new factors
+                    "enable_supertrend": [True, False],
+                    "enable_kc": [True, False],
+                    "enable_mfi": [True, False],
+                    "enable_tsi": [True, False],
+                    "enable_wpr": [True, False],
+                    "enable_sar": [True, False],
                 }
+                import csv
+                import os
+                log_file = f"agentic_tuning_log_{symbol.replace('/', '')}_{version}.csv"
+                log_fields = None
+                log_written = False
                 def evaluate(params):
+                    nonlocal log_fields, log_written
                     # Wrap params in {'signal': params} for v7
                     trades = run_backtest(df, version, symbol=symbol, profile=profile, params={"signal": params})
                     if trades is None or trades.empty:
-                        return None
-                    pnl_col = "pnl" if "pnl" in trades.columns else "dollar_pnl"
-                    equity_col = "equity" if "equity" in trades.columns else "equity"
-                    win_trades = int((trades[pnl_col] > 0).sum())
-                    total_trades = len(trades)
-                    win_rate = win_trades / total_trades * 100 if total_trades else 0
-                    net_return = (trades[equity_col].iloc[-1] - trades[equity_col].iloc[0]) / trades[equity_col].iloc[0] * 100 if total_trades else 0
-                    max_drawdown = (trades[equity_col].cummax() - trades[equity_col]).max() if total_trades else 0
-                    calmar_ratio = net_return / max_drawdown if max_drawdown else 0
-                    return {
-                        "win_rate": win_rate,
-                        "net_return": net_return,
-                        "max_drawdown": max_drawdown,
-                        "calmar_ratio": calmar_ratio,
-                        "trades": total_trades,
-                    }
+                        result = {
+                            "win_rate": 0,
+                            "net_return": 0,
+                            "max_drawdown": 0,
+                            "calmar_ratio": 0,
+                            "trades": 0,
+                        }
+                    else:
+                        pnl_col = "pnl" if "pnl" in trades.columns else "dollar_pnl"
+                        equity_col = "equity" if "equity" in trades.columns else "equity"
+                        win_trades = int((trades[pnl_col] > 0).sum())
+                        total_trades = len(trades)
+                        win_rate = win_trades / total_trades * 100 if total_trades else 0
+                        net_return = (trades[equity_col].iloc[-1] - trades[equity_col].iloc[0]) / trades[equity_col].iloc[0] * 100 if total_trades else 0
+                        # Drawdown as percent from equity curve
+                        equity_curve = trades[equity_col]
+                        roll_max = equity_curve.cummax()
+                        drawdown = (equity_curve - roll_max) / roll_max * 100
+                        max_drawdown = drawdown.min() if not drawdown.empty else 0
+                        max_drawdown = abs(max_drawdown)  # Always positive for guideline check
+                        calmar_ratio = net_return / max_drawdown if max_drawdown else 0
+                        result = {
+                            "win_rate": win_rate,
+                            "net_return": net_return,
+                            "max_drawdown": max_drawdown,
+                            "calmar_ratio": calmar_ratio,
+                            "trades": total_trades,
+                        }
+                    # Log params and result
+                    row = {**params, **result}
+                    if log_fields is None:
+                        log_fields = list(row.keys())
+                    write_header = not log_written and not os.path.exists(log_file)
+                    with open(log_file, "a", newline="") as f:
+                        writer = csv.DictWriter(f, fieldnames=log_fields)
+                        if write_header:
+                            writer.writeheader()
+                            log_written = True
+                        writer.writerow(row)
+                    return result
                 guideline_filter = GuidelineFilter(symbol, version)
                 tuner = AdaptiveTuner(guideline_filter, param_space, evaluate, rank_by="calmar_ratio", max_iters=20)
                 best = tuner.tune()
