@@ -113,6 +113,7 @@ Design and implement an AI-driven trading application for both crypto and non-cr
 	- Automated tests, backtest validation, paper trading simulation
 7. **Deployment and monitoring**
 	- Deploy to Ionos server, set up monitoring and logging
-
----
+8. **Agentic Trading
+    - Review Gemini article here - https://www.theblock.co/post/399001/gemini-rolls-out-agentic-trading-allowing-ai-bots-to-directly-manage-crypto-exchange-trading-accounts
+    
 **If you have further requirements or want to prioritize specific features, please specify before development begins.**

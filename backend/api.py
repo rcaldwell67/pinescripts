@@ -1,3 +1,38 @@
+# --- Live Trading Endpoint ---
+from live_trading import place_market_order, get_positions, get_orders
+
+# POST /api/live-trade
+@app.route('/api/live-trade', methods=['POST'])
+def live_trade():
+    data = request.get_json()
+    symbol = data.get('symbol')
+    qty = data.get('qty')
+    side = data.get('side')
+    if not symbol or not qty or not side:
+        return jsonify({'error': 'symbol, qty, and side are required'}), 400
+    try:
+        order = place_market_order(symbol, qty, side)
+        return jsonify({'order': order.model_dump() if hasattr(order, 'model_dump') else str(order)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# GET /api/live-positions
+@app.route('/api/live-positions', methods=['GET'])
+def live_positions():
+    try:
+        positions = get_positions()
+        return jsonify({'positions': [p.model_dump() if hasattr(p, 'model_dump') else str(p) for p in positions]})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# GET /api/live-orders
+@app.route('/api/live-orders', methods=['GET'])
+def live_orders():
+    try:
+        orders = get_orders()
+        return jsonify({'orders': [o.model_dump() if hasattr(o, 'model_dump') else str(o) for o in orders]})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 from strategy_engine import evaluate_strategy
 import pandas as pd
 
