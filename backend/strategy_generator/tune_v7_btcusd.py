@@ -481,20 +481,11 @@ if __name__ == "__main__":
                             log_resources(f"PROGRESS {completed}")
                         check_resources()
 
-                # Enforce all trading strategy guidelines using centralized policy
-                import sys
-                import os
+                # Enforce all trading strategy guidelines using agentic_trading.GuidelineFilter
                 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-                from backend.config.guideline_policy import evaluate_backtest_guideline
-                passing_stage1 = []
-                for row in results:
-                    trades = row.get("trades", 0)
-                    win_rate = row.get("win_rate", 0.0)
-                    net_return = row.get("net_return", 0.0)
-                    max_drawdown = row.get("max_drawdown", 0.0)
-                    passed, _ = evaluate_backtest_guideline(symbol, "v7", trades, win_rate, net_return, abs(max_drawdown) if max_drawdown is not None else None)
-                    if passed:
-                        passing_stage1.append(row)
+                from backend.agentic_trading import GuidelineFilter
+                guideline_filter = GuidelineFilter(symbol, "v7")
+                passing_stage1 = guideline_filter.filter(results)
                 print(f"\nStage 1 chunk complete. {len(passing_stage1)} parameter sets passed ALL trading strategy guidelines in this chunk.")
                 output_columns = [
                     "macd_fast", "macd_slow", "macd_signal", "stoch_k_len", "stoch_d_len", "cci_len", "ema_fast", "ema_mid", "ema_slow", "rsi_len", "atr_len", "atr_baseline_len", "volume_sma_len", "bb_len", "bb_std_mult", "donchian_len", "adx_len", "atr_percentile_window", "macro_ema_period", "type", "side", "win_rate", "net_return", "max_drawdown", "calmar_ratio", "trades"

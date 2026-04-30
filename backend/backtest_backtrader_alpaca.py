@@ -714,6 +714,7 @@ def save_to_db(symbol: str, version: str,
 
 # ── Main ───────────────────────────────────────────────────────────────────────
 
+
 def main() -> int:
     """
     CLI entry point for running a backtest and saving results to the DB.
@@ -727,13 +728,13 @@ def main() -> int:
     parser.add_argument("--profile", help="Optional runtime profile override, e.g. eth_focus")
     parser.add_argument("--all-symbols", action="store_true", help="Run for every symbol in the DB")
     parser.add_argument("--timespan", default="YTD", help="Timespan for backtest (YTD, MTD, WTD, 1D, 4H, 1H, 30m, 15m)")
+    parser.add_argument("--agentic-tune", action="store_true", help="Run agentic adaptive tuning for this symbol/version")
     args = parser.parse_args()
 
     version = args.version.strip().lower()
     if version not in VERSION_MAP:
         print(f"ERROR: version {version!r} is not implemented. Valid: {list(VERSION_MAP)}", file=sys.stderr)
         return 1
-
 
     # Determine symbols to process
     if args.all_symbols:
@@ -761,6 +762,52 @@ def main() -> int:
             print(f"  {len(df):,} bars fetched ({df['timestamp'].iloc[0]} -> {df['timestamp'].iloc[-1]})")
 
             profile = args.profile.strip() if args.profile else None
+            if args.agentic_tune:
+                print(f"Running agentic adaptive tuning for {symbol} {version}...")
+                # Robust import for agentic_trading regardless of cwd
+                try:
+                    from backend.agentic_trading import GuidelineFilter, AdaptiveTuner
+                except ImportError:
+                    import importlib.util, os
+                    ag_path = os.path.join(os.path.dirname(__file__), "agentic_trading.py")
+                    spec = importlib.util.spec_from_file_location("agentic_trading", ag_path)
+                    ag_mod = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(ag_mod)
+                    GuidelineFilter = ag_mod.GuidelineFilter
+                    AdaptiveTuner = ag_mod.AdaptiveTuner
+                # Example param_space for demonstration (should match your strategy's params)
+                param_space = {
+                    "macd_fast": [8, 12],
+                    "macd_slow": [21, 26],
+                    "macd_signal": [7, 9],
+                }
+                def evaluate(params):
+                    trades = run_backtest(df, version, symbol=symbol, profile=profile, params=params)
+                    if trades is None or trades.empty:
+                        return None
+                    pnl_col = "pnl" if "pnl" in trades.columns else "dollar_pnl"
+                    equity_col = "equity" if "equity" in trades.columns else "equity"
+                    win_trades = int((trades[pnl_col] > 0).sum())
+                    total_trades = len(trades)
+                    win_rate = win_trades / total_trades * 100 if total_trades else 0
+                    net_return = (trades[equity_col].iloc[-1] - trades[equity_col].iloc[0]) / trades[equity_col].iloc[0] * 100 if total_trades else 0
+                    max_drawdown = (trades[equity_col].cummax() - trades[equity_col]).max() if total_trades else 0
+                    calmar_ratio = net_return / max_drawdown if max_drawdown else 0
+                    return {
+                        "win_rate": win_rate,
+                        "net_return": net_return,
+                        "max_drawdown": max_drawdown,
+                        "calmar_ratio": calmar_ratio,
+                        "trades": total_trades,
+                    }
+                guideline_filter = GuidelineFilter(symbol, version)
+                tuner = AdaptiveTuner(guideline_filter, param_space, evaluate, rank_by="calmar_ratio", max_iters=20)
+                best = tuner.tune()
+                print(f"Agentic tuning complete. {len(best)} parameter sets passed guidelines.")
+                for b in best[:5]:
+                    print(b)
+                # Optionally, save best results to DB or file
+                continue
             if profile:
                 print(f"Running backtest {version} (profile={profile})...")
             else:
