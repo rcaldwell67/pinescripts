@@ -6,6 +6,7 @@ import SimulatedPaperTable from "./SimulatedPaperTable";
 import SymbolsTable from "./SymbolsTable";
 import StrategyManager from "./components/StrategyManager";
 import BacktestRunner from "./components/BacktestRunner";
+import LiveTradingPanel from "./components/LiveTradingPanel";
 
 
 // Demo/mock data from backend/data/print_account_info.py output
@@ -66,6 +67,7 @@ function App() {
             <li><a href="#" onClick={() => handleNav("Backtests")}>Backtests</a></li>
             <li><a href="#" onClick={() => handleNav("Strategy Management")}>Strategy Management</a></li>
             <li><a href="#" onClick={() => handleNav("Backtest Runner")}>Backtest Runner</a></li>
+            <li><a href="#" onClick={() => handleNav("Live Trading Control")}>Live Trading Control</a></li>
             <li><a href="#" onClick={() => handleNav("Symbols")}>Symbols</a></li>
             <li>
               <a href="#" onClick={() => handleNav("Paper Trading")}>Paper Trading</a>
@@ -138,6 +140,8 @@ function App() {
             <StrategyManager />
           ) : activePage === "Backtest Runner" ? (
             <BacktestRunner />
+          ) : activePage === "Live Trading Control" ? (
+            <LiveTradingPanel />
           ) : activePage === "Symbols" ? (
             <SymbolsTable />
           ) : activePage === "Real-Time" ? (
